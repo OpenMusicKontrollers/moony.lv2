@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2014 Hanspeter Portner (dev@open-music-kontrollers.ch)
+ * 
+ * This GUI theme and its accompanying resources are released under a
+ * Creative Commons Attribution Non-Commercial Share-Alike License 3.0
+ */
+
+#define LUA_CONTROL_URI				LUA_URI"#control"
+#define LUA_CONTROL_UI_URI		LUA_CONTROL_URI"/ui"
+
+images {
+	image: "encapsulation.png" COMP;
+	image: "omk_logo_256x256.png" COMP;
+}
+
+group {
+	name: LUA_CONTROL_UI_URI"/theme";
+
+	parts {
+		part {
+			name: "bg";
+			type: RECT;
+			mouse_events: 0;
+			description {
+				state: "default" 0.0;
+				color: 48 48 48 255;
+			}
+		}
+		part {
+			name: "encapsulation";
+			type: IMAGE;
+			mouse_events: 0;
+			description {
+				state: "default" 0.0;
+				image {
+					normal: "encapsulation.png";
+					border: 12 12 12 12;
+					middle: NONE;
+					scale_hint: STATIC;
+				}
+			}
+		}
+		part {
+			name: "content";
+			type: SWALLOW;
+			mouse_events: 1;
+			repeat_events: 1;
+			description {
+				state: "default" 0.0;
+				rel1.offset: 12 12;
+				rel2.offset: -12 -12;
+			}
+		}
+		part {
+			name: "logo";
+			type: IMAGE;
+			mouse_events: 0;
+			description {
+				state: "default" 0.0;
+				rel1.relative: 0.2 0.2;
+				rel2.relative: 0.8 0.8;
+				aspect: 1 1;
+				aspect_preference: BOTH;
+				image.normal: "omk_logo_256x256.png";
+				color: 255 255 255 16;
+			}
+		}
+	}
+}

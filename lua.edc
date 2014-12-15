@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2014 Hanspeter Portner (dev@open-music-kontrollers.ch)
+ * 
+ * This GUI theme and its accompanying resources are released under a
+ * Creative Commons Attribution Non-Commercial Share-Alike License 3.0
+ */
+
+#define LUA_URI "http://open-music-kontrollers.ch/lv2/lua"
+
+collections {
+#	include <lua_control.edc>
+}
