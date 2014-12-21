@@ -8,6 +8,11 @@
 	ui:ui <http://open-music-kontrollers.ch/lv2/lua#control/ui> ;
 	rdfs:seeAlso <lua.ttl> .
 
+<http://open-music-kontrollers.ch/lv2/lua#midi>
+	a lv2:Plugin ;
+	lv2:binary <lua@LIB_EXT@> ;
+	rdfs:seeAlso <lua.ttl> .
+
 <http://open-music-kontrollers.ch/lv2/lua#control/ui>
 	a ui:X11UI ;
 	ui:binary <lua_ui@LIB_EXT@> ;

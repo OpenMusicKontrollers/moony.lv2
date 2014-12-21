@@ -24,20 +24,18 @@ if(USE_LUAJIT)
 	include_directories(${LUAJIT_INCLUDE_DIRS})
 	set(LIBS ${LIBS} ${LUAJIT_LDFLAGS})
 else()
-	pkg_search_module(LUA REQUIRED lua)
+	pkg_search_module(LUA REQUIRED lua>=5.1)
 	include_directories(${LUA_INCLUDE_DIRS})
 	set(LIBS ${LIBS} ${LUA_LDFLAGS})
 endif()
 
-# tlsf
-add_library(tlsf tlsf-3.0/tlsf.c)
-
-set(CMAKE_C_FLAGS "-fPIC") #FIXME
-
 add_library(lua MODULE
 	lua_lv2.c
-	lua_control.c)
-target_link_libraries(lua tlsf ${LIBS})
+	tlsf-3.0/tlsf.c
+	lua_control.c
+	lua_midi.c
+	lua_osc.c)
+target_link_libraries(lua ${LIBS})
 set_target_properties(lua PROPERTIES PREFIX "")
 install(TARGETS lua DESTINATION ${DEST})
 

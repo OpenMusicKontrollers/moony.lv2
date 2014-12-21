@@ -6,7 +6,11 @@
 #include <stdint.h>
 #include <endian.h>
 
+#define LUA_COMPAT_ALL
 #include <lua.h>
+#include <lualib.h>
+#include <lauxlib.h>
+
 #include <tlsf.h>
 
 #include "lv2/lv2plug.in/ns/ext/atom/atom.h"
@@ -22,6 +26,12 @@
 
 #define LUA_CONTROL_URI			LUA_URI"#control"
 #define LUA_CONTROL_UI_URI	LUA_CONTROL_URI"/ui"
+
+#define LUA_MIDI_URI				LUA_URI"#midi"
+#define LUA_MIDI_UI_URI			LUA_MIDI_URI"/ui"
+
+#define LUA_OSC_URI					LUA_URI"#osc"
+#define LUA_OSC_UI_URI			LUA_OSC_URI"/ui"
 
 typedef struct _Lua_VM Lua_VM;
 

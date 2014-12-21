@@ -10,12 +10,14 @@ struct _Handle {
 		LV2_URID atom_string;
 		LV2_URID lua_chunk;
 		LV2_URID state_default;
+		LV2_URID osc_OscEvent;
 	} uris;
 
 	Lua_VM lvm;
 
-	const float *control_in [8];
-	float *control_out [8];
+	const LV2_Atom_Sequence *osc_in;
+	LV2_Atom_String *osc_out;
+	LV2_Atom_Forge forge;
 };
 
 static const char *default_chunk =
@@ -99,6 +101,7 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 	handle->uris.atom_string = handle->map->map(handle->map->handle, LV2_ATOM__String);
 	handle->uris.lua_chunk = handle->map->map(handle->map->handle, "http://lua.org#chunk");
 	handle->uris.state_default = handle->map->map(handle->map->handle, LV2_STATE__loadDefaultState);
+	handle->uris.osc_OscEvent = handle->map->map(handle->map->handle, "http://opensoundcontrol.org#OscEvent");
 
 	if(lua_vm_init(&handle->lvm))
 		return NULL;
@@ -110,6 +113,8 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 		fprintf(stderr, "Lua: %s\n", lua_tostring(handle->lvm.L, -1));
 		return NULL;
 	}
+	
+	lv2_atom_forge_init(&handle->forge, handle->map);
 
 	return handle;
 }
@@ -119,10 +124,17 @@ connect_port(LV2_Handle instance, uint32_t port, void *data)
 {
 	Handle *handle = (Handle *)instance;
 
-	if(port < 8)
-		handle->control_in[port] = (const float *)data;
-	else
-		handle->control_out[port-8] = (float *)data;
+	switch(port)
+	{
+		case 0:
+			handle->osc_in = (const LV2_Atom_Sequence *)data;
+			break;
+		case 1:
+			handle->osc_out = (LV2_Atom_String *)data;
+			break;
+		default:
+			break;
+	}
 }
 
 static void
@@ -138,24 +150,56 @@ run(LV2_Handle instance, uint32_t nsamples)
 	Handle *handle = (Handle *)instance;
 	lua_State *L = handle->lvm.L;
 
-	lua_getglobal(L, "run");
-	if(lua_isfunction(L, -1))
+	// prepare osc atom forge
+	const uint32_t capacity = handle->osc_out->atom.size;
+	LV2_Atom_Forge *forge = &handle->forge;
+	lv2_atom_forge_set_buffer(forge, (uint8_t *)handle->osc_out, capacity);
+	LV2_Atom_Forge_Frame frame;
+	lv2_atom_forge_sequence_head(forge, &frame, 0);
+	
+	LV2_Atom_Event *ev = NULL;
+	LV2_ATOM_SEQUENCE_FOREACH(handle->osc_in, ev)
 	{
-		for(int i=0; i<8; i++)
-			lua_pushnumber(L, *handle->control_in[i]);
+		if(ev->body.type == handle->uris.osc_OscEvent)
+		{
+			int64_t frames = ev->time.frames;
+			uint32_t len = ev->body.size;
+			const uint8_t *buf = LV2_ATOM_CONTENTS_CONST(LV2_Atom_Event, ev);
 
-		if(lua_pcall(L, 8, 8, 0))
-			fprintf(stderr, "Lua: %s\n", lua_tostring(L, -1));
+			//FIXME
+			/*
+			lua_getglobal(L, "run");
+			if(lua_isfunction(L, -1))
+			{
+				for(int i=0; i<len; i++)
+					lua_pushnumber(L, buf[i]);
+				if(lua_pcall(L, len, LUA_MULTRET, 0))
+					fprintf(stderr, "Lua: %s\n", lua_tostring(L, -1));
+					
+				int r = lua_gettop(L);
+				LV2_Atom oscatom;
+				oscatom.type = handle->uris.osc_OscEvent;
+				oscatom.size = r;
+					
+				lv2_atom_forge_frame_time(forge, frames);
+				lv2_atom_forge_raw(forge, &oscatom, sizeof(LV2_Atom));
 
-		for(int i=0; i<8; i++)
-			if(lua_isnumber(L, i+1))
-				*handle->control_out[i] = lua_tonumber(L, i+1);
+				for(int i=0; i<r; i++)
+				{
+					uint8_t m = luaL_checkint(L, i+1);
+					lv2_atom_forge_raw(forge, &m, 1);
+				}
+				lua_pop(L, r);
+				
+				lv2_atom_forge_pad(forge, sizeof(LV2_Atom) + len);
+			}
 			else
-				*handle->control_out[i] = 0.f;
-		lua_pop(L, 8);
+				lua_pop(L, 1);
+			*/
+		}
 	}
-	else
-		lua_pop(L, 1);
+
+	lv2_atom_forge_pop(forge, &frame);
 	lua_gc(L, LUA_GCSTEP, 0);
 }
 
@@ -189,8 +233,8 @@ extension_data(const char* uri)
 		return NULL;
 }
 
-const LV2_Descriptor lv2_lua_control = {
-	.URI						= LUA_CONTROL_URI,
+const LV2_Descriptor lv2_lua_osc = {
+	.URI						= LUA_OSC_URI,
 	.instantiate		= instantiate,
 	.connect_port		= connect_port,
 	.activate				= activate,

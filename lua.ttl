@@ -3,6 +3,9 @@
 @prefix doap: <http://usefulinc.com/ns/doap#> .
 @prefix lv2:  <http://lv2plug.in/ns/lv2core#> .
 @prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .
+@prefix atom: <http://lv2plug.in/ns/ext/atom#> .
+@prefix midi: <http://lv2plug.in/ns/ext/midi#> .
+@prefix osc:  <http://opensoundcontrol.org##> .
 
 # Maintainer
 <http://open-music-kontrollers.ch#me>
@@ -24,7 +27,7 @@
   lv2:optionalFeature ui:noUserResize ;
   lv2:extensionData ui:idleInterface, ui:showInterface .
 
-# Plugin
+# Control Plugin
 <http://open-music-kontrollers.ch/lv2/lua#control>
 	a lv2:Plugin,
 		lv2:ConverterPlugin;
@@ -170,4 +173,68 @@
 		lv2:index 15 ;
 		lv2:symbol "output_8" ;
 		lv2:name "Output 8" ;
+	] .
+
+# Midi Plugin
+<http://open-music-kontrollers.ch/lv2/lua#midi>
+	a lv2:Plugin,
+		lv2:ConverterPlugin;
+	doap:name "Lua for Midi Ports" ;
+	doap:license <http://opensource.org/licenses/isc> ;
+	lv2:project <http://open-music-kontrollers.ch/lv2/lua> ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
+  lv2:extensionData ui:stateInterface ;
+
+	# input midi port
+	lv2:port [
+	  a lv2:InputPort ,
+			atom:AtomPort ;
+		atom:bufferType atom:Sequence ;
+		atom:supports midi:MidiEvent ;
+		lv2:index 0 ;
+		lv2:symbol "input_1" ;
+		lv2:name "Input 1" ;
+	] ;
+
+	# output control ports
+	lv2:port [
+	  a lv2:OutputPort ,
+			atom:AtomPort ;
+		atom:bufferType atom:Sequence ;
+		atom:supports midi:MidiEvent ;
+		lv2:index 1 ;
+		lv2:symbol "output_1" ;
+		lv2:name "Output 1" ;
+	] .
+
+# Osc Plugin
+<http://open-music-kontrollers.ch/lv2/lua#osc>
+	a lv2:Plugin,
+		lv2:ConverterPlugin;
+	doap:name "Lua for OSC Ports" ;
+	doap:license <http://opensource.org/licenses/isc> ;
+	lv2:project <http://open-music-kontrollers.ch/lv2/lua> ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
+  lv2:extensionData ui:stateInterface ;
+
+	# input midi port
+	lv2:port [
+	  a lv2:InputPort ,
+			atom:AtomPort ;
+		atom:bufferType atom:Sequence ;
+		atom:supports osc:OscEvent ;
+		lv2:index 0 ;
+		lv2:symbol "input_1" ;
+		lv2:name "Input 1" ;
+	] ;
+
+	# output control ports
+	lv2:port [
+	  a lv2:OutputPort ,
+			atom:AtomPort ;
+		atom:bufferType atom:Sequence ;
+		atom:supports osc:OscEvent ;
+		lv2:index 1 ;
+		lv2:symbol "output_1" ;
+		lv2:name "Output 1" ;
 	] .
