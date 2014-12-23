@@ -1,6 +1,6 @@
 #include <lua_lv2.h>
 
-#include <lauxlib.h>
+#include <osc.h>
 
 typedef struct _Handle Handle;
 
@@ -21,8 +21,8 @@ struct _Handle {
 };
 
 static const char *default_chunk =
-	"function run(...)"
-		"return ...;"
+	"function run(frame, path, fmt, ...)"
+		"osc(frame, path, fmt, ...);"
 	"end";
 
 static LV2_State_Status
@@ -79,6 +79,68 @@ state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_Sta
 	return LV2_STATE_SUCCESS;
 }
 
+static int
+_osc(lua_State *L)
+{
+	Handle *handle = lua_touserdata(L, lua_upvalueindex(1));
+	LV2_Atom_Forge *forge = &handle->forge;
+	osc_data_t buf[1024]; // TODO how big?
+	osc_data_t *ptr = buf;
+	osc_data_t *end = buf+1024;
+		
+	int len = lua_gettop(L);
+	if(len > 2)
+	{
+		int64_t frames = luaL_checkint(L, 1);
+		const char *path = luaL_checkstring(L, 2);
+		const char *fmt = luaL_checkstring(L, 3);
+
+		if(len-3 <= strlen(fmt)) // I,N,T,F have no arguments
+		{
+			int pos = 4;
+			for(const char *type=fmt; *type; type++)
+				switch(*type)
+				{
+					case OSC_INT32:
+					{
+						int32_t i = luaL_checkint(L, pos++);
+						ptr = osc_set_int32(ptr, end, i);
+						break;
+					}
+					case OSC_FLOAT:
+					{
+						float f = luaL_checknumber(L, pos++);
+						ptr = osc_set_float(ptr, end, f);
+						break;
+					}
+					case OSC_STRING:
+					{
+						const char *s = luaL_checkstring(L, pos++);
+						ptr = osc_set_string(ptr, end, s);
+						break;
+					}
+					//TODO  pop arguments
+					default:
+						break;
+				}
+		
+			if(ptr)
+			{
+				size_t size = ptr-buf;
+				LV2_Atom oscatom;
+				oscatom.type = handle->uris.osc_OscEvent;
+				oscatom.size = size;
+				lv2_atom_forge_frame_time(forge, frames);
+				lv2_atom_forge_raw(forge, &oscatom, sizeof(LV2_Atom));
+				lv2_atom_forge_raw(forge, buf, size);
+				lv2_atom_forge_pad(forge, size);
+			}
+		}
+	}
+
+	return 0;
+}
+
 static LV2_Handle
 instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_path, const LV2_Feature *const *features)
 {
@@ -113,6 +175,11 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 		fprintf(stderr, "Lua: %s\n", lua_tostring(handle->lvm.L, -1));
 		return NULL;
 	}
+
+	// register midi function with handle as upvalue
+	lua_pushlightuserdata(handle->lvm.L, handle);
+	lua_pushcclosure(handle->lvm.L, _osc, 1);
+	lua_setglobal(handle->lvm.L, "osc");
 	
 	lv2_atom_forge_init(&handle->forge, handle->map);
 
@@ -144,6 +211,61 @@ activate(LV2_Handle instance)
 	//nothing
 }
 
+static int
+_through(osc_time_t time, const char *path, const char *fmt, osc_data_t *arg, size_t size, void *data)
+{
+	Handle *handle = data;
+	lua_State *L = handle->lvm.L;
+
+	lua_getglobal(L, "run");
+	if(lua_isfunction(L, -1))
+	{
+		osc_data_t *ptr = arg;
+		lua_pushnumber(L, time);
+		lua_pushstring(L, path);
+		lua_pushstring(L, fmt);
+		for(const char *type=fmt; *type; type++)
+			switch(*type)
+			{
+				case OSC_INT32:
+				{
+					int32_t i;
+					ptr = osc_get_int32(ptr, &i);
+					lua_pushnumber(L, i);
+					break;
+				}
+				case OSC_FLOAT:
+				{
+					float f;
+					ptr = osc_get_float(ptr, &f);
+					lua_pushnumber(L, f);
+					break;
+				}
+				case OSC_STRING:
+				{
+					const char *s;
+					ptr = osc_get_string(ptr, &s);
+					lua_pushstring(L, s);
+					break;
+				}
+				//TODO push arguments
+				default:
+					break;
+			}
+		if(lua_pcall(L, 3+strlen(fmt), 0, 0))
+			fprintf(stderr, "Lua: %s\n", lua_tostring(L, -1));
+	}
+	else
+		lua_pop(L, 1);
+
+	return 1;
+}
+
+static const osc_method_t methods [] = {
+	{NULL, NULL, _through},
+	{NULL, NULL, NULL}
+};
+
 static void
 run(LV2_Handle instance, uint32_t nsamples)
 {
@@ -162,40 +284,12 @@ run(LV2_Handle instance, uint32_t nsamples)
 	{
 		if(ev->body.type == handle->uris.osc_OscEvent)
 		{
-			int64_t frames = ev->time.frames;
-			uint32_t len = ev->body.size;
-			const uint8_t *buf = LV2_ATOM_CONTENTS_CONST(LV2_Atom_Event, ev);
+			osc_time_t frames = ev->time.frames;
+			size_t len = ev->body.size;
+			const osc_data_t *buf = LV2_ATOM_CONTENTS_CONST(LV2_Atom_Event, ev);
 
-			//FIXME
-			/*
-			lua_getglobal(L, "run");
-			if(lua_isfunction(L, -1))
-			{
-				for(int i=0; i<len; i++)
-					lua_pushnumber(L, buf[i]);
-				if(lua_pcall(L, len, LUA_MULTRET, 0))
-					fprintf(stderr, "Lua: %s\n", lua_tostring(L, -1));
-					
-				int r = lua_gettop(L);
-				LV2_Atom oscatom;
-				oscatom.type = handle->uris.osc_OscEvent;
-				oscatom.size = r;
-					
-				lv2_atom_forge_frame_time(forge, frames);
-				lv2_atom_forge_raw(forge, &oscatom, sizeof(LV2_Atom));
-
-				for(int i=0; i<r; i++)
-				{
-					uint8_t m = luaL_checkint(L, i+1);
-					lv2_atom_forge_raw(forge, &m, 1);
-				}
-				lua_pop(L, r);
-				
-				lv2_atom_forge_pad(forge, sizeof(LV2_Atom) + len);
-			}
-			else
-				lua_pop(L, 1);
-			*/
+			if(osc_check_packet((osc_data_t *)buf, len))
+				osc_dispatch_method(frames, (osc_data_t *)buf, len, (osc_method_t *)methods, NULL, NULL, handle);
 		}
 	}
 

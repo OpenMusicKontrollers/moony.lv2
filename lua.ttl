@@ -196,7 +196,7 @@
 		lv2:name "Input 1" ;
 	] ;
 
-	# output control ports
+	# output midi ports
 	lv2:port [
 	  a lv2:OutputPort ,
 			atom:AtomPort ;
@@ -217,7 +217,7 @@
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
   lv2:extensionData ui:stateInterface ;
 
-	# input midi port
+	# input osc port
 	lv2:port [
 	  a lv2:InputPort ,
 			atom:AtomPort ;
@@ -228,7 +228,7 @@
 		lv2:name "Input 1" ;
 	] ;
 
-	# output control ports
+	# output osc ports
 	lv2:port [
 	  a lv2:OutputPort ,
 			atom:AtomPort ;

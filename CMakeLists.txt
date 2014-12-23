@@ -4,6 +4,7 @@ project(lua.lv2)
 
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/tlsf-3.0)
+include_directories(${PROJECT_SOURCE_DIR}/libosc)
 
 set(DEST lib/lv2/lua.lv2)
 set(LIB_EXT ".so")
@@ -32,6 +33,7 @@ endif()
 add_library(lua MODULE
 	lua_lv2.c
 	tlsf-3.0/tlsf.c
+	libosc/osc.c
 	lua_control.c
 	lua_midi.c
 	lua_osc.c)

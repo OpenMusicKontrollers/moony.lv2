@@ -1,7 +1,5 @@
 #include <lua_lv2.h>
 
-#include <lauxlib.h>
-
 typedef struct _Handle Handle;
 
 struct _Handle {
@@ -21,8 +19,8 @@ struct _Handle {
 };
 
 static const char *default_chunk =
-	"function run(...)"
-		"return ...;"
+	"function run(frame, ...)"
+		"midi(frame, ...);"
 	"end";
 
 static LV2_State_Status
@@ -79,6 +77,35 @@ state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_Sta
 	return LV2_STATE_SUCCESS;
 }
 
+static int
+_midi(lua_State *L)
+{
+	Handle *handle = lua_touserdata(L, lua_upvalueindex(1));
+	LV2_Atom_Forge *forge = &handle->forge;
+		
+	int len = lua_gettop(L);
+	if(len > 0)
+	{
+		LV2_Atom midiatom;
+		midiatom.type = handle->uris.midi_MidiEvent;
+		midiatom.size = len-1;
+			
+		int64_t frames = luaL_checkint(L, 1);
+		lv2_atom_forge_frame_time(forge, frames);
+		lv2_atom_forge_raw(forge, &midiatom, sizeof(LV2_Atom));
+
+		for(int i=0; i<len-1; i++)
+		{
+			uint8_t m = luaL_checkint(L, i+2);
+			lv2_atom_forge_raw(forge, &m, 1);
+		}
+		
+		lv2_atom_forge_pad(forge, len);
+	}
+
+	return 0;
+}
+
 static LV2_Handle
 instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_path, const LV2_Feature *const *features)
 {
@@ -113,6 +140,11 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 		fprintf(stderr, "Lua: %s\n", lua_tostring(handle->lvm.L, -1));
 		return NULL;
 	}
+
+	// register midi function with handle as upvalue
+	lua_pushlightuserdata(handle->lvm.L, handle);
+	lua_pushcclosure(handle->lvm.L, _midi, 1);
+	lua_setglobal(handle->lvm.L, "midi");
 	
 	lv2_atom_forge_init(&handle->forge, handle->map);
 
@@ -169,27 +201,11 @@ run(LV2_Handle instance, uint32_t nsamples)
 			lua_getglobal(L, "run");
 			if(lua_isfunction(L, -1))
 			{
+				lua_pushnumber(L, frames);
 				for(int i=0; i<len; i++)
 					lua_pushnumber(L, buf[i]);
-				if(lua_pcall(L, len, LUA_MULTRET, 0))
+				if(lua_pcall(L, 1+len, 0, 0))
 					fprintf(stderr, "Lua: %s\n", lua_tostring(L, -1));
-					
-				int r = lua_gettop(L);
-				LV2_Atom midiatom;
-				midiatom.type = handle->uris.midi_MidiEvent;
-				midiatom.size = r;
-					
-				lv2_atom_forge_frame_time(forge, frames);
-				lv2_atom_forge_raw(forge, &midiatom, sizeof(LV2_Atom));
-
-				for(int i=0; i<r; i++)
-				{
-					uint8_t m = luaL_checkint(L, i+1);
-					lv2_atom_forge_raw(forge, &m, 1);
-				}
-				lua_pop(L, r);
-				
-				lv2_atom_forge_pad(forge, sizeof(LV2_Atom) + len);
 			}
 			else
 				lua_pop(L, 1);
