@@ -57,7 +57,7 @@ state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_Sta
 
 	//TODO check type, flags2
 
-	if(size && type)
+	if(chunk && size && type)
 	{
 		if(handle->lvm.chunk)
 			free(handle->lvm.chunk);
@@ -95,6 +95,9 @@ _osc(lua_State *L)
 		const char *path = luaL_checkstring(L, 2);
 		const char *fmt = luaL_checkstring(L, 3);
 
+		ptr = osc_set_path(ptr, end, path);
+		ptr = osc_set_fmt(ptr, end, fmt);
+
 		if(len-3 <= strlen(fmt)) // I,N,T,F have no arguments
 		{
 			int pos = 4;
@@ -123,10 +126,10 @@ _osc(lua_State *L)
 					default:
 						break;
 				}
-		
-			if(ptr)
+	
+			size_t size;
+			if(ptr && osc_check_packet(buf, size=ptr-buf))
 			{
-				size_t size = ptr-buf;
 				LV2_Atom oscatom;
 				oscatom.type = handle->uris.osc_OscEvent;
 				oscatom.size = size;
