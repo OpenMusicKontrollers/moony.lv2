@@ -116,7 +116,9 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri, const ch
 
 	//edje_frametime_set(0.04);
 
-	if(strcmp(plugin_uri, LUA_CONTROL_URI))
+	if(		strcmp(plugin_uri, LUA_CONTROL_URI)
+		&&	strcmp(plugin_uri, LUA_MIDI_URI)
+		&&	strcmp(plugin_uri, LUA_OSC_URI) )
 		return NULL;
 
 	UI *ui = calloc(1, sizeof(UI));
@@ -154,7 +156,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri, const ch
 	sprintf(ui->theme_path, "%s/lua.edj", bundle_path);
 	
 	ui->theme = edje_object_add(ui->e);
-	edje_object_file_set(ui->theme, ui->theme_path, LUA_CONTROL_UI_URI"/theme");
+	edje_object_file_set(ui->theme, ui->theme_path, LUA_COMMON_UI_URI"/theme");
 	evas_object_resize(ui->theme, ui->w, ui->h);
 	evas_object_show(ui->theme);
 
@@ -221,8 +223,8 @@ extension_data(const char *uri)
 	return NULL;
 }
 
-const LV2UI_Descriptor lv2_lua_control_ui = {
-	.URI						= LUA_CONTROL_UI_URI,
+const LV2UI_Descriptor lv2_lua_common_ui = {
+	.URI						= LUA_COMMON_UI_URI,
 	.instantiate		= instantiate,
 	.cleanup				= cleanup,
 	.port_event			= port_event,

@@ -1,3 +1,24 @@
+# Copyright (c) 2014 Hanspeter Portner (dev@open-music-kontrollers.ch)
+# 
+# This software is provided 'as-is', without any express or implied
+# warranty. In no event will the authors be held liable for any damages
+# arising from the use of this software.
+# 
+# Permission is granted to anyone to use this software for any purpose,
+# including commercial applications, and to alter it and redistribute it
+# freely, subject to the following restrictions:
+# 
+#     1. The origin of this software must not be misrepresented; you must not
+#     claim that you wrote the original software. If you use this software
+#     in a product, an acknowledgment in the product documentation would be
+#     appreciated but is not required.
+# 
+#     2. Altered source versions must be plainly marked as such, and must not be
+#     misrepresented as being the original software.
+# 
+#     3. This notice may not be removed or altered from any source
+#     distribution.
+
 @prefix lv2:  <http://lv2plug.in/ns/lv2core#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .
@@ -5,20 +26,22 @@
 <http://open-music-kontrollers.ch/lv2/lua#control>
 	a lv2:Plugin ;
 	lv2:binary <lua@LIB_EXT@> ;
-	ui:ui <http://open-music-kontrollers.ch/lv2/lua#control/ui> ;
+	ui:ui <http://open-music-kontrollers.ch/lv2/lua#common/ui> ;
 	rdfs:seeAlso <lua.ttl> .
 
 <http://open-music-kontrollers.ch/lv2/lua#midi>
 	a lv2:Plugin ;
 	lv2:binary <lua@LIB_EXT@> ;
+	ui:ui <http://open-music-kontrollers.ch/lv2/lua#common/ui> ;
 	rdfs:seeAlso <lua.ttl> .
 
 <http://open-music-kontrollers.ch/lv2/lua#osc>
 	a lv2:Plugin ;
 	lv2:binary <lua@LIB_EXT@> ;
+	ui:ui <http://open-music-kontrollers.ch/lv2/lua#common/ui> ;
 	rdfs:seeAlso <lua.ttl> .
 
-<http://open-music-kontrollers.ch/lv2/lua#control/ui>
+<http://open-music-kontrollers.ch/lv2/lua#common/ui>
 	a ui:X11UI ;
 	ui:binary <lua_ui@LIB_EXT@> ;
 	rdfs:seeAlso <lua.ttl> .

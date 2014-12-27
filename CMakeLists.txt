@@ -43,7 +43,7 @@ install(TARGETS lua DESTINATION ${DEST})
 
 add_library(lua_ui MODULE
 	lua_lv2_ui.c
-	lua_control_ui.c)
+	lua_common_ui.c)
 target_link_libraries(lua_ui ${LIBS_UI})
 set_target_properties(lua_ui PROPERTIES PREFIX "")
 install(TARGETS lua_ui DESTINATION ${DEST})
@@ -66,7 +66,7 @@ add_custom_command(
 		${PROJECT_BINARY_DIR}/lua.edj
 	MAIN_DEPENDENCY
 		${PROJECT_SOURCE_DIR}/lua.edc
-		${PROJECT_SOURCE_DIR}/lua_control.edc)
+		${PROJECT_SOURCE_DIR}/lua_common.edc)
 add_custom_target(THEME ALL DEPENDS ${PROJECT_BINARY_DIR}/lua.edj)
 
 install(FILES ${PROJECT_BINARY_DIR}/manifest.ttl DESTINATION ${DEST})

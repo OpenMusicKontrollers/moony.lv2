@@ -8,5 +8,5 @@
 #define LUA_URI "http://open-music-kontrollers.ch/lv2/lua"
 
 collections {
-#	include <lua_control.edc>
+#	include <lua_common.edc>
 }
