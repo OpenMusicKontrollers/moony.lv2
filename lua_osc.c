@@ -1,3 +1,26 @@
+/*
+ * Copyright (c) 2014 Hanspeter Portner (dev@open-music-kontrollers.ch)
+ * 
+ * This software is provided 'as-is', without any express or implied
+ * warranty. In no event will the authors be held liable for any damages
+ * arising from the use of this software.
+ * 
+ * Permission is granted to anyone to use this software for any purpose,
+ * including commercial applications, and to alter it and redistribute it
+ * freely, subject to the following restrictions:
+ * 
+ *     1. The origin of this software must not be misrepresented; you must not
+ *     claim that you wrote the original software. If you use this software
+ *     in a product, an acknowledgment in the product documentation would be
+ *     appreciated but is not required.
+ * 
+ *     2. Altered source versions must be plainly marked as such, and must not be
+ *     misrepresented as being the original software.
+ * 
+ *     3. This notice may not be removed or altered from any source
+ *     distribution.
+ */
+
 #include <lua_lv2.h>
 
 #include <osc.h>
@@ -117,12 +140,57 @@ _osc(lua_State *L)
 						break;
 					}
 					case OSC_STRING:
+					case OSC_SYMBOL:
 					{
 						const char *s = luaL_checkstring(L, pos++);
 						ptr = osc_set_string(ptr, end, s);
 						break;
 					}
-					//TODO  pop arguments
+					case OSC_INT64:
+					{
+						int64_t h = luaL_checkint(L, pos++);
+						ptr = osc_set_int64(ptr, end, h);
+						break;
+					}
+					case OSC_TIMETAG:
+					{
+						osc_time_t t = luaL_checkint(L, pos++);
+						ptr = osc_set_timetag(ptr, end, t);
+						break;
+					}
+					case OSC_DOUBLE:
+					{
+						double d = luaL_checknumber(L, pos++);
+						ptr = osc_set_double(ptr, end, d);
+						break;
+					}
+					case OSC_MIDI:
+					{
+						uint8_t m[4];
+						for(int i=0; i<4; i++)
+						{
+							lua_rawgeti(L, pos, i+1);
+							m[i] = luaL_checkint(L, -1);
+							lua_pop(L, 1);
+						}
+						pos++;
+						ptr = osc_set_midi(ptr, end, m);
+						break;
+					}
+					case OSC_CHAR:
+					{
+						char c = luaL_checkint(L, pos++);
+						ptr = osc_set_char(ptr, end, c);
+						break;
+					}
+					case OSC_BLOB:
+						//FIXME
+						break;
+					case OSC_NIL:
+					case OSC_BANG:
+					case OSC_TRUE:
+					case OSC_FALSE:
+						break;
 					default:
 						break;
 				}
@@ -245,13 +313,61 @@ _through(osc_time_t time, const char *path, const char *fmt, osc_data_t *arg, si
 					break;
 				}
 				case OSC_STRING:
+				case OSC_SYMBOL:
 				{
 					const char *s;
 					ptr = osc_get_string(ptr, &s);
 					lua_pushstring(L, s);
 					break;
 				}
-				//TODO push arguments
+				case OSC_INT64:
+				{
+					int64_t h;
+					ptr = osc_get_int64(ptr, &h);
+					lua_pushnumber(L, h);
+					break;
+				}
+				case OSC_DOUBLE:
+				{
+					double d;
+					ptr = osc_get_double(ptr, &d);
+					lua_pushnumber(L, d);
+					break;
+				}
+				case OSC_TIMETAG:
+				{
+					osc_time_t t;
+					ptr = osc_get_timetag(ptr, &t);
+					lua_pushnumber(L, t);
+					break;
+				}
+				case OSC_CHAR:
+				{
+					char c;
+					ptr = osc_get_char(ptr, &c);
+					lua_pushnumber(L, c);
+					break;
+				}
+				case OSC_MIDI:
+				{
+					uint8_t *m;
+					ptr = osc_get_midi(ptr, &m);
+					lua_createtable(L, 4, 0);
+					for(int i=0; i<4; i++)
+					{
+						lua_pushnumber(L, m[i]);
+						lua_rawseti(L, -2, i+1);
+					}
+					break;
+				}
+				case OSC_BLOB:
+					//FIXME
+					break;
+				case OSC_NIL:
+				case OSC_BANG:
+				case OSC_TRUE:
+				case OSC_FALSE:
+					break;
 				default:
 					break;
 			}

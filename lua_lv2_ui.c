@@ -23,7 +23,7 @@
 
 #include <lua_lv2.h>
 
-extern const LV2UI_Descriptor lv2_lua_control_ui;
+extern const LV2UI_Descriptor lv2_lua_common_ui;
 
 LV2_SYMBOL_EXPORT const LV2UI_Descriptor*
 lv2ui_descriptor(uint32_t index)
@@ -31,7 +31,7 @@ lv2ui_descriptor(uint32_t index)
 	switch(index)
 	{
 		case 0:
-			return &lv2_lua_control_ui;
+			return &lv2_lua_common_ui;
 		default:
 			return NULL;
 	}

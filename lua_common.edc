@@ -5,8 +5,8 @@
  * Creative Commons Attribution Non-Commercial Share-Alike License 3.0
  */
 
-#define LUA_CONTROL_URI				LUA_URI"#control"
-#define LUA_CONTROL_UI_URI		LUA_CONTROL_URI"/ui"
+#define LUA_COMMON_URI				LUA_URI"#common"
+#define LUA_COMMON_UI_URI			LUA_COMMON_URI"/ui"
 
 images {
 	image: "encapsulation.png" COMP;
@@ -14,7 +14,7 @@ images {
 }
 
 group {
-	name: LUA_CONTROL_UI_URI"/theme";
+	name: LUA_COMMON_UI_URI"/theme";
 
 	parts {
 		part {
