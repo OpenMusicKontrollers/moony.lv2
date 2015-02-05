@@ -26,7 +26,7 @@
 @prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .
 @prefix atom: <http://lv2plug.in/ns/ext/atom#> .
 @prefix midi: <http://lv2plug.in/ns/ext/midi#> .
-@prefix osc:  <http://opensoundcontrol.org##> .
+@prefix osc:  <http://opensoundcontrol.org#> .
 
 # Maintainer
 <http://open-music-kontrollers.ch#me>
