@@ -78,7 +78,7 @@ state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_Sta
 
 	//TODO check type, flags2
 
-	if(size && type)
+	if(chunk && size && type)
 	{
 		if(handle->lvm.chunk)
 			free(handle->lvm.chunk);
