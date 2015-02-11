@@ -26,10 +26,12 @@
 @prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .
 @prefix atom: <http://lv2plug.in/ns/ext/atom#> .
 @prefix midi: <http://lv2plug.in/ns/ext/midi#> .
+@prefix state: <http://lv2plug.in/ns/ext/state#> .
+
 @prefix osc:  <http://opensoundcontrol.org#> .
 
 # Maintainer
-<http://open-music-kontrollers.ch#me>
+<http://open-music-kontrollers.ch/ventosus#me>
 	a foaf:Person ;
 	foaf:name "Hanspeter Portner" ;
 	foaf:mbox <dev@open-music-kontrollers.ch> ;
@@ -38,7 +40,7 @@
 # Project
 <http://open-music-kontrollers.ch/lv2/lua>
 	a doap:Project ;
-	doap:maintainer <http://open-music-kontrollers.ch#me> ;
+	doap:maintainer <http://open-music-kontrollers.ch/ventosus#me> ;
 	doap:name "Lua bundle" .
 
 # Plugin UI
@@ -56,7 +58,7 @@
 	doap:license <http://opensource.org/licenses/isc> ;
 	lv2:project <http://open-music-kontrollers.ch/lv2/lua> ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
-  lv2:extensionData ui:stateInterface ;
+  lv2:extensionData state:interface ;
 
 	# input control ports
 	lv2:port [
@@ -204,7 +206,7 @@
 	doap:license <http://opensource.org/licenses/isc> ;
 	lv2:project <http://open-music-kontrollers.ch/lv2/lua> ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
-  lv2:extensionData ui:stateInterface ;
+  lv2:extensionData state:interface ;
 
 	# input midi port
 	lv2:port [
@@ -236,7 +238,7 @@
 	doap:license <http://opensource.org/licenses/isc> ;
 	lv2:project <http://open-music-kontrollers.ch/lv2/lua> ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
-  lv2:extensionData ui:stateInterface ;
+  lv2:extensionData state:interface ;
 
 	# input osc port
 	lv2:port [
