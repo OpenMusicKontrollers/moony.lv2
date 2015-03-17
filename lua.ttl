@@ -1,23 +1,17 @@
-# Copyright (c) 2014 Hanspeter Portner (dev@open-music-kontrollers.ch)
-# 
-# This software is provided 'as-is', without any express or implied
-# warranty. In no event will the authors be held liable for any damages
-# arising from the use of this software.
-# 
-# Permission is granted to anyone to use this software for any purpose,
-# including commercial applications, and to alter it and redistribute it
-# freely, subject to the following restrictions:
-# 
-#     1. The origin of this software must not be misrepresented; you must not
-#     claim that you wrote the original software. If you use this software
-#     in a product, an acknowledgment in the product documentation would be
-#     appreciated but is not required.
-# 
-#     2. Altered source versions must be plainly marked as such, and must not be
-#     misrepresented as being the original software.
-# 
-#     3. This notice may not be removed or altered from any source
-#     distribution.
+# Copyright (c) 2015 Hanspeter Portner (dev@open-music-kontrollers.ch)
+#
+# This is free software: you can redistribute it and/or modify
+# it under the terms of the Artistic License 2.0 as published by
+# The Perl Foundation.
+#
+# This source is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# Artistic License 2.0 for more details.
+#
+# You should have received a copy of the Artistic License 2.0
+# along the source as a COPYING file. If not, obtain it from
+# http://www.perlfoundation.org/artistic_license_2_0.
 
 @prefix owl:  <http://www.w3.org/2002/07/owl#> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
@@ -25,239 +19,269 @@
 @prefix lv2:  <http://lv2plug.in/ns/lv2core#> .
 @prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .
 @prefix atom: <http://lv2plug.in/ns/ext/atom#> .
+@prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .
 @prefix midi: <http://lv2plug.in/ns/ext/midi#> .
 @prefix state: <http://lv2plug.in/ns/ext/state#> .
 
 @prefix osc:  <http://opensoundcontrol.org#> .
+@prefix lic:	<http://opensource.org/licenses/> .
+@prefix omk:	<http://open-music-kontrollers.ch/ventosus#> .
+@prefix proj:	<http://open-music-kontrollers.ch/lv2/> .
+@prefix lua:	<http://open-music-kontrollers.ch/lv2/lua#> .
 
 # Maintainer
-<http://open-music-kontrollers.ch/ventosus#me>
+omk:me
 	a foaf:Person ;
 	foaf:name "Hanspeter Portner" ;
 	foaf:mbox <dev@open-music-kontrollers.ch> ;
 	foaf:homepage <http://open-music-kontrollers.ch> .
 
 # Project
-<http://open-music-kontrollers.ch/lv2/lua>
+proj:lua
 	a doap:Project ;
-	doap:maintainer <http://open-music-kontrollers.ch/ventosus#me> ;
-	doap:name "Lua bundle" .
+	doap:maintainer omk:me ;
+	doap:name "Lua Bundle" .
 
-# Plugin UI
-<http://open-music-kontrollers.ch/lv2/lua#common/ui>
+# Common UI
+lua:common_ui
 	a ui:X11UI ;
+	ui:portNotification [
+		ui:plugin lua:control ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin lua:midi ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin lua:osc ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] ;
 	lv2:requiredFeature ui:idleInterface ;
   lv2:optionalFeature ui:noUserResize ;
   lv2:extensionData ui:idleInterface, ui:showInterface .
 
+lua:common_eo
+	a ui:EoUI ;
+	ui:portNotification [
+		ui:plugin lua:control ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin lua:midi ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin lua:osc ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] .
+
 # Control Plugin
-<http://open-music-kontrollers.ch/lv2/lua#control>
-	a lv2:Plugin,
-		lv2:ConverterPlugin;
+lua:control
+	a lv2:Plugin ,
+		lv2:ConverterPlugin ;
 	doap:name "Lua for Control Ports" ;
-	doap:license <http://opensource.org/licenses/isc> ;
-	lv2:project <http://open-music-kontrollers.ch/lv2/lua> ;
+	doap:license lic:Artistic-2.0 ;
+	lv2:project proj:lua ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
   lv2:extensionData state:interface ;
 
-	# input control ports
 	lv2:port [
+	# input control ports
 	  a lv2:InputPort ,
 			lv2:ControlPort ;
 		lv2:index 0 ;
 		lv2:symbol "input_1" ;
 		lv2:name "Input 1" ;
 		lv2:default 0.0;
-	] ;
-
-	lv2:port [
+	] , [
 	  a lv2:InputPort ,
 			lv2:ControlPort ;
 		lv2:index 1 ;
 		lv2:symbol "input_2" ;
 		lv2:name "Input 2" ;
 		lv2:default 0.0;
-	] ;
-
-	lv2:port [
+	] , [
 	  a lv2:InputPort ,
 			lv2:ControlPort ;
 		lv2:index 2 ;
 		lv2:symbol "input_3" ;
 		lv2:name "Input 3" ;
 		lv2:default 0.0;
-	] ;
-
-	lv2:port [
+	] , [
 	  a lv2:InputPort ,
 			lv2:ControlPort ;
 		lv2:index 3 ;
 		lv2:symbol "input_4" ;
 		lv2:name "Input 4" ;
 		lv2:default 0.0;
-	] ;
-
-	lv2:port [
+	] , [
 	  a lv2:InputPort ,
 			lv2:ControlPort ;
 		lv2:index 4 ;
 		lv2:symbol "input_5" ;
 		lv2:name "Input 5" ;
 		lv2:default 0.0;
-	] ;
-
-	lv2:port [
+	] , [
 	  a lv2:InputPort ,
 			lv2:ControlPort ;
 		lv2:index 5 ;
 		lv2:symbol "input_6" ;
 		lv2:name "Input 6" ;
 		lv2:default 0.0;
-	] ;
-
-	lv2:port [
+	] , [
 	  a lv2:InputPort ,
 			lv2:ControlPort ;
 		lv2:index 6 ;
 		lv2:symbol "input_7" ;
 		lv2:name "Input 7" ;
 		lv2:default 0.0;
-	] ;
-
-	lv2:port [
+	] , [
 	  a lv2:InputPort ,
 			lv2:ControlPort ;
 		lv2:index 7 ;
 		lv2:symbol "input_8" ;
 		lv2:name "Input 8" ;
 		lv2:default 0.0;
-	] ;
-
+	] , [
 	# output control ports
-	lv2:port [
 	  a lv2:OutputPort ,
 			lv2:ControlPort ;
 		lv2:index 8 ;
 		lv2:symbol "output_1" ;
 		lv2:name "Output 1" ;
-	] ;
-
-	lv2:port [
+	] , [
 	  a lv2:OutputPort ,
 			lv2:ControlPort ;
 		lv2:index 9 ;
 		lv2:symbol "output_2" ;
 		lv2:name "Output 2" ;
-	] ;
-
-	lv2:port [
+	] , [
 	  a lv2:OutputPort ,
 			lv2:ControlPort ;
 		lv2:index 10 ;
 		lv2:symbol "output_3" ;
 		lv2:name "Output 3" ;
-	] ;
-
-	lv2:port [
+	] , [
 	  a lv2:OutputPort ,
 			lv2:ControlPort ;
 		lv2:index 11 ;
 		lv2:symbol "output_4" ;
 		lv2:name "Output 4" ;
-	] ;
-
-	lv2:port [
+	] , [
 	  a lv2:OutputPort ,
 			lv2:ControlPort ;
 		lv2:index 12 ;
 		lv2:symbol "output_5" ;
 		lv2:name "Output 5" ;
-	] ;
-
-	lv2:port [
+	] , [
 	  a lv2:OutputPort ,
 			lv2:ControlPort ;
 		lv2:index 13 ;
 		lv2:symbol "output_6" ;
 		lv2:name "Output 6" ;
-	] ;
-
-	lv2:port [
+	] , [
 	  a lv2:OutputPort ,
 			lv2:ControlPort ;
 		lv2:index 14 ;
 		lv2:symbol "output_7" ;
 		lv2:name "Output 7" ;
-	] ;
-
-	lv2:port [
+	] , [
 	  a lv2:OutputPort ,
 			lv2:ControlPort ;
 		lv2:index 15 ;
 		lv2:symbol "output_8" ;
 		lv2:name "Output 8" ;
+	] , [
+	# input event port
+	  a lv2:InputPort ,
+			atom:AtomPort ;
+		atom:bufferType atom:Sequence ;
+		lv2:index 16 ;
+		lv2:symbol "event_in" ;
+		lv2:name "Event In" ;
+	] , [
+	# output event ports
+	  a lv2:OutputPort ,
+			atom:AtomPort ;
+		atom:bufferType atom:Sequence ;
+		lv2:index 17 ;
+		lv2:symbol "notify" ;
+		lv2:name "Notify" ;
 	] .
 
 # Midi Plugin
-<http://open-music-kontrollers.ch/lv2/lua#midi>
-	a lv2:Plugin,
-		lv2:ConverterPlugin;
+lua:midi
+	a lv2:Plugin ,
+		lv2:ConverterPlugin ;
 	doap:name "Lua for Midi Ports" ;
-	doap:license <http://opensource.org/licenses/isc> ;
-	lv2:project <http://open-music-kontrollers.ch/lv2/lua> ;
+	doap:license lic:Artistic-2.0 ;
+	lv2:project proj:lua ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
   lv2:extensionData state:interface ;
 
-	# input midi port
 	lv2:port [
+	# input midi port
 	  a lv2:InputPort ,
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports midi:MidiEvent ;
 		lv2:index 0 ;
-		lv2:symbol "input_1" ;
-		lv2:name "Input 1" ;
-	] ;
-
+		lv2:symbol "event_in" ;
+		lv2:name "Event Out" ;
+	] , [
 	# output midi ports
-	lv2:port [
 	  a lv2:OutputPort ,
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports midi:MidiEvent ;
 		lv2:index 1 ;
-		lv2:symbol "output_1" ;
-		lv2:name "Output 1" ;
+		lv2:symbol "event_out" ;
+		lv2:name "Event Out" ;
+	] , [
+	  a lv2:OutputPort ,
+			atom:AtomPort ;
+		atom:bufferType atom:Sequence ;
+		lv2:index 2 ;
+		lv2:symbol "notify" ;
+		lv2:name "Notify" ;
 	] .
 
 # Osc Plugin
-<http://open-music-kontrollers.ch/lv2/lua#osc>
-	a lv2:Plugin,
-		lv2:ConverterPlugin;
+lua:osc
+	a lv2:Plugin ,
+		lv2:ConverterPlugin ;
 	doap:name "Lua for OSC Ports" ;
-	doap:license <http://opensource.org/licenses/isc> ;
-	lv2:project <http://open-music-kontrollers.ch/lv2/lua> ;
+	doap:license lic:Artistic-2.0 ;
+	lv2:project proj:lua ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
   lv2:extensionData state:interface ;
 
-	# input osc port
 	lv2:port [
+	# input osc port
 	  a lv2:InputPort ,
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports osc:OscEvent ;
 		lv2:index 0 ;
-		lv2:symbol "input_1" ;
-		lv2:name "Input 1" ;
-	] ;
-
+		lv2:symbol "event_in" ;
+		lv2:name "Event In" ;
+	] , [
 	# output osc ports
-	lv2:port [
 	  a lv2:OutputPort ,
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports osc:OscEvent ;
 		lv2:index 1 ;
-		lv2:symbol "output_1" ;
-		lv2:name "Output 1" ;
+		lv2:symbol "event_out" ;
+		lv2:name "Event Out" ;
+	] , [
+	  a lv2:OutputPort ,
+			atom:AtomPort ;
+		atom:bufferType atom:Sequence ;
+		lv2:index 2 ;
+		lv2:symbol "notify" ;
+		lv2:name "Notify" ;
 	] .

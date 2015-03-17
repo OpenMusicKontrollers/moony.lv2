@@ -1,24 +1,18 @@
 /*
- * Copyright (c) 2014 Hanspeter Portner (dev@open-music-kontrollers.ch)
- * 
- * This software is provided 'as-is', without any express or implied
- * warranty. In no event will the authors be held liable for any damages
- * arising from the use of this software.
- * 
- * Permission is granted to anyone to use this software for any purpose,
- * including commercial applications, and to alter it and redistribute it
- * freely, subject to the following restrictions:
- * 
- *     1. The origin of this software must not be misrepresented; you must not
- *     claim that you wrote the original software. If you use this software
- *     in a product, an acknowledgment in the product documentation would be
- *     appreciated but is not required.
- * 
- *     2. Altered source versions must be plainly marked as such, and must not be
- *     misrepresented as being the original software.
- * 
- *     3. This notice may not be removed or altered from any source
- *     distribution.
+ * Copyright (c) 2015 Hanspeter Portner (dev@open-music-kontrollers.ch)
+ *
+ * This is free software: you can redistribute it and/or modify
+ * it under the terms of the Artistic License 2.0 as published by
+ * The Perl Foundation.
+ *
+ * This source is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * Artistic License 2.0 for more details.
+ *
+ * You should have received a copy of the Artistic License 2.0
+ * along the source as a COPYING file. If not, obtain it from
+ * http://www.perlfoundation.org/artistic_license_2_0.
  */
 
 #include <lua_lv2.h>
@@ -39,6 +33,10 @@ struct _Handle {
 
 	const float *control_in [8];
 	float *control_out [8];
+	
+	const LV2_Atom_Sequence *event_in;
+	LV2_Atom_Sequence *notify;
+	LV2_Atom_Forge forge;
 };
 
 static const char *default_chunk =
@@ -134,6 +132,8 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 		return NULL;
 	}
 
+	lv2_atom_forge_init(&handle->forge, handle->map);
+
 	return handle;
 }
 
@@ -142,10 +142,35 @@ connect_port(LV2_Handle instance, uint32_t port, void *data)
 {
 	Handle *handle = (Handle *)instance;
 
-	if(port < 8)
-		handle->control_in[port] = (const float *)data;
-	else
-		handle->control_out[port-8] = (float *)data;
+	switch(port)
+	{
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+		case 6:
+		case 7:
+			handle->control_in[port] = (const float *)data;
+			break;
+		case 8:
+		case 9:
+		case 10:
+		case 11:
+		case 12:
+		case 13:
+		case 14:
+		case 15:
+			handle->control_out[port-8] = (float *)data;
+			break;
+		case 16:
+			handle->event_in = (const LV2_Atom_Sequence *)data;
+			break;
+		case 17:
+			handle->notify = (LV2_Atom_Sequence *)data;
+			break;
+	}
 }
 
 static void
@@ -160,6 +185,15 @@ run(LV2_Handle instance, uint32_t nsamples)
 {
 	Handle *handle = (Handle *)instance;
 	lua_State *L = handle->lvm.L;
+
+	// prepare notify atom forge
+	uint32_t capacity = handle->notify->atom.size;
+	LV2_Atom_Forge *forge = &handle->forge;
+	lv2_atom_forge_set_buffer(forge, (uint8_t *)handle->notify, capacity);
+	LV2_Atom_Forge_Frame frame;
+	lv2_atom_forge_sequence_head(forge, &frame, 0);
+	//TODO
+	lv2_atom_forge_pop(forge, &frame);
 
 	lua_getglobal(L, "run");
 	if(lua_isfunction(L, -1))

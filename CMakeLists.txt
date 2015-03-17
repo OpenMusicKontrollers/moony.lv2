@@ -49,26 +49,5 @@ set_target_properties(lua_ui PROPERTIES PREFIX "")
 install(TARGETS lua_ui DESTINATION ${DEST})
 
 configure_file(${PROJECT_SOURCE_DIR}/manifest.ttl.in ${PROJECT_BINARY_DIR}/manifest.ttl)
-
-find_program(EDJE_CC NAMES edje_cc)
-if(EDJE_CC_NOTFOUND)
-  message(SEND_ERROR "edje_cc not found")
-else()
-  message(STATUS "edje_cc found: " ${EDJE_CC})
-endif()
-
-add_custom_command(
-	OUTPUT ${PROJECT_BINARY_DIR}/lua.edj
-	COMMAND ${EDJE_CC} ARGS
-		-fd ${PROJECT_SOURCE_DIR}
-		-id ${PROJECT_SOURCE_DIR}
-		${PROJECT_SOURCE_DIR}/lua.edc
-		${PROJECT_BINARY_DIR}/lua.edj
-	MAIN_DEPENDENCY
-		${PROJECT_SOURCE_DIR}/lua.edc
-		${PROJECT_SOURCE_DIR}/lua_common.edc)
-add_custom_target(THEME ALL DEPENDS ${PROJECT_BINARY_DIR}/lua.edj)
-
 install(FILES ${PROJECT_BINARY_DIR}/manifest.ttl DESTINATION ${DEST})
-install(FILES ${PROJECT_BINARY_DIR}/lua.edj DESTINATION ${DEST})
 install(FILES ${PROJECT_SOURCE_DIR}/lua.ttl DESTINATION ${DEST})

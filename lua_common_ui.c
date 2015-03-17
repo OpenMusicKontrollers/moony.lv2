@@ -1,24 +1,18 @@
 /*
- * Copyright (c) 2014 Hanspeter Portner (dev@open-music-kontrollers.ch)
- * 
- * This software is provided 'as-is', without any express or implied
- * warranty. In no event will the authors be held liable for any damages
- * arising from the use of this software.
- * 
- * Permission is granted to anyone to use this software for any purpose,
- * including commercial applications, and to alter it and redistribute it
- * freely, subject to the following restrictions:
- * 
- *     1. The origin of this software must not be misrepresented; you must not
- *     claim that you wrote the original software. If you use this software
- *     in a product, an acknowledgment in the product documentation would be
- *     appreciated but is not required.
- * 
- *     2. Altered source versions must be plainly marked as such, and must not be
- *     misrepresented as being the original software.
- * 
- *     3. This notice may not be removed or altered from any source
- *     distribution.
+ * Copyright (c) 2015 Hanspeter Portner (dev@open-music-kontrollers.ch)
+ *
+ * This is free software: you can redistribute it and/or modify
+ * it under the terms of the Artistic License 2.0 as published by
+ * The Perl Foundation.
+ *
+ * This source is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * Artistic License 2.0 for more details.
+ *
+ * You should have received a copy of the Artistic License 2.0
+ * along the source as a COPYING file. If not, obtain it from
+ * http://www.perlfoundation.org/artistic_license_2_0.
  */
 
 #include <lua_lv2.h>
@@ -34,11 +28,9 @@ struct _UI {
 	int w, h;
 	Ecore_Evas *ee;
 	Evas *e;
-	Evas_Object *theme;
+	Evas_Object *parent;
 	Evas_Object *vbox;
 	Evas_Object *entry;
-
-	char theme_path [512];
 };
 
 // Idle interface
@@ -68,7 +60,8 @@ _show_cb(LV2UI_Handle handle)
 	if(!ui)
 		return -1;
 
-	ecore_evas_show(ui->ee);
+	if(ui->ee)
+		ecore_evas_show(ui->ee);
 
 	return 0;
 }
@@ -81,7 +74,8 @@ _hide_cb(LV2UI_Handle handle)
 	if(!ui)
 		return -1;
 
-	ecore_evas_hide(ui->ee);
+	if(ui->ee)
+		ecore_evas_hide(ui->ee);
 
 	return 0;
 }
@@ -103,18 +97,40 @@ resize_cb(LV2UI_Feature_Handle handle, int w, int h)
 	ui->w = w;
 	ui->h = h;
 
-	ecore_evas_resize(ui->ee, ui->w, ui->h);
-	evas_object_resize(ui->theme, ui->w, ui->h);
+	if(ui->ee)
+	{
+		ecore_evas_resize(ui->ee, ui->w, ui->h);
+		evas_object_resize(ui->parent, ui->w, ui->h);
+	}
+
+	evas_object_resize(ui->vbox, ui->w, ui->h);
+	evas_object_size_hint_min_set(ui->vbox, ui->w, ui->h);
   
   return 0;
 }
 
+static void
+_delete(void *data, Evas *e, Evas_Object *obj, void *event_info)
+{
+	UI *ui = data;
+
+	elm_box_clear(ui->vbox);
+	//evas_object_del(ui->entry);
+}
+
+void
+_lua_markup(void *data, Evas_Object *entry, char **txt)
+{
+	//TODO
+}
+
 static LV2UI_Handle
-instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri, const char *bundle_path, LV2UI_Write_Function write_function, LV2UI_Controller controller, LV2UI_Widget *widget, const LV2_Feature *const *features)
+instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
+	const char *bundle_path, LV2UI_Write_Function write_function,
+	LV2UI_Controller controller, LV2UI_Widget *widget,
+	const LV2_Feature *const *features)
 {
 	elm_init(1, (char **)&plugin_uri);
-
-	//edje_frametime_set(0.04);
 
 	if(		strcmp(plugin_uri, LUA_CONTROL_URI)
 		&&	strcmp(plugin_uri, LUA_MIDI_URI)
@@ -138,39 +154,53 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri, const ch
 	{
 		if(!strcmp(features[i]->URI, LV2_UI__parent))
 			parent = features[i]->data;
-		else if (!strcmp(features[i]->URI, LV2_UI__resize))
+		else if(!strcmp(features[i]->URI, LV2_UI__resize))
 			resize = (LV2UI_Resize *)features[i]->data;
   }
 
-	ui->ee = ecore_evas_gl_x11_new(NULL, (Ecore_X_Window)parent, 0, 0, ui->w, ui->h);
-	if(!ui->ee)
-		ui->ee = ecore_evas_software_x11_new(NULL, (Ecore_X_Window)parent, 0, 0, ui->w, ui->h);
-	if(!ui->ee)
-		printf("could not start evas\n");
-	ui->e = ecore_evas_get(ui->ee);
-	ecore_evas_show(ui->ee);
+	if(descriptor == &lv2_lua_common_ui)
+	{
+		ui->ee = ecore_evas_gl_x11_new(NULL, (Ecore_X_Window)parent, 0, 0, ui->w, ui->h);
+		if(!ui->ee)
+			ui->ee = ecore_evas_software_x11_new(NULL, (Ecore_X_Window)parent, 0, 0, ui->w, ui->h);
+		if(!ui->ee)
+			printf("could not start evas\n");
+		ui->e = ecore_evas_get(ui->ee);
+		ecore_evas_show(ui->ee);
+		
+		ui->parent = evas_object_rectangle_add(ui->e);
+		evas_object_color_set(ui->parent, 48, 48, 48, 255);
+		evas_object_resize(ui->parent, ui->w, ui->h);
+		evas_object_show(ui->parent);
+	}
+	else if(descriptor == &lv2_lua_common_eo)
+	{
+		ui->ee = NULL;
+		ui->parent = (Evas_Object *)parent;
+		ui->e = evas_object_evas_get((Evas_Object *)parent);
+	}
 
 	if(resize)
     resize->ui_resize(resize->handle, ui->w, ui->h);
 	
-	sprintf(ui->theme_path, "%s/lua.edj", bundle_path);
-	
-	ui->theme = edje_object_add(ui->e);
-	edje_object_file_set(ui->theme, ui->theme_path, LUA_COMMON_UI_URI"/theme");
-	evas_object_resize(ui->theme, ui->w, ui->h);
-	evas_object_show(ui->theme);
-
-	ui->vbox = elm_box_add(ui->theme);
+	ui->vbox = elm_box_add(ui->parent);
+	elm_box_horizontal_set(ui->vbox, EINA_FALSE);
+	elm_box_homogeneous_set(ui->vbox, EINA_FALSE);
+	elm_box_padding_set(ui->vbox, 0, 10);
+	evas_object_event_callback_add(ui->vbox, EVAS_CALLBACK_DEL, _delete, ui);
 	evas_object_size_hint_weight_set(ui->vbox, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
 	evas_object_size_hint_align_set(ui->vbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
+	evas_object_size_hint_min_set(ui->vbox, ui->w, ui->h);
+	evas_object_size_hint_aspect_set(ui->vbox, EVAS_ASPECT_CONTROL_BOTH, 1, 1);
+	evas_object_resize(ui->vbox, ui->w, ui->h);
 	evas_object_show(ui->vbox);
-	evas_object_resize(ui->vbox, 800, 450);
-	edje_object_part_swallow(ui->theme, "content", ui->vbox);
-
+	
 	ui->entry = elm_entry_add(ui->vbox);
 	elm_entry_single_line_set(ui->entry, EINA_FALSE);
 	elm_entry_scrollable_set(ui->entry, EINA_TRUE);
-	elm_entry_editable_set(ui->entry, EINA_TRUE);
+	elm_entry_editable_set(ui->entry, EINA_FALSE);
+	elm_entry_markup_filter_append(ui->entry, _lua_markup, NULL);
+	elm_entry_cnp_mode_set(ui->entry, ELM_CNP_MODE_PLAINTEXT);
 	elm_object_focus_set(ui->entry, EINA_TRUE);
 	evas_object_size_hint_weight_set(ui->entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
 	evas_object_size_hint_align_set(ui->entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
@@ -178,9 +208,18 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri, const ch
 	elm_box_pack_end(ui->vbox, ui->entry);
 
 	elm_entry_entry_set(ui->entry, 
-		"<code>function run(...)<br/>"
-		"</tab>return ...<br/>"
-		"end</code>");
+		"<code>"
+		"<keyword>function</keyword> <function>run</function><brace>(</brace><param>seq</param><brace>)</brace><br/>"
+		"<tab/><keyword>for</keyword> frames, atom <keyword>in</keyword> sequence_foreach<brace>(</brace>seq<brace>)</brace> <keyword>do</keyword><br/>"
+		"<tab/><tab/><function>print</function><brace>(</brace>frames, atom.size<brace>)</brace><br/>"
+		"<tab/><keyword>end</keyword><br/>"
+		"<keyword>end</keyword>"
+		"</code>");
+	
+	if(ui->ee) // X11 UI
+		*(Evas_Object **)widget = NULL;
+	else // Eo UI
+		*(Evas_Object **)widget = ui->vbox;
 
 	return ui;
 }
@@ -192,13 +231,15 @@ cleanup(LV2UI_Handle handle)
 	
 	if(ui)
 	{
-		ecore_evas_hide(ui->ee);
+		if(ui->ee)
+		{
+			ecore_evas_hide(ui->ee);
+			
+			evas_object_del(ui->vbox);
+			evas_object_del(ui->parent);
 
-		elm_box_clear(ui->vbox);
-		edje_object_part_unswallow(ui->theme, ui->vbox);
-		evas_object_del(ui->vbox);
-		evas_object_del(ui->theme);
-		ecore_evas_free(ui->ee);
+			ecore_evas_free(ui->ee);
+		}
 		
 		free(ui);
 	}
@@ -207,9 +248,14 @@ cleanup(LV2UI_Handle handle)
 }
 
 static void
-port_event(LV2UI_Handle handle, uint32_t i, uint32_t buffer_size, uint32_t format, const void *buffer)
+port_event(LV2UI_Handle handle, uint32_t i, uint32_t buffer_size,
+	uint32_t format, const void *buffer)
 {
 	UI *ui = handle;
+
+	// TODO read notify
+
+	//printf("port_event: %u %u %u\n", i, buffer_size, format);
 }
 
 static const void *
@@ -229,4 +275,12 @@ const LV2UI_Descriptor lv2_lua_common_ui = {
 	.cleanup				= cleanup,
 	.port_event			= port_event,
 	.extension_data	= extension_data
+};
+
+const LV2UI_Descriptor lv2_lua_common_eo = {
+	.URI						= LUA_COMMON_EO_URI,
+	.instantiate		= instantiate,
+	.cleanup				= cleanup,
+	.port_event			= port_event,
+	.extension_data	= NULL
 };
