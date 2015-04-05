@@ -22,6 +22,7 @@
 @prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .
 @prefix midi: <http://lv2plug.in/ns/ext/midi#> .
 @prefix state: <http://lv2plug.in/ns/ext/state#> .
+@prefix kx:		<http://kxstudio.sf.net/ns/lv2ext/external-ui#> .
 
 @prefix osc:  <http://opensoundcontrol.org#> .
 @prefix lic:	<http://opensource.org/licenses/> .
@@ -43,25 +44,6 @@ proj:lua
 	doap:name "Lua Bundle" .
 
 # Common UI
-lua:common_ui
-	a ui:X11UI ;
-	ui:portNotification [
-		ui:plugin lua:control ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-	] , [
-		ui:plugin lua:midi ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-	] , [
-		ui:plugin lua:osc ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-	] ;
-	lv2:requiredFeature ui:idleInterface ;
-  lv2:optionalFeature ui:noUserResize ;
-  lv2:extensionData ui:idleInterface, ui:showInterface .
-
 lua:common_eo
 	a ui:EoUI ;
 	ui:portNotification [
@@ -77,6 +59,57 @@ lua:common_eo
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 	] .
+lua:common_ui
+	a ui:UI ;
+	ui:portNotification [
+		ui:plugin lua:control ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin lua:midi ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin lua:osc ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] ;
+	lv2:requiredFeature ui:idleInterface ;
+  lv2:extensionData ui:idleInterface, ui:showInterface .
+lua:common_x11
+	a ui:X11UI ;
+	ui:portNotification [
+		ui:plugin lua:control ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin lua:midi ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin lua:osc ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] ;
+	lv2:requiredFeature ui:idleInterface ;
+	lv2:optionalFeature ui:resize ;
+  lv2:extensionData ui:idleInterface .
+lua:common_kx
+	a kx:Widget ;
+	ui:portNotification [
+		ui:plugin lua:control ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin lua:midi ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin lua:osc ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] ;
+	lv2:requiredFeature kx:Host .
 
 # Control Plugin
 lua:control

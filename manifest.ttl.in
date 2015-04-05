@@ -14,38 +14,63 @@
 # http://www.perlfoundation.org/artistic_license_2_0.
 
 @prefix lv2:  <http://lv2plug.in/ns/lv2core#> .
+@prefix owl:			<http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .
+@prefix kx:		<http://kxstudio.sf.net/ns/lv2ext/external-ui#> .
 
 @prefix lua:	<http://open-music-kontrollers.ch/lv2/lua#> .
+
+# to please sord_validate
+ui:EoUI
+	a rdfs:Class, owl:Class ;
+	rdfs:subClassOf ui:UI .
+kx:Widget
+	a rdfs:Class, owl:Class ;
+	rdfs:subClassOf ui:UI .
+kx:Host
+	a lv2:Feature .
 
 lua:control
 	a lv2:Plugin ;
 	lv2:binary <lua@LIB_EXT@> ;
-	ui:ui lua:common_ui ;
 	ui:ui lua:common_eo ;
+	ui:ui lua:common_ui ;
+	ui:ui lua:common_x11 ;
+	ui:ui lua:common_kx ;
 	rdfs:seeAlso <lua.ttl> .
 
 lua:midi
 	a lv2:Plugin ;
 	lv2:binary <lua@LIB_EXT@> ;
-	ui:ui lua:common_ui ;
 	ui:ui lua:common_eo ;
+	ui:ui lua:common_ui ;
+	ui:ui lua:common_x11 ;
+	ui:ui lua:common_kx ;
 	rdfs:seeAlso <lua.ttl> .
 
 lua:osc
 	a lv2:Plugin ;
 	lv2:binary <lua@LIB_EXT@> ;
-	ui:ui lua:common_ui ;
 	ui:ui lua:common_eo ;
-	rdfs:seeAlso <lua.ttl> .
-
-lua:common_ui
-	a ui:X11UI ;
-	ui:binary <lua_ui@LIB_EXT@> ;
+	ui:ui lua:common_ui ;
+	ui:ui lua:common_x11 ;
+	ui:ui lua:common_kx ;
 	rdfs:seeAlso <lua.ttl> .
 
 lua:common_eo
 	a ui:EoUI ;
+	ui:binary <lua_ui@LIB_EXT@> ;
+	rdfs:seeAlso <lua.ttl> .
+lua:common_ui
+	a ui:UI ;
+	ui:binary <lua_ui@LIB_EXT@> ;
+	rdfs:seeAlso <lua.ttl> .
+lua:common_x11
+	a ui:X11UI ;
+	ui:binary <lua_ui@LIB_EXT@> ;
+	rdfs:seeAlso <lua.ttl> .
+lua:common_kx
+	a kx:Widget ;
 	ui:binary <lua_ui@LIB_EXT@> ;
 	rdfs:seeAlso <lua.ttl> .

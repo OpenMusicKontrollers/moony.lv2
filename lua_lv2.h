@@ -43,9 +43,10 @@
 
 #define LUA_URI							"http://open-music-kontrollers.ch/lv2/lua"
 
-#define LUA_COMMON_URI			LUA_URI"#common"
-#define LUA_COMMON_UI_URI		LUA_URI"#common_ui"
 #define LUA_COMMON_EO_URI		LUA_URI"#common_eo"
+#define LUA_COMMON_UI_URI		LUA_URI"#common_ui"
+#define LUA_COMMON_X11_URI	LUA_URI"#common_x11"
+#define LUA_COMMON_KX_URI		LUA_URI"#common_kx"
 
 #define LUA_CONTROL_URI			LUA_URI"#control"
 #define LUA_MIDI_URI				LUA_URI"#midi"
@@ -55,8 +56,10 @@ extern const LV2_Descriptor lv2_lua_control;
 extern const LV2_Descriptor lv2_lua_midi;
 extern const LV2_Descriptor lv2_lua_osc;
 
-extern const LV2UI_Descriptor lv2_lua_common_ui;
 extern const LV2UI_Descriptor lv2_lua_common_eo;
+extern const LV2UI_Descriptor lv2_lua_common_ui;
+extern const LV2UI_Descriptor lv2_lua_common_x11;
+extern const LV2UI_Descriptor lv2_lua_common_kx;
 
 typedef struct _Lua_VM Lua_VM;
 
