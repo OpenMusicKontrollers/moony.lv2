@@ -40,16 +40,7 @@ lua:control
 	ui:ui lua:common_kx ;
 	rdfs:seeAlso <lua.ttl> .
 
-lua:midi
-	a lv2:Plugin ;
-	lv2:binary <lua@LIB_EXT@> ;
-	ui:ui lua:common_eo ;
-	ui:ui lua:common_ui ;
-	ui:ui lua:common_x11 ;
-	ui:ui lua:common_kx ;
-	rdfs:seeAlso <lua.ttl> .
-
-lua:osc
+lua:atom
 	a lv2:Plugin ;
 	lv2:binary <lua@LIB_EXT@> ;
 	ui:ui lua:common_eo ;

@@ -21,10 +21,6 @@
 
 #define MEM_SIZE 0x1000000UL // 16MB
 
-extern const LV2_Descriptor lv2_lua_control;
-extern const LV2_Descriptor lv2_lua_midi;
-extern const LV2_Descriptor lv2_lua_osc;
-
 static inline void *
 rt_alloc(Lua_VM *lvm, size_t len)
 {
@@ -121,9 +117,7 @@ lv2_descriptor(uint32_t index)
 		case 0:
 			return &lv2_lua_control;
 		case 1:
-			return &lv2_lua_midi;
-		case 2:
-			return &lv2_lua_osc;
+			return &lv2_lua_atom;
 		default:
 			return NULL;
 	}

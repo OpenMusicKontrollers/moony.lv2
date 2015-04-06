@@ -40,8 +40,7 @@ add_library(lua MODULE
 	tlsf-3.0/tlsf.c
 	libosc/osc.c
 	lua_control.c
-	lua_midi.c
-	lua_osc.c)
+	lua_atom.c)
 target_link_libraries(lua ${LIBS})
 set_target_properties(lua PROPERTIES PREFIX "")
 install(TARGETS lua DESTINATION ${DEST})

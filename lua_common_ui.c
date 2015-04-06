@@ -15,6 +15,8 @@
  * http://www.perlfoundation.org/artistic_license_2_0.
  */
 
+#include <string.h>
+
 #include <lua_lv2.h>
 
 #include <Elementary.h>
@@ -26,6 +28,13 @@ typedef struct _UI UI;
 struct _UI {
 	eo_ui_t eoui;
 
+	struct {
+		LV2_URID event_transfer;
+		LV2_URID atom_string;
+	} uris;
+
+	LV2_URID_Map *map;
+
 	LV2UI_Write_Function write_function;
 	LV2UI_Controller controller;
 
@@ -35,12 +44,36 @@ struct _UI {
 	Evas_Object *parent;
 	Evas_Object *vbox;
 	Evas_Object *entry;
+	Evas_Object *compile;
 };
 
-void
+static void
 _lua_markup(void *data, Evas_Object *entry, char **txt)
 {
 	//TODO
+}
+
+static void
+_compile_clicked(void *data, Evas_Object *obj, void *event_info)
+{
+	UI *ui = data;
+
+	const char *chunk = elm_entry_entry_get(ui->entry);
+	char *utf8 = elm_entry_markup_to_utf8(chunk);
+	uint32_t size = strlen(chunk) + 1;
+	uint32_t atom_size = sizeof(LV2_Atom) + size;
+	LV2_Atom *atom = calloc(1, atom_size);
+	if(!atom)
+		return;
+
+	atom->size = size;
+	atom->type = ui->uris.atom_string;
+	strcpy(LV2_ATOM_BODY(atom), chunk);
+
+	ui->write_function(ui->controller, 0, atom_size, ui->uris.event_transfer, atom);
+
+	free(utf8);
+	free(atom);
 }
 
 static Evas_Object *
@@ -72,14 +105,15 @@ _content_get(eo_ui_t *eoui)
 	evas_object_show(ui->entry);
 	elm_box_pack_end(ui->vbox, ui->entry);
 
-	elm_entry_entry_set(ui->entry, 
-		"<code>"
-		"<keyword>function</keyword> <function>run</function><brace>(</brace><param>seq</param><brace>)</brace><br/>"
-		"<tab/><keyword>for</keyword> frames, atom <keyword>in</keyword> sequence_foreach<brace>(</brace>seq<brace>)</brace> <keyword>do</keyword><br/>"
-		"<tab/><tab/><function>print</function><brace>(</brace>frames, atom.size<brace>)</brace><br/>"
-		"<tab/><keyword>end</keyword><br/>"
-		"<keyword>end</keyword>"
-		"</code>");
+	ui->compile = elm_button_add(ui->vbox);
+	elm_object_part_text_set(ui->compile, "default", "Inject");
+	evas_object_smart_callback_add(ui->compile, "clicked", _compile_clicked, ui);
+	//evas_object_size_hint_weight_set(ui->compile, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+	evas_object_size_hint_align_set(ui->compile, EVAS_HINT_FILL, EVAS_HINT_FILL);
+	evas_object_show(ui->compile);
+	elm_box_pack_end(ui->vbox, ui->compile);
+
+	elm_entry_entry_set(ui->entry, "");
 
 	return ui->vbox;
 }
@@ -92,8 +126,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 {
 
 	if(		strcmp(plugin_uri, LUA_CONTROL_URI)
-		&&	strcmp(plugin_uri, LUA_MIDI_URI)
-		&&	strcmp(plugin_uri, LUA_OSC_URI) )
+		&&	strcmp(plugin_uri, LUA_ATOM_URI) )
 		return NULL;
 
 	eo_ui_driver_t driver;
@@ -112,6 +145,20 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	if(!ui)
 		return NULL;
 
+	for(int i=0; features[i]; i++)
+		if(!strcmp(features[i]->URI, LV2_URID__map))
+			ui->map = (LV2_URID_Map *)features[i]->data;
+
+	if(!ui->map)
+	{
+		fprintf(stderr, "%s: Host does not support urid:map\n", descriptor->URI);
+		free(ui);
+		return NULL;
+	}
+
+	ui->uris.event_transfer = ui->map->map(ui->map->handle, LV2_ATOM__eventTransfer);
+	ui->uris.atom_string = ui->map->map(ui->map->handle, LV2_ATOM__String);
+
 	eo_ui_t *eoui = &ui->eoui;
 	eoui->driver = driver;
 	eoui->content_get = _content_get;
@@ -127,6 +174,14 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		free(ui);
 		return NULL;
 	}
+
+	LV2_Atom empty = {
+		.size = 0,
+		.type = ui->uris.atom_string
+	};
+	// trigger update
+	ui->write_function(ui->controller, 0, sizeof(LV2_Atom),
+		ui->uris.event_transfer, &empty);
 
 	return ui;
 }
@@ -146,9 +201,12 @@ port_event(LV2UI_Handle handle, uint32_t i, uint32_t buffer_size,
 {
 	UI *ui = handle;
 
-	// TODO read notify
-
-	//printf("port_event: %u %u %u\n", i, buffer_size, format);
+	if( (i == 1) && (format == ui->uris.event_transfer) )
+	{
+		const LV2_Atom *atom = buffer;
+		const char *chunk = LV2_ATOM_BODY_CONST(atom);
+		elm_entry_entry_set(ui->entry, chunk);
+	}
 }
 
 const LV2UI_Descriptor lv2_lua_common_eo = {
