@@ -17,48 +17,63 @@
 
 #include <lua_lv2.h>
 
-#include <osc.h>
+#include <lauxlib.h>
 
+typedef struct _lseq_t lseq_t;
+typedef struct _lforge_t lforge_t;
 typedef struct _Handle Handle;
+
+struct _lseq_t {
+	const LV2_Atom_Sequence *seq;
+	const LV2_Atom_Event *itr;
+};
+
+struct _lforge_t
+{
+	LV2_Atom_Forge *forge;
+};
 
 struct _Handle {
 	LV2_URID_Map *map;
 	struct {
+		LV2_URID lua_message;
 		LV2_URID lua_code;
-		LV2_URID state_default;
-		LV2_URID osc_OscEvent;
+		LV2_URID lua_error;
 	} uris;
 
+	Lua_VM lvm;
+	char *chunk;
 	volatile int dirty_in;
 	volatile int dirty_out;
-	Lua_VM lvm;
-
-	const LV2_Atom_Sequence *control;
-	LV2_Atom_Sequence *notify;
+	char error [1024];
 
 	const LV2_Atom_Sequence *event_in;
 	LV2_Atom_Sequence *event_out;
+
+	const LV2_Atom_Sequence *control;
+	LV2_Atom_Sequence *notify;
 
 	LV2_Atom_Forge forge;
 };
 
 static const char *default_code =
-	"<code>function run(seq, forge)</br>"
-	"</tab>for frames, atom, in seq:foreach() do</br>"
-	"</tab></tab>forge:append(frames, atom)</br>"
-	"</tab>end</br>"
-	"end</code>";
+	"function run(seq, forge)\n"
+	"  for frames, size, type in seq:foreach() do\n"
+	"    -- your code here\n"
+	"  end\n"
+	"end";
 
 static LV2_State_Status
-state_save(LV2_Handle instance, LV2_State_Store_Function store, LV2_State_Handle state, uint32_t flags, const LV2_Feature *const *features)
+state_save(LV2_Handle instance, LV2_State_Store_Function store,
+	LV2_State_Handle state, uint32_t flags, const LV2_Feature *const *features)
 {
 	Handle *handle = (Handle *)instance;
 
 	return store(
 		state,
 		handle->uris.lua_code,
-		handle->lvm.chunk,
-		strlen(handle->lvm.chunk)+1,
+		handle->chunk,
+		strlen(handle->chunk)+1,
 		handle->forge.String,
 		LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
 }
@@ -83,14 +98,153 @@ state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_Sta
 
 	if(chunk && size && type)
 	{
-		if(handle->lvm.chunk)
-			free(handle->lvm.chunk);
-		handle->lvm.chunk = strdup(chunk);
+		if(handle->chunk)
+			free(handle->chunk);
+		handle->chunk = strdup(chunk);
 
 		handle->dirty_in = 1;
 	}
 
 	return LV2_STATE_SUCCESS;
+}
+
+static const LV2_State_Interface state_iface = {
+	.save = state_save,
+	.restore = state_restore
+};
+
+static int
+_lseq_foreach_itr(lua_State *L)
+{
+	lseq_t *lseq = luaL_checkudata(L, 1, "lseq");
+
+	if(!lv2_atom_sequence_is_end(&lseq->seq->body, lseq->seq->atom.size, lseq->itr))
+	{
+		lua_pushnumber(L, lseq->itr->time.frames);
+		lua_pushnumber(L, lseq->itr->body.size);
+		lua_pushnumber(L, lseq->itr->body.type);
+	
+		// advance iterator
+		lseq->itr = lv2_atom_sequence_next(lseq->itr);
+
+		return 3;
+	}
+
+	// end of sequence reached
+	lua_pushnil(L);
+	return 1;
+}
+
+static int
+_lseq_foreach(lua_State *L)
+{
+	lseq_t *lseq = luaL_checkudata(L, 1, "lseq");
+
+	// reset iterator to beginning of sequence
+	lseq->itr = lv2_atom_sequence_begin(&lseq->seq->body);
+
+	lua_pushcclosure(L, _lseq_foreach_itr, 0);
+	lua_pushvalue(L, 1);
+
+	return 2;
+}
+
+static const luaL_Reg lseq_mt [] = {
+	{"foreach", _lseq_foreach},
+	{NULL, NULL}
+};
+
+static int
+_lforge_frame_time(lua_State *L)
+{
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	int64_t val = luaL_checkint(L, 2);
+
+	lv2_atom_forge_frame_time(lforge->forge, val);
+
+	return 0;
+}
+
+static int
+_lforge_int(lua_State *L)
+{
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	int32_t val = luaL_checkint(L, 2);
+
+	lv2_atom_forge_int(lforge->forge, val);
+
+	return 0;
+}
+
+static int
+_lforge_long(lua_State *L)
+{
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	int64_t val = luaL_checkint(L, 2);
+
+	lv2_atom_forge_long(lforge->forge, val);
+
+	return 0;
+}
+
+static int
+_lforge_float(lua_State *L)
+{
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	float val = luaL_checkint(L, 2);
+
+	lv2_atom_forge_float(lforge->forge, val);
+
+	return 0;
+}
+
+static int
+_lforge_double(lua_State *L)
+{
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	double val = luaL_checkint(L, 2);
+
+	lv2_atom_forge_double(lforge->forge, val);
+
+	return 0;
+}
+
+static int
+_lforge_string(lua_State *L)
+{
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	size_t size;
+	const char *val = luaL_checklstring(L, 2, &size);
+
+	lv2_atom_forge_string(lforge->forge, val, size);
+
+	return 0;
+}
+
+static const luaL_Reg lforge_mt [] = {
+	{"frame_time", _lforge_frame_time},
+	{"int", _lforge_int},
+	{"long", _lforge_long},
+	{"float", _lforge_float},
+	{"double", _lforge_double},
+	{"string", _lforge_string},
+	{NULL, NULL}
+};
+
+static void
+luaopen_atom(lua_State *L)
+{
+	luaL_newmetatable(L, "lseq");
+	luaL_register(L, NULL, lseq_mt);
+	lua_pushvalue(L, -1);
+	lua_setfield(L, -2, "__index");
+	lua_pop(L, 1);
+	
+	luaL_newmetatable(L, "lforge");
+	luaL_register(L, NULL, lforge_mt);
+	lua_pushvalue(L, -1);
+	lua_setfield(L, -2, "__index");
+	lua_pop(L, 1);
 }
 
 static LV2_Handle
@@ -111,12 +265,14 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 		return NULL;
 	}
 
+	handle->uris.lua_message = handle->map->map(handle->map->handle, LUA_MESSAGE_URI);
 	handle->uris.lua_code = handle->map->map(handle->map->handle, LUA_CODE_URI);
-	handle->uris.state_default = handle->map->map(handle->map->handle, LV2_STATE__loadDefaultState);
+	handle->uris.lua_error = handle->map->map(handle->map->handle, LUA_ERROR_URI);
 
 	if(lua_vm_init(&handle->lvm))
 		return NULL;
-	
+	luaopen_atom(handle->lvm.L);
+
 	lv2_atom_forge_init(&handle->forge, handle->map);
 
 	return handle;
@@ -152,8 +308,8 @@ activate(LV2_Handle instance)
 	Handle *handle = (Handle *)instance;
 	
 	// load default chunk
-	handle->lvm.chunk = strdup(default_code);
-	luaL_dostring(handle->lvm.L, handle->lvm.chunk);
+	handle->chunk = strdup(default_code);
+	luaL_dostring(handle->lvm.L, handle->chunk); // cannot fail
 
 	handle->dirty_out = 1; // trigger update of UI
 }
@@ -173,7 +329,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 		{
 			if(atom->size)
 			{
-				handle->lvm.chunk = strndup(LV2_ATOM_BODY_CONST(atom), atom->size);
+				handle->chunk = strndup(LV2_ATOM_BODY_CONST(atom), atom->size);
 				handle->dirty_in = 1;
 			}
 			else
@@ -185,46 +341,91 @@ run(LV2_Handle instance, uint32_t nsamples)
 	if(handle->dirty_in)
 	{
 		// load chunk
-		if(luaL_dostring(handle->lvm.L, handle->lvm.chunk))
+		if(luaL_dostring(handle->lvm.L, handle->chunk))
 		{
-			free(handle->lvm.chunk);
-			handle->lvm.chunk = strdup(default_code);
-			luaL_dostring(handle->lvm.L, handle->lvm.chunk);
+			printf("load error\n");
+			strcpy(handle->error, lua_tostring(L, -1));
+			lua_pop(L, 1);
+
+			// load default code
+			free(handle->chunk);
+			handle->chunk = strdup(default_code);
+			luaL_dostring(handle->lvm.L, handle->chunk); // cannot fail
 		}
 
 		handle->dirty_in = 0;
 	}
 
-	// prepare notify atom forge
-	uint32_t capacity = handle->notify->atom.size;
-	LV2_Atom_Forge *forge = &handle->forge;
-	lv2_atom_forge_set_buffer(forge, (uint8_t *)handle->notify, capacity);
-	LV2_Atom_Forge_Frame frame;
-	lv2_atom_forge_sequence_head(forge, &frame, 0);
-	if(handle->dirty_out)
-	{
-		lv2_atom_forge_frame_time(forge, 0);
-		lv2_atom_forge_string(forge, handle->lvm.chunk, strlen(handle->lvm.chunk) + 1);
-
-		handle->dirty_out = 0;
-	}
-	lv2_atom_forge_pop(forge, &frame);
-
 	// prepare event_out sequence
-	capacity = handle->event_out->atom.size;
+	uint32_t capacity = handle->event_out->atom.size;
+	LV2_Atom_Forge *forge = &handle->forge;
+	LV2_Atom_Forge_Frame frame;
 	lv2_atom_forge_set_buffer(forge, (uint8_t *)handle->event_out, capacity);
 	lv2_atom_forge_sequence_head(forge, &frame, 0);
 
 	// run
-	LV2_ATOM_SEQUENCE_FOREACH(handle->event_in, ev)
+	lua_getglobal(L, "run");
+	if(lua_isfunction(L, -1))
 	{
-		const LV2_Atom *atom = &ev->body;
+		// push sequence
+		lseq_t *lseq = lua_newuserdata(handle->lvm.L, sizeof(lseq_t));
+		lseq->seq = handle->event_in;
+		lseq->itr = NULL;
+		luaL_getmetatable(L, "lseq");
+		lua_setmetatable(L, -2);
 
-		//TODO
+		// push forge
+		lforge_t *lforge = lua_newuserdata(handle->lvm.L, sizeof(lforge_t));
+		lforge->forge = forge;
+		luaL_getmetatable(L, "lforge");
+		lua_setmetatable(L, -2);
+			
+		if(lua_pcall(L, 2, 0, 0))
+		{
+			printf("runtime error\n");
+			strcpy(handle->error, lua_tostring(L, -1));
+			lua_pop(L, 1);
+
+			// load default code
+			free(handle->chunk);
+			handle->chunk = strdup(default_code);
+			luaL_dostring(handle->lvm.L, handle->chunk); // cannot fail
+		}
 	}
+	else
+		lua_pop(L, 1);
 
 	lua_gc(L, LUA_GCSTEP, 0);
+	lv2_atom_forge_pop(forge, &frame);
 
+	// prepare notify atom forge
+	capacity = handle->notify->atom.size;
+	lv2_atom_forge_set_buffer(forge, (uint8_t *)handle->notify, capacity);
+	lv2_atom_forge_sequence_head(forge, &frame, 0);
+	if(handle->dirty_out)
+	{
+		uint32_t len = strlen(handle->chunk) + 1;
+		LV2_Atom_Forge_Frame obj_frame;
+		lv2_atom_forge_frame_time(forge, 0);
+		lv2_atom_forge_object(forge, &obj_frame, 0, handle->uris.lua_message);
+		lv2_atom_forge_key(forge, handle->uris.lua_code);
+		lv2_atom_forge_string(forge, handle->chunk, len);
+		lv2_atom_forge_pop(forge, &obj_frame);
+
+		handle->dirty_out = 0; // reset flag
+	}
+	if(handle->error[0])
+	{
+		uint32_t len = strlen(handle->error) + 1;
+		LV2_Atom_Forge_Frame obj_frame;
+		lv2_atom_forge_frame_time(forge, 0);
+		lv2_atom_forge_object(forge, &obj_frame, 0, handle->uris.lua_message);
+		lv2_atom_forge_key(forge, handle->uris.lua_error);
+		lv2_atom_forge_string(forge, handle->error, len);
+		lv2_atom_forge_pop(forge, &obj_frame);
+
+		handle->error[0] = '\0'; // reset flag
+	}
 	lv2_atom_forge_pop(forge, &frame);
 }
 
@@ -233,7 +434,8 @@ deactivate(LV2_Handle instance)
 {
 	Handle *handle = (Handle *)instance;
 
-	//free(handle->lvm.chunk);
+	if(handle->chunk)
+		free(handle->chunk);
 }
 
 static void
@@ -248,11 +450,6 @@ cleanup(LV2_Handle instance)
 static const void*
 extension_data(const char* uri)
 {
-	const static LV2_State_Interface state_iface = {
-		.save = state_save,
-		.restore = state_restore
-	};
-
 	if(!strcmp(uri, LV2_STATE__interface))
 		return &state_iface;
 	else

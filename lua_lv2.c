@@ -57,12 +57,14 @@ lua_alloc(void *ud, void *ptr, size_t osize, size_t nsize)
 	Lua_VM *lvm = ud;
 	(void)osize;
 
-	if(nsize == 0) {
+	if(nsize == 0)
+	{
 		if(ptr)
 			rt_free(lvm, ptr);
 		return NULL;
 	}
-	else {
+	else
+	{
 		if(ptr)
 			return rt_realloc(lvm, nsize, ptr);
 		else
@@ -96,9 +98,6 @@ lua_vm_init(Lua_VM *lvm)
 int
 lua_vm_deinit(Lua_VM *lvm)
 {
-	if(lvm->chunk)
-		free(lvm->chunk);
-	
 	if(lvm->L)
 		lua_close(lvm->L);
 

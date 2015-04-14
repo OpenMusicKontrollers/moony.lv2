@@ -26,13 +26,16 @@ typedef struct _Handle Handle;
 struct _Handle {
 	LV2_URID_Map *map;
 	struct {
+		LV2_URID lua_message;
 		LV2_URID lua_code;
-		LV2_URID state_default;
+		LV2_URID lua_error;
 	} uris;
 
 	Lua_VM lvm;
+	char *chunk;
 	volatile int dirty_in;
 	volatile int dirty_out;
+	char error [1024];
 
 	const float *val_in [4];
 	float *val_out [4];
@@ -44,20 +47,21 @@ struct _Handle {
 };
 
 static const char *default_code =
-	"<code>function run(v1, v2, v3, v4)</br>"
-	"</tab>return v1, v2, v3, v4</br>"
-	"end</code>";
+	"function run(...)\n"
+	"  return ...\n"
+	"end";
 
 static LV2_State_Status
-state_save(LV2_Handle instance, LV2_State_Store_Function store, LV2_State_Handle state, uint32_t flags, const LV2_Feature *const *features)
+state_save(LV2_Handle instance, LV2_State_Store_Function store,
+	LV2_State_Handle state, uint32_t flags, const LV2_Feature *const *features)
 {
 	Handle *handle = (Handle *)instance;
 
 	return store(
 		state,
 		handle->uris.lua_code,
-		handle->lvm.chunk,
-		strlen(handle->lvm.chunk)+1,
+		handle->chunk,
+		strlen(handle->chunk)+1,
 		handle->forge.String,
 		LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
 }
@@ -82,9 +86,9 @@ state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_Sta
 
 	if(chunk && size && type)
 	{
-		if(handle->lvm.chunk)
-			free(handle->lvm.chunk);
-		handle->lvm.chunk = strdup(chunk);
+		if(handle->chunk)
+			free(handle->chunk);
+		handle->chunk = strdup(chunk);
 
 		handle->dirty_in = 1;
 	}
@@ -115,8 +119,9 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 		return NULL;
 	}
 
+	handle->uris.lua_message = handle->map->map(handle->map->handle, LUA_MESSAGE_URI);
 	handle->uris.lua_code = handle->map->map(handle->map->handle, LUA_CODE_URI);
-	handle->uris.state_default = handle->map->map(handle->map->handle, LV2_STATE__loadDefaultState);
+	handle->uris.lua_error = handle->map->map(handle->map->handle, LUA_ERROR_URI);
 
 	if(lua_vm_init(&handle->lvm))
 		return NULL;
@@ -162,8 +167,8 @@ activate(LV2_Handle instance)
 	Handle *handle = (Handle *)instance;
 	
 	// load default chunk
-	handle->lvm.chunk = strdup(default_code);
-	luaL_dostring(handle->lvm.L, handle->lvm.chunk);
+	handle->chunk = strdup(default_code);
+	luaL_dostring(handle->lvm.L, handle->chunk); // cannot fail
 
 	handle->dirty_out = 1; // trigger update of UI
 }
@@ -183,7 +188,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 		{
 			if(atom->size)
 			{
-				handle->lvm.chunk = strndup(LV2_ATOM_BODY_CONST(atom), atom->size);
+				handle->chunk = strndup(LV2_ATOM_BODY_CONST(atom), atom->size);
 				handle->dirty_in = 1;
 			}
 			else
@@ -195,15 +200,53 @@ run(LV2_Handle instance, uint32_t nsamples)
 	if(handle->dirty_in)
 	{
 		// load chunk
-		if(luaL_dostring(handle->lvm.L, handle->lvm.chunk))
+		if(luaL_dostring(handle->lvm.L, handle->chunk))
 		{
-			free(handle->lvm.chunk);
-			handle->lvm.chunk = strdup(default_code);
-			luaL_dostring(handle->lvm.L, handle->lvm.chunk);
+			printf("load error\n");
+			strcpy(handle->error, lua_tostring(L, -1));
+			lua_pop(L, 1);
+
+			// load default code
+			free(handle->chunk);
+			handle->chunk = strdup(default_code);
+			luaL_dostring(handle->lvm.L, handle->chunk); // cannot fail
 		}
 
 		handle->dirty_in = 0;
 	}
+
+	// run
+	lua_getglobal(L, "run");
+	if(lua_isfunction(L, -1))
+	{
+		for(int i=0; i<NUM_VAL; i++)
+			lua_pushnumber(L, *handle->val_in[i]);
+
+		if(lua_pcall(L, NUM_VAL, LUA_MULTRET, 0))
+		{
+			printf("runtime error\n");
+			strcpy(handle->error, lua_tostring(L, -1));
+			lua_pop(L, 1);
+
+			// load default code
+			free(handle->chunk);
+			handle->chunk = strdup(default_code);
+			luaL_dostring(handle->lvm.L, handle->chunk); // cannot fail
+		}
+
+		int ret = lua_gettop(L);
+		int max = ret > NUM_VAL ? NUM_VAL : ret; // discard superfluous returns
+		for(int i=0; i<max; i++)
+			*handle->val_out[i] = luaL_optnumber(L, i+1, 0.f);
+		for(int i=ret; i<NUM_VAL; i++) // fill in missing returns with 0.f
+			*handle->val_out[i] = 0.f;
+
+		lua_pop(L, ret);
+	}
+	else
+		lua_pop(L, 1);
+
+	lua_gc(L, LUA_GCSTEP, 0);
 
 	// prepare notify atom forge
 	uint32_t capacity = handle->notify->atom.size;
@@ -213,32 +256,29 @@ run(LV2_Handle instance, uint32_t nsamples)
 	lv2_atom_forge_sequence_head(forge, &frame, 0);
 	if(handle->dirty_out)
 	{
+		uint32_t len = strlen(handle->chunk) + 1;
+		LV2_Atom_Forge_Frame obj_frame;
 		lv2_atom_forge_frame_time(forge, 0);
-		lv2_atom_forge_string(forge, handle->lvm.chunk, strlen(handle->lvm.chunk) + 1);
+		lv2_atom_forge_object(forge, &obj_frame, 0, handle->uris.lua_message);
+		lv2_atom_forge_key(forge, handle->uris.lua_code);
+		lv2_atom_forge_string(forge, handle->chunk, len);
+		lv2_atom_forge_pop(forge, &obj_frame);
 
-		handle->dirty_out = 0;
+		handle->dirty_out = 0; // reset flag
+	}
+	if(handle->error[0])
+	{
+		uint32_t len = strlen(handle->error) + 1;
+		LV2_Atom_Forge_Frame obj_frame;
+		lv2_atom_forge_frame_time(forge, 0);
+		lv2_atom_forge_object(forge, &obj_frame, 0, handle->uris.lua_message);
+		lv2_atom_forge_key(forge, handle->uris.lua_error);
+		lv2_atom_forge_string(forge, handle->error, len);
+		lv2_atom_forge_pop(forge, &obj_frame);
+
+		handle->error[0] = '\0'; // reset flag
 	}
 	lv2_atom_forge_pop(forge, &frame);
-
-	// run
-	lua_getglobal(L, "run");
-	if(lua_isfunction(L, -1))
-	{
-		for(int i=0; i<NUM_VAL; i++)
-			lua_pushnumber(L, *handle->val_in[i]);
-
-		if(lua_pcall(L, NUM_VAL, NUM_VAL, 0))
-			fprintf(stderr, "Lua: %s\n", lua_tostring(L, -1));
-
-		for(int i=0; i<NUM_VAL; i++)
-			*handle->val_out[i] = luaL_optinteger(L, i+i, 0.f);
-
-		lua_pop(L, NUM_VAL);
-	}
-	else
-		lua_pop(L, 1);
-
-	lua_gc(L, LUA_GCSTEP, 0);
 }
 
 static void
@@ -246,7 +286,8 @@ deactivate(LV2_Handle instance)
 {
 	Handle *handle = (Handle *)instance;
 
-	//free(handle->lvm.chunk);
+	if(handle->chunk)
+		free(handle->chunk);
 }
 
 static void

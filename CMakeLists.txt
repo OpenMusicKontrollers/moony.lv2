@@ -6,11 +6,13 @@ include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/tlsf-3.0)
 include_directories(${PROJECT_SOURCE_DIR}/libosc)
 include_directories(${PROJECT_SOURCE_DIR}/eo_ui.lv2)
+include_directories(${PROJECT_BINARY_DIR})
 
 set(DEST lib/lv2/lua.lv2)
 set(LIB_EXT ".so")
 
 find_package(PkgConfig) # ${PKG_CONFIG_FOUND}
+find_package(FLEX)
 
 pkg_search_module(LV2 REQUIRED lv2>=1.10)
 include_directories(${LV2_INCLUDE_DIRS})
@@ -35,6 +37,9 @@ else()
 	set(LIBS ${LIBS} ${LUA_LDFLAGS})
 endif()
 
+flex_target(encoder encoder.l ${PROJECT_BINARY_DIR}/encoder.c
+	COMPILE_FLAGS	"--header-file=${PROJECT_BINARY_DIR}/encoder.h --prefix=enc")
+
 add_library(lua MODULE
 	lua_lv2.c
 	tlsf-3.0/tlsf.c
@@ -47,7 +52,8 @@ install(TARGETS lua DESTINATION ${DEST})
 
 add_library(lua_ui MODULE
 	lua_lv2_ui.c
-	lua_common_ui.c)
+	lua_common_ui.c
+	${FLEX_encoder_OUTPUTS})
 target_link_libraries(lua_ui ${LIBS_UI})
 set_target_properties(lua_ui PROPERTIES PREFIX "")
 install(TARGETS lua_ui DESTINATION ${DEST})

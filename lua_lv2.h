@@ -39,11 +39,11 @@
 #include "lv2/lv2plug.in/ns/lv2core/lv2.h"
 #include "lv2/lv2plug.in/ns/extensions/ui/ui.h"
 
-#define LV2_OSC__OscEvent		"http://opensoundcontrol.org#OscEvent"
-
 #define LUA_URI							"http://open-music-kontrollers.ch/lv2/lua"
 
+#define LUA_MESSAGE_URI			LUA_URI"#message"
 #define LUA_CODE_URI				LUA_URI"#code"
+#define LUA_ERROR_URI				LUA_URI"#error"
 
 #define LUA_COMMON_EO_URI		LUA_URI"#common_eo"
 #define LUA_COMMON_UI_URI		LUA_URI"#common_ui"
@@ -65,8 +65,6 @@ typedef struct _Lua_VM Lua_VM;
 
 struct _Lua_VM {
 	lua_State *L;
-
-	char *chunk; // Lua program
 
 	void *area;
 	tlsf_t tlsf;
