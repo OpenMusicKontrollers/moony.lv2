@@ -158,7 +158,7 @@ static int
 _lforge_frame_time(lua_State *L)
 {
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
-	int64_t val = luaL_checkint(L, 2);
+	int64_t val = luaL_checkinteger(L, 2);
 
 	lv2_atom_forge_frame_time(lforge->forge, val);
 
@@ -169,7 +169,7 @@ static int
 _lforge_int(lua_State *L)
 {
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
-	int32_t val = luaL_checkint(L, 2);
+	int32_t val = luaL_checkinteger(L, 2);
 
 	lv2_atom_forge_int(lforge->forge, val);
 
@@ -180,7 +180,7 @@ static int
 _lforge_long(lua_State *L)
 {
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
-	int64_t val = luaL_checkint(L, 2);
+	int64_t val = luaL_checkinteger(L, 2);
 
 	lv2_atom_forge_long(lforge->forge, val);
 
@@ -191,7 +191,7 @@ static int
 _lforge_float(lua_State *L)
 {
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
-	float val = luaL_checkint(L, 2);
+	float val = luaL_checkinteger(L, 2);
 
 	lv2_atom_forge_float(lforge->forge, val);
 
@@ -202,7 +202,7 @@ static int
 _lforge_double(lua_State *L)
 {
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
-	double val = luaL_checkint(L, 2);
+	double val = luaL_checkinteger(L, 2);
 
 	lv2_atom_forge_double(lforge->forge, val);
 
@@ -235,13 +235,13 @@ static void
 luaopen_atom(lua_State *L)
 {
 	luaL_newmetatable(L, "lseq");
-	luaL_register(L, NULL, lseq_mt);
+	luaL_setfuncs (L, lseq_mt, 0);
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -2, "__index");
 	lua_pop(L, 1);
 	
 	luaL_newmetatable(L, "lforge");
-	luaL_register(L, NULL, lforge_mt);
+	luaL_setfuncs (L, lforge_mt, 0);
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -2, "__index");
 	lua_pop(L, 1);

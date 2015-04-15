@@ -23,11 +23,6 @@
 #include <stdint.h>
 #include <endian.h>
 
-#define LUA_COMPAT_ALL
-#include <lua.h>
-#include <lualib.h>
-#include <lauxlib.h>
-
 #include <tlsf.h>
 
 #include "lv2/lv2plug.in/ns/ext/atom/atom.h"
@@ -38,6 +33,8 @@
 #include "lv2/lv2plug.in/ns/ext/state/state.h"
 #include "lv2/lv2plug.in/ns/lv2core/lv2.h"
 #include "lv2/lv2plug.in/ns/extensions/ui/ui.h"
+
+#include <lua.h>
 
 #define LUA_URI							"http://open-music-kontrollers.ch/lv2/lua"
 
@@ -64,11 +61,12 @@ extern const LV2UI_Descriptor lv2_lua_common_kx;
 typedef struct _Lua_VM Lua_VM;
 
 struct _Lua_VM {
-	lua_State *L;
-
 	void *area;
 	tlsf_t tlsf;
 	pool_t pool;
+	size_t used;
+
+	lua_State *L;
 };
 
 int lua_vm_init(Lua_VM *lvm);

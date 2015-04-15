@@ -216,6 +216,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 	}
 
 	// run
+	int top = lua_gettop(L);
 	lua_getglobal(L, "run");
 	if(lua_isfunction(L, -1))
 	{
@@ -234,7 +235,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 			luaL_dostring(handle->lvm.L, handle->chunk); // cannot fail
 		}
 
-		int ret = lua_gettop(L);
+		int ret = lua_gettop(L) - top;
 		int max = ret > NUM_VAL ? NUM_VAL : ret; // discard superfluous returns
 		for(int i=0; i<max; i++)
 			*handle->val_out[i] = luaL_optnumber(L, i+1, 0.f);

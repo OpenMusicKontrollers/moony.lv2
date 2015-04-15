@@ -19,16 +19,18 @@
 
 #include <sys/mman.h>
 
-#define MEM_SIZE 0x1000000UL // 16MB
+#include <lualib.h>
+
+#define MEM_SIZE 0x2000000UL // 16MB
 
 static inline void *
 rt_alloc(Lua_VM *lvm, size_t len)
 {
 	void *data = NULL;
-	
+
 	data = tlsf_malloc(lvm->tlsf, len);
 	if(!data)
-		; //FIXME
+		printf("tlsf_malloc failed\n");
 
 	return data;
 }
@@ -40,7 +42,7 @@ rt_realloc(Lua_VM *lvm, size_t len, void *buf)
 	
 	data =tlsf_realloc(lvm->tlsf, buf, len);
 	if(!data)
-		; //FIXME
+		printf("tlsf_realloc failed\n");
 
 	return data;
 }
@@ -56,6 +58,9 @@ lua_alloc(void *ud, void *ptr, size_t osize, size_t nsize)
 {
 	Lua_VM *lvm = ud;
 	(void)osize;
+
+	lvm->used += nsize - (ptr ? osize : 0);
+	//printf("rt_alloc: %zu\n", lvm->used);
 
 	if(nsize == 0)
 	{
@@ -75,8 +80,14 @@ lua_alloc(void *ud, void *ptr, size_t osize, size_t nsize)
 int
 lua_vm_init(Lua_VM *lvm)
 {
-	lvm->area = mmap(NULL, MEM_SIZE, PROT_READ|PROT_WRITE,
-									MAP_32BIT|MAP_PRIVATE|MAP_ANONYMOUS|MAP_LOCKED, -1, 0);
+	memset(lvm, 0x0, sizeof(Lua_VM));
+
+#if defined(_WIN32)
+	lvm->area= _aligned_malloc(MEM_SIZE, 8);
+#else
+	posix_memalign(&lvm->area, 8, MEM_SIZE);
+	mlock(lvm->area, MEM_SIZE);
+#endif
 	if(!lvm->area)
 		return -1;
 	
@@ -88,7 +99,19 @@ lua_vm_init(Lua_VM *lvm)
 	lvm->L = lua_newstate(lua_alloc, lvm);
 	if(!lvm->L)
 		return -1;
-	luaL_openlibs(lvm->L);
+
+	luaopen_base(lvm->L);
+	luaopen_coroutine(lvm->L);
+	luaopen_table(lvm->L);
+	//luaopen_io(lvm->L);
+	//luaopen_os(lvm->L);
+	luaopen_string(lvm->L);
+	luaopen_utf8(lvm->L);
+	//luaopen_bit32(lvm->L);
+	luaopen_math(lvm->L);
+	//luaopen_debug(lvm->L);
+	//luaopen_package(lvm->L);
+	lua_pop(lvm->L, 6);
 
 	lua_gc(lvm->L, LUA_GCSTOP, 0); // disable automatic garbage collection
 
@@ -103,7 +126,11 @@ lua_vm_deinit(Lua_VM *lvm)
 
 	tlsf_remove_pool(lvm->tlsf, lvm->pool);
 	tlsf_destroy(lvm->tlsf);
-	munmap(lvm->area, MEM_SIZE);
+
+#if !defined(_WIN32)
+	munlock(lvm->area, MEM_SIZE);
+#endif
+	free(lvm->area);
 
 	return 0;
 }
