@@ -71,5 +71,16 @@ struct _Lua_VM {
 
 int lua_vm_init(Lua_VM *lvm);
 int lua_vm_deinit(Lua_VM *lvm);
+
+typedef void (*encoder_append_t)(const char *str, void *data);
+typedef struct _encoder_t encoder_t;
+
+struct _encoder_t {
+	encoder_append_t append;
+	void *data;
+};
+extern encoder_t *encoder;
+
+void lua_to_markup(const char *utf8);
 	
 #endif // _LUA_LV2_H

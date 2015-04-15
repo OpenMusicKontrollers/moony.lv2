@@ -2,15 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
-typedef void (*encoder_append_t)(const char *str, void *data);
-typedef struct _encoder_t encoder_t;
-
-struct _encoder_t {
-	encoder_append_t append;
-	void *data;
-};
-
-extern encoder_t *encoder;
+#include <lua_lv2.h>
 
 static void
 _add_plain(const char *content)
@@ -96,6 +88,9 @@ enum {
 	TK_NEWLINE,
 	TK_BRACE,
 	TK_RAW,
+	TK_AMP,
+	TK_LT,
+	TK_GT,
 	TK_BADCHAR
 };
 
@@ -116,26 +111,16 @@ checkKw(char*s)
 			break;
 		case 'b':
 			CHECK(break,BREAK);
-			CHECK(bit32.band,CALLER);
-			CHECK(bit32.rshift,CALLER);
-			CHECK(bit32.rrotate,CALLER);
-			CHECK(bit32.extract,CALLER);
-			CHECK(bit32.bnot,CALLER);
-			CHECK(bit32.replace,CALLER);
-			CHECK(bit32.lrotate,CALLER);
-			CHECK(bit32.arshift,CALLER);
-			CHECK(bit32.bxor,CALLER);
-			CHECK(bit32.lshift,CALLER);
-			CHECK(bit32.bor,CALLER);
-			CHECK(bit32.btest,CALLER);
 			break;
 		case 'c':
-			CHECK(coroutine.status,CALLER);
-			CHECK(coroutine.yield,CALLER);
-			CHECK(coroutine.resume,CALLER);
-			CHECK(coroutine.wrap,CALLER);
 			CHECK(coroutine.running,CALLER);
 			CHECK(coroutine.create,CALLER);
+			CHECK(coroutine.yield,CALLER);
+			CHECK(coroutine.isyieldable,CALLER);
+			CHECK(coroutine.wrap,CALLER);
+			CHECK(coroutine.resume,CALLER);
+			CHECK(coroutine.status,CALLER);
+
 			CHECK(collectgarbage,CALLER);
 			break;
 		case 'd':
@@ -165,42 +150,45 @@ checkKw(char*s)
 			break;
 		case 'l':
 			CHECK(local,LOCAL);
-			CHECK(loadstring,CALLER);
 			CHECK(load,CALLER);
 			CHECK(loadfile,CALLER);
 			break;
 		case 'm':
-			CHECK(math.atan,CALLER)
-			CHECK(math.tanh,CALLER)
 			CHECK(math.frexp,CALLER)
-			CHECK(math.atan2,CALLER)
-			CHECK(math.abs,CALLER)
-			CHECK(math.pow,CALLER)
-			CHECK(math.log,CALLER)
-			CHECK(math.pi,CALLER)
-			CHECK(math.random,CALLER)
-			CHECK(math.tan,CALLER)
-			CHECK(math.rad,CALLER)
 			CHECK(math.sqrt,CALLER)
-			CHECK(math.sin,CALLER)
+			CHECK(math.sinh,CALLER)
+			CHECK(math.tanh,CALLER)
+			CHECK(math.ult,CALLER)
+			CHECK(math.deg,CALLER)
+			CHECK(math.tointeger,CALLER)
+			CHECK(math.asin,CALLER)
 			CHECK(math.randomseed,CALLER)
-			CHECK(math.log10,CALLER)
-			CHECK(math.min,CALLER)
+			CHECK(math.atan2,CALLER)
+			CHECK(math.floor,CALLER)
+			CHECK(math.max,CALLER)
 			CHECK(math.acos,CALLER)
+			CHECK(math.ceil,CALLER)
+			CHECK(math.modf,CALLER)
+			CHECK(math.huge,CALLER)
+			CHECK(math.min,CALLER)
+			CHECK(math.rad,CALLER)
 			CHECK(math.exp,CALLER)
 			CHECK(math.fmod,CALLER)
-			CHECK(math.huge,CALLER)
-			CHECK(math.cosh,CALLER)
-			CHECK(math.max,CALLER)
-			CHECK(math.modf,CALLER)
-			CHECK(math.floor,CALLER)
-			CHECK(math.ldexp,CALLER)
-			CHECK(math.asin,CALLER)
-			CHECK(math.ceil,CALLER)
-			CHECK(math.sinh,CALLER)
-			CHECK(math.deg,CALLER)
+			CHECK(math.type,CALLER)
+			CHECK(math.mininteger,CALLER)
+			CHECK(math.maxinteger,CALLER)
+			CHECK(math.random,CALLER)
+			CHECK(math.pi,CALLER)
 			CHECK(math.cos,CALLER)
-			CHECK(module,LOCAL)
+			CHECK(math.cosh,CALLER)
+			CHECK(math.abs,CALLER)
+			CHECK(math.log10,CALLER)
+			CHECK(math.tan,CALLER)
+			CHECK(math.ldexp,CALLER)
+			CHECK(math.sin,CALLER)
+			CHECK(math.pow,CALLER)
+			CHECK(math.log,CALLER)
+			CHECK(math.atan,CALLER)
 			break;
 		case 'n':
 			CHECK(nil,NIL);
@@ -229,20 +217,23 @@ checkKw(char*s)
 			CHECK(run,CALLER); // lua.lv2 specific
 			break;
 		case 's':
-			CHECK(string.match,CALLER);
-			CHECK(string.reverse,CALLER);
-			CHECK(string.upper,CALLER);
-			CHECK(string.sub,CALLER);
-			CHECK(string.byte,CALLER);
 			CHECK(string.char,CALLER);
-			CHECK(string.dump,CALLER);
-			CHECK(string.gmatch,CALLER);
-			CHECK(string.lower,CALLER);
-			CHECK(string.len,CALLER);
 			CHECK(string.gsub,CALLER);
-			CHECK(string.find,CALLER);
+			CHECK(string.len,CALLER);
+			CHECK(string.byte,CALLER);
 			CHECK(string.format,CALLER);
+			CHECK(string.lower,CALLER);
+			CHECK(string.gmatch,CALLER);
+			CHECK(string.dump,CALLER);
+			CHECK(string.packsize,CALLER);
+			CHECK(string.pack,CALLER);
+			CHECK(string.unpack,CALLER);
+			CHECK(string.upper,CALLER);
 			CHECK(string.rep,CALLER);
+			CHECK(string.reverse,CALLER);
+			CHECK(string.sub,CALLER);
+			CHECK(string.match,CALLER);
+			CHECK(string.find,CALLER);
 
 			CHECK(select,CALLER);
 			CHECK(setmetatable,CALLER);
@@ -254,17 +245,23 @@ checkKw(char*s)
 			CHECK(tonumber,CALLER);
 			CHECK(tostring,CALLER);
 
-			CHECK(table.pack,CALLER);
-			CHECK(table.remove,CALLER);
-			CHECK(table.sort,CALLER);
 			CHECK(table.insert,CALLER);
-			CHECK(table.concat,CALLER);
 			CHECK(table.unpack,CALLER);
-			CHECK(table.maxn,CALLER);
+			CHECK(table.concat,CALLER);
+			CHECK(table.move,CALLER);
+			CHECK(table.sort,CALLER);
+			CHECK(table.remove,CALLER);
+			CHECK(table.pack,CALLER);
 			break;
 		case 'u':
 			CHECK(until,UNTIL);
-			CHECK(unpack,CALLER);
+
+			CHECK(utf8.offset,CALLER);
+			CHECK(utf8.charpattern,CALLER);
+			CHECK(utf8.codes,CALLER);
+			CHECK(utf8.len,CALLER);
+			CHECK(utf8.codepoint,CALLER);
+			CHECK(utf8.char,CALLER);
 			break;
 		case 'w':
 			CHECK(while,WHILE);
@@ -288,6 +285,7 @@ name           [_a-zA-Z][_a-zA-Z0-9\.]*
 n              [0-9]+
 exp            [Ee][+-]?{n}
 number         ({n}|{n}[.]{n}){exp}?
+hexnumber			 0x[a-f0-9]+
 eol            [\n\r]
 sep            =*
 brace					 [\(\)\[\]\{\}]
@@ -302,6 +300,7 @@ brace					 [\(\)\[\]\{\}]
 
 ^#!.*          {if(firstline) firstline=0;}
 {name}         return checkKw(yytext);
+{hexnumber}    return TK_NUMBER;
 {number}       return TK_NUMBER;
 "--[["  			 BEGIN(XLONGCOMMENT); return TK_LONG_COMMENT_IN;
 "[["    			 BEGIN(XLONGSTRING); return TK_LONG_STRING_IN;
@@ -313,7 +312,10 @@ brace					 [\(\)\[\]\{\}]
 ".."           return TK_CONCAT;
 {brace}				 return TK_BRACE;
 {eol}          return TK_NEWLINE;
-.              return yytext[0];
+"&"            return TK_AMP;
+"<"            return TK_LT;
+">"            return TK_GT;
+.              return TK_RAW;
 
 <XSTRINGQ>
 {
@@ -465,6 +467,16 @@ lua_to_markup(const char *utf8)
 				break;
 
 			case TK_BADCHAR:
+				break;
+			
+			case TK_AMP:
+				_add_plain("&amp;");
+				break;
+			case TK_LT:
+				_add_plain("&lt;");
+				break;
+			case TK_GT:
+				_add_plain("&gt;");
 				break;
 
 			case TK_NAME:

@@ -95,25 +95,15 @@ static void
 _encoder_append(const char *str, void *data)
 {
 	UI *ui = data;
-	//printf("%s", str);
+
 	elm_entry_entry_append(ui->entry, str);
 }
-
-typedef void (*encoder_append_t)(const char *str, void *data);
-typedef struct _encoder_t encoder_t;
-
-struct _encoder_t {
-	encoder_append_t append;
-	void *data;
-};
 
 static encoder_t enc = {
 	.append = _encoder_append,
 	.data = NULL
 };
 encoder_t *encoder = &enc;
-
-extern void lua_to_markup(const char *utf8);
 
 static void
 _changed(void *data, Evas_Object *obj, void *event_info)
