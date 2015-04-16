@@ -7,9 +7,10 @@ before_install:
  - wget http://lv2plug.in/spec/lv2-1.10.0.tar.bz2
  - tar xjf lv2-1.10.0.tar.bz2 
  - sudo add-apt-repository -y ppa:enlightenment-git/ppa
+ - sudo add-apt-repository -y ppa:andykimpe/cmake
  - sudo apt-get -q update
 install:
- - sudo apt-get install -y libefl-dev libelementary-dev libsndfile1-dev liblua5.2-dev libluajit-5.1-dev
+ - sudo apt-get install -y libefl-dev libelementary-dev libsndfile1-dev cmake=2.8.12.2-3
  - pushd lv2-1.10.0 && ./waf configure && ./waf build && sudo ./waf install && popd
 before_script:
  - mkdir build && pushd build && cmake -DCMAKE_C_FLAGS="-std=gnu99" .. && popd

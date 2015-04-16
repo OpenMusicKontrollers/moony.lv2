@@ -19,6 +19,15 @@
 
 #include <lauxlib.h>
 
+// there is a bug in LV2 <= 0.10
+#if defined(LV2_ATOM_TUPLE_FOREACH)
+#	undef LV2_ATOM_TUPLE_FOREACH
+#	define LV2_ATOM_TUPLE_FOREACH(tuple, iter) \
+	for (LV2_Atom* (iter) = lv2_atom_tuple_begin(tuple); \
+	     !lv2_atom_tuple_is_end(LV2_ATOM_BODY(tuple), (tuple)->atom.size, (iter)); \
+	     (iter) = lv2_atom_tuple_next(iter))
+#endif
+
 typedef struct _lseq_t lseq_t;
 typedef struct _lobj_t lobj_t;
 typedef struct _ltuple_t ltuple_t;
@@ -189,19 +198,62 @@ static int
 _lseq__index(lua_State *L)
 {
 	lseq_t *lseq = luaL_checkudata(L, 1, "lseq");
-	const char *key = luaL_checkstring(L, 2);
-	//TODO allow indexing by index
 
-	if(!strcmp(key, "type"))
+	if(lua_isinteger(L, 2))
 	{
-		lua_pushinteger(L, lseq->seq->atom.type);
+		int index = lua_tointeger(L, 2); // indexing start from 1
+		int count = 0;
+		LV2_ATOM_SEQUENCE_FOREACH(lseq->seq, ev)
+		{
+			if(++count == index) 
+			{
+				_latom_new(L, &ev->body);
+				break;
+			}
+		}
+		if(count != index) // index is out of bounds
+			lua_pushnil(L);
 	}
-	else // look in metatable
+	else if(lua_isstring(L, 2))
 	{
-		lua_getmetatable(L, 1);
-		lua_pushvalue(L, 2);
-		lua_rawget(L, -2);
+		const char *key = lua_tostring(L, 2);
+
+		if(!strcmp(key, "type"))
+		{
+			lua_pushinteger(L, lseq->seq->atom.type);
+		}
+		else // look in metatable
+		{
+			lua_getmetatable(L, 1);
+			lua_pushvalue(L, 2);
+			lua_rawget(L, -2);
+		}
 	}
+	else
+		lua_pushnil(L); // unsupported key
+
+	return 1;
+}
+
+static int
+_lseq__len(lua_State *L)
+{
+	lseq_t *lseq = luaL_checkudata(L, 1, "lseq");
+
+	uint32_t count = 0;
+	LV2_ATOM_SEQUENCE_FOREACH(lseq->seq, ev)
+		count++;
+	lua_pushinteger(L, count);
+
+	return 1;
+}
+
+static int
+_lseq__tostring(lua_State *L)
+{
+	lseq_t *lseq = luaL_checkudata(L, 1, "lseq");
+
+	lua_pushstring(L, "Atom_Sequence");
 
 	return 1;
 }
@@ -224,6 +276,8 @@ _lseq_foreach(lua_State *L)
 
 static const luaL_Reg lseq_mt [] = {
 	{"__index", _lseq__index},
+	{"__len", _lseq__len},
+	{"__tostring", _lseq__tostring},
 	{"foreach", _lseq_foreach},
 	{NULL, NULL}
 };
@@ -253,19 +307,62 @@ static int
 _ltuple__index(lua_State *L)
 {
 	ltuple_t *ltuple = luaL_checkudata(L, 1, "ltuple");
-	const char *key = luaL_checkstring(L, 2);
-	//TODO allow indexing by index
 
-	if(!strcmp(key, "type"))
+	if(lua_isnumber(L, 2))
 	{
-		lua_pushinteger(L, ltuple->tuple->atom.type);
+		int index = lua_tointeger(L, 2); // indexing start from 1
+		int count = 0;
+		LV2_ATOM_TUPLE_FOREACH(ltuple->tuple, atom)
+		{
+			if(++count == index) 
+			{
+				_latom_new(L, atom);
+				break;
+			}
+		}
+		if(count != index) // index is out of bounds
+			lua_pushnil(L);
 	}
-	else // look in metatable
+	else if(lua_isstring(L, 2))
 	{
-		lua_getmetatable(L, 1);
-		lua_pushvalue(L, 2);
-		lua_rawget(L, -2);
+		const char *key = lua_tostring(L, 2);
+
+		if(!strcmp(key, "type"))
+		{
+			lua_pushinteger(L, ltuple->tuple->atom.type);
+		}
+		else // look in metatable
+		{
+			lua_getmetatable(L, 1);
+			lua_pushvalue(L, 2);
+			lua_rawget(L, -2);
+		}
 	}
+	else
+		lua_pushnil(L); // unsupported key
+
+	return 1;
+}
+
+static int
+_ltuple__len(lua_State *L)
+{
+	ltuple_t *ltuple = luaL_checkudata(L, 1, "ltuple");
+
+	uint32_t count = 0;
+	LV2_ATOM_TUPLE_FOREACH(ltuple->tuple, atom)
+		count++;
+	lua_pushinteger(L, count);
+
+	return 1;
+}
+
+static int
+_ltuple__tostring(lua_State *L)
+{
+	ltuple_t *ltuple = luaL_checkudata(L, 1, "ltuple");
+
+	lua_pushstring(L, "Atom_Tuple");
 
 	return 1;
 }
@@ -288,6 +385,8 @@ _ltuple_foreach(lua_State *L)
 
 static const luaL_Reg ltuple_mt [] = {
 	{"__index", _ltuple__index},
+	{"__len", _ltuple__len},
+	{"__tostring", _ltuple__tostring},
 	{"foreach", _ltuple_foreach},
 	{NULL, NULL}
 };
@@ -318,19 +417,63 @@ static int
 _lobj__index(lua_State *L)
 {
 	lobj_t *lobj = luaL_checkudata(L, 1, "lobj");
-	const char *key = luaL_checkstring(L, 2);
-	//TODO allow indexing by keys
 
-	if(!strcmp(key, "type"))
+	if(lua_isinteger(L, 2))
 	{
-		lua_pushinteger(L, lobj->obj->atom.type);
+		LV2_URID urid = lua_tointeger(L, 2);
+
+		// start a query for given URID
+		const LV2_Atom *atom = NULL;
+		LV2_Atom_Object_Query q [] = {
+			{urid, &atom},
+			LV2_ATOM_OBJECT_QUERY_END
+		};
+		lv2_atom_object_query(lobj->obj, q);
+
+		if(atom) // query returned a matching atom
+			_latom_new(L, atom);
+		else // query returned no matching atom
+			lua_pushnil(L);
 	}
-	else // look in metatable
+	else if(lua_isstring(L, 2))
 	{
-		lua_getmetatable(L, 1);
-		lua_pushvalue(L, 2);
-		lua_rawget(L, -2);
+		const char *key = lua_tostring(L, 2);
+
+		if(!strcmp(key, "type"))
+		{
+			lua_pushinteger(L, lobj->obj->atom.type);
+		}
+		else // look in metatable
+		{
+			lua_getmetatable(L, 1);
+			lua_pushvalue(L, 2);
+			lua_rawget(L, -2);
+		}
 	}
+	else
+		lua_pushnil(L); // unsupported key
+
+	return 1;
+}
+
+static int
+_lobj__len(lua_State *L)
+{
+	lobj_t *lobj = luaL_checkudata(L, 1, "lobj");
+
+	uint32_t count = 0;
+	LV2_ATOM_OBJECT_FOREACH(lobj->obj, prop)
+		count++;
+	lua_pushinteger(L, count);
+
+	return 1;
+}
+static int
+_lobj__tostring(lua_State *L)
+{
+	lobj_t *lobj = luaL_checkudata(L, 1, "lobj");
+
+	lua_pushstring(L, "Atom_Object");
 
 	return 1;
 }
@@ -352,8 +495,115 @@ _lobj_foreach(lua_State *L)
 }
 
 static const luaL_Reg lobj_mt [] = {
-	{"__idnex", _lobj__index},
+	{"__index", _lobj__index},
+	{"__len", _lobj__len},
+	{"__tostring", _lobj__tostring},
 	{"foreach", _lobj_foreach},
+	{NULL, NULL}
+};
+
+static void
+_latom_value(lua_State *L, const LV2_Atom *atom)
+{
+	Handle *handle = lua_touserdata(L, lua_upvalueindex(1));
+	LV2_Atom_Forge *forge = &handle->forge;
+
+	if(atom->type == forge->Int)
+		lua_pushinteger(L, ((const LV2_Atom_Int *)atom)->body);
+	else if(atom->type == forge->Long)
+		lua_pushinteger(L, ((const LV2_Atom_Long *)atom)->body);
+	else if(atom->type == forge->Float)
+		lua_pushnumber(L, ((const LV2_Atom_Float *)atom)->body);
+	else if(atom->type == forge->Double)
+		lua_pushnumber(L, ((const LV2_Atom_Double *)atom)->body);
+	else if(atom->type == forge->Bool)
+		lua_pushinteger(L, ((const LV2_Atom_Bool *)atom)->body);
+	else if(atom->type == forge->URID)
+		lua_pushinteger(L, ((const LV2_Atom_URID *)atom)->body);
+	else if(atom->type == forge->String)
+		lua_pushstring(L, LV2_ATOM_BODY_CONST(atom));
+	else if(atom->type == forge->URI)
+		lua_pushstring(L, LV2_ATOM_BODY_CONST(atom));
+	else if(atom->type == forge->Path)
+		lua_pushstring(L, LV2_ATOM_BODY_CONST(atom));
+	else // unknown type
+		lua_pushnil(L);
+}
+
+static int
+_latom__index(lua_State *L)
+{
+	latom_t *latom = luaL_checkudata(L, 1, "latom");
+	const char *key = lua_tostring(L, 2);
+
+	if(!strcmp(key, "type"))
+		lua_pushinteger(L, latom->atom->type);
+	else if(!strcmp(key, "value"))
+		_latom_value(L, latom->atom);
+	else // look in metatable
+	{
+		lua_getmetatable(L, 1);
+		lua_pushvalue(L, 2);
+		lua_rawget(L, -2);
+	}
+
+	return 1;
+}
+
+static int
+_latom__len(lua_State *L)
+{
+	latom_t *latom = luaL_checkudata(L, 1, "latom");
+
+	lua_pushinteger(L, latom->atom->size);
+
+	return 1;
+}
+
+static int
+_latom__tostring(lua_State *L)
+{
+	latom_t *latom = luaL_checkudata(L, 1, "latom");
+
+	_latom_value(L, latom->atom);
+	if(!lua_isstring(L, -1))
+		lua_tostring(L, -1);
+
+	return 1;
+}
+
+static int
+_latom__concat(lua_State *L)
+{
+	latom_t *latom;
+	if((latom = luaL_testudata(L, 1, "latom")))
+	{
+		_latom_value(L, latom->atom);
+		if(!lua_isstring(L, -1))
+			lua_tostring(L, -1);
+	}
+	else
+		lua_pushvalue(L, 1);
+	
+	if((latom = luaL_testudata(L, 2, "latom")))
+	{
+		_latom_value(L, latom->atom);
+		if(!lua_isstring(L, -1))
+			lua_tostring(L, -1);
+	}
+	else
+		lua_pushvalue(L, 2);
+
+	lua_concat(L, 2);
+
+	return 1;
+}
+
+static const luaL_Reg latom_mt [] = {
+	{"__index", _latom__index},
+	{"__len", _latom__len},
+	{"__tostring", _latom__tostring},
+	{"__concat", _latom__concat},
 	{NULL, NULL}
 };
 
@@ -543,113 +793,6 @@ static const luaL_Reg lforge_mt [] = {
 	{"key", _lforge_key},
 
 	{"pop", _lforge_pop},
-	{NULL, NULL}
-};
-
-static void
-_latom_value(lua_State *L, const LV2_Atom *atom)
-{
-	Handle *handle = lua_touserdata(L, lua_upvalueindex(1));
-	LV2_Atom_Forge *forge = &handle->forge;
-
-	if(atom->type == forge->Int)
-		lua_pushinteger(L, ((const LV2_Atom_Int *)atom)->body);
-	else if(atom->type == forge->Long)
-		lua_pushinteger(L, ((const LV2_Atom_Long *)atom)->body);
-	else if(atom->type == forge->Float)
-		lua_pushnumber(L, ((const LV2_Atom_Float *)atom)->body);
-	else if(atom->type == forge->Double)
-		lua_pushnumber(L, ((const LV2_Atom_Double *)atom)->body);
-	else if(atom->type == forge->Bool)
-		lua_pushinteger(L, ((const LV2_Atom_Bool *)atom)->body);
-	else if(atom->type == forge->URID)
-		lua_pushinteger(L, ((const LV2_Atom_URID *)atom)->body);
-	else if(atom->type == forge->String)
-		lua_pushstring(L, LV2_ATOM_BODY_CONST(atom));
-	else if(atom->type == forge->URI)
-		lua_pushstring(L, LV2_ATOM_BODY_CONST(atom));
-	else if(atom->type == forge->Path)
-		lua_pushstring(L, LV2_ATOM_BODY_CONST(atom));
-	else
-		lua_pushnil(L);
-}
-
-static int
-_latom__index(lua_State *L)
-{
-	latom_t *latom = luaL_checkudata(L, 1, "latom");
-	const char *key = lua_tostring(L, 2);
-
-	if(!strcmp(key, "type"))
-		lua_pushinteger(L, latom->atom->type);
-	else if(!strcmp(key, "size"))
-		lua_pushinteger(L, latom->atom->size);
-	else if(!strcmp(key, "value"))
-		_latom_value(L, latom->atom);
-	else // look in metatable
-	{
-		lua_getmetatable(L, 1);
-		lua_pushvalue(L, 2);
-		lua_rawget(L, -2);
-	}
-
-	return 1;
-}
-
-static int
-_latom__len(lua_State *L)
-{
-	latom_t *latom = luaL_checkudata(L, 1, "latom");
-
-	lua_pushinteger(L, latom->atom->size);
-
-	return 1;
-}
-
-static int
-_latom__tostring(lua_State *L)
-{
-	latom_t *latom = luaL_checkudata(L, 1, "latom");
-
-	_latom_value(L, latom->atom);
-	if(!lua_isstring(L, -1))
-		lua_tostring(L, -1);
-
-	return 1;
-}
-
-static int
-_latom__concat(lua_State *L)
-{
-	latom_t *latom;
-	if((latom = luaL_testudata(L, 1, "latom")))
-	{
-		_latom_value(L, latom->atom);
-		if(!lua_isstring(L, -1))
-			lua_tostring(L, -1);
-	}
-	else
-		lua_pushvalue(L, 1);
-	
-	if((latom = luaL_testudata(L, 2, "latom")))
-	{
-		_latom_value(L, latom->atom);
-		if(!lua_isstring(L, -1))
-			lua_tostring(L, -1);
-	}
-	else
-		lua_pushvalue(L, 2);
-
-	lua_concat(L, 2);
-
-	return 1;
-}
-
-static const luaL_Reg latom_mt [] = {
-	{"__index", _latom__index},
-	{"__len", _latom__len},
-	{"__tostring", _latom__tostring},
-	{"__concat", _latom__concat},
 	{NULL, NULL}
 };
 
