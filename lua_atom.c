@@ -65,10 +65,12 @@ struct _latom_t {
 
 struct _Handle {
 	LV2_URID_Map *map;
+	LV2_URID_Unmap *unmap;
 	struct {
 		LV2_URID lua_message;
 		LV2_URID lua_code;
 		LV2_URID lua_error;
+		LV2_URID midi_event;
 	} uris;
 
 	Lua_VM lvm;
@@ -526,6 +528,16 @@ _latom_value(lua_State *L, const LV2_Atom *atom)
 		lua_pushstring(L, LV2_ATOM_BODY_CONST(atom));
 	else if(atom->type == forge->Path)
 		lua_pushstring(L, LV2_ATOM_BODY_CONST(atom));
+	else if(atom->type == handle->uris.midi_event)
+	{
+		const uint8_t *m = LV2_ATOM_BODY_CONST(atom);
+		lua_createtable(L, atom->size, 0);
+		for(int i=0; i<atom->size; i++)
+		{
+			lua_pushinteger(L, m[i]);
+			lua_rawseti(L, -2, i+1);
+		}
+	}
 	else // unknown type
 		lua_pushnil(L);
 }
@@ -721,6 +733,28 @@ _lforge_path(lua_State *L)
 }
 
 static int
+_lforge_midi(lua_State *L)
+{
+	Handle *handle = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	if(lua_istable(L, 2))
+	{
+		uint32_t size = lua_rawlen(L, 2);
+		lv2_atom_forge_atom(lforge->forge, size, handle->uris.midi_event);
+		for(int i=1; i<=size; i++)
+		{
+			lua_rawgeti(L, -1, i);
+			uint8_t m = luaL_checkinteger(L, -1);
+			lua_pop(L, 1);
+			lv2_atom_forge_raw(lforge->forge, &m, 1);
+		}
+		lv2_atom_forge_pad(lforge->forge, size);
+	}
+
+	return 0;
+}
+
+static int
 _lforge_tuple(lua_State *L)
 {
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
@@ -788,11 +822,50 @@ static const luaL_Reg lforge_mt [] = {
 	{"path", _lforge_path},
 
 	//TODO vector
+	//TODO chunk
+	{"midi", _lforge_midi},
 	{"tuple", _lforge_tuple},
 	{"object", _lforge_object},
 	{"key", _lforge_key},
 
 	{"pop", _lforge_pop},
+	{NULL, NULL}
+};
+
+static int
+_llv2_map(lua_State *L)
+{
+	Handle *handle = lua_touserdata(L, lua_upvalueindex(1));
+	const char *uri = luaL_checkstring(L, 1);
+	LV2_URID urid = handle->map->map(handle->map->handle, uri);
+
+	if(urid)
+		lua_pushinteger(L, urid);
+	else
+		lua_pushnil(L);
+
+	return 1;
+}
+
+static int
+_llv2_unmap(lua_State *L)
+{
+	Handle *handle = lua_touserdata(L, lua_upvalueindex(1));
+	LV2_URID urid = luaL_checkinteger(L, 1);
+	const char *uri = handle->unmap->unmap(handle->unmap->handle, urid);
+
+	if(uri)
+		lua_pushstring(L, uri);
+	else
+		lua_pushnil(L);
+
+	return 1;
+}
+
+static const luaL_Reg llv2 [] = {
+	{"map", _llv2_map},
+	{"unmap", _llv2_unmap},
+
 	{NULL, NULL}
 };
 
@@ -840,6 +913,37 @@ luaopen_atom(Handle *handle, lua_State *L)
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -2, "__index");
 	lua_pop(L, 1);
+
+#define SET_CONST(L, ID) \
+	lua_pushinteger(L, handle->forge.ID); \
+	lua_setfield(L, -2, #ID);
+
+	lua_newtable(L);
+	lua_pushlightuserdata(L, handle); // @ upvalueindex 1
+	luaL_setfuncs(L, llv2, 1);
+	//SET_CONST(L, Blank); // is depracated
+	SET_CONST(L, Bool);
+	SET_CONST(L, Chunk);
+	SET_CONST(L, Double);
+	SET_CONST(L, Float);
+	SET_CONST(L, Int);
+	SET_CONST(L, Long);
+	SET_CONST(L, Literal);
+	SET_CONST(L, Object);
+	SET_CONST(L, Path);
+	SET_CONST(L, Property);
+	//SET_CONST(L, Resource); // is deprecated
+	SET_CONST(L, Sequence);
+	SET_CONST(L, String);
+	SET_CONST(L, Tuple);
+	SET_CONST(L, URI);
+	SET_CONST(L, URID);
+	SET_CONST(L, Vector);
+	lua_pushinteger(L, handle->uris.midi_event);
+		lua_setfield(L, -2, "Midi");
+	lua_setglobal(L, "lv2");
+
+#undef SET_CONST
 }
 
 static LV2_Handle
@@ -852,6 +956,8 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 	for(int i=0; features[i]; i++)
 		if(!strcmp(features[i]->URI, LV2_URID__map))
 			handle->map = (LV2_URID_Map *)features[i]->data;
+		else if(!strcmp(features[i]->URI, LV2_URID__unmap))
+			handle->unmap = (LV2_URID_Unmap *)features[i]->data;
 
 	if(!handle->map)
 	{
@@ -859,16 +965,23 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 		free(handle);
 		return NULL;
 	}
+	if(!handle->unmap)
+	{
+		fprintf(stderr, "%s: Host does not support urid:unmap\n", descriptor->URI);
+		free(handle);
+		return NULL;
+	}
 
 	handle->uris.lua_message = handle->map->map(handle->map->handle, LUA_MESSAGE_URI);
 	handle->uris.lua_code = handle->map->map(handle->map->handle, LUA_CODE_URI);
 	handle->uris.lua_error = handle->map->map(handle->map->handle, LUA_ERROR_URI);
+	handle->uris.midi_event = handle->map->map(handle->map->handle, LV2_MIDI__MidiEvent);
+
+	lv2_atom_forge_init(&handle->forge, handle->map);
 
 	if(lua_vm_init(&handle->lvm))
 		return NULL;
 	luaopen_atom(handle, handle->lvm.L);
-
-	lv2_atom_forge_init(&handle->forge, handle->map);
 
 	return handle;
 }
