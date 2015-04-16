@@ -21,7 +21,7 @@
 
 #include <lualib.h>
 
-#define MEM_SIZE 0x2000000UL // 16MB
+#define MEM_SIZE 0x100000UL // 1MB
 
 static inline void *
 rt_alloc(Lua_VM *lvm, size_t len)
