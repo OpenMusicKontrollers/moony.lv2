@@ -69,19 +69,19 @@ add_library(lua MODULE
 	lua.embed/lvm.c
 	lua.embed/lzio.c
 
-	lua.embed/lauxlib.c
 	lua.embed/lbaselib.c
-	#lua.embed/lbitlib.c
+	lua.embed/lauxlib.c
 	lua.embed/lcorolib.c
-	#lua.embed/ldblib.c
-	#lua.embed/liolib.c
 	lua.embed/lmathlib.c
-	#lua.embed/loslib.c
 	lua.embed/lstrlib.c
 	lua.embed/ltablib.c
+	lua.embed/lutf8lib.c)
+	#lua.embed/lbitlib.c
+	#lua.embed/ldblib.c
+	#lua.embed/liolib.c
+	#lua.embed/loslib.c
 	#lua.embed/loadlib.c
 	#lua.embed/linit.c
-	lua.embed/lutf8lib.c)
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	target_compile_definitions(lua PUBLIC -DLUA_USE_LINUX)
 elseif(WIN32)

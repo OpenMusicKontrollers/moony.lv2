@@ -60,10 +60,16 @@ extern const LV2UI_Descriptor lv2_lua_common_kx;
 
 typedef struct _Lua_VM Lua_VM;
 
+#define POOL_NUM 8
+
 struct _Lua_VM {
-	void *area;
 	tlsf_t tlsf;
-	pool_t pool;
+
+	size_t size [POOL_NUM];
+	void *area [POOL_NUM]; // 128K, 256K, 512K, 1M, 2M, 4M, 8M, 16M
+	pool_t pool [POOL_NUM];
+
+	size_t space;
 	size_t used;
 
 	lua_State *L;
@@ -71,6 +77,10 @@ struct _Lua_VM {
 
 int lua_vm_init(Lua_VM *lvm);
 int lua_vm_deinit(Lua_VM *lvm);
+void *lua_vm_mem_alloc(size_t size);
+void lua_vm_mem_free(void *area, size_t size);
+int lua_vm_mem_half_full(Lua_VM *lvm);
+int lua_vm_mem_extend(Lua_VM *lvm);
 
 typedef void (*encoder_append_t)(const char *str, void *data);
 typedef struct _encoder_t encoder_t;
