@@ -234,9 +234,9 @@
  */
 #if defined _WIN32 || defined __CYGWIN__
 	#ifdef __GNUC__
-		#define LUA_API __attribute__ ((dllimport))
+		#define LUA_API __attribute__ ((dllexport))
 	#else
-		#define LUA_API __declspec(dllimport) // Note: actually gcc seems to also supports this syntax.
+		#define LUA_API __declspec(dllexport) // Note: actually gcc seems to also supports this syntax.
 	#endif
 #else
   #if __GNUC__ >= 4

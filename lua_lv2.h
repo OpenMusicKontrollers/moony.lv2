@@ -21,7 +21,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <endian.h>
 
 #include <tlsf.h>
 
@@ -92,5 +91,20 @@ struct _encoder_t {
 extern encoder_t *encoder;
 
 void lua_to_markup(const char *utf8);
+
+
+#if defined(_WIN32)
+static inline char *
+strndup(const char *s, size_t n)
+{
+    char *result;
+    size_t len = strlen (s);
+    if (n < len) len = n;
+    result = (char *) malloc (len + 1);
+    if (!result) return 0;
+    result[len] = '\0';
+    return (char *) strncpy (result, s, len);
+}
+#endif
 	
 #endif // _LUA_LV2_H

@@ -10,7 +10,13 @@ include_directories(${PROJECT_SOURCE_DIR}/lua.embed)
 include_directories(${PROJECT_BINARY_DIR})
 
 set(DEST lib/lv2/lua.lv2)
-set(LIB_EXT ".so")
+if(WIN32)
+	set(LIB_EXT ".dll")
+elseif(APPLE)
+	set(LIB_EXT ".so")
+else()
+	set(LIB_EXT ".so")
+endif()
 
 find_package(PkgConfig) # ${PKG_CONFIG_FOUND}
 find_package(FLEX)
@@ -85,7 +91,7 @@ add_library(lua MODULE
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	target_compile_definitions(lua PUBLIC -DLUA_USE_LINUX)
 elseif(WIN32)
-	target_compile_definitions(lua PUBLIC -DLUA_USE_WINDOWS)
+	target_compile_definitions(lua PUBLIC)
 elseif(APPLE)
 	target_compile_definitions(lua PUBLIC -DLUA_USE_MACOSX)
 endif()
@@ -93,13 +99,17 @@ target_link_libraries(lua ${LIBS} "-lm")
 set_target_properties(lua PROPERTIES PREFIX "")
 install(TARGETS lua DESTINATION ${DEST})
 
-add_library(lua_ui MODULE
-	lua_lv2_ui.c
-	lua_common_ui.c
-	${FLEX_encoder_OUTPUTS})
-target_link_libraries(lua_ui ${LIBS_UI})
-set_target_properties(lua_ui PROPERTIES PREFIX "")
-install(TARGETS lua_ui DESTINATION ${DEST})
+
+option(BUILD_UI "Build UI" ON)
+if(${BUILD_UI})
+	add_library(lua_ui MODULE
+		lua_lv2_ui.c
+		lua_common_ui.c
+		${FLEX_encoder_OUTPUTS})
+	target_link_libraries(lua_ui ${LIBS_UI})
+	set_target_properties(lua_ui PROPERTIES PREFIX "")
+	install(TARGETS lua_ui DESTINATION ${DEST})
+endif()
 
 configure_file(${PROJECT_SOURCE_DIR}/manifest.ttl.in ${PROJECT_BINARY_DIR}/manifest.ttl)
 install(FILES ${PROJECT_BINARY_DIR}/manifest.ttl DESTINATION ${DEST})
