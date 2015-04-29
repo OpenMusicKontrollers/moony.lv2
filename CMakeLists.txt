@@ -4,7 +4,6 @@ project(lua.lv2)
 
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/tlsf-3.0)
-include_directories(${PROJECT_SOURCE_DIR}/libosc)
 include_directories(${PROJECT_SOURCE_DIR}/eo_ui.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/lua.embed)
 include_directories(${PROJECT_BINARY_DIR})
@@ -56,8 +55,6 @@ add_library(lua MODULE
 	lua_axc.c
 
 	tlsf-3.0/tlsf.c
-
-	libosc/osc.c
 
 	lua.embed/lapi.c
 	lua.embed/lcode.c

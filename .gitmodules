@@ -1,6 +1,3 @@
 [submodule "eo_ui.lv2"]
 	path = eo_ui.lv2
 	url = https://github.com/OpenMusicKontrollers/eo_ui.lv2.git
-[submodule "libosc"]
-	path = libosc
-	url = https://github.com/OpenMusicKontrollers/libosc.git
