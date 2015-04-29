@@ -47,8 +47,8 @@ flex_target(encoder encoder.l ${PROJECT_BINARY_DIR}/encoder.c
 
 add_library(lua MODULE
 	lua_lv2.c
-	lua_control.c
-	lua_atom.c
+	lua_cxc.c
+	lua_axa.c
 
 	tlsf-3.0/tlsf.c
 
@@ -98,7 +98,6 @@ endif()
 target_link_libraries(lua ${LIBS} "-lm")
 set_target_properties(lua PROPERTIES PREFIX "")
 install(TARGETS lua DESTINATION ${DEST})
-
 
 option(BUILD_UI "Build UI" ON)
 if(${BUILD_UI})

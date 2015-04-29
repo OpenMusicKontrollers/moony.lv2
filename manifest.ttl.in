@@ -31,7 +31,8 @@ kx:Widget
 kx:Host
 	a lv2:Feature .
 
-lua:control
+# control in, control out
+lua:c1xc1
 	a lv2:Plugin ;
 	lv2:binary <lua@LIB_EXT@> ;
 	ui:ui lua:common_eo ;
@@ -40,7 +41,7 @@ lua:control
 	ui:ui lua:common_kx ;
 	rdfs:seeAlso <lua.ttl> .
 
-lua:atom
+lua:c2xc2
 	a lv2:Plugin ;
 	lv2:binary <lua@LIB_EXT@> ;
 	ui:ui lua:common_eo ;
@@ -49,6 +50,100 @@ lua:atom
 	ui:ui lua:common_kx ;
 	rdfs:seeAlso <lua.ttl> .
 
+lua:c4xc4
+	a lv2:Plugin ;
+	lv2:binary <lua@LIB_EXT@> ;
+	ui:ui lua:common_eo ;
+	ui:ui lua:common_ui ;
+	ui:ui lua:common_x11 ;
+	ui:ui lua:common_kx ;
+	rdfs:seeAlso <lua.ttl> .
+
+# atom in, atom out
+lua:a1xa1
+	a lv2:Plugin ;
+	lv2:binary <lua@LIB_EXT@> ;
+	ui:ui lua:common_eo ;
+	ui:ui lua:common_ui ;
+	ui:ui lua:common_x11 ;
+	ui:ui lua:common_kx ;
+	rdfs:seeAlso <lua.ttl> .
+
+lua:a2xa2
+	a lv2:Plugin ;
+	lv2:binary <lua@LIB_EXT@> ;
+	ui:ui lua:common_eo ;
+	ui:ui lua:common_ui ;
+	ui:ui lua:common_x11 ;
+	ui:ui lua:common_kx ;
+	rdfs:seeAlso <lua.ttl> .
+
+lua:a4xa4
+	a lv2:Plugin ;
+	lv2:binary <lua@LIB_EXT@> ;
+	ui:ui lua:common_eo ;
+	ui:ui lua:common_ui ;
+	ui:ui lua:common_x11 ;
+	ui:ui lua:common_kx ;
+	rdfs:seeAlso <lua.ttl> .
+
+## atom in, control out
+#lua:a1xc1
+#	a lv2:Plugin ;
+#	lv2:binary <lua@LIB_EXT@> ;
+#	ui:ui lua:common_eo ;
+#	ui:ui lua:common_ui ;
+#	ui:ui lua:common_x11 ;
+#	ui:ui lua:common_kx ;
+#	rdfs:seeAlso <lua.ttl> .
+#
+#lua:a1xc2
+#	a lv2:Plugin ;
+#	lv2:binary <lua@LIB_EXT@> ;
+#	ui:ui lua:common_eo ;
+#	ui:ui lua:common_ui ;
+#	ui:ui lua:common_x11 ;
+#	ui:ui lua:common_kx ;
+#	rdfs:seeAlso <lua.ttl> .
+#
+#lua:a1xc4
+#	a lv2:Plugin ;
+#	lv2:binary <lua@LIB_EXT@> ;
+#	ui:ui lua:common_eo ;
+#	ui:ui lua:common_ui ;
+#	ui:ui lua:common_x11 ;
+#	ui:ui lua:common_kx ;
+#	rdfs:seeAlso <lua.ttl> .
+#
+## control in, atom out
+#lua:c1xa1
+#	a lv2:Plugin ;
+#	lv2:binary <lua@LIB_EXT@> ;
+#	ui:ui lua:common_eo ;
+#	ui:ui lua:common_ui ;
+#	ui:ui lua:common_x11 ;
+#	ui:ui lua:common_kx ;
+#	rdfs:seeAlso <lua.ttl> .
+#
+#lua:c2xa1
+#	a lv2:Plugin ;
+#	lv2:binary <lua@LIB_EXT@> ;
+#	ui:ui lua:common_eo ;
+#	ui:ui lua:common_ui ;
+#	ui:ui lua:common_x11 ;
+#	ui:ui lua:common_kx ;
+#	rdfs:seeAlso <lua.ttl> .
+#
+#lua:c4xa1
+#	a lv2:Plugin ;
+#	lv2:binary <lua@LIB_EXT@> ;
+#	ui:ui lua:common_eo ;
+#	ui:ui lua:common_ui ;
+#	ui:ui lua:common_x11 ;
+#	ui:ui lua:common_kx ;
+#	rdfs:seeAlso <lua.ttl> .
+
+# UI
 lua:common_eo
 	a ui:EoUI ;
 	ui:binary <lua_ui@LIB_EXT@> ;

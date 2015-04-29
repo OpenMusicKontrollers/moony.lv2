@@ -46,16 +46,42 @@
 #define LUA_COMMON_X11_URI	LUA_URI"#common_x11"
 #define LUA_COMMON_KX_URI		LUA_URI"#common_kx"
 
-#define LUA_CONTROL_URI			LUA_URI"#control"
-#define LUA_ATOM_URI				LUA_URI"#atom"
+#define LUA_C1XC1_URI				LUA_URI"#c1xc1"
+#define LUA_C2XC2_URI				LUA_URI"#c2xc2"
+#define LUA_C4XC4_URI				LUA_URI"#c4xc4"
 
-extern const LV2_Descriptor lv2_lua_control;
-extern const LV2_Descriptor lv2_lua_atom;
+#define LUA_A1XA1_URI				LUA_URI"#a1xa1"
+#define LUA_A2XA2_URI				LUA_URI"#a2xa2"
+#define LUA_A4XA4_URI				LUA_URI"#a4xa4"
 
-extern const LV2UI_Descriptor lv2_lua_common_eo;
-extern const LV2UI_Descriptor lv2_lua_common_ui;
-extern const LV2UI_Descriptor lv2_lua_common_x11;
-extern const LV2UI_Descriptor lv2_lua_common_kx;
+#define LUA_A1XC1_URI				LUA_URI"#a1xc1"
+#define LUA_A1XC2_URI				LUA_URI"#a1xc2"
+#define LUA_A1XC4_URI				LUA_URI"#a1xc4"
+
+#define LUA_C1XA1_URI				LUA_URI"#c1xa1"
+#define LUA_C2XA1_URI				LUA_URI"#c2xa1"
+#define LUA_C4XA1_URI				LUA_URI"#c4xa1"
+
+extern const LV2_Descriptor c1xc1;
+extern const LV2_Descriptor c2xc2;
+extern const LV2_Descriptor c4xc4;
+
+extern const LV2_Descriptor a1xa1;
+extern const LV2_Descriptor a2xa2;
+extern const LV2_Descriptor a4xa4;
+
+extern const LV2_Descriptor a1xc1;
+extern const LV2_Descriptor a1xc2;
+extern const LV2_Descriptor a1xc4;
+
+extern const LV2_Descriptor c1xa1;
+extern const LV2_Descriptor c2xa1;
+extern const LV2_Descriptor c4xa1;
+
+extern const LV2UI_Descriptor common_eo;
+extern const LV2UI_Descriptor common_ui;
+extern const LV2UI_Descriptor common_x11;
+extern const LV2UI_Descriptor common_kx;
 
 typedef struct _Lua_VM Lua_VM;
 

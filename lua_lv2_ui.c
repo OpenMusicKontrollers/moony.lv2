@@ -23,13 +23,13 @@ lv2ui_descriptor(uint32_t index)
 	switch(index)
 	{
 		case 0:
-			return &lv2_lua_common_eo;
+			return &common_eo;
 		case 1:
-			return &lv2_lua_common_ui;
+			return &common_ui;
 		case 2:
-			return &lv2_lua_common_x11;
+			return &common_x11;
 		case 3:
-			return &lv2_lua_common_kx;
+			return &common_kx;
 		default:
 			return NULL;
 	}

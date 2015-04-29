@@ -208,9 +208,35 @@ lv2_descriptor(uint32_t index)
 	switch(index)
 	{
 		case 0:
-			return &lv2_lua_control;
+			return &c1xc1;
 		case 1:
-			return &lv2_lua_atom;
+			return &c2xc2;
+		case 2:
+			return &c4xc4;
+
+		case 3:
+			return &a1xa1;
+		case 4:
+			return &a2xa2;
+		case 5:
+			return &a4xa4;
+
+/*
+		case 6:
+			return &a1xc1;
+		case 7:
+			return &a1xc2;
+		case 8:
+			return &a1xc4;
+
+		case 9:
+			return &c1xa1;
+		case 10:
+			return &c2xa1;
+		case 11:
+			return &c4xa1;
+*/
+
 		default:
 			return NULL;
 	}

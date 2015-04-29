@@ -79,21 +79,39 @@ struct _Handle {
 	volatile int dirty_out;
 	char error [1024];
 
-	const LV2_Atom_Sequence *event_in;
-	LV2_Atom_Sequence *event_out;
+	int max_val;
+
+	const LV2_Atom_Sequence *event_in [4];
+	LV2_Atom_Sequence *event_out [4];
 
 	const LV2_Atom_Sequence *control;
 	LV2_Atom_Sequence *notify;
 
-	LV2_Atom_Forge forge;
+	LV2_Atom_Forge forge [4];
 };
 
-static const char *default_code =
+static const char *default_code [4] = {
 	"function run(seq, forge)\n"
 	"  for frames, atom in seq:foreach() do\n"
 	"    -- your code here\n"
 	"  end\n"
-	"end";
+	"end",
+	"function run(seq1, seq2, forge1, forge2)\n"
+	"  for frames, atom in seq1:foreach() do\n"
+	"    -- your code here\n"
+	"  end\n"
+	"end",
+	"function run(seq1, seq2, seq3, forge1, forge2, forge3)\n"
+	"  for frames, atom in seq1:foreach() do\n"
+	"    -- your code here\n"
+	"  end\n"
+	"end",
+	"function run(seq1, seq2, seq3, seq4, forge1, forge2, forge3, forge4)\n"
+	"  for frames, atom in seq1:foreach() do\n"
+	"    -- your code here\n"
+	"  end\n"
+	"end"
+};
 
 static LV2_State_Status
 state_save(LV2_Handle instance, LV2_State_Store_Function store,
@@ -106,7 +124,7 @@ state_save(LV2_Handle instance, LV2_State_Store_Function store,
 		handle->uris.lua_code,
 		handle->chunk,
 		strlen(handle->chunk)+1,
-		handle->forge.String,
+		handle->forge[0].String,
 		LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
 }
 
@@ -149,7 +167,7 @@ static void
 _latom_new(lua_State *L, const LV2_Atom *atom)
 {
 	Handle *handle = lua_touserdata(L, lua_upvalueindex(1));
-	LV2_Atom_Forge *forge = &handle->forge;
+	LV2_Atom_Forge *forge = &handle->forge[0];
 
 	if(atom->type == forge->Object)
 	{
@@ -508,7 +526,7 @@ static void
 _latom_value(lua_State *L, const LV2_Atom *atom)
 {
 	Handle *handle = lua_touserdata(L, lua_upvalueindex(1));
-	LV2_Atom_Forge *forge = &handle->forge;
+	LV2_Atom_Forge *forge = &handle->forge[0];
 
 	if(atom->type == forge->Int)
 		lua_pushinteger(L, ((const LV2_Atom_Int *)atom)->body);
@@ -915,7 +933,7 @@ luaopen_atom(Handle *handle, lua_State *L)
 	lua_pop(L, 1);
 
 #define SET_CONST(L, ID) \
-	lua_pushinteger(L, handle->forge.ID); \
+	lua_pushinteger(L, handle->forge[0].ID); \
 	lua_setfield(L, -2, #ID);
 
 	lua_newtable(L);
@@ -977,11 +995,21 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 	handle->uris.lua_error = handle->map->map(handle->map->handle, LUA_ERROR_URI);
 	handle->uris.midi_event = handle->map->map(handle->map->handle, LV2_MIDI__MidiEvent);
 
-	lv2_atom_forge_init(&handle->forge, handle->map);
-
 	if(lua_vm_init(&handle->lvm))
 		return NULL;
 	luaopen_atom(handle, handle->lvm.L);
+	
+	if(!strcmp(descriptor->URI, LUA_A1XA1_URI))
+		handle->max_val = 1;
+	else if(!strcmp(descriptor->URI, LUA_A2XA2_URI))
+		handle->max_val = 2;
+	else if(!strcmp(descriptor->URI, LUA_A4XA4_URI))
+		handle->max_val = 4;
+	else
+		; // never reached
+
+	for(int i=0; i<handle->max_val; i++)
+		lv2_atom_forge_init(&handle->forge[i], handle->map);
 
 	return handle;
 }
@@ -991,23 +1019,14 @@ connect_port(LV2_Handle instance, uint32_t port, void *data)
 {
 	Handle *handle = (Handle *)instance;
 
-	switch(port)
-	{
-		case 0:
-			handle->control = (const LV2_Atom_Sequence *)data;
-			break;
-		case 1:
-			handle->notify = (LV2_Atom_Sequence *)data;
-			break;
-		case 2:
-			handle->event_in = (const LV2_Atom_Sequence *)data;
-			break;
-		case 3:
-			handle->event_out = (LV2_Atom_Sequence *)data;
-			break;
-		default:
-			break;
-	}
+	if(port == 0)
+		handle->control = (const LV2_Atom_Sequence *)data;
+	else if(port == 1)
+		handle->notify = (LV2_Atom_Sequence *)data;
+	else if( (port - 2) < handle->max_val)
+		handle->event_in[port - 2] = (const LV2_Atom_Sequence *)data;
+	else if( (port - 2) < handle->max_val*2)
+		handle->event_out[port - 2 - handle->max_val] = (LV2_Atom_Sequence *)data;
 }
 
 static void
@@ -1016,7 +1035,7 @@ activate(LV2_Handle instance)
 	Handle *handle = (Handle *)instance;
 	
 	// load default chunk
-	handle->chunk = strdup(default_code);
+	handle->chunk = strdup(default_code[handle->max_val-1]);
 	luaL_dostring(handle->lvm.L, handle->chunk); // cannot fail
 
 	handle->dirty_out = 1; // trigger update of UI
@@ -1033,7 +1052,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 	{
 		const LV2_Atom *atom = &ev->body;
 
-		if(atom->type == handle->forge.String)
+		if(atom->type == handle->forge[0].String)
 		{
 			if(atom->size)
 			{
@@ -1057,7 +1076,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 
 			// load default code
 			free(handle->chunk);
-			handle->chunk = strdup(default_code);
+			handle->chunk = strdup(default_code[handle->max_val-1]);
 			luaL_dostring(handle->lvm.L, handle->chunk); // cannot fail
 		}
 
@@ -1065,30 +1084,39 @@ run(LV2_Handle instance, uint32_t nsamples)
 	}
 
 	// prepare event_out sequence
-	uint32_t capacity = handle->event_out->atom.size;
-	LV2_Atom_Forge *forge = &handle->forge;
-	LV2_Atom_Forge_Frame frame;
-	lv2_atom_forge_set_buffer(forge, (uint8_t *)handle->event_out, capacity);
-	lv2_atom_forge_sequence_head(forge, &frame, 0);
+	LV2_Atom_Forge_Frame frame [4];
+
+	for(int i=0; i<handle->max_val; i++)
+	{
+		uint32_t capacity = handle->event_out[i]->atom.size;
+		lv2_atom_forge_set_buffer(&handle->forge[i], (uint8_t *)handle->event_out[i], capacity);
+		lv2_atom_forge_sequence_head(&handle->forge[i], &frame[i], 0);
+	}
 
 	// run
 	lua_getglobal(L, "run");
 	if(lua_isfunction(L, -1))
 	{
 		// push sequence
-		lseq_t *lseq = lua_newuserdata(handle->lvm.L, sizeof(lseq_t));
-		lseq->seq = handle->event_in;
-		lseq->itr = NULL;
-		luaL_getmetatable(L, "lseq");
-		lua_setmetatable(L, -2);
+		for(int i=0; i<handle->max_val; i++)
+		{
+			lseq_t *lseq = lua_newuserdata(handle->lvm.L, sizeof(lseq_t));
+			lseq->seq = handle->event_in[i];
+			lseq->itr = NULL;
+			luaL_getmetatable(L, "lseq");
+			lua_setmetatable(L, -2);
+		}
 
 		// push forge
-		lforge_t *lforge = lua_newuserdata(handle->lvm.L, sizeof(lforge_t));
-		lforge->forge = forge;
-		luaL_getmetatable(L, "lforge");
-		lua_setmetatable(L, -2);
+		for(int i=0; i<handle->max_val; i++)
+		{
+			lforge_t *lforge = lua_newuserdata(handle->lvm.L, sizeof(lforge_t));
+			lforge->forge = &handle->forge[i];
+			luaL_getmetatable(L, "lforge");
+			lua_setmetatable(L, -2);
+		}
 			
-		if(lua_pcall(L, 2, 0, 0))
+		if(lua_pcall(L, 2*handle->max_val, 0, 0))
 		{
 			printf("runtime error\n");
 			strcpy(handle->error, lua_tostring(L, -1));
@@ -1096,7 +1124,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 
 			// load default code
 			free(handle->chunk);
-			handle->chunk = strdup(default_code);
+			handle->chunk = strdup(default_code[handle->max_val-1]);
 			luaL_dostring(handle->lvm.L, handle->chunk); // cannot fail
 		}
 	}
@@ -1104,12 +1132,17 @@ run(LV2_Handle instance, uint32_t nsamples)
 		lua_pop(L, 1);
 
 	lua_gc(L, LUA_GCSTEP, 0);
-	lv2_atom_forge_pop(forge, &frame);
+
+	for(int i=0; i<handle->max_val; i++)
+		lv2_atom_forge_pop(&handle->forge[i], &frame[i]);
 
 	// prepare notify atom forge
-	capacity = handle->notify->atom.size;
+	LV2_Atom_Forge *forge = &handle->forge[0];
+	LV2_Atom_Forge_Frame notify_frame;
+
+	uint32_t capacity = handle->notify->atom.size;
 	lv2_atom_forge_set_buffer(forge, (uint8_t *)handle->notify, capacity);
-	lv2_atom_forge_sequence_head(forge, &frame, 0);
+	lv2_atom_forge_sequence_head(forge, &notify_frame, 0);
 	if(handle->dirty_out)
 	{
 		uint32_t len = strlen(handle->chunk) + 1;
@@ -1134,7 +1167,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 
 		handle->error[0] = '\0'; // reset flag
 	}
-	lv2_atom_forge_pop(forge, &frame);
+	lv2_atom_forge_pop(forge, &notify_frame);
 }
 
 static void
@@ -1164,8 +1197,30 @@ extension_data(const char* uri)
 		return NULL;
 }
 
-const LV2_Descriptor lv2_lua_atom = {
-	.URI						= LUA_ATOM_URI,
+const LV2_Descriptor a1xa1 = {
+	.URI						= LUA_A1XA1_URI,
+	.instantiate		= instantiate,
+	.connect_port		= connect_port,
+	.activate				= activate,
+	.run						= run,
+	.deactivate			= deactivate,
+	.cleanup				= cleanup,
+	.extension_data	= extension_data
+};
+
+const LV2_Descriptor a2xa2 = {
+	.URI						= LUA_A2XA2_URI,
+	.instantiate		= instantiate,
+	.connect_port		= connect_port,
+	.activate				= activate,
+	.run						= run,
+	.deactivate			= deactivate,
+	.cleanup				= cleanup,
+	.extension_data	= extension_data
+};
+
+const LV2_Descriptor a4xa4 = {
+	.URI						= LUA_A4XA4_URI,
 	.instantiate		= instantiate,
 	.connect_port		= connect_port,
 	.activate				= activate,

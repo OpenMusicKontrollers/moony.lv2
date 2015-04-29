@@ -175,18 +175,33 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	const LV2_Feature *const *features)
 {
 
-	if(		strcmp(plugin_uri, LUA_CONTROL_URI)
-		&&	strcmp(plugin_uri, LUA_ATOM_URI) )
+	if(		strcmp(plugin_uri, LUA_C1XC1_URI)
+		&&	strcmp(plugin_uri, LUA_C2XC2_URI)
+		&&	strcmp(plugin_uri, LUA_C4XC4_URI)
+
+		&&	strcmp(plugin_uri, LUA_A1XA1_URI)
+		&&	strcmp(plugin_uri, LUA_A2XA2_URI)
+		&&	strcmp(plugin_uri, LUA_A4XA4_URI)
+
+		&&	strcmp(plugin_uri, LUA_A1XC1_URI)
+		&&	strcmp(plugin_uri, LUA_A1XC2_URI)
+		&&	strcmp(plugin_uri, LUA_A1XC4_URI)
+
+		&&	strcmp(plugin_uri, LUA_C1XA1_URI)
+		&&	strcmp(plugin_uri, LUA_C2XA1_URI)
+		&&	strcmp(plugin_uri, LUA_C4XA1_URI) )
+	{
 		return NULL;
+	}
 
 	eo_ui_driver_t driver;
-	if(descriptor == &lv2_lua_common_eo)
+	if(descriptor == &common_eo)
 		driver = EO_UI_DRIVER_EO;
-	else if(descriptor == &lv2_lua_common_ui)
+	else if(descriptor == &common_ui)
 		driver = EO_UI_DRIVER_UI;
-	else if(descriptor == &lv2_lua_common_x11)
+	else if(descriptor == &common_x11)
 		driver = EO_UI_DRIVER_X11;
-	else if(descriptor == &lv2_lua_common_kx)
+	else if(descriptor == &common_kx)
 		driver = EO_UI_DRIVER_KX;
 	else
 		return NULL;
@@ -283,7 +298,7 @@ port_event(LV2UI_Handle handle, uint32_t i, uint32_t buffer_size,
 	}
 }
 
-const LV2UI_Descriptor lv2_lua_common_eo = {
+const LV2UI_Descriptor common_eo = {
 	.URI						= LUA_COMMON_EO_URI,
 	.instantiate		= instantiate,
 	.cleanup				= cleanup,
@@ -291,7 +306,7 @@ const LV2UI_Descriptor lv2_lua_common_eo = {
 	.extension_data	= eoui_eo_extension_data
 };
 
-const LV2UI_Descriptor lv2_lua_common_ui = {
+const LV2UI_Descriptor common_ui = {
 	.URI						= LUA_COMMON_UI_URI,
 	.instantiate		= instantiate,
 	.cleanup				= cleanup,
@@ -299,7 +314,7 @@ const LV2UI_Descriptor lv2_lua_common_ui = {
 	.extension_data	= eoui_ui_extension_data
 };
 
-const LV2UI_Descriptor lv2_lua_common_x11 = {
+const LV2UI_Descriptor common_x11 = {
 	.URI						= LUA_COMMON_X11_URI,
 	.instantiate		= instantiate,
 	.cleanup				= cleanup,
@@ -307,7 +322,7 @@ const LV2UI_Descriptor lv2_lua_common_x11 = {
 	.extension_data	= eoui_x11_extension_data
 };
 
-const LV2UI_Descriptor lv2_lua_common_kx = {
+const LV2UI_Descriptor common_kx = {
 	.URI						= LUA_COMMON_KX_URI,
 	.instantiate		= instantiate,
 	.cleanup				= cleanup,
