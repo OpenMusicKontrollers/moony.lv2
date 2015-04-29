@@ -83,9 +83,10 @@ extern const LV2UI_Descriptor common_ui;
 extern const LV2UI_Descriptor common_x11;
 extern const LV2UI_Descriptor common_kx;
 
-typedef struct _Lua_VM Lua_VM;
-
+// from lua_vm.c
 #define POOL_NUM 8
+
+typedef struct _Lua_VM Lua_VM;
 
 struct _Lua_VM {
 	tlsf_t tlsf;
@@ -107,6 +108,7 @@ void lua_vm_mem_free(void *area, size_t size);
 int lua_vm_mem_half_full(Lua_VM *lvm);
 int lua_vm_mem_extend(Lua_VM *lvm);
 
+// from encoder.l
 typedef void (*encoder_append_t)(const char *str, void *data);
 typedef struct _encoder_t encoder_t;
 
@@ -118,7 +120,37 @@ extern encoder_t *encoder;
 
 void lua_to_markup(const char *utf8);
 
+// from lua_atom.c
+typedef struct _lua_atom_t lua_atom_t;
+typedef struct _lseq_t lseq_t;
+typedef struct _lforge_t lforge_t;
 
+struct _lua_atom_t {
+	LV2_URID_Map *map;
+	LV2_URID_Unmap *unmap;
+	LV2_Atom_Forge forge;
+
+	struct {
+		LV2_URID lua_message;
+		LV2_URID lua_code;
+		LV2_URID lua_error;
+		LV2_URID midi_event;
+	} uris;
+};
+
+struct _lseq_t {
+	const LV2_Atom_Sequence *seq;
+	const LV2_Atom_Event *itr;
+};
+
+struct _lforge_t {
+	LV2_Atom_Forge *forge;
+};
+
+int lua_atom_init(lua_atom_t *lua_atom, const LV2_Feature *const *features);
+void lua_atom_open(lua_atom_t *lua_atom, lua_State *L);
+
+// strdup fallback for windows
 #if defined(_WIN32)
 static inline char *
 strndup(const char *s, size_t n)

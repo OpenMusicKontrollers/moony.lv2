@@ -47,8 +47,13 @@ flex_target(encoder encoder.l ${PROJECT_BINARY_DIR}/encoder.c
 
 add_library(lua MODULE
 	lua_lv2.c
+	lua_atom.c
+	lua_vm.c
+
 	lua_cxc.c
+	lua_cxa.c
 	lua_axa.c
+	lua_axc.c
 
 	tlsf-3.0/tlsf.c
 

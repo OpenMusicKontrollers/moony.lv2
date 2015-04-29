@@ -32,17 +32,20 @@ struct _Handle {
 
 	int max_val;
 
-	const float *val_in [4];
+	const LV2_Atom_Sequence *event_in;
 	float *val_out [4];
-	
+
 	const LV2_Atom_Sequence *control;
 	LV2_Atom_Sequence *notify;
 };
 
 static const char *default_code =
-	"function run(...)\n"
-	"  -- your code here\n"
-	"  return ...\n"
+	"function run(seq)\n"
+	"  for frames, atom in seq:foreach() do\n"
+	"    -- your code here\n"
+	"  end\n"
+	"\n"
+	"  return 1, 2, 3, 4\n"
 	"end";
 
 static LV2_State_Status
@@ -108,12 +111,13 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 		free(handle);
 		return NULL;
 	}
+	lua_atom_open(&handle->lua_atom, handle->lvm.L);
 	
-	if(!strcmp(descriptor->URI, LUA_C1XC1_URI))
+	if(!strcmp(descriptor->URI, LUA_A1XC1_URI))
 		handle->max_val = 1;
-	else if(!strcmp(descriptor->URI, LUA_C2XC2_URI))
+	else if(!strcmp(descriptor->URI, LUA_A1XC2_URI))
 		handle->max_val = 2;
-	else if(!strcmp(descriptor->URI, LUA_C4XC4_URI))
+	else if(!strcmp(descriptor->URI, LUA_A1XC4_URI))
 		handle->max_val = 4;
 	else
 		handle->max_val = 0; // never reached
@@ -130,10 +134,10 @@ connect_port(LV2_Handle instance, uint32_t port, void *data)
 		handle->control = (const LV2_Atom_Sequence *)data;
 	else if(port == 1)
 		handle->notify = (LV2_Atom_Sequence *)data;
-	else if( (port - 2) < handle->max_val)
-		handle->val_in[port - 2] = (const float *)data;
-	else if( (port - 2) < handle->max_val*2)
-		handle->val_out[port - 2 - handle->max_val] = (float *)data;
+	else if(port == 2)
+		handle->event_in = (const LV2_Atom_Sequence *)data;
+	else if( (port - 3) < handle->max_val)
+		handle->val_out[port - 3] = (float *)data;
 }
 
 static void
@@ -195,10 +199,14 @@ run(LV2_Handle instance, uint32_t nsamples)
 	lua_getglobal(L, "run");
 	if(lua_isfunction(L, -1))
 	{
-		for(int i=0; i<handle->max_val; i++)
-			lua_pushnumber(L, *handle->val_in[i]);
+		// push sequence
+		lseq_t *lseq = lua_newuserdata(handle->lvm.L, sizeof(lseq_t));
+		lseq->seq = handle->event_in;
+		lseq->itr = NULL;
+		luaL_getmetatable(L, "lseq");
+		lua_setmetatable(L, -2);
 
-		if(lua_pcall(L, handle->max_val, LUA_MULTRET, 0))
+		if(lua_pcall(L, 1, LUA_MULTRET, 0))
 		{
 			printf("runtime error\n");
 			strcpy(handle->error, lua_tostring(L, -1));
@@ -227,7 +235,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 	// prepare notify atom forge
 	LV2_Atom_Forge *forge = &handle->lua_atom.forge;
 	LV2_Atom_Forge_Frame notify_frame;
-	
+
 	uint32_t capacity = handle->notify->atom.size;
 	lv2_atom_forge_set_buffer(forge, (uint8_t *)handle->notify, capacity);
 	lv2_atom_forge_sequence_head(forge, &notify_frame, 0);
@@ -285,8 +293,8 @@ extension_data(const char* uri)
 		return NULL;
 }
 
-const LV2_Descriptor c1xc1 = {
-	.URI						= LUA_C1XC1_URI,
+const LV2_Descriptor a1xc1 = {
+	.URI						= LUA_A1XC1_URI,
 	.instantiate		= instantiate,
 	.connect_port		= connect_port,
 	.activate				= activate,
@@ -296,8 +304,8 @@ const LV2_Descriptor c1xc1 = {
 	.extension_data	= extension_data
 };
 
-const LV2_Descriptor c2xc2 = {
-	.URI						= LUA_C2XC2_URI,
+const LV2_Descriptor a1xc2 = {
+	.URI						= LUA_A1XC2_URI,
 	.instantiate		= instantiate,
 	.connect_port		= connect_port,
 	.activate				= activate,
@@ -307,8 +315,8 @@ const LV2_Descriptor c2xc2 = {
 	.extension_data	= extension_data
 };
 
-const LV2_Descriptor c4xc4 = {
-	.URI						= LUA_C4XC4_URI,
+const LV2_Descriptor a1xc4 = {
+	.URI						= LUA_A1XC4_URI,
 	.instantiate		= instantiate,
 	.connect_port		= connect_port,
 	.activate				= activate,
