@@ -352,6 +352,14 @@ _lobj__index(lua_State *L)
 		{
 			lua_pushinteger(L, lobj->obj->atom.type);
 		}
+		else if(!strcmp(key, "id"))
+		{
+			lua_pushinteger(L, lobj->obj->body.id);
+		}
+		else if(!strcmp(key, "otype"))
+		{
+			lua_pushinteger(L, lobj->obj->body.otype);
+		}
 		else // look in metatable
 		{
 			lua_getmetatable(L, 1);

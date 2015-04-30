@@ -102,6 +102,7 @@ enum {
 	TK_LONG_COMMENT_IN,
 	TK_LONG_COMMENT_OUT,
 	TK_WHITESPACE,
+	TK_TAB,
 	TK_NEWLINE,
 	TK_BRACE,
 	TK_RAW,
@@ -296,8 +297,7 @@ checkKw(char*s)
 
 %option reentrant noyywrap
 
-w              [ \t\v\a]+
-o              [ \t\v\a]*
+w              [ \v\a]+
 name           [_a-zA-Z][_a-zA-Z0-9\.]*
 n              [0-9]+
 exp            [Ee][+-]?{n}
@@ -323,6 +323,7 @@ brace					 [\(\)\[\]\{\}]
 "[["    			 BEGIN(XLONGSTRING); return TK_LONG_STRING_IN;
 "--"           BEGIN( XSHORTCOMMENT); return TK_SHORT_COMMENT_IN;
 {w}            return TK_WHITESPACE;
+"\t"           return TK_TAB;
 \"             BEGIN(XSTRINGQ); return TK_DOUBLE_QUOTE_IN;
 '              BEGIN(XSTRINGA); return TK_SINGLE_QUOTE_IN;
 "..."          return TK_DOTS;
@@ -510,6 +511,10 @@ lua_to_markup(const char *utf8, FILE *f)
 				break;
 			case TK_GT:
 				_add_plain("&gt;");
+				break;
+
+			case TK_TAB:
+				_add_plain("  ");
 				break;
 
 			case TK_NAME:
