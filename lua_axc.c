@@ -39,14 +39,33 @@ struct _Handle {
 	LV2_Atom_Sequence *notify;
 };
 
-static const char *default_code =
+static const char *default_code [4] = {
 	"function run(seq)\n"
 	"  for frames, atom in seq:foreach() do\n"
 	"    -- your code here\n"
 	"  end\n"
 	"\n"
-	"  return 1, 2, 3, 4\n"
-	"end";
+	"  return 0.0\n"
+	"end",
+
+	"function run(seq)\n"
+	"  for frames, atom in seq:foreach() do\n"
+	"    -- your code here\n"
+	"  end\n"
+	"\n"
+	"  return 0.0, 0.0\n"
+	"end",
+
+	NULL,
+
+	"function run(seq)\n"
+	"  for frames, atom in seq:foreach() do\n"
+	"    -- your code here\n"
+	"  end\n"
+	"\n"
+	"  return 0.0, 0.0, 0.0, 0.0\n"
+	"end"
+};
 
 static LV2_State_Status
 state_save(LV2_Handle instance, LV2_State_Store_Function store,
@@ -146,7 +165,7 @@ activate(LV2_Handle instance)
 	Handle *handle = (Handle *)instance;
 	
 	// load default chunk
-	handle->chunk = strdup(default_code);
+	handle->chunk = strdup(default_code[handle->max_val-1]);
 	luaL_dostring(handle->lvm.L, handle->chunk); // cannot fail
 
 	handle->dirty_out = 1; // trigger update of UI
@@ -187,7 +206,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 
 			// load default code
 			free(handle->chunk);
-			handle->chunk = strdup(default_code);
+			handle->chunk = strdup(default_code[handle->max_val-1]);
 			luaL_dostring(handle->lvm.L, handle->chunk); // cannot fail
 		}
 
@@ -214,7 +233,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 
 			// load default code
 			free(handle->chunk);
-			handle->chunk = strdup(default_code);
+			handle->chunk = strdup(default_code[handle->max_val-1]);
 			luaL_dostring(handle->lvm.L, handle->chunk); // cannot fail
 		}
 

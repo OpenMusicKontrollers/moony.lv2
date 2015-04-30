@@ -39,11 +39,24 @@ struct _Handle {
 	LV2_Atom_Sequence *notify;
 };
 
-static const char *default_code =
-	"function run(...)\n"
+static const char *default_code [4] = {
+	"function run(a)\n"
 	"  -- your code here\n"
-	"  return ...\n"
-	"end";
+	"  return a\n"
+	"end",
+
+	"function run(a, b)\n"
+	"  -- your code here\n"
+	"  return a, b\n"
+	"end",
+
+	NULL,
+
+	"function run(a, b, c, d)\n"
+	"  -- your code here\n"
+	"  return a, b, c, d\n"
+	"end"
+};
 
 static LV2_State_Status
 state_save(LV2_Handle instance, LV2_State_Store_Function store,
@@ -142,7 +155,7 @@ activate(LV2_Handle instance)
 	Handle *handle = (Handle *)instance;
 	
 	// load default chunk
-	handle->chunk = strdup(default_code);
+	handle->chunk = strdup(default_code[handle->max_val-1]);
 	luaL_dostring(handle->lvm.L, handle->chunk); // cannot fail
 
 	handle->dirty_out = 1; // trigger update of UI
@@ -183,7 +196,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 
 			// load default code
 			free(handle->chunk);
-			handle->chunk = strdup(default_code);
+			handle->chunk = strdup(default_code[handle->max_val-1]);
 			luaL_dostring(handle->lvm.L, handle->chunk); // cannot fail
 		}
 
@@ -206,7 +219,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 
 			// load default code
 			free(handle->chunk);
-			handle->chunk = strdup(default_code);
+			handle->chunk = strdup(default_code[handle->max_val-1]);
 			luaL_dostring(handle->lvm.L, handle->chunk); // cannot fail
 		}
 

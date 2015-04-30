@@ -47,14 +47,29 @@ static const char *default_code [4] = {
 	"    -- your code here\n"
 	"  end\n"
 	"end",
+
 	"function run(seq1, seq2, forge1, forge2)\n"
 	"  for frames, atom in seq1:foreach() do\n"
 	"    -- your code here\n"
 	"  end\n"
+	"  for frames, atom in seq2:foreach() do\n"
+	"    -- your code here\n"
+	"  end\n"
 	"end",
+
 	NULL,
+
 	"function run(seq1, seq2, seq3, seq4, forge1, forge2, forge3, forge4)\n"
 	"  for frames, atom in seq1:foreach() do\n"
+	"    -- your code here\n"
+	"  end\n"
+	"  for frames, atom in seq2:foreach() do\n"
+	"    -- your code here\n"
+	"  end\n"
+	"  for frames, atom in seq3:foreach() do\n"
+	"    -- your code here\n"
+	"  end\n"
+	"  for frames, atom in seq4:foreach() do\n"
 	"    -- your code here\n"
 	"  end\n"
 	"end"
