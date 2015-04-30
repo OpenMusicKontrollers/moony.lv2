@@ -373,12 +373,28 @@ brace					 [\(\)\[\]\{\}]
 %%
 
 void
-lua_to_markup(const char *utf8)
+lua_to_markup(const char *utf8, FILE *f)
 {
 	yyscan_t scanner;
 	YY_BUFFER_STATE buf;
+
 	enclex_init(&scanner);
-	buf = enc_scan_string(utf8, scanner);
+	if(utf8)
+	{
+		buf = enc_scan_string(utf8, scanner);
+	}
+	else if(f)
+	{
+		encset_in(f, scanner);
+		buf = enc_create_buffer(NULL, YY_BUF_SIZE, scanner);
+	}
+	else
+	{
+		enclex_destroy(scanner);
+		return;
+	}
+				
+	_add_markup_begin("code");
 
 	for(int tok=enclex(scanner); tok; tok=enclex(scanner))
 	{
@@ -504,6 +520,8 @@ lua_to_markup(const char *utf8)
 				break;
 		}
 	}
+				
+	_add_markup_end("code");
 
 	enc_delete_buffer(buf, scanner);
 	enclex_destroy(scanner);

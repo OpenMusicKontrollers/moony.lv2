@@ -118,7 +118,7 @@ struct _encoder_t {
 };
 extern encoder_t *encoder;
 
-void lua_to_markup(const char *utf8);
+void lua_to_markup(const char *utf8, FILE *f);
 
 // from lua_atom.c
 typedef struct _lua_atom_t lua_atom_t;

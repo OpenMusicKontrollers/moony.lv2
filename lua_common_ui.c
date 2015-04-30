@@ -45,8 +45,11 @@ struct _UI {
 
 	int w, h;
 	Evas_Object *vbox;
+	Evas_Object *hbox;
 	Evas_Object *entry;
 	Evas_Object *error;
+	Evas_Object *load;
+	Evas_Object *save;
 	Evas_Object *compile;
 };
 
@@ -59,6 +62,65 @@ _lua_markup(void *data, Evas_Object *entry, char **txt)
 		free(*txt);
 		*txt = strdup("  ");
 	}
+}
+
+static void
+_encoder_append(const char *str, void *data)
+{
+	UI *ui = data;
+
+	elm_entry_entry_append(ui->entry, str);
+}
+
+static encoder_t enc = {
+	.append = _encoder_append,
+	.data = NULL
+};
+encoder_t *encoder = &enc;
+
+static void
+_load_chosen(void *data, Evas_Object *obj, void *event_info)
+{
+	UI *ui = data;
+
+	const char *path = event_info;
+	if(!path)
+		return;
+	
+	// load file
+	FILE *f = fopen(path, "rb");
+	if(f)
+	{
+		elm_entry_entry_set(ui->entry, "");
+		enc.data = ui;
+		lua_to_markup(NULL, f);
+		elm_entry_cursor_pos_set(ui->entry, 0);
+	}
+	fclose(f);
+}
+
+static void
+_save_chosen(void *data, Evas_Object *obj, void *event_info)
+{
+	UI *ui = data;
+
+	const char *path = event_info;
+	if(!path)
+		return;
+	
+	// get code from entry
+	const char *chunk = elm_entry_entry_get(ui->entry);
+	char *utf8 = elm_entry_markup_to_utf8(chunk);
+	uint32_t size = strlen(utf8);
+
+	// save to file
+	FILE *f = fopen(path, "wb");
+	if(f)
+		fwrite(utf8, size, 1, f);
+	fclose(f);
+
+	// cleanup
+	free(utf8);
 }
 
 static void
@@ -92,20 +154,6 @@ _compile_clicked(void *data, Evas_Object *obj, void *event_info)
 }
 
 static void
-_encoder_append(const char *str, void *data)
-{
-	UI *ui = data;
-
-	elm_entry_entry_append(ui->entry, str);
-}
-
-static encoder_t enc = {
-	.append = _encoder_append,
-	.data = NULL
-};
-encoder_t *encoder = &enc;
-
-static void
 _changed(void *data, Evas_Object *obj, void *event_info)
 {
 	UI *ui = data;
@@ -113,13 +161,12 @@ _changed(void *data, Evas_Object *obj, void *event_info)
 	int pos = elm_entry_cursor_pos_get(ui->entry);
 	const char *chunk = elm_entry_entry_get(ui->entry);
 	char *utf8 = elm_entry_markup_to_utf8(chunk);
-	elm_entry_entry_set(ui->entry, "<code>");
 
+	elm_entry_entry_set(ui->entry, "");
 	enc.data = ui;
-	lua_to_markup(utf8);
-
-	elm_entry_entry_append(ui->entry, "</code>");
+	lua_to_markup(utf8, NULL);
 	elm_entry_cursor_pos_set(ui->entry, pos);
+
 	free(utf8);
 }
 
@@ -134,6 +181,7 @@ _content_get(eo_ui_t *eoui)
 	elm_box_padding_set(ui->vbox, 0, 0);
 	
 	ui->entry = elm_entry_add(ui->vbox);
+	elm_entry_autosave_set(ui->entry, EINA_FALSE);
 	elm_entry_entry_set(ui->entry, "");
 	elm_entry_single_line_set(ui->entry, EINA_FALSE);
 	elm_entry_scrollable_set(ui->entry, EINA_TRUE);
@@ -157,13 +205,44 @@ _content_get(eo_ui_t *eoui)
 	evas_object_size_hint_align_set(ui->error, EVAS_HINT_FILL, EVAS_HINT_FILL);
 	evas_object_show(ui->error);
 	elm_box_pack_end(ui->vbox, ui->error);
+	
+	ui->hbox = elm_box_add(eoui->win);
+	elm_box_horizontal_set(ui->hbox, EINA_TRUE);
+	elm_box_homogeneous_set(ui->hbox, EINA_TRUE);
+	elm_box_padding_set(ui->hbox, 0, 0);
+	evas_object_size_hint_align_set(ui->hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
+	evas_object_show(ui->hbox);
+	elm_box_pack_end(ui->vbox, ui->hbox);
 
-	ui->compile = elm_button_add(ui->vbox);
-	elm_object_part_text_set(ui->compile, "default", "Inject");
+	ui->load = elm_fileselector_button_add(ui->hbox);
+	elm_fileselector_button_inwin_mode_set(ui->load, EINA_FALSE);
+	elm_fileselector_button_window_title_set(ui->load, "Load Lua script from file");
+	elm_fileselector_is_save_set(ui->save, EINA_FALSE);
+	elm_object_part_text_set(ui->load, "default", "Load");
+	evas_object_smart_callback_add(ui->load, "file,chosen", _load_chosen, ui);
+	evas_object_size_hint_weight_set(ui->load, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+	evas_object_size_hint_align_set(ui->load, EVAS_HINT_FILL, EVAS_HINT_FILL);
+	evas_object_show(ui->load);
+	elm_box_pack_end(ui->hbox, ui->load);
+
+	ui->save = elm_fileselector_button_add(ui->hbox);
+	elm_fileselector_button_inwin_mode_set(ui->save, EINA_FALSE);
+	elm_fileselector_button_window_title_set(ui->save, "Save Lua script to file");
+	elm_fileselector_is_save_set(ui->save, EINA_TRUE);
+	elm_object_part_text_set(ui->save, "default", "Save");
+	evas_object_smart_callback_add(ui->save, "file,chosen", _save_chosen, ui);
+	evas_object_size_hint_weight_set(ui->save, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+	evas_object_size_hint_align_set(ui->save, EVAS_HINT_FILL, EVAS_HINT_FILL);
+	evas_object_show(ui->save);
+	elm_box_pack_end(ui->hbox, ui->save);
+
+	ui->compile = elm_button_add(ui->hbox);
+	elm_object_part_text_set(ui->compile, "default", "Compile");
 	evas_object_smart_callback_add(ui->compile, "clicked", _compile_clicked, ui);
+	evas_object_size_hint_weight_set(ui->compile, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
 	evas_object_size_hint_align_set(ui->compile, EVAS_HINT_FILL, EVAS_HINT_FILL);
 	evas_object_show(ui->compile);
-	elm_box_pack_end(ui->vbox, ui->compile);
+	elm_box_pack_end(ui->hbox, ui->compile);
 
 	return ui->vbox;
 }
@@ -281,12 +360,11 @@ port_event(LV2UI_Handle handle, uint32_t i, uint32_t buffer_size,
 		if(prop->key == ui->uris.lua_code)
 		{
 			const char *chunk = LV2_ATOM_BODY_CONST(&prop->value);
-			elm_entry_entry_set(ui->entry, "<code>");
 
+			elm_entry_entry_set(ui->entry, "");
 			enc.data = ui;
-			lua_to_markup(chunk);
-
-			elm_entry_entry_append(ui->entry, "</code>");
+			lua_to_markup(chunk, NULL);
+			elm_entry_cursor_pos_set(ui->entry, 0);
 		}
 		else if(prop->key == ui->uris.lua_error)
 		{
