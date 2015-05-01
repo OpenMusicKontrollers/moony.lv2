@@ -292,11 +292,31 @@ _ltuple_foreach(lua_State *L)
 	return 2;
 }
 
+static int
+_ltuple_unpack(lua_State *L)
+{
+	lua_atom_t *lua_atom = lua_touserdata(L, lua_upvalueindex(1));
+	ltuple_t *ltuple = luaL_checkudata(L, 1, "ltuple");
+
+	uint32_t count = 0;
+	LV2_ATOM_TUPLE_FOREACH(ltuple->tuple, atom)
+	{
+		// push atom
+		_latom_new(L, atom);
+
+		// increase counter
+		count++;
+	}
+
+	return count;
+}
+
 static const luaL_Reg ltuple_mt [] = {
 	{"__index", _ltuple__index},
 	{"__len", _ltuple__len},
 	{"__tostring", _ltuple__tostring},
 	{"foreach", _ltuple_foreach},
+	{"unpack", _ltuple_unpack},
 	{NULL, NULL}
 };
 
