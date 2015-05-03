@@ -124,168 +124,189 @@ checkKw(char*s)
 	switch(*s)
 	{
 		case 'a':
-			CHECK(and,AND);
-			CHECK(assert,CALLER);
+			CHECK(and, AND);
+			CHECK(assert, CALLER);
 			break;
 		case 'b':
-			CHECK(break,BREAK);
+			CHECK(break, BREAK);
 			break;
 		case 'c':
-			CHECK(coroutine.running,CALLER);
-			CHECK(coroutine.create,CALLER);
-			CHECK(coroutine.yield,CALLER);
-			CHECK(coroutine.isyieldable,CALLER);
-			CHECK(coroutine.wrap,CALLER);
-			CHECK(coroutine.resume,CALLER);
-			CHECK(coroutine.status,CALLER);
+			CHECK(coroutine.running, CALLER);
+			CHECK(coroutine.create, CALLER);
+			CHECK(coroutine.yield, CALLER);
+			CHECK(coroutine.isyieldable, CALLER);
+			CHECK(coroutine.wrap, CALLER);
+			CHECK(coroutine.resume, CALLER);
+			CHECK(coroutine.status, CALLER);
 
-			CHECK(collectgarbage,CALLER);
+			CHECK(collectgarbage, CALLER);
 			break;
 		case 'd':
-			CHECK(dofile,CALLER);
-			CHECK(do,DO);
+			CHECK(dofile, CALLER);
+			CHECK(do, DO);
 			//TODO debug
 			break;
 		case 'e':
-			CHECK(elseif,ELSEIF);
-			CHECK(else,ELSE);
-			CHECK(end,END);
-			CHECK(error,CALLER);
+			CHECK(elseif, ELSEIF);
+			CHECK(else, ELSE);
+			CHECK(end, END);
+			CHECK(error, CALLER);
 			break;
 		case 'f':
-			CHECK(false,FALSE);
-			CHECK(for,FOR);
-			CHECK(function,FUNCTION);
+			CHECK(false, FALSE);
+			CHECK(for, FOR);
+			CHECK(function, FUNCTION);
 			break;
 		case 'g':
-			CHECK(getmetatable,CALLER);
+			CHECK(getmetatable, CALLER);
 			break;
 		case 'i':
-			CHECK(if,IF);
-			CHECK(in,IN);
-			CHECK(ipairs,CALLER);
+			CHECK(if, IF);
+			CHECK(in, IN);
+			CHECK(ipairs, CALLER);
 			//TODO io
 			break;
 		case 'l':
-			CHECK(local,LOCAL);
-			CHECK(load,CALLER);
-			CHECK(loadfile,CALLER);
+			CHECK(local, LOCAL);
+			CHECK(load, CALLER);
+			CHECK(loadfile, CALLER);
+			
+			CHECK(lv2.map, CALLER);
+			CHECK(lv2.unmap, CALLER);
+
+			CHECK(lv2.Bool, NUMBER);
+			CHECK(lv2.Chunk, NUMBER);
+			CHECK(lv2.Double, NUMBER);
+			CHECK(lv2.Float, NUMBER);
+			CHECK(lv2.Int, NUMBER);
+			CHECK(lv2.Long, NUMBER);
+			CHECK(lv2.Literal, NUMBER);
+			CHECK(lv2.Object, NUMBER);
+			CHECK(lv2.Path, NUMBER);
+			CHECK(lv2.Property, NUMBER);
+			CHECK(lv2.Sequence, NUMBER);
+			CHECK(lv2.String, NUMBER);
+			CHECK(lv2.Tuple, NUMBER);
+			CHECK(lv2.URI, NUMBER);
+			CHECK(lv2.URID, NUMBER);
+			CHECK(lv2.Vector, NUMBER);
+			CHECK(lv2.Midi, NUMBER);
 			break;
 		case 'm':
-			CHECK(math.frexp,CALLER)
-			CHECK(math.sqrt,CALLER)
-			CHECK(math.sinh,CALLER)
-			CHECK(math.tanh,CALLER)
-			CHECK(math.ult,CALLER)
-			CHECK(math.deg,CALLER)
-			CHECK(math.tointeger,CALLER)
-			CHECK(math.asin,CALLER)
-			CHECK(math.randomseed,CALLER)
-			CHECK(math.atan2,CALLER)
-			CHECK(math.floor,CALLER)
-			CHECK(math.max,CALLER)
-			CHECK(math.acos,CALLER)
-			CHECK(math.ceil,CALLER)
-			CHECK(math.modf,CALLER)
-			CHECK(math.huge,CALLER)
-			CHECK(math.min,CALLER)
-			CHECK(math.rad,CALLER)
-			CHECK(math.exp,CALLER)
-			CHECK(math.fmod,CALLER)
-			CHECK(math.type,CALLER)
-			CHECK(math.mininteger,CALLER)
-			CHECK(math.maxinteger,CALLER)
-			CHECK(math.random,CALLER)
-			CHECK(math.pi,CALLER)
-			CHECK(math.cos,CALLER)
-			CHECK(math.cosh,CALLER)
-			CHECK(math.abs,CALLER)
-			CHECK(math.log10,CALLER)
-			CHECK(math.tan,CALLER)
-			CHECK(math.ldexp,CALLER)
-			CHECK(math.sin,CALLER)
-			CHECK(math.pow,CALLER)
-			CHECK(math.log,CALLER)
-			CHECK(math.atan,CALLER)
+			CHECK(math.frexp, CALLER)
+			CHECK(math.sqrt, CALLER)
+			CHECK(math.sinh, CALLER)
+			CHECK(math.tanh, CALLER)
+			CHECK(math.ult, CALLER)
+			CHECK(math.deg, CALLER)
+			CHECK(math.tointeger, CALLER)
+			CHECK(math.asin, CALLER)
+			CHECK(math.randomseed, CALLER)
+			CHECK(math.atan2, CALLER)
+			CHECK(math.floor, CALLER)
+			CHECK(math.max, CALLER)
+			CHECK(math.acos, CALLER)
+			CHECK(math.ceil, CALLER)
+			CHECK(math.modf, CALLER)
+			CHECK(math.huge, CALLER)
+			CHECK(math.min, CALLER)
+			CHECK(math.rad, CALLER)
+			CHECK(math.exp, CALLER)
+			CHECK(math.fmod, CALLER)
+			CHECK(math.type, CALLER)
+			CHECK(math.mininteger, CALLER)
+			CHECK(math.maxinteger, CALLER)
+			CHECK(math.random, CALLER)
+			CHECK(math.pi, CALLER)
+			CHECK(math.cos, CALLER)
+			CHECK(math.cosh, CALLER)
+			CHECK(math.abs, CALLER)
+			CHECK(math.log10, CALLER)
+			CHECK(math.tan, CALLER)
+			CHECK(math.ldexp, CALLER)
+			CHECK(math.sin, CALLER)
+			CHECK(math.pow, CALLER)
+			CHECK(math.log, CALLER)
+			CHECK(math.atan, CALLER)
 			break;
 		case 'n':
-			CHECK(nil,NIL);
-			CHECK(not,NOT);
-			CHECK(next,CALLER);
+			CHECK(nil, NIL);
+			CHECK(not, NOT);
+			CHECK(next, CALLER);
 			break;
 		case 'o':
-			CHECK(or,OR);
+			CHECK(or, OR);
 			//TODO os
 			break;
 		case 'p':
-			CHECK(pairs,CALLER);
-			CHECK(print,CALLER);
-			CHECK(pcall,CALLER);
+			CHECK(pairs, CALLER);
+			CHECK(print, CALLER);
+			CHECK(pcall, CALLER);
 			//TODO package
 			break;
 		case 'r':
-			CHECK(repeat,REPEAT);
-			CHECK(return,RETURN);
-			CHECK(rawget,CALLER);
-			CHECK(rawset,CALLER);
-			CHECK(rawlen,CALLER);
-			CHECK(rawequal,CALLER);
-			CHECK(require,CALLER);
+			CHECK(repeat, REPEAT);
+			CHECK(return, RETURN);
+			CHECK(rawget, CALLER);
+			CHECK(rawset, CALLER);
+			CHECK(rawlen, CALLER);
+			CHECK(rawequal, CALLER);
+			CHECK(require, CALLER);
 			
-			CHECK(run,CALLER); // lua.lv2 specific
+			CHECK(run, CALLER); // lua.lv2 specific
 			break;
 		case 's':
-			CHECK(string.char,CALLER);
-			CHECK(string.gsub,CALLER);
-			CHECK(string.len,CALLER);
-			CHECK(string.byte,CALLER);
-			CHECK(string.format,CALLER);
-			CHECK(string.lower,CALLER);
-			CHECK(string.gmatch,CALLER);
-			CHECK(string.dump,CALLER);
-			CHECK(string.packsize,CALLER);
-			CHECK(string.pack,CALLER);
-			CHECK(string.unpack,CALLER);
-			CHECK(string.upper,CALLER);
-			CHECK(string.rep,CALLER);
-			CHECK(string.reverse,CALLER);
-			CHECK(string.sub,CALLER);
-			CHECK(string.match,CALLER);
-			CHECK(string.find,CALLER);
+			CHECK(string.char, CALLER);
+			CHECK(string.gsub, CALLER);
+			CHECK(string.len, CALLER);
+			CHECK(string.byte, CALLER);
+			CHECK(string.format, CALLER);
+			CHECK(string.lower, CALLER);
+			CHECK(string.gmatch, CALLER);
+			CHECK(string.dump, CALLER);
+			CHECK(string.packsize, CALLER);
+			CHECK(string.pack, CALLER);
+			CHECK(string.unpack, CALLER);
+			CHECK(string.upper, CALLER);
+			CHECK(string.rep, CALLER);
+			CHECK(string.reverse, CALLER);
+			CHECK(string.sub, CALLER);
+			CHECK(string.match, CALLER);
+			CHECK(string.find, CALLER);
 
-			CHECK(select,CALLER);
-			CHECK(setmetatable,CALLER);
+			CHECK(select, CALLER);
+			CHECK(setmetatable, CALLER);
 			break;
 		case 't':
-			CHECK(then,THEN);
-			CHECK(true,TRUE);
-			CHECK(type,CALLER);
-			CHECK(tonumber,CALLER);
-			CHECK(tostring,CALLER);
+			CHECK(then, THEN);
+			CHECK(true, TRUE);
+			CHECK(type, CALLER);
+			CHECK(tonumber, CALLER);
+			CHECK(tostring, CALLER);
 
-			CHECK(table.insert,CALLER);
-			CHECK(table.unpack,CALLER);
-			CHECK(table.concat,CALLER);
-			CHECK(table.move,CALLER);
-			CHECK(table.sort,CALLER);
-			CHECK(table.remove,CALLER);
-			CHECK(table.pack,CALLER);
+			CHECK(table.insert, CALLER);
+			CHECK(table.unpack, CALLER);
+			CHECK(table.concat, CALLER);
+			CHECK(table.move, CALLER);
+			CHECK(table.sort, CALLER);
+			CHECK(table.remove, CALLER);
+			CHECK(table.pack, CALLER);
 			break;
 		case 'u':
-			CHECK(until,UNTIL);
+			CHECK(until, UNTIL);
 
-			CHECK(utf8.offset,CALLER);
-			CHECK(utf8.charpattern,CALLER);
-			CHECK(utf8.codes,CALLER);
-			CHECK(utf8.len,CALLER);
-			CHECK(utf8.codepoint,CALLER);
-			CHECK(utf8.char,CALLER);
+			CHECK(utf8.offset, CALLER);
+			CHECK(utf8.charpattern, CALLER);
+			CHECK(utf8.codes, CALLER);
+			CHECK(utf8.len, CALLER);
+			CHECK(utf8.codepoint, CALLER);
+			CHECK(utf8.char, CALLER);
 			break;
 		case 'w':
-			CHECK(while,WHILE);
+			CHECK(while, WHILE);
 			break;
 		case 'x':
-			CHECK(xpcall,CALLER);
+			CHECK(xpcall, CALLER);
 			break;
 	}
 	
