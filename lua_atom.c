@@ -328,12 +328,13 @@ _lobj_foreach_itr(lua_State *L)
 	{
 		// push atom
 		lua_pushinteger(L, lobj->itr->key);
+		lua_pushinteger(L, lobj->itr->context);
 		_latom_new(L, &lobj->itr->value);
 	
 		// advance iterator
 		lobj->itr = lv2_atom_object_next(lobj->itr);
 
-		return 2;
+		return 3;
 	}
 
 	// end of sequence reached
