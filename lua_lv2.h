@@ -109,11 +109,15 @@ int lua_vm_mem_half_full(Lua_VM *lvm);
 int lua_vm_mem_extend(Lua_VM *lvm);
 
 // from encoder.l
+typedef void (*encoder_begin_t)(void *data);
 typedef void (*encoder_append_t)(const char *str, void *data);
+typedef void (*encoder_end_t)(void *data);
 typedef struct _encoder_t encoder_t;
 
 struct _encoder_t {
+	encoder_begin_t begin;
 	encoder_append_t append;
+	encoder_end_t end;
 	void *data;
 };
 extern encoder_t *encoder;

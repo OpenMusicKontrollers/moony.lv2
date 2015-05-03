@@ -395,6 +395,7 @@ lua_to_markup(const char *utf8, FILE *f)
 		return;
 	}
 				
+	encoder->begin(encoder->data);
 	_add_markup_begin("code");
 
 	for(int tok=enclex(scanner); tok; tok=enclex(scanner))
@@ -527,6 +528,7 @@ lua_to_markup(const char *utf8, FILE *f)
 	}
 				
 	_add_markup_end("code");
+	encoder->end(encoder->data);
 
 	enc_delete_buffer(buf, scanner);
 	enclex_destroy(scanner);

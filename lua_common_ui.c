@@ -51,6 +51,8 @@ struct _UI {
 	Evas_Object *load;
 	Evas_Object *save;
 	Evas_Object *compile;
+
+	char *chunk;
 };
 
 static void
@@ -65,15 +67,40 @@ _lua_markup(void *data, Evas_Object *entry, char **txt)
 }
 
 static void
+_encoder_begin(void *data)
+{
+	UI *ui = data;
+
+	ui->chunk = strdup("");
+}
+
+static void
 _encoder_append(const char *str, void *data)
 {
 	UI *ui = data;
 
-	elm_entry_entry_append(ui->entry, str);
+	size_t size = 0;
+	size += ui->chunk ? strlen(ui->chunk) : 0;
+	size += str ? strlen(str) + 1 : 0;
+
+	ui->chunk = realloc(ui->chunk, size);
+
+	strncat(ui->chunk, str, size);
+}
+
+static void
+_encoder_end(void *data)
+{
+	UI *ui = data;
+
+	elm_entry_entry_set(ui->entry, ui->chunk);
+	free(ui->chunk);
 }
 
 static encoder_t enc = {
+	.begin = _encoder_begin,
 	.append = _encoder_append,
+	.end = _encoder_end,
 	.data = NULL
 };
 encoder_t *encoder = &enc;
@@ -91,7 +118,6 @@ _load_chosen(void *data, Evas_Object *obj, void *event_info)
 	FILE *f = fopen(path, "rb");
 	if(f)
 	{
-		elm_entry_entry_set(ui->entry, "");
 		enc.data = ui;
 		lua_to_markup(NULL, f);
 		elm_entry_cursor_pos_set(ui->entry, 0);
@@ -162,7 +188,6 @@ _changed(void *data, Evas_Object *obj, void *event_info)
 	const char *chunk = elm_entry_entry_get(ui->entry);
 	char *utf8 = elm_entry_markup_to_utf8(chunk);
 
-	elm_entry_entry_set(ui->entry, "");
 	enc.data = ui;
 	lua_to_markup(utf8, NULL);
 	elm_entry_cursor_pos_set(ui->entry, pos);
@@ -361,7 +386,6 @@ port_event(LV2UI_Handle handle, uint32_t i, uint32_t buffer_size,
 		{
 			const char *chunk = LV2_ATOM_BODY_CONST(&prop->value);
 
-			elm_entry_entry_set(ui->entry, "");
 			enc.data = ui;
 			lua_to_markup(chunk, NULL);
 			elm_entry_cursor_pos_set(ui->entry, 0);
