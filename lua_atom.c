@@ -51,7 +51,6 @@ struct _latom_t {
 	const LV2_Atom *atom;
 };
 
-
 static void
 _latom_new(lua_State *L, const LV2_Atom *atom)
 {
@@ -454,15 +453,17 @@ _latom_value(lua_State *L, const LV2_Atom *atom)
 	else if(atom->type == forge->Double)
 		lua_pushnumber(L, ((const LV2_Atom_Double *)atom)->body);
 	else if(atom->type == forge->Bool)
-		lua_pushinteger(L, ((const LV2_Atom_Bool *)atom)->body);
+		lua_pushboolean(L, ((const LV2_Atom_Bool *)atom)->body);
 	else if(atom->type == forge->URID)
 		lua_pushinteger(L, ((const LV2_Atom_URID *)atom)->body);
 	else if(atom->type == forge->String)
-		lua_pushstring(L, LV2_ATOM_BODY_CONST(atom));
+		lua_pushstring(L, LV2_ATOM_CONTENTS_CONST(LV2_Atom_String, atom));
 	else if(atom->type == forge->URI)
-		lua_pushstring(L, LV2_ATOM_BODY_CONST(atom));
+		lua_pushstring(L, LV2_ATOM_CONTENTS_CONST(LV2_Atom_String, atom));
 	else if(atom->type == forge->Path)
-		lua_pushstring(L, LV2_ATOM_BODY_CONST(atom));
+		lua_pushstring(L, LV2_ATOM_CONTENTS_CONST(LV2_Atom_String, atom));
+	else if(atom->type == forge->Literal)
+		lua_pushstring(L, LV2_ATOM_CONTENTS_CONST(LV2_Atom_Literal, atom));
 	else if(atom->type == lua_atom->uris.midi_event)
 	{
 		const uint8_t *m = LV2_ATOM_BODY_CONST(atom);
@@ -480,6 +481,7 @@ _latom_value(lua_State *L, const LV2_Atom *atom)
 static int
 _latom__index(lua_State *L)
 {
+	lua_atom_t *lua_atom = lua_touserdata(L, lua_upvalueindex(1));
 	latom_t *latom = luaL_checkudata(L, 1, "latom");
 	const char *key = lua_tostring(L, 2);
 
@@ -487,6 +489,10 @@ _latom__index(lua_State *L)
 		lua_pushinteger(L, latom->atom->type);
 	else if(!strcmp(key, "value"))
 		_latom_value(L, latom->atom);
+	else if(!strcmp(key, "datatype") && (latom->atom->type == lua_atom->forge.Literal) )
+		lua_pushinteger(L, ((LV2_Atom_Literal *)latom->atom)->body.datatype);
+	else if(!strcmp(key, "lang") && (latom->atom->type == lua_atom->forge.Literal) )
+		lua_pushinteger(L, ((LV2_Atom_Literal *)latom->atom)->body.lang);
 	else // look in metatable
 	{
 		lua_getmetatable(L, 1);
@@ -500,9 +506,13 @@ _latom__index(lua_State *L)
 static int
 _latom__len(lua_State *L)
 {
+	lua_atom_t *lua_atom = lua_touserdata(L, lua_upvalueindex(1));
 	latom_t *latom = luaL_checkudata(L, 1, "latom");
 
-	lua_pushinteger(L, latom->atom->size);
+	if(latom->atom->type == lua_atom->forge.Literal)
+		lua_pushinteger(L, latom->atom->size - sizeof(LV2_Atom_Literal_Body));
+	else
+		lua_pushinteger(L, latom->atom->size);
 
 	return 1;
 }
@@ -561,6 +571,17 @@ _lforge_frame_time(lua_State *L)
 	int64_t val = luaL_checkinteger(L, 2);
 
 	lv2_atom_forge_frame_time(lforge->forge, val);
+
+	return 0;
+}
+
+static int
+_lforge_beat_time(lua_State *L)
+{
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	double val = luaL_checknumber(L, 2);
+
+	lv2_atom_forge_beat_time(lforge->forge, val);
 
 	return 0;
 }
@@ -639,6 +660,20 @@ _lforge_string(lua_State *L)
 	const char *val = luaL_checklstring(L, 2, &size);
 
 	lv2_atom_forge_string(lforge->forge, val, size);
+
+	return 0;
+}
+
+static int
+_lforge_literal(lua_State *L)
+{
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	size_t size;
+	const char *val = luaL_checklstring(L, 2, &size);
+	LV2_URID datatype = luaL_checkinteger(L, 3);
+	LV2_URID lang = luaL_checkinteger(L, 4);
+
+	lv2_atom_forge_literal(lforge->forge, val, size, datatype, lang);
 
 	return 0;
 }
@@ -729,6 +764,18 @@ _lforge_key(lua_State *L)
 }
 
 static int
+_lforge_property(lua_State *L)
+{
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	LV2_URID key = luaL_checkinteger(L, 2);
+	LV2_URID context = luaL_checkinteger(L, 3);
+
+	lv2_atom_forge_property_head(lforge->forge, key, context);
+
+	return 1;
+}
+
+static int
 _lforge_pop(lua_State *L)
 {
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
@@ -745,6 +792,7 @@ static const luaL_Reg lframe_mt [] = {
 
 static const luaL_Reg lforge_mt [] = {
 	{"frame_time", _lforge_frame_time},
+	{"beat_time", _lforge_beat_time},
 
 	{"int", _lforge_int},
 	{"long", _lforge_long},
@@ -753,6 +801,7 @@ static const luaL_Reg lforge_mt [] = {
 	{"bool", _lforge_bool},
 	{"urid", _lforge_urid},
 	{"string", _lforge_string},
+	{"literal", _lforge_literal},
 	{"uri", _lforge_uri},
 	{"path", _lforge_path},
 
@@ -762,8 +811,10 @@ static const luaL_Reg lforge_mt [] = {
 	{"tuple", _lforge_tuple},
 	{"object", _lforge_object},
 	{"key", _lforge_key},
+	{"property", _lforge_property},
 
 	{"pop", _lforge_pop},
+
 	{NULL, NULL}
 };
 
