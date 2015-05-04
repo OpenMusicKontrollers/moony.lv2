@@ -28,19 +28,33 @@
 	     (iter) = lv2_atom_tuple_next(iter))
 #endif
 
+#define LV2_ATOM_VECTOR_ITEM_CONST(vec, i) \
+	(LV2_ATOM_CONTENTS_CONST(LV2_Atom_Vector, (vec)) + (i)*(vec)->body.child_size)
+
 typedef struct _lobj_t lobj_t;
 typedef struct _ltuple_t ltuple_t;
+typedef struct _lvec_t lvec_t;
 typedef struct _lframe_t lframe_t;
 typedef struct _latom_t latom_t;
 
 struct _lobj_t {
 	const LV2_Atom_Object *obj;
 	const LV2_Atom_Property_Body *itr;
+	LV2_Atom body [0];
 };
 
 struct _ltuple_t {
 	const LV2_Atom_Tuple *tuple;
+	uint32_t pos;
 	const LV2_Atom *itr;
+	LV2_Atom body [0];
+};
+
+struct _lvec_t {
+	const LV2_Atom_Vector *vec;
+	uint32_t count;
+	uint32_t pos;
+	LV2_Atom body [0];
 };
 
 struct _lframe_t {
@@ -49,6 +63,7 @@ struct _lframe_t {
 
 struct _latom_t {
 	const LV2_Atom *atom;
+	LV2_Atom body [0];
 };
 
 static void
@@ -69,10 +84,67 @@ _latom_new(lua_State *L, const LV2_Atom *atom)
 		ltuple->tuple = (const LV2_Atom_Tuple *)atom;
 		luaL_getmetatable(L, "ltuple");
 	}
+	else if(atom->type == forge->Vector)
+	{
+		lvec_t *lvec = lua_newuserdata(L, sizeof(lvec_t));
+		lvec->vec = (const LV2_Atom_Vector *)atom;
+		lvec->count = (lvec->vec->atom.size - sizeof(LV2_Atom_Vector_Body))
+			/ lvec->vec->body.child_size;
+		luaL_getmetatable(L, "lvec");
+	}
 	else
 	{
 		latom_t *latom = lua_newuserdata(L, sizeof(latom_t));
 		latom->atom = atom;
+		luaL_getmetatable(L, "latom");
+	}
+
+	lua_setmetatable(L, -2);
+}
+
+static void
+_latom_body_new(lua_State *L, uint32_t size, LV2_URID type, const void *body)
+{
+	lua_atom_t *lua_atom = lua_touserdata(L, lua_upvalueindex(1));
+	LV2_Atom_Forge *forge = &lua_atom->forge;
+	size_t atom_size = sizeof(LV2_Atom) + size;
+
+	if(type == forge->Object)
+	{
+		lobj_t *lobj = lua_newuserdata(L, sizeof(lobj_t) + atom_size);
+		lobj->obj = (const LV2_Atom_Object *)lobj->body;
+		lobj->body->size = size;
+		lobj->body->type = type;
+		memcpy(LV2_ATOM_BODY(lobj->body), body, size);
+		luaL_getmetatable(L, "lobj");
+	}
+	else if(type == forge->Tuple)
+	{
+		ltuple_t *ltuple = lua_newuserdata(L, sizeof(ltuple_t) + atom_size);
+		ltuple->tuple = (const LV2_Atom_Tuple *)ltuple->body;
+		ltuple->body->size = size;
+		ltuple->body->type = type;
+		memcpy(LV2_ATOM_BODY(ltuple->body), body, size);
+		luaL_getmetatable(L, "ltuple");
+	}
+	else if(type == forge->Vector)
+	{
+		lvec_t *lvec = lua_newuserdata(L, sizeof(lvec_t) + atom_size);
+		lvec->vec = (const LV2_Atom_Vector *)lvec->body;
+		lvec->body->size = size;
+		lvec->body->type = type;
+		memcpy(LV2_ATOM_BODY(lvec->body), body, size);
+		lvec->count = (lvec->vec->atom.size - sizeof(LV2_Atom_Vector_Body))
+			/ lvec->vec->body.child_size;
+		luaL_getmetatable(L, "lvec");
+	}
+	else
+	{
+		latom_t *latom = lua_newuserdata(L, sizeof(latom_t) + atom_size);
+		latom->atom = (const LV2_Atom *)latom->body;
+		latom->body->size = size;
+		latom->body->type = type;
+		memcpy(LV2_ATOM_BODY(latom->body), body, size);
 		luaL_getmetatable(L, "latom");
 	}
 
@@ -197,16 +269,20 @@ _ltuple_foreach_itr(lua_State *L)
 
 	if(!lv2_atom_tuple_is_end(LV2_ATOM_BODY(ltuple->tuple), ltuple->tuple->atom.size, ltuple->itr))
 	{
+		// push index
+		lua_pushinteger(L, ltuple->pos + 1);
+
 		// push atom
 		_latom_new(L, ltuple->itr);
 	
 		// advance iterator
+		ltuple->pos += 1;
 		ltuple->itr = lv2_atom_tuple_next(ltuple->itr);
 
 		return 1;
 	}
 
-	// end of sequence reached
+	// end of tuple reached
 	lua_pushnil(L);
 	return 1;
 }
@@ -282,6 +358,7 @@ _ltuple_foreach(lua_State *L)
 	ltuple_t *ltuple = luaL_checkudata(L, 1, "ltuple");
 
 	// reset iterator to beginning of tuple
+	ltuple->pos = 0;
 	ltuple->itr = lv2_atom_tuple_begin(ltuple->tuple);
 
 	lua_pushlightuserdata(L, lua_atom);
@@ -320,6 +397,136 @@ static const luaL_Reg ltuple_mt [] = {
 };
 
 static int
+_lvec_foreach_itr(lua_State *L)
+{
+	lvec_t *lvec = luaL_checkudata(L, 1, "lvec");
+
+	if(lvec->pos < lvec->count)
+	{
+		// push index
+		lua_pushinteger(L, lvec->pos + 1);
+
+		// push atom
+		_latom_body_new(L, lvec->vec->body.child_size, lvec->vec->body.child_type,
+			LV2_ATOM_VECTOR_ITEM_CONST(lvec->vec, lvec->pos));
+
+		// advance iterator
+		lvec->pos += 1;
+
+		return 2;
+	}
+
+	// end of vector reached
+	lua_pushnil(L);
+	return 1;
+}
+
+static int
+_lvec__index(lua_State *L)
+{
+	lvec_t *lvec = luaL_checkudata(L, 1, "lvec");
+
+	if(lua_isnumber(L, 2))
+	{
+		int index = lua_tointeger(L, 2); // indexing start from 1
+		if(index <= lvec->count)
+		{
+			_latom_body_new(L, lvec->vec->body.child_size, lvec->vec->body.child_type,
+				LV2_ATOM_VECTOR_ITEM_CONST(lvec->vec, index - 1));
+		}
+		else // index is out of bounds
+			lua_pushnil(L);
+	}
+	else if(lua_isstring(L, 2))
+	{
+		const char *key = lua_tostring(L, 2);
+
+		if(!strcmp(key, "type"))
+		{
+			lua_pushinteger(L, lvec->vec->atom.type);
+		}
+		else if(!strcmp(key, "child_type"))
+		{
+			lua_pushinteger(L, lvec->vec->body.child_type);
+		}
+		else if(!strcmp(key, "child_size"))
+		{
+			lua_pushinteger(L, lvec->vec->body.child_size);
+		}
+		else // look in metatable
+		{
+			lua_getmetatable(L, 1);
+			lua_pushvalue(L, 2);
+			lua_rawget(L, -2);
+		}
+	}
+	else
+		lua_pushnil(L); // unsupported key
+
+	return 1;
+}
+
+static int
+_lvec__len(lua_State *L)
+{
+	lvec_t *lvec = luaL_checkudata(L, 1, "lvec");
+
+	lua_pushinteger(L, lvec->count);
+
+	return 1;
+}
+
+static int
+_lvec__tostring(lua_State *L)
+{
+	lvec_t *lvec = luaL_checkudata(L, 1, "lvec");
+
+	lua_pushstring(L, "Atom_Vector");
+
+	return 1;
+}
+
+static int
+_lvec_foreach(lua_State *L)
+{
+	lua_atom_t *lua_atom = lua_touserdata(L, lua_upvalueindex(1));
+	lvec_t *lvec = luaL_checkudata(L, 1, "lvec");
+
+	// reset iterator to beginning of tuple
+	lvec->pos = 0;
+
+	lua_pushlightuserdata(L, lua_atom);
+	lua_pushcclosure(L, _lvec_foreach_itr, 1);
+	lua_pushvalue(L, 1);
+
+	return 2;
+}
+
+static int
+_lvec_unpack(lua_State *L)
+{
+	lua_atom_t *lua_atom = lua_touserdata(L, lua_upvalueindex(1));
+	lvec_t *lvec = luaL_checkudata(L, 1, "lvec");
+
+	for(int i=0; i<lvec->count; i++)
+	{
+		_latom_body_new(L, lvec->vec->body.child_size, lvec->vec->body.child_type,
+			LV2_ATOM_VECTOR_ITEM_CONST(lvec->vec, i));
+	}
+
+	return lvec->count;
+}
+
+static const luaL_Reg lvec_mt [] = {
+	{"__index", _lvec__index},
+	{"__len", _lvec__len},
+	{"__tostring", _lvec__tostring},
+	{"foreach", _lvec_foreach},
+	{"unpack", _lvec_unpack},
+	{NULL, NULL}
+};
+
+static int
 _lobj_foreach_itr(lua_State *L)
 {
 	lobj_t *lobj = luaL_checkudata(L, 1, "lobj");
@@ -337,7 +544,7 @@ _lobj_foreach_itr(lua_State *L)
 		return 3;
 	}
 
-	// end of sequence reached
+	// end of object reached
 	lua_pushnil(L);
 	return 1;
 }
@@ -892,29 +1099,26 @@ lua_atom_open(lua_atom_t *lua_atom, lua_State *L)
 	luaL_newmetatable(L, "lseq");
 	lua_pushlightuserdata(L, lua_atom); // @ upvalueindex 1
 	luaL_setfuncs (L, lseq_mt, 1);
-	//lua_pushvalue(L, -1);
-	//lua_setfield(L, -2, "__index");
 	lua_pop(L, 1);
 	
 	luaL_newmetatable(L, "lobj");
 	lua_pushlightuserdata(L, lua_atom); // @ upvalueindex 1
 	luaL_setfuncs (L, lobj_mt, 1);
-	//lua_pushvalue(L, -1);
-	//lua_setfield(L, -2, "__index");
 	lua_pop(L, 1);
 	
 	luaL_newmetatable(L, "ltuple");
 	lua_pushlightuserdata(L, lua_atom); // @ upvalueindex 1
 	luaL_setfuncs (L, ltuple_mt, 1);
-	//lua_pushvalue(L, -1);
-	//lua_setfield(L, -2, "__index");
+	lua_pop(L, 1);
+	
+	luaL_newmetatable(L, "lvec");
+	lua_pushlightuserdata(L, lua_atom); // @ upvalueindex 1
+	luaL_setfuncs (L, lvec_mt, 1);
 	lua_pop(L, 1);
 	
 	luaL_newmetatable(L, "latom");
 	lua_pushlightuserdata(L, lua_atom); // @ upvalueindex 1
 	luaL_setfuncs (L, latom_mt, 1);
-	//lua_pushvalue(L, -1);
-	//lua_setfield(L, -2, "__index");
 	lua_pop(L, 1);
 	
 	luaL_newmetatable(L, "lforge");
