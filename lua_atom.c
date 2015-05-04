@@ -429,7 +429,7 @@ _lvec__index(lua_State *L)
 	if(lua_isnumber(L, 2))
 	{
 		int index = lua_tointeger(L, 2); // indexing start from 1
-		if(index <= lvec->count)
+		if( (index > 0) && (index <= lvec->count) )
 		{
 			_latom_body_new(L, lvec->vec->body.child_size, lvec->vec->body.child_type,
 				LV2_ATOM_VECTOR_ITEM_CONST(lvec->vec, index - 1));
