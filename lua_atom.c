@@ -57,13 +57,13 @@ struct _lvec_t {
 	LV2_Atom body [0];
 };
 
-struct _lframe_t {
-	LV2_Atom_Forge_Frame frame;
-};
-
 struct _latom_t {
 	const LV2_Atom *atom;
 	LV2_Atom body [0];
+};
+
+struct _lframe_t {
+	LV2_Atom_Forge_Frame frame;
 };
 
 static void
@@ -279,7 +279,7 @@ _ltuple_foreach_itr(lua_State *L)
 		ltuple->pos += 1;
 		ltuple->itr = lv2_atom_tuple_next(ltuple->itr);
 
-		return 1;
+		return 2;
 	}
 
 	// end of tuple reached
@@ -795,6 +795,19 @@ _lforge_beat_time(lua_State *L)
 }
 
 static int
+_lforge_atom(lua_State *L)
+{
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	const LV2_Atom **atom_ptr = lua_touserdata(L, 2); // TODO check for latom, lobj, ltuple, lvec
+	const LV2_Atom *atom = *atom_ptr;
+
+	lv2_atom_forge_raw(lforge->forge, atom, sizeof(LV2_Atom) + atom->size);
+	lv2_atom_forge_pad(lforge->forge, atom->size);
+
+	return 0;
+}
+
+static int
 _lforge_int(lua_State *L)
 {
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
@@ -1002,6 +1015,7 @@ static const luaL_Reg lforge_mt [] = {
 	{"frame_time", _lforge_frame_time},
 	{"beat_time", _lforge_beat_time},
 
+	{"atom", _lforge_atom},
 	{"int", _lforge_int},
 	{"long", _lforge_long},
 	{"float", _lforge_float},
