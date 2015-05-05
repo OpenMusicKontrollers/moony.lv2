@@ -56,13 +56,57 @@ struct _UI {
 };
 
 static void
-_lua_markup(void *data, Evas_Object *entry, char **txt)
+_compile(UI *ui)
 {
+	// clear error
+	elm_entry_entry_set(ui->error, "");
+
+	// get code from entry
+	const char *chunk = elm_entry_entry_get(ui->entry);
+	char *utf8 = elm_entry_markup_to_utf8(chunk);
+	uint32_t size = strlen(utf8) + 1;
+	uint32_t atom_size = sizeof(LV2_Atom) + size;
+	LV2_Atom *atom = calloc(1, atom_size);
+	if(!atom)
+	{
+		free(utf8);
+		return;
+	}
+
+	atom->size = size;
+	atom->type = ui->forge.String;
+	strcpy(LV2_ATOM_BODY(atom), utf8);
+
+	ui->write_function(ui->controller, 0, atom_size, ui->uris.event_transfer, atom);
+
+	free(utf8);
+	free(atom);
+
+}
+
+static void
+_lua_markup(void *data, Evas_Object *obj, char **txt)
+{
+	UI *ui = data;
+
 	// replace tab with two spaces
 	if(!strcmp(*txt, "<tab/>"))
 	{
 		free(*txt);
 		*txt = strdup("  ");
+	}
+	// intercept shift-enter
+	else if(!strcmp(*txt, "<br/>"))
+	{
+		const Evas_Modifier *mods = evas_key_modifier_get(evas_object_evas_get(obj));
+		if(evas_key_modifier_is_set(mods, "Shift"))
+		{
+			free(*txt);
+			*txt = strdup("");
+
+			_compile(ui);
+			//TODO give some visual feedback here
+		}
 	}
 }
 
@@ -154,29 +198,7 @@ _compile_clicked(void *data, Evas_Object *obj, void *event_info)
 {
 	UI *ui = data;
 
-	// clear error
-	elm_entry_entry_set(ui->error, "");
-
-	// get code from entry
-	const char *chunk = elm_entry_entry_get(ui->entry);
-	char *utf8 = elm_entry_markup_to_utf8(chunk);
-	uint32_t size = strlen(utf8) + 1;
-	uint32_t atom_size = sizeof(LV2_Atom) + size;
-	LV2_Atom *atom = calloc(1, atom_size);
-	if(!atom)
-	{
-		free(utf8);
-		return;
-	}
-
-	atom->size = size;
-	atom->type = ui->forge.String;
-	strcpy(LV2_ATOM_BODY(atom), utf8);
-
-	ui->write_function(ui->controller, 0, atom_size, ui->uris.event_transfer, atom);
-
-	free(utf8);
-	free(atom);
+	_compile(ui);
 }
 
 static void
@@ -211,7 +233,7 @@ _content_get(eo_ui_t *eoui)
 	elm_entry_single_line_set(ui->entry, EINA_FALSE);
 	elm_entry_scrollable_set(ui->entry, EINA_TRUE);
 	elm_entry_editable_set(ui->entry, EINA_TRUE);
-	elm_entry_markup_filter_append(ui->entry, _lua_markup, NULL);
+	elm_entry_markup_filter_append(ui->entry, _lua_markup, ui);
 	elm_entry_cnp_mode_set(ui->entry, ELM_CNP_MODE_PLAINTEXT);
 	elm_object_focus_set(ui->entry, EINA_TRUE);
 	evas_object_smart_callback_add(ui->entry, "changed,user", _changed, ui);
