@@ -65,22 +65,36 @@ _compile(UI *ui)
 	const char *chunk = elm_entry_entry_get(ui->entry);
 	char *utf8 = elm_entry_markup_to_utf8(chunk);
 	uint32_t size = strlen(utf8) + 1;
-	uint32_t atom_size = sizeof(LV2_Atom) + size;
-	LV2_Atom *atom = calloc(1, atom_size);
-	if(!atom)
+
+	if(size <= MAX_CHUNK_LEN)
 	{
-		free(utf8);
-		return;
+		uint32_t atom_size = sizeof(LV2_Atom) + size;
+		LV2_Atom *atom = calloc(1, atom_size);
+		if(!atom)
+		{
+			free(utf8);
+			return;
+		}
+
+		atom->size = size;
+		atom->type = ui->forge.String;
+		strcpy(LV2_ATOM_BODY(atom), utf8);
+
+		ui->write_function(ui->controller, 0, atom_size, ui->uris.event_transfer, atom);
+
+		free(atom);
+	}
+	else
+	{
+		char buf [64];
+		sprintf(buf, " <number>%i</number> ", size - MAX_CHUNK_LEN);
+		elm_entry_entry_set(ui->error,
+			"<code><string>Cannot compile script: too long by</string>");
+		elm_entry_entry_append(ui->error, buf);
+		elm_entry_entry_append(ui->error, "<string>characters.</string></code>");
 	}
 
-	atom->size = size;
-	atom->type = ui->forge.String;
-	strcpy(LV2_ATOM_BODY(atom), utf8);
-
-	ui->write_function(ui->controller, 0, atom_size, ui->uris.event_transfer, atom);
-
 	free(utf8);
-	free(atom);
 }
 
 static void

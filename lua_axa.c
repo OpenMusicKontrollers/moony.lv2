@@ -28,6 +28,7 @@ struct _Handle {
 	char chunk [MAX_CHUNK_LEN];
 	volatile int dirty_in;
 	volatile int dirty_out;
+	volatile int error_out;
 	char error [MAX_ERROR_LEN];
 
 	int max_val;
@@ -208,14 +209,13 @@ run(LV2_Handle instance, uint32_t nsamples)
 		// load chunk
 		if(luaL_dostring(handle->lvm.L, handle->chunk))
 		{
-			printf("load error\n");
 			strcpy(handle->error, lua_tostring(L, -1));
 			lua_pop(L, 1);
 
-			// load default code
-			strcpy(handle->chunk, default_code[handle->max_val-1]);
-			luaL_dostring(handle->lvm.L, handle->chunk); // cannot fail
+			handle->error_out = 1;
 		}
+		else
+			handle->error[0] = 0x0; // reset error flag
 
 		handle->dirty_in = 0;
 	}
@@ -231,43 +231,43 @@ run(LV2_Handle instance, uint32_t nsamples)
 	}
 
 	// run
-	lua_getglobal(L, "run");
-	if(lua_isfunction(L, -1))
+	if(handle->error[0] == 0x0) // bypass if errored
 	{
-		// push sequence
-		for(int i=0; i<handle->max_val; i++)
+		lua_getglobal(L, "run");
+		if(lua_isfunction(L, -1))
 		{
-			lseq_t *lseq = lua_newuserdata(handle->lvm.L, sizeof(lseq_t));
-			lseq->seq = handle->event_in[i];
-			lseq->itr = NULL;
-			luaL_getmetatable(L, "lseq");
-			lua_setmetatable(L, -2);
-		}
+			// push sequence
+			for(int i=0; i<handle->max_val; i++)
+			{
+				lseq_t *lseq = lua_newuserdata(handle->lvm.L, sizeof(lseq_t));
+				lseq->seq = handle->event_in[i];
+				lseq->itr = NULL;
+				luaL_getmetatable(L, "lseq");
+				lua_setmetatable(L, -2);
+			}
 
-		// push forge
-		for(int i=0; i<handle->max_val; i++)
-		{
-			lforge_t *lforge = lua_newuserdata(handle->lvm.L, sizeof(lforge_t));
-			lforge->forge = &handle->forge[i];
-			luaL_getmetatable(L, "lforge");
-			lua_setmetatable(L, -2);
+			// push forge
+			for(int i=0; i<handle->max_val; i++)
+			{
+				lforge_t *lforge = lua_newuserdata(handle->lvm.L, sizeof(lforge_t));
+				lforge->forge = &handle->forge[i];
+				luaL_getmetatable(L, "lforge");
+				lua_setmetatable(L, -2);
+			}
+				
+			if(lua_pcall(L, 2*handle->max_val, 0, 0))
+			{
+				strcpy(handle->error, lua_tostring(L, -1));
+				lua_pop(L, 1);
+
+				handle->error_out = 1;
+			}
 		}
-			
-		if(lua_pcall(L, 2*handle->max_val, 0, 0))
-		{
-			printf("runtime error\n");
-			strcpy(handle->error, lua_tostring(L, -1));
+		else
 			lua_pop(L, 1);
-
-			// load default code
-			strcpy(handle->chunk, default_code[handle->max_val-1]);
-			luaL_dostring(handle->lvm.L, handle->chunk); // cannot fail
-		}
+	
+		lua_gc(L, LUA_GCSTEP, 0);
 	}
-	else
-		lua_pop(L, 1);
-
-	lua_gc(L, LUA_GCSTEP, 0);
 
 	for(int i=0; i<handle->max_val; i++)
 		lv2_atom_forge_pop(&handle->forge[i], &frame[i]);
@@ -291,7 +291,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 
 		handle->dirty_out = 0; // reset flag
 	}
-	if(handle->error[0])
+	if(handle->error_out)
 	{
 		uint32_t len = strlen(handle->error) + 1;
 		LV2_Atom_Forge_Frame obj_frame;
@@ -301,7 +301,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 		lv2_atom_forge_string(forge, handle->error, len);
 		lv2_atom_forge_pop(forge, &obj_frame);
 
-		handle->error[0] = '\0'; // reset flag
+		handle->error_out = 0; // reset flag
 	}
 	lv2_atom_forge_pop(forge, &notify_frame);
 }
