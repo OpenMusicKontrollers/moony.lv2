@@ -22,6 +22,7 @@
 @prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .
 @prefix midi: <http://lv2plug.in/ns/ext/midi#> .
 @prefix state: <http://lv2plug.in/ns/ext/state#> .
+@prefix rsz:  <http://lv2plug.in/ns/ext/resize-port#> .
 @prefix kx:		<http://kxstudio.sf.net/ns/lv2ext/external-ui#> .
 
 @prefix osc:  <http://opensoundcontrol.org#> .
@@ -274,6 +275,7 @@ lua:c1xc1
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
 	  a lv2:OutputPort ,
@@ -283,6 +285,7 @@ lua:c1xc1
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# input control ports
 	  a lv2:InputPort ,
@@ -319,6 +322,7 @@ lua:c2xc2
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
 	  a lv2:OutputPort ,
@@ -328,6 +332,7 @@ lua:c2xc2
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# input control ports
 	  a lv2:InputPort ,
@@ -377,6 +382,7 @@ lua:c4xc4
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
 	  a lv2:OutputPort ,
@@ -386,6 +392,7 @@ lua:c4xc4
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# input control ports
 	  a lv2:InputPort ,
@@ -461,6 +468,7 @@ lua:a1xa1
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
 	  a lv2:OutputPort ,
@@ -470,6 +478,7 @@ lua:a1xa1
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# input event port
 	  a lv2:InputPort ,
@@ -509,6 +518,7 @@ lua:a2xa2
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
 	  a lv2:OutputPort ,
@@ -518,6 +528,7 @@ lua:a2xa2
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# input event port
 	  a lv2:InputPort ,
@@ -573,6 +584,7 @@ lua:a4xa4
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
 	  a lv2:OutputPort ,
@@ -582,6 +594,7 @@ lua:a4xa4
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# input event port
 	  a lv2:InputPort ,
@@ -669,6 +682,7 @@ lua:a1xc1
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
 	  a lv2:OutputPort ,
@@ -678,6 +692,7 @@ lua:a1xc1
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# input event port
 	  a lv2:InputPort ,
@@ -715,6 +730,7 @@ lua:a1xc2
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
 	  a lv2:OutputPort ,
@@ -724,6 +740,7 @@ lua:a1xc2
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# input event port
 	  a lv2:InputPort ,
@@ -767,6 +784,7 @@ lua:a1xc4
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
 	  a lv2:OutputPort ,
@@ -776,6 +794,7 @@ lua:a1xc4
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# input event port
 	  a lv2:InputPort ,
@@ -831,6 +850,7 @@ lua:c1xa1
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
 	  a lv2:OutputPort ,
@@ -840,6 +860,7 @@ lua:c1xa1
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# input event port
 	  a lv2:OutputPort ,
@@ -877,6 +898,7 @@ lua:c2xa1
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
 	  a lv2:OutputPort ,
@@ -886,6 +908,7 @@ lua:c2xa1
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# input event port
 	  a lv2:OutputPort ,
@@ -929,6 +952,7 @@ lua:c4xa1
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
 	  a lv2:OutputPort ,
@@ -938,6 +962,7 @@ lua:c4xa1
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
 		lv2:designation lv2:control ;
+		rsz:minimumSize 65536 ;
 	] , [
 	# output event port
 	  a lv2:OutputPort ,

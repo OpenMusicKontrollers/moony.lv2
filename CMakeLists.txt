@@ -41,6 +41,13 @@ if((${ELM_VERSION} VERSION_EQUAL "1.13.0") OR (${ELM_VERSION} VERSION_GREATER "1
 	add_definitions("-DELM_HAS_FAKE")
 endif()
 
+option(BUILD_X11_WRAPPER OFF)
+if(${BUILD_X11_WRAPPER})
+	set(X11_UI_WRAP "")
+else()
+	set(X11_UI_WRAP "#")
+endif()
+
 flex_target(encoder encoder.l ${PROJECT_BINARY_DIR}/encoder.c
 	COMPILE_FLAGS	"--header-file=${PROJECT_BINARY_DIR}/encoder.h --prefix=enc")
 
@@ -101,16 +108,13 @@ target_link_libraries(lua ${LIBS} "-lm")
 set_target_properties(lua PROPERTIES PREFIX "")
 install(TARGETS lua DESTINATION ${DEST})
 
-option(BUILD_UI "Build UI" ON)
-if(${BUILD_UI})
-	add_library(lua_ui MODULE
-		lua_lv2_ui.c
-		lua_common_ui.c
-		${FLEX_encoder_OUTPUTS})
-	target_link_libraries(lua_ui ${LIBS_UI})
-	set_target_properties(lua_ui PROPERTIES PREFIX "")
-	install(TARGETS lua_ui DESTINATION ${DEST})
-endif()
+add_library(lua_ui MODULE
+	lua_lv2_ui.c
+	lua_common_ui.c
+	${FLEX_encoder_OUTPUTS})
+target_link_libraries(lua_ui ${LIBS_UI})
+set_target_properties(lua_ui PROPERTIES PREFIX "")
+install(TARGETS lua_ui DESTINATION ${DEST})
 
 configure_file(${PROJECT_SOURCE_DIR}/manifest.ttl.in ${PROJECT_BINARY_DIR}/manifest.ttl)
 install(FILES ${PROJECT_BINARY_DIR}/manifest.ttl DESTINATION ${DEST})
