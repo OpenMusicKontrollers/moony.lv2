@@ -35,6 +35,9 @@
 
 #include <lua.h>
 
+#define MAX_CHUNK_LEN 0x10000
+#define MAX_ERROR_LEN 0x400
+
 #define LUA_URI							"http://open-music-kontrollers.ch/lv2/lua"
 
 #define LUA_MESSAGE_URI			LUA_URI"#message"

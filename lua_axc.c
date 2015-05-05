@@ -25,10 +25,10 @@ struct _Handle {
 	lua_atom_t lua_atom;
 
 	Lua_VM lvm;
-	char *chunk;
+	char chunk [MAX_CHUNK_LEN];
 	volatile int dirty_in;
 	volatile int dirty_out;
-	char error [1024];
+	char error [MAX_ERROR_LEN];
 
 	int max_val;
 
@@ -102,10 +102,7 @@ state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_Sta
 
 	if(chunk && size && type)
 	{
-		if(handle->chunk)
-			free(handle->chunk);
-		handle->chunk = strdup(chunk);
-
+		strncpy(handle->chunk, chunk, size);
 		handle->dirty_in = 1;
 	}
 
@@ -165,7 +162,7 @@ activate(LV2_Handle instance)
 	Handle *handle = (Handle *)instance;
 	
 	// load default chunk
-	handle->chunk = strdup(default_code[handle->max_val-1]);
+	strcpy(handle->chunk, default_code[handle->max_val-1]);
 	luaL_dostring(handle->lvm.L, handle->chunk); // cannot fail
 
 	handle->dirty_out = 1; // trigger update of UI
@@ -186,7 +183,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 		{
 			if(atom->size)
 			{
-				handle->chunk = strndup(LV2_ATOM_BODY_CONST(atom), atom->size);
+				strncpy(handle->chunk, LV2_ATOM_BODY_CONST(atom), atom->size);
 				handle->dirty_in = 1;
 			}
 			else
@@ -205,8 +202,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 			lua_pop(L, 1);
 
 			// load default code
-			free(handle->chunk);
-			handle->chunk = strdup(default_code[handle->max_val-1]);
+			strcpy(handle->chunk, default_code[handle->max_val-1]);
 			luaL_dostring(handle->lvm.L, handle->chunk); // cannot fail
 		}
 
@@ -232,8 +228,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 			lua_pop(L, 1);
 
 			// load default code
-			free(handle->chunk);
-			handle->chunk = strdup(default_code[handle->max_val-1]);
+			strcpy(handle->chunk, default_code[handle->max_val-1]);
 			luaL_dostring(handle->lvm.L, handle->chunk); // cannot fail
 		}
 
@@ -290,8 +285,7 @@ deactivate(LV2_Handle instance)
 {
 	Handle *handle = (Handle *)instance;
 
-	if(handle->chunk)
-		free(handle->chunk);
+	// nothing
 }
 
 static void
