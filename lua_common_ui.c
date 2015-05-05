@@ -81,7 +81,6 @@ _compile(UI *ui)
 
 	free(utf8);
 	free(atom);
-
 }
 
 static void

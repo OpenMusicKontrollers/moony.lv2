@@ -1178,5 +1178,11 @@ lua_atom_open(lua_atom_t *lua_atom, lua_State *L)
 		lua_setfield(L, -2, "Midi");
 	lua_setglobal(L, "lv2");
 
+	// delete print function as it is not realtime-safe
+	lua_pushnil(L);
+	lua_setglobal(L, "print");
+
+	//TODO support for LV2_Log extension
+
 #undef SET_CONST
 }
