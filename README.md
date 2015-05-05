@@ -47,6 +47,7 @@ Get more information at: [http://open-music-kontrollers.ch/lv2/lua](http://open-
 
 	git clone https://github.com/OpenMusicKontrollers/lua.lv2.git
 	cd lua.lv2
+	git submodule update --init
 	mkdir build
 	cd build
 	cmake -DCMAKE_C_FLAGS="-std=gnu99" ..
