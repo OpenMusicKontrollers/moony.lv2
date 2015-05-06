@@ -25,24 +25,28 @@
 
 #define MEM_SIZE 0x20000UL // 128KB
 
+// rt
 static inline void *
 rt_alloc(Lua_VM *lvm, size_t len)
 {
 	return tlsf_malloc(lvm->tlsf, len);
 }
 
+// rt
 static inline void *
 rt_realloc(Lua_VM *lvm, size_t len, void *buf)
 {
 	return tlsf_realloc(lvm->tlsf, buf, len);
 }
 
+// rt
 static inline void
 rt_free(Lua_VM *lvm, void *buf)
 {
 	tlsf_free(lvm->tlsf, buf);
 }
 
+// rt
 static void *
 lua_alloc(void *ud, void *ptr, size_t osize, size_t nsize)
 {
@@ -68,6 +72,7 @@ lua_alloc(void *ud, void *ptr, size_t osize, size_t nsize)
 	}
 }
 
+// non-rt
 int
 lua_vm_init(Lua_VM *lvm)
 {
@@ -114,11 +119,14 @@ lua_vm_init(Lua_VM *lvm)
 	return 0;
 }
 
+// non-rt
 int
 lua_vm_deinit(Lua_VM *lvm)
 {
 	if(lvm->L)
 		lua_close(lvm->L);
+	lvm->L = NULL;
+	lvm->used = 0;
 
 	for(int i=(POOL_NUM-1); i>=0; i--)
 	{
@@ -128,9 +136,10 @@ lua_vm_deinit(Lua_VM *lvm)
 		tlsf_remove_pool(lvm->tlsf, lvm->pool[i]);
 		lua_vm_mem_free(lvm->area[i], lvm->size[i]);
 		lvm->space -= lvm->size[i];
-		
-		lvm->pool[i] = NULL;
+
+		lvm->size[i] = 0;
 		lvm->area[i] = NULL;
+		lvm->pool[i] = NULL;
 	}
 
 	assert(lvm->space == 0);
@@ -140,6 +149,7 @@ lua_vm_deinit(Lua_VM *lvm)
 	return 0;
 }
 
+// non-rt
 void *
 lua_vm_mem_alloc(size_t size)
 {
@@ -156,6 +166,7 @@ lua_vm_mem_alloc(size_t size)
 	return area;
 }
 
+// non-rt
 void
 lua_vm_mem_free(void *area, size_t size)
 {
@@ -168,12 +179,7 @@ lua_vm_mem_free(void *area, size_t size)
 	free(area);
 }
 
-int
-lua_vm_mem_half_full(Lua_VM *lvm)
-{
-	return lvm->used > (lvm->space >> 1);
-}
-
+// non-rt
 int
 lua_vm_mem_extend(Lua_VM *lvm)
 {

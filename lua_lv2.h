@@ -35,8 +35,8 @@
 
 #include <lua.h>
 
-#define MAX_CHUNK_LEN				0x10000
-#define MAX_ERROR_LEN				0x400
+#define MAX_CHUNK_LEN				0x10000 // 64KB
+#define MAX_ERROR_LEN				0x400 // 1KB
 
 #define LUA_URI							"http://open-music-kontrollers.ch/lv2/lua"
 
@@ -108,7 +108,6 @@ int lua_vm_init(Lua_VM *lvm);
 int lua_vm_deinit(Lua_VM *lvm);
 void *lua_vm_mem_alloc(size_t size);
 void lua_vm_mem_free(void *area, size_t size);
-int lua_vm_mem_half_full(Lua_VM *lvm);
 int lua_vm_mem_extend(Lua_VM *lvm);
 
 // from encoder.l
@@ -127,12 +126,12 @@ extern encoder_t *encoder;
 
 void lua_to_markup(const char *utf8, FILE *f);
 
-// from lua_atom.c
-typedef struct _lua_atom_t lua_atom_t;
+// from lua_handle.c
+typedef struct _lua_handle_t lua_handle_t;
 typedef struct _lseq_t lseq_t;
 typedef struct _lforge_t lforge_t;
 
-struct _lua_atom_t {
+struct _lua_handle_t {
 	LV2_URID_Map *map;
 	LV2_URID_Unmap *unmap;
 	LV2_Atom_Forge forge;
@@ -143,6 +142,13 @@ struct _lua_atom_t {
 		LV2_URID lua_error;
 		LV2_URID midi_event;
 	} uris;
+
+	Lua_VM lvm;
+	char chunk [MAX_CHUNK_LEN];
+	volatile int dirty_in;
+	volatile int dirty_out;
+	volatile int error_out;
+	char error [MAX_ERROR_LEN];
 };
 
 struct _lseq_t {
@@ -154,21 +160,47 @@ struct _lforge_t {
 	LV2_Atom_Forge *forge;
 };
 
-int lua_atom_init(lua_atom_t *lua_atom, const LV2_Feature *const *features);
-void lua_atom_open(lua_atom_t *lua_atom, lua_State *L);
+int lua_handle_init(lua_handle_t *lua_handle, const LV2_Feature *const *features);
+void lua_handle_deinit(lua_handle_t *lua_handle);
+void lua_handle_open(lua_handle_t *lua_handle, lua_State *L);
+void lua_handle_activate(lua_handle_t *lua_handle, const char *chunk);
+void lua_handle_in(lua_handle_t *lua_handle, const LV2_Atom_Sequence *seq);
+void lua_handle_out(lua_handle_t *lua_handle, LV2_Atom_Sequence *seq, uint32_t frames);
+
+static inline int
+lua_handle_bypass(lua_handle_t *lua_handle)
+{
+	return lua_handle->error[0] != '\0';
+}
+
+static inline void
+lua_handle_error(lua_handle_t *lua_handle)
+{
+	lua_State *L = lua_handle->lvm.L;
+
+	strcpy(lua_handle->error, lua_tostring(L, -1));
+	lua_pop(L, 1);
+
+	lua_handle->error_out = 1;
+}
+
+extern const LV2_State_Interface lua_handle_state_iface;
 
 // strdup fallback for windows
 #if defined(_WIN32)
 static inline char *
 strndup(const char *s, size_t n)
 {
-    char *result;
-    size_t len = strlen (s);
-    if (n < len) len = n;
-    result = (char *) malloc (len + 1);
-    if (!result) return 0;
-    result[len] = '\0';
-    return (char *) strncpy (result, s, len);
+	char *result;
+	size_t len = strlen(s);
+	if(n < len)
+		len = n;
+	result = (char *)malloc(len + 1);
+	if(!result)
+		return 0;
+	result[len] = '\0';
+
+	return (char *)strncpy(result, s, len);
 }
 #endif
 	

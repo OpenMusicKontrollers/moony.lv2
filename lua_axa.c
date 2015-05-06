@@ -22,14 +22,7 @@
 typedef struct _Handle Handle;
 
 struct _Handle {
-	lua_atom_t lua_atom;
-
-	Lua_VM lvm;
-	char chunk [MAX_CHUNK_LEN];
-	volatile int dirty_in;
-	volatile int dirty_out;
-	volatile int error_out;
-	char error [MAX_ERROR_LEN];
+	lua_handle_t lua_handle;
 
 	int max_val;
 
@@ -76,53 +69,6 @@ static const char *default_code [4] = {
 	"end"
 };
 
-static LV2_State_Status
-state_save(LV2_Handle instance, LV2_State_Store_Function store,
-	LV2_State_Handle state, uint32_t flags, const LV2_Feature *const *features)
-{
-	Handle *handle = (Handle *)instance;
-
-	return store(
-		state,
-		handle->lua_atom.uris.lua_code,
-		handle->chunk,
-		strlen(handle->chunk)+1,
-		handle->lua_atom.forge.String,
-		LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
-}
-
-static LV2_State_Status
-state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_State_Handle state, uint32_t flags, const LV2_Feature *const *features)
-{
-	Handle *handle = (Handle *)instance;
-
-	size_t size;
-	uint32_t type;
-	uint32_t flags2;
-	const char *chunk = retrieve(
-		state,
-		handle->lua_atom.uris.lua_code,
-		&size,
-		&type,
-		&flags2
-	);
-
-	//TODO check type, flags2
-
-	if(chunk && size && type)
-	{
-		strncpy(handle->chunk, chunk, size);
-		handle->dirty_in = 1;
-	}
-
-	return LV2_STATE_SUCCESS;
-}
-
-static const LV2_State_Interface state_iface = {
-	.save = state_save,
-	.restore = state_restore
-};
-
 static LV2_Handle
 instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_path, const LV2_Feature *const *features)
 {
@@ -130,13 +76,12 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 	if(!handle)
 		return NULL;
 
-	if(  lua_vm_init(&handle->lvm)
-		|| lua_atom_init(&handle->lua_atom, features) )
+	if(lua_handle_init(&handle->lua_handle, features))
 	{
 		free(handle);
 		return NULL;
 	}
-	lua_atom_open(&handle->lua_atom, handle->lvm.L);
+	lua_handle_open(&handle->lua_handle, handle->lua_handle.lvm.L);
 	
 	if(!strcmp(descriptor->URI, LUA_A1XA1_URI))
 		handle->max_val = 1;
@@ -148,7 +93,7 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 		handle->max_val = 0; // never reached
 
 	for(int i=0; i<handle->max_val; i++)
-		lv2_atom_forge_init(&handle->forge[i], handle->lua_atom.map);
+		lv2_atom_forge_init(&handle->forge[i], handle->lua_handle.map);
 
 	return handle;
 }
@@ -172,53 +117,18 @@ static void
 activate(LV2_Handle instance)
 {
 	Handle *handle = (Handle *)instance;
-	
-	// load default chunk
-	strcpy(handle->chunk, default_code[handle->max_val-1]);
-	luaL_dostring(handle->lvm.L, handle->chunk); // cannot fail
 
-	handle->dirty_out = 1; // trigger update of UI
+	lua_handle_activate(&handle->lua_handle, default_code[handle->max_val-1]);
 }
 
 static void
 run(LV2_Handle instance, uint32_t nsamples)
 {
 	Handle *handle = (Handle *)instance;
-	lua_State *L = handle->lvm.L;
+	lua_State *L = handle->lua_handle.lvm.L;
 
-	// read control atom port
-	LV2_ATOM_SEQUENCE_FOREACH(handle->control, ev)
-	{
-		const LV2_Atom *atom = &ev->body;
-
-		if(atom->type == handle->lua_atom.forge.String)
-		{
-			if(atom->size)
-			{
-				strncpy(handle->chunk, LV2_ATOM_BODY_CONST(atom), atom->size);
-				handle->dirty_in = 1;
-			}
-			else
-				handle->dirty_out = 1;
-		}
-	}
-
-	// handle dirty state
-	if(handle->dirty_in)
-	{
-		// load chunk
-		if(luaL_dostring(handle->lvm.L, handle->chunk))
-		{
-			strcpy(handle->error, lua_tostring(L, -1));
-			lua_pop(L, 1);
-
-			handle->error_out = 1;
-		}
-		else
-			handle->error[0] = 0x0; // reset error flag
-
-		handle->dirty_in = 0;
-	}
+	// handle UI comm
+	lua_handle_in(&handle->lua_handle, handle->control);
 
 	// prepare event_out sequence
 	LV2_Atom_Forge_Frame frame [4];
@@ -231,7 +141,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 	}
 
 	// run
-	if(handle->error[0] == 0x0) // bypass if errored
+	if(!lua_handle_bypass(&handle->lua_handle))
 	{
 		lua_getglobal(L, "run");
 		if(lua_isfunction(L, -1))
@@ -239,7 +149,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 			// push sequence
 			for(int i=0; i<handle->max_val; i++)
 			{
-				lseq_t *lseq = lua_newuserdata(handle->lvm.L, sizeof(lseq_t));
+				lseq_t *lseq = lua_newuserdata(L, sizeof(lseq_t));
 				lseq->seq = handle->event_in[i];
 				lseq->itr = NULL;
 				luaL_getmetatable(L, "lseq");
@@ -249,19 +159,14 @@ run(LV2_Handle instance, uint32_t nsamples)
 			// push forge
 			for(int i=0; i<handle->max_val; i++)
 			{
-				lforge_t *lforge = lua_newuserdata(handle->lvm.L, sizeof(lforge_t));
+				lforge_t *lforge = lua_newuserdata(L, sizeof(lforge_t));
 				lforge->forge = &handle->forge[i];
 				luaL_getmetatable(L, "lforge");
 				lua_setmetatable(L, -2);
 			}
 				
 			if(lua_pcall(L, 2*handle->max_val, 0, 0))
-			{
-				strcpy(handle->error, lua_tostring(L, -1));
-				lua_pop(L, 1);
-
-				handle->error_out = 1;
-			}
+				lua_handle_error(&handle->lua_handle);
 		}
 		else
 			lua_pop(L, 1);
@@ -272,38 +177,8 @@ run(LV2_Handle instance, uint32_t nsamples)
 	for(int i=0; i<handle->max_val; i++)
 		lv2_atom_forge_pop(&handle->forge[i], &frame[i]);
 
-	// prepare notify atom forge
-	LV2_Atom_Forge *forge = &handle->lua_atom.forge;
-	LV2_Atom_Forge_Frame notify_frame;
-
-	uint32_t capacity = handle->notify->atom.size;
-	lv2_atom_forge_set_buffer(forge, (uint8_t *)handle->notify, capacity);
-	lv2_atom_forge_sequence_head(forge, &notify_frame, 0);
-	if(handle->dirty_out)
-	{
-		uint32_t len = strlen(handle->chunk) + 1;
-		LV2_Atom_Forge_Frame obj_frame;
-		lv2_atom_forge_frame_time(forge, 0);
-		lv2_atom_forge_object(forge, &obj_frame, 0, handle->lua_atom.uris.lua_message);
-		lv2_atom_forge_key(forge, handle->lua_atom.uris.lua_code);
-		lv2_atom_forge_string(forge, handle->chunk, len);
-		lv2_atom_forge_pop(forge, &obj_frame);
-
-		handle->dirty_out = 0; // reset flag
-	}
-	if(handle->error_out)
-	{
-		uint32_t len = strlen(handle->error) + 1;
-		LV2_Atom_Forge_Frame obj_frame;
-		lv2_atom_forge_frame_time(forge, 0);
-		lv2_atom_forge_object(forge, &obj_frame, 0, handle->lua_atom.uris.lua_message);
-		lv2_atom_forge_key(forge, handle->lua_atom.uris.lua_error);
-		lv2_atom_forge_string(forge, handle->error, len);
-		lv2_atom_forge_pop(forge, &obj_frame);
-
-		handle->error_out = 0; // reset flag
-	}
-	lv2_atom_forge_pop(forge, &notify_frame);
+	// handle UI comm
+	lua_handle_out(&handle->lua_handle, handle->notify, nsamples - 1);
 }
 
 static void
@@ -319,7 +194,7 @@ cleanup(LV2_Handle instance)
 {
 	Handle *handle = (Handle *)instance;
 
-	lua_vm_deinit(&handle->lvm);
+	lua_handle_deinit(&handle->lua_handle);
 	free(handle);
 }
 
@@ -327,7 +202,7 @@ static const void*
 extension_data(const char* uri)
 {
 	if(!strcmp(uri, LV2_STATE__interface))
-		return &state_iface;
+		return &lua_handle_state_iface;
 	else
 		return NULL;
 }

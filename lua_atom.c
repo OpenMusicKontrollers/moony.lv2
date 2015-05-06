@@ -69,8 +69,8 @@ struct _lframe_t {
 static void
 _latom_new(lua_State *L, const LV2_Atom *atom)
 {
-	lua_atom_t *lua_atom = lua_touserdata(L, lua_upvalueindex(1));
-	LV2_Atom_Forge *forge = &lua_atom->forge;
+	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
+	LV2_Atom_Forge *forge = &lua_handle->forge;
 
 	if(atom->type == forge->Object)
 	{
@@ -105,8 +105,8 @@ _latom_new(lua_State *L, const LV2_Atom *atom)
 static void
 _latom_body_new(lua_State *L, uint32_t size, LV2_URID type, const void *body)
 {
-	lua_atom_t *lua_atom = lua_touserdata(L, lua_upvalueindex(1));
-	LV2_Atom_Forge *forge = &lua_atom->forge;
+	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
+	LV2_Atom_Forge *forge = &lua_handle->forge;
 	size_t atom_size = sizeof(LV2_Atom) + size;
 
 	if(type == forge->Object)
@@ -241,13 +241,13 @@ _lseq__tostring(lua_State *L)
 static int
 _lseq_foreach(lua_State *L)
 {
-	lua_atom_t *lua_atom = lua_touserdata(L, lua_upvalueindex(1));
+	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
 	lseq_t *lseq = luaL_checkudata(L, 1, "lseq");
 
 	// reset iterator to beginning of sequence
 	lseq->itr = lv2_atom_sequence_begin(&lseq->seq->body);
 
-	lua_pushlightuserdata(L, lua_atom);
+	lua_pushlightuserdata(L, lua_handle);
 	lua_pushcclosure(L, _lseq_foreach_itr, 1);
 	lua_pushvalue(L, 1);
 
@@ -354,14 +354,14 @@ _ltuple__tostring(lua_State *L)
 static int
 _ltuple_foreach(lua_State *L)
 {
-	lua_atom_t *lua_atom = lua_touserdata(L, lua_upvalueindex(1));
+	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
 	ltuple_t *ltuple = luaL_checkudata(L, 1, "ltuple");
 
 	// reset iterator to beginning of tuple
 	ltuple->pos = 0;
 	ltuple->itr = lv2_atom_tuple_begin(ltuple->tuple);
 
-	lua_pushlightuserdata(L, lua_atom);
+	lua_pushlightuserdata(L, lua_handle);
 	lua_pushcclosure(L, _ltuple_foreach_itr, 1);
 	lua_pushvalue(L, 1);
 
@@ -371,7 +371,7 @@ _ltuple_foreach(lua_State *L)
 static int
 _ltuple_unpack(lua_State *L)
 {
-	lua_atom_t *lua_atom = lua_touserdata(L, lua_upvalueindex(1));
+	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
 	ltuple_t *ltuple = luaL_checkudata(L, 1, "ltuple");
 
 	uint32_t count = 0;
@@ -489,13 +489,13 @@ _lvec__tostring(lua_State *L)
 static int
 _lvec_foreach(lua_State *L)
 {
-	lua_atom_t *lua_atom = lua_touserdata(L, lua_upvalueindex(1));
+	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
 	lvec_t *lvec = luaL_checkudata(L, 1, "lvec");
 
 	// reset iterator to beginning of tuple
 	lvec->pos = 0;
 
-	lua_pushlightuserdata(L, lua_atom);
+	lua_pushlightuserdata(L, lua_handle);
 	lua_pushcclosure(L, _lvec_foreach_itr, 1);
 	lua_pushvalue(L, 1);
 
@@ -505,7 +505,7 @@ _lvec_foreach(lua_State *L)
 static int
 _lvec_unpack(lua_State *L)
 {
-	lua_atom_t *lua_atom = lua_touserdata(L, lua_upvalueindex(1));
+	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
 	lvec_t *lvec = luaL_checkudata(L, 1, "lvec");
 
 	for(int i=0; i<lvec->count; i++)
@@ -625,13 +625,13 @@ _lobj__tostring(lua_State *L)
 static int
 _lobj_foreach(lua_State *L)
 {
-	lua_atom_t *lua_atom = lua_touserdata(L, lua_upvalueindex(1));
+	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
 	lobj_t *lobj = luaL_checkudata(L, 1, "lobj");
 
 	// reset iterator to beginning of tuple
 	lobj->itr = lv2_atom_object_begin(&lobj->obj->body);
 
-	lua_pushlightuserdata(L, lua_atom);
+	lua_pushlightuserdata(L, lua_handle);
 	lua_pushcclosure(L, _lobj_foreach_itr, 1);
 	lua_pushvalue(L, 1);
 
@@ -649,8 +649,8 @@ static const luaL_Reg lobj_mt [] = {
 static void
 _latom_value(lua_State *L, const LV2_Atom *atom)
 {
-	lua_atom_t *lua_atom = lua_touserdata(L, lua_upvalueindex(1));
-	LV2_Atom_Forge *forge = &lua_atom->forge;
+	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
+	LV2_Atom_Forge *forge = &lua_handle->forge;
 
 	if(atom->type == forge->Int)
 		lua_pushinteger(L, ((const LV2_Atom_Int *)atom)->body);
@@ -672,7 +672,7 @@ _latom_value(lua_State *L, const LV2_Atom *atom)
 		lua_pushstring(L, LV2_ATOM_CONTENTS_CONST(LV2_Atom_String, atom));
 	else if(atom->type == forge->Literal)
 		lua_pushstring(L, LV2_ATOM_CONTENTS_CONST(LV2_Atom_Literal, atom));
-	else if(atom->type == lua_atom->uris.midi_event)
+	else if(atom->type == lua_handle->uris.midi_event)
 	{
 		const uint8_t *m = LV2_ATOM_BODY_CONST(atom);
 		lua_createtable(L, atom->size, 0);
@@ -689,7 +689,7 @@ _latom_value(lua_State *L, const LV2_Atom *atom)
 static int
 _latom__index(lua_State *L)
 {
-	lua_atom_t *lua_atom = lua_touserdata(L, lua_upvalueindex(1));
+	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
 	latom_t *latom = luaL_checkudata(L, 1, "latom");
 	const char *key = lua_tostring(L, 2);
 
@@ -697,9 +697,9 @@ _latom__index(lua_State *L)
 		lua_pushinteger(L, latom->atom->type);
 	else if(!strcmp(key, "value"))
 		_latom_value(L, latom->atom);
-	else if(!strcmp(key, "datatype") && (latom->atom->type == lua_atom->forge.Literal) )
+	else if(!strcmp(key, "datatype") && (latom->atom->type == lua_handle->forge.Literal) )
 		lua_pushinteger(L, ((LV2_Atom_Literal *)latom->atom)->body.datatype);
-	else if(!strcmp(key, "lang") && (latom->atom->type == lua_atom->forge.Literal) )
+	else if(!strcmp(key, "lang") && (latom->atom->type == lua_handle->forge.Literal) )
 		lua_pushinteger(L, ((LV2_Atom_Literal *)latom->atom)->body.lang);
 	else // look in metatable
 	{
@@ -714,10 +714,10 @@ _latom__index(lua_State *L)
 static int
 _latom__len(lua_State *L)
 {
-	lua_atom_t *lua_atom = lua_touserdata(L, lua_upvalueindex(1));
+	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
 	latom_t *latom = luaL_checkudata(L, 1, "latom");
 
-	if(latom->atom->type == lua_atom->forge.Literal)
+	if(latom->atom->type == lua_handle->forge.Literal)
 		lua_pushinteger(L, latom->atom->size - sizeof(LV2_Atom_Literal_Body));
 	else
 		lua_pushinteger(L, latom->atom->size);
@@ -926,12 +926,12 @@ _lforge_path(lua_State *L)
 static int
 _lforge_midi(lua_State *L)
 {
-	lua_atom_t *lua_atom = lua_touserdata(L, lua_upvalueindex(1));
+	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	if(lua_istable(L, 2))
 	{
 		uint32_t size = lua_rawlen(L, 2);
-		lv2_atom_forge_atom(lforge->forge, size, lua_atom->uris.midi_event);
+		lv2_atom_forge_atom(lforge->forge, size, lua_handle->uris.midi_event);
 		for(int i=1; i<=size; i++)
 		{
 			lua_rawgeti(L, -1, i);
@@ -1043,9 +1043,9 @@ static const luaL_Reg lforge_mt [] = {
 static int
 _llv2_map(lua_State *L)
 {
-	lua_atom_t *lua_atom = lua_touserdata(L, lua_upvalueindex(1));
+	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
 	const char *uri = luaL_checkstring(L, 1);
-	LV2_URID urid = lua_atom->map->map(lua_atom->map->handle, uri);
+	LV2_URID urid = lua_handle->map->map(lua_handle->map->handle, uri);
 
 	if(urid)
 		lua_pushinteger(L, urid);
@@ -1058,9 +1058,9 @@ _llv2_map(lua_State *L)
 static int
 _llv2_unmap(lua_State *L)
 {
-	lua_atom_t *lua_atom = lua_touserdata(L, lua_upvalueindex(1));
+	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
 	LV2_URID urid = luaL_checkinteger(L, 1);
-	const char *uri = lua_atom->unmap->unmap(lua_atom->unmap->handle, urid);
+	const char *uri = lua_handle->unmap->unmap(lua_handle->unmap->handle, urid);
 
 	if(uri)
 		lua_pushstring(L, uri);
@@ -1078,83 +1078,95 @@ static const luaL_Reg llv2 [] = {
 };
 
 int
-lua_atom_init(lua_atom_t *lua_atom, const LV2_Feature *const *features)
+lua_handle_init(lua_handle_t *lua_handle, const LV2_Feature *const *features)
 {
+	if(lua_vm_init(&lua_handle->lvm))
+	{
+		fprintf(stderr, "Lua VM cannot be initialized\n");
+		return -1;
+	}
+
 	for(int i=0; features[i]; i++)
 		if(!strcmp(features[i]->URI, LV2_URID__map))
-			lua_atom->map = (LV2_URID_Map *)features[i]->data;
+			lua_handle->map = (LV2_URID_Map *)features[i]->data;
 		else if(!strcmp(features[i]->URI, LV2_URID__unmap))
-			lua_atom->unmap = (LV2_URID_Unmap *)features[i]->data;
+			lua_handle->unmap = (LV2_URID_Unmap *)features[i]->data;
 
-	if(!lua_atom->map)
+	if(!lua_handle->map)
 	{
 		fprintf(stderr, "Host does not support urid:map\n");
 		return -1;
 	}
-	if(!lua_atom->unmap)
+	if(!lua_handle->unmap)
 	{
 		fprintf(stderr, "Host does not support urid:unmap\n");
 		return -1;
 	}
 
-	lua_atom->uris.lua_message = lua_atom->map->map(lua_atom->map->handle, LUA_MESSAGE_URI);
-	lua_atom->uris.lua_code = lua_atom->map->map(lua_atom->map->handle, LUA_CODE_URI);
-	lua_atom->uris.lua_error = lua_atom->map->map(lua_atom->map->handle, LUA_ERROR_URI);
-	lua_atom->uris.midi_event = lua_atom->map->map(lua_atom->map->handle, LV2_MIDI__MidiEvent);
+	lua_handle->uris.lua_message = lua_handle->map->map(lua_handle->map->handle, LUA_MESSAGE_URI);
+	lua_handle->uris.lua_code = lua_handle->map->map(lua_handle->map->handle, LUA_CODE_URI);
+	lua_handle->uris.lua_error = lua_handle->map->map(lua_handle->map->handle, LUA_ERROR_URI);
+	lua_handle->uris.midi_event = lua_handle->map->map(lua_handle->map->handle, LV2_MIDI__MidiEvent);
 
-	lv2_atom_forge_init(&lua_atom->forge, lua_atom->map);
+	lv2_atom_forge_init(&lua_handle->forge, lua_handle->map);
 
 	return 0;
 }
 
 void
-lua_atom_open(lua_atom_t *lua_atom, lua_State *L)
+lua_handle_deinit(lua_handle_t *lua_handle)
+{
+	lua_vm_deinit(&lua_handle->lvm);
+}
+
+void
+lua_handle_open(lua_handle_t *lua_handle, lua_State *L)
 {
 	luaL_newmetatable(L, "lseq");
-	lua_pushlightuserdata(L, lua_atom); // @ upvalueindex 1
+	lua_pushlightuserdata(L, lua_handle); // @ upvalueindex 1
 	luaL_setfuncs (L, lseq_mt, 1);
 	lua_pop(L, 1);
 	
 	luaL_newmetatable(L, "lobj");
-	lua_pushlightuserdata(L, lua_atom); // @ upvalueindex 1
+	lua_pushlightuserdata(L, lua_handle); // @ upvalueindex 1
 	luaL_setfuncs (L, lobj_mt, 1);
 	lua_pop(L, 1);
 	
 	luaL_newmetatable(L, "ltuple");
-	lua_pushlightuserdata(L, lua_atom); // @ upvalueindex 1
+	lua_pushlightuserdata(L, lua_handle); // @ upvalueindex 1
 	luaL_setfuncs (L, ltuple_mt, 1);
 	lua_pop(L, 1);
 	
 	luaL_newmetatable(L, "lvec");
-	lua_pushlightuserdata(L, lua_atom); // @ upvalueindex 1
+	lua_pushlightuserdata(L, lua_handle); // @ upvalueindex 1
 	luaL_setfuncs (L, lvec_mt, 1);
 	lua_pop(L, 1);
 	
 	luaL_newmetatable(L, "latom");
-	lua_pushlightuserdata(L, lua_atom); // @ upvalueindex 1
+	lua_pushlightuserdata(L, lua_handle); // @ upvalueindex 1
 	luaL_setfuncs (L, latom_mt, 1);
 	lua_pop(L, 1);
 	
 	luaL_newmetatable(L, "lforge");
-	lua_pushlightuserdata(L, lua_atom); // @ upvalueindex 1
+	lua_pushlightuserdata(L, lua_handle); // @ upvalueindex 1
 	luaL_setfuncs (L, lforge_mt, 1);
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -2, "__index");
 	lua_pop(L, 1);
 	
 	luaL_newmetatable(L, "lframe");
-	lua_pushlightuserdata(L, lua_atom); // @ upvalueindex 1
+	lua_pushlightuserdata(L, lua_handle); // @ upvalueindex 1
 	luaL_setfuncs (L, lframe_mt, 1);
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -2, "__index");
 	lua_pop(L, 1);
 
 #define SET_CONST(L, ID) \
-	lua_pushinteger(L, lua_atom->forge.ID); \
+	lua_pushinteger(L, lua_handle->forge.ID); \
 	lua_setfield(L, -2, #ID);
 
 	lua_newtable(L);
-	lua_pushlightuserdata(L, lua_atom); // @ upvalueindex 1
+	lua_pushlightuserdata(L, lua_handle); // @ upvalueindex 1
 	luaL_setfuncs(L, llv2, 1);
 	//SET_CONST(L, Blank); // is depracated
 	SET_CONST(L, Bool);
@@ -1174,7 +1186,7 @@ lua_atom_open(lua_atom_t *lua_atom, lua_State *L)
 	SET_CONST(L, URI);
 	SET_CONST(L, URID);
 	SET_CONST(L, Vector);
-	lua_pushinteger(L, lua_atom->uris.midi_event);
+	lua_pushinteger(L, lua_handle->uris.midi_event);
 		lua_setfield(L, -2, "Midi");
 	lua_setglobal(L, "lv2");
 
@@ -1185,4 +1197,141 @@ lua_atom_open(lua_atom_t *lua_atom, lua_State *L)
 	//TODO support for LV2_Log extension
 
 #undef SET_CONST
+}
+
+void
+lua_handle_in(lua_handle_t *lua_handle, const LV2_Atom_Sequence *seq)
+{
+	lua_State *L = lua_handle->lvm.L;
+
+	if(lua_handle->dirty_in)
+	{
+		// load chunk
+		if(luaL_dostring(L, lua_handle->chunk))
+		{
+			strcpy(lua_handle->error, lua_tostring(L, -1));
+			lua_pop(L, 1);
+
+			lua_handle->error_out = 1;
+		}
+		else
+			lua_handle->error[0] = 0x0; // reset error flag
+
+		lua_handle->dirty_in = 0;
+	}
+
+	LV2_ATOM_SEQUENCE_FOREACH(seq, ev)
+	{
+		const LV2_Atom *atom = &ev->body;
+
+		if(atom->type == lua_handle->forge.String)
+		{
+			if(atom->size)
+			{
+				strncpy(lua_handle->chunk, LV2_ATOM_BODY_CONST(atom), atom->size);
+				lua_handle->dirty_in = 1;
+			}
+			else
+				lua_handle->dirty_out = 1;
+		}
+	}
+}
+
+static LV2_State_Status
+_state_save(LV2_Handle instance, LV2_State_Store_Function store,
+	LV2_State_Handle state, uint32_t flags, const LV2_Feature *const *features)
+{
+	lua_handle_t *lua_handle = (lua_handle_t *)instance;
+
+	return store(
+		state,
+		lua_handle->uris.lua_code,
+		lua_handle->chunk,
+		strlen(lua_handle->chunk)+1,
+		lua_handle->forge.String,
+		LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
+}
+
+static LV2_State_Status
+_state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_State_Handle state, uint32_t flags, const LV2_Feature *const *features)
+{
+	lua_handle_t *lua_handle = (lua_handle_t *)instance;
+
+	size_t size;
+	uint32_t type;
+	uint32_t flags2;
+	const char *chunk = retrieve(
+		state,
+		lua_handle->uris.lua_code,
+		&size,
+		&type,
+		&flags2
+	);
+
+	//TODO check type, flags2
+
+	if(chunk && size && type)
+	{
+		strncpy(lua_handle->chunk, chunk, size);
+		lua_handle->dirty_in = 1;
+	}
+
+	return LV2_STATE_SUCCESS;
+}
+
+const LV2_State_Interface lua_handle_state_iface = {
+	.save = _state_save,
+	.restore = _state_restore
+};
+
+void
+lua_handle_activate(lua_handle_t *lua_handle, const char *chunk)
+{
+	lua_State *L = lua_handle->lvm.L;
+
+	// load chunk
+	strcpy(lua_handle->chunk, chunk);
+	luaL_dostring(L, lua_handle->chunk); // cannot fail
+
+	lua_handle->dirty_out = 1; // trigger update of UI
+}
+
+void
+lua_handle_out(lua_handle_t *lua_handle, LV2_Atom_Sequence *seq, uint32_t frames)
+{
+	// prepare notify atom forge
+	LV2_Atom_Forge *forge = &lua_handle->forge;
+	LV2_Atom_Forge_Frame notify_frame;
+	
+	uint32_t capacity = seq->atom.size;
+	lv2_atom_forge_set_buffer(forge, (uint8_t *)seq, capacity);
+	lv2_atom_forge_sequence_head(forge, &notify_frame, 0);
+
+	if(lua_handle->dirty_out)
+	{
+		uint32_t len = strlen(lua_handle->chunk) + 1;
+		LV2_Atom_Forge_Frame obj_frame;
+		lv2_atom_forge_frame_time(forge, frames);
+		lv2_atom_forge_object(forge, &obj_frame, 0, lua_handle->uris.lua_message);
+		lv2_atom_forge_key(forge, lua_handle->uris.lua_code);
+		lv2_atom_forge_string(forge, lua_handle->chunk, len);
+		lv2_atom_forge_pop(forge, &obj_frame);
+
+		lua_handle->dirty_out = 0; // reset flag
+	}
+
+	if(lua_handle->error_out)
+	{
+		uint32_t len = strlen(lua_handle->error) + 1;
+		LV2_Atom_Forge_Frame obj_frame;
+		lv2_atom_forge_frame_time(forge, frames);
+		lv2_atom_forge_object(forge, &obj_frame, 0, lua_handle->uris.lua_message);
+		lv2_atom_forge_key(forge, lua_handle->uris.lua_error);
+		lv2_atom_forge_string(forge, lua_handle->error, len);
+		lv2_atom_forge_pop(forge, &obj_frame);
+
+		lua_handle->error_out = 0; // reset flag
+	}
+	
+	lv2_atom_forge_pop(forge, &notify_frame);
 }
