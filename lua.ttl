@@ -51,50 +51,62 @@ lua:common_eo
 		ui:plugin lua:c1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:c2xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:c4xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a2xa2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a4xa4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a1xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a1xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:c1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:c2xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:c4xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] .
 lua:common_ui
 	a ui:UI ;
@@ -102,50 +114,62 @@ lua:common_ui
 		ui:plugin lua:c1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:c2xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:c4xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a2xa2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a4xa4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a1xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a1xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:c1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:c2xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:c4xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] ;
 	lv2:requiredFeature ui:idleInterface ;
   lv2:extensionData ui:idleInterface, ui:showInterface .
@@ -155,50 +179,62 @@ lua:common_x11
 		ui:plugin lua:c1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:c2xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:c4xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a2xa2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a4xa4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a1xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a1xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:c1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:c2xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:c4xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] ;
 	lv2:requiredFeature ui:idleInterface ;
 	lv2:optionalFeature ui:resize ;
@@ -209,50 +245,62 @@ lua:common_kx
 		ui:plugin lua:c1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:c2xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:c4xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a2xa2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a4xa4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a1xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:a1xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:c1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:c2xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin lua:c4xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
 	] ;
 	lv2:requiredFeature kx:Host .
 
@@ -274,7 +322,6 @@ lua:c1xc1
 		lv2:index 0 ;
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
@@ -284,7 +331,6 @@ lua:c1xc1
 		lv2:index 1 ;
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# input control ports
@@ -321,7 +367,6 @@ lua:c2xc2
 		lv2:index 0 ;
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
@@ -331,7 +376,6 @@ lua:c2xc2
 		lv2:index 1 ;
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# input control ports
@@ -381,7 +425,6 @@ lua:c4xc4
 		lv2:index 0 ;
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
@@ -391,7 +434,6 @@ lua:c4xc4
 		lv2:index 1 ;
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# input control ports
@@ -467,7 +509,6 @@ lua:a1xa1
 		lv2:index 0 ;
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
@@ -477,7 +518,6 @@ lua:a1xa1
 		lv2:index 1 ;
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# input event port
@@ -488,6 +528,7 @@ lua:a1xa1
 		lv2:index 2 ;
 		lv2:symbol "event_in_1" ;
 		lv2:name "Event In 1" ;
+		lv2:designation lv2:control ;
 	] , [
 	# output event port
 	  a lv2:OutputPort ,
@@ -497,6 +538,7 @@ lua:a1xa1
 		lv2:index 3 ;
 		lv2:symbol "event_out_1" ;
 		lv2:name "Event Out 1" ;
+		lv2:designation lv2:control ;
 	] .
 
 # A2XA2 Plugin
@@ -517,7 +559,6 @@ lua:a2xa2
 		lv2:index 0 ;
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
@@ -527,7 +568,6 @@ lua:a2xa2
 		lv2:index 1 ;
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# input event port
@@ -538,6 +578,7 @@ lua:a2xa2
 		lv2:index 2 ;
 		lv2:symbol "event_in_1" ;
 		lv2:name "Event In 1" ;
+		lv2:designation lv2:control ;
 	] , [
 	  a lv2:InputPort ,
 			atom:AtomPort ;
@@ -555,6 +596,7 @@ lua:a2xa2
 		lv2:index 4 ;
 		lv2:symbol "event_out_1" ;
 		lv2:name "Event Out 1" ;
+		lv2:designation lv2:control ;
 	] , [
 	  a lv2:OutputPort ,
 			atom:AtomPort ;
@@ -583,7 +625,6 @@ lua:a4xa4
 		lv2:index 0 ;
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
@@ -593,7 +634,6 @@ lua:a4xa4
 		lv2:index 1 ;
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# input event port
@@ -604,6 +644,7 @@ lua:a4xa4
 		lv2:index 2 ;
 		lv2:symbol "event_in_1" ;
 		lv2:name "Event In 1" ;
+		lv2:designation lv2:control ;
 	] , [
 	  a lv2:InputPort ,
 			atom:AtomPort ;
@@ -637,6 +678,7 @@ lua:a4xa4
 		lv2:index 6 ;
 		lv2:symbol "event_out_1" ;
 		lv2:name "Event Out 1" ;
+		lv2:designation lv2:control ;
 	] , [
 	  a lv2:OutputPort ,
 			atom:AtomPort ;
@@ -681,7 +723,6 @@ lua:a1xc1
 		lv2:index 0 ;
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
@@ -691,7 +732,6 @@ lua:a1xc1
 		lv2:index 1 ;
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# input event port
@@ -702,6 +742,7 @@ lua:a1xc1
 		lv2:index 2 ;
 		lv2:symbol "event_in_1" ;
 		lv2:name "Event In 1" ;
+		lv2:designation lv2:control ;
 	] , [
 	# output port
 	  a lv2:OutputPort ,
@@ -729,7 +770,6 @@ lua:a1xc2
 		lv2:index 0 ;
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
@@ -739,7 +779,6 @@ lua:a1xc2
 		lv2:index 1 ;
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# input event port
@@ -750,6 +789,7 @@ lua:a1xc2
 		lv2:index 2 ;
 		lv2:symbol "event_in_1" ;
 		lv2:name "Event In 1" ;
+		lv2:designation lv2:control ;
 	] , [
 	# output port
 	  a lv2:OutputPort ,
@@ -783,7 +823,6 @@ lua:a1xc4
 		lv2:index 0 ;
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
@@ -793,7 +832,6 @@ lua:a1xc4
 		lv2:index 1 ;
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# input event port
@@ -804,6 +842,7 @@ lua:a1xc4
 		lv2:index 2 ;
 		lv2:symbol "event_in_1" ;
 		lv2:name "Event In 1" ;
+		lv2:designation lv2:control ;
 	] , [
 	# output port
 	  a lv2:OutputPort ,
@@ -849,7 +888,6 @@ lua:c1xa1
 		lv2:index 0 ;
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
@@ -859,7 +897,6 @@ lua:c1xa1
 		lv2:index 1 ;
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# input event port
@@ -870,6 +907,7 @@ lua:c1xa1
 		lv2:index 2 ;
 		lv2:symbol "event_ou_1" ;
 		lv2:name "Event Out 1" ;
+		lv2:designation lv2:control ;
 	] , [
 	# output port
 	  a lv2:InputPort ,
@@ -897,7 +935,6 @@ lua:c2xa1
 		lv2:index 0 ;
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
@@ -907,7 +944,6 @@ lua:c2xa1
 		lv2:index 1 ;
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# input event port
@@ -918,6 +954,7 @@ lua:c2xa1
 		lv2:index 2 ;
 		lv2:symbol "event_out_1" ;
 		lv2:name "Event Out 1" ;
+		lv2:designation lv2:control ;
 	] , [
 	# input port
 	  a lv2:InputPort ,
@@ -951,7 +988,6 @@ lua:c4xa1
 		lv2:index 0 ;
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# output notify port
@@ -961,7 +997,6 @@ lua:c4xa1
 		lv2:index 1 ;
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
-		lv2:designation lv2:control ;
 		rsz:minimumSize 65536 ;
 	] , [
 	# output event port
@@ -972,6 +1007,7 @@ lua:c4xa1
 		lv2:index 2 ;
 		lv2:symbol "event_out_1" ;
 		lv2:name "Event Out 1" ;
+		lv2:designation lv2:control ;
 	] , [
 	# input port
 	  a lv2:InputPort ,
