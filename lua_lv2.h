@@ -29,6 +29,7 @@
 #include "lv2/lv2plug.in/ns/ext/atom/forge.h"
 #include "lv2/lv2plug.in/ns/ext/midi/midi.h"
 #include "lv2/lv2plug.in/ns/ext/urid/urid.h"
+#include "lv2/lv2plug.in/ns/ext/worker/worker.h"
 #include "lv2/lv2plug.in/ns/ext/state/state.h"
 #include "lv2/lv2plug.in/ns/lv2core/lv2.h"
 #include "lv2/lv2plug.in/ns/extensions/ui/ui.h"
@@ -90,6 +91,7 @@ extern const LV2UI_Descriptor common_kx;
 #define POOL_NUM 8
 
 typedef struct _Lua_VM Lua_VM;
+typedef struct _mem_request_t mem_request_t;
 
 struct _Lua_VM {
 	tlsf_t tlsf;
@@ -102,6 +104,11 @@ struct _Lua_VM {
 	size_t used;
 
 	lua_State *L;
+};
+
+struct _mem_request_t {
+	int i;
+	void *mem;
 };
 
 int lua_vm_init(Lua_VM *lvm);
@@ -142,6 +149,9 @@ struct _lua_handle_t {
 		LV2_URID lua_error;
 		LV2_URID midi_event;
 	} uris;
+	
+	LV2_Worker_Schedule *sched;
+	volatile int working;
 
 	Lua_VM lvm;
 	char chunk [MAX_CHUNK_LEN];
@@ -166,6 +176,7 @@ void lua_handle_open(lua_handle_t *lua_handle, lua_State *L);
 void lua_handle_activate(lua_handle_t *lua_handle, const char *chunk);
 void lua_handle_in(lua_handle_t *lua_handle, const LV2_Atom_Sequence *seq);
 void lua_handle_out(lua_handle_t *lua_handle, LV2_Atom_Sequence *seq, uint32_t frames);
+const void* extension_data(const char* uri);
 
 static inline int
 lua_handle_bypass(lua_handle_t *lua_handle)
@@ -183,8 +194,6 @@ lua_handle_error(lua_handle_t *lua_handle)
 
 	lua_handle->error_out = 1;
 }
-
-extern const LV2_State_Interface lua_handle_state_iface;
 
 // strdup fallback for windows
 #if defined(_WIN32)

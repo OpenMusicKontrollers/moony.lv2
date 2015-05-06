@@ -1091,6 +1091,8 @@ lua_handle_init(lua_handle_t *lua_handle, const LV2_Feature *const *features)
 			lua_handle->map = (LV2_URID_Map *)features[i]->data;
 		else if(!strcmp(features[i]->URI, LV2_URID__unmap))
 			lua_handle->unmap = (LV2_URID_Unmap *)features[i]->data;
+		else if(!strcmp(features[i]->URI, LV2_WORKER__schedule))
+			lua_handle->sched = (LV2_Worker_Schedule *)features[i]->data;
 
 	if(!lua_handle->map)
 	{
@@ -1100,6 +1102,11 @@ lua_handle_init(lua_handle_t *lua_handle, const LV2_Feature *const *features)
 	if(!lua_handle->unmap)
 	{
 		fprintf(stderr, "Host does not support urid:unmap\n");
+		return -1;
+	}
+	if(!lua_handle->sched)
+	{
+		fprintf(stderr, "Host does not support worker:schedule\n");
 		return -1;
 	}
 
@@ -1279,10 +1286,107 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 	return LV2_STATE_SUCCESS;
 }
 
-const LV2_State_Interface lua_handle_state_iface = {
+static const LV2_State_Interface state_iface = {
 	.save = _state_save,
 	.restore = _state_restore
 };
+
+// non-rt thread
+static LV2_Worker_Status
+_work(LV2_Handle instance,
+	LV2_Worker_Respond_Function respond,
+	LV2_Worker_Respond_Handle target,
+	uint32_t size,
+	const void *body)
+{
+	lua_handle_t *lua_handle = instance;
+
+	assert(size == sizeof(mem_request_t));
+	const mem_request_t *request = body;
+	uint32_t i = request->i;
+
+	if(request->mem) // request to free memory from _work_response
+	{
+		lua_vm_mem_free(request->mem, lua_handle->lvm.size[i]);
+	}
+	else // request to allocate memory from lua_vm_mem_extend
+	{
+		lua_handle->lvm.area[i] = lua_vm_mem_alloc(lua_handle->lvm.size[i]);
+	
+		respond(target, size, body); // signal to _work_response
+	}
+	
+	return LV2_WORKER_SUCCESS;
+}
+
+// rt-thread
+static LV2_Worker_Status
+_work_response(LV2_Handle instance, uint32_t size, const void *body)
+{
+	lua_handle_t *lua_handle = instance;
+
+	assert(size == sizeof(mem_request_t));
+	const mem_request_t *request = body;
+	uint32_t i = request->i;
+	
+	if(!lua_handle->lvm.area[i]) // allocation failed
+		return LV2_WORKER_ERR_UNKNOWN;
+
+	// tlsf add pool
+	lua_handle->lvm.pool[i] = tlsf_add_pool(lua_handle->lvm.tlsf,
+		lua_handle->lvm.area[i], lua_handle->lvm.size[i]);
+
+	if(!lua_handle->lvm.pool[i]) // pool addition failed
+	{
+		const mem_request_t req = {
+			.i = i,
+			.mem = lua_handle->lvm.area[i]
+		};
+		lua_handle->lvm.area[i] = NULL;
+
+		// schedule freeing of memory to _work
+		LV2_Worker_Status status = lua_handle->sched->schedule_work(
+			lua_handle->sched->handle, sizeof(mem_request_t), &req);
+
+		//TODO check status
+
+		return LV2_WORKER_ERR_UNKNOWN;
+	}
+		
+	lua_handle->lvm.space += lua_handle->lvm.size[i];
+	//printf("mem extended to %zu KB\n", lua_handle->lvm.space / 1024);
+
+	return LV2_WORKER_SUCCESS;
+}
+
+// rt-thread
+static LV2_Worker_Status
+_end_run(LV2_Handle instance)
+{
+	lua_handle_t *lua_handle = instance;
+
+	// do nothing
+	lua_handle->working = 0;
+
+	return LV2_WORKER_SUCCESS;
+}
+
+static const LV2_Worker_Interface work_iface = {
+	.work = _work,
+	.work_response = _work_response,
+	.end_run = _end_run
+};
+
+const void*
+extension_data(const char* uri)
+{
+	if(!strcmp(uri, LV2_WORKER__interface))
+		return &work_iface;
+	else if(!strcmp(uri, LV2_STATE__interface))
+		return &state_iface;
+	else
+		return NULL;
+}
 
 void
 lua_handle_activate(lua_handle_t *lua_handle, const char *chunk)

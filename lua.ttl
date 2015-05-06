@@ -20,6 +20,7 @@
 @prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .
 @prefix atom: <http://lv2plug.in/ns/ext/atom#> .
 @prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .
+@prefix work: <http://lv2plug.in/ns/ext/worker#> .
 @prefix midi: <http://lv2plug.in/ns/ext/midi#> .
 @prefix state: <http://lv2plug.in/ns/ext/state#> .
 @prefix rsz:  <http://lv2plug.in/ns/ext/resize-port#> .
@@ -312,7 +313,8 @@ lua:c1xc1
 	doap:license lic:Artistic-2.0 ;
 	lv2:project proj:lua ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
-  lv2:extensionData state:interface ;
+	lv2:extensionData work:interface, state:interface ;
+	lv2:requiredFeature work:schedule ;
 
 	lv2:port [
 	# input control port
@@ -357,7 +359,8 @@ lua:c2xc2
 	doap:license lic:Artistic-2.0 ;
 	lv2:project proj:lua ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
-  lv2:extensionData state:interface ;
+	lv2:extensionData work:interface, state:interface ;
+	lv2:requiredFeature work:schedule ;
 
 	lv2:port [
 	# input control port
@@ -415,7 +418,8 @@ lua:c4xc4
 	doap:license lic:Artistic-2.0 ;
 	lv2:project proj:lua ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
-  lv2:extensionData state:interface ;
+	lv2:extensionData work:interface, state:interface ;
+	lv2:requiredFeature work:schedule ;
 
 	lv2:port [
 	# input control port
@@ -499,7 +503,8 @@ lua:a1xa1
 	doap:license lic:Artistic-2.0 ;
 	lv2:project proj:lua ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
-  lv2:extensionData state:interface ;
+	lv2:extensionData work:interface, state:interface ;
+	lv2:requiredFeature work:schedule ;
 
 	lv2:port [
 	# input control port
@@ -549,7 +554,8 @@ lua:a2xa2
 	doap:license lic:Artistic-2.0 ;
 	lv2:project proj:lua ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
-  lv2:extensionData state:interface ;
+	lv2:extensionData work:interface, state:interface ;
+	lv2:requiredFeature work:schedule ;
 
 	lv2:port [
 	# input control port
@@ -615,7 +621,8 @@ lua:a4xa4
 	doap:license lic:Artistic-2.0 ;
 	lv2:project proj:lua ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
-  lv2:extensionData state:interface ;
+	lv2:extensionData work:interface, state:interface ;
+	lv2:requiredFeature work:schedule ;
 
 	lv2:port [
 	# input control port
@@ -713,7 +720,8 @@ lua:a1xc1
 	doap:license lic:Artistic-2.0 ;
 	lv2:project proj:lua ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
-  lv2:extensionData state:interface ;
+	lv2:extensionData work:interface, state:interface ;
+	lv2:requiredFeature work:schedule ;
 
 	lv2:port [
 	# input control port
@@ -760,7 +768,8 @@ lua:a1xc2
 	doap:license lic:Artistic-2.0 ;
 	lv2:project proj:lua ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
-  lv2:extensionData state:interface ;
+	lv2:extensionData work:interface, state:interface ;
+	lv2:requiredFeature work:schedule ;
 
 	lv2:port [
 	# input control port
@@ -813,7 +822,8 @@ lua:a1xc4
 	doap:license lic:Artistic-2.0 ;
 	lv2:project proj:lua ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
-  lv2:extensionData state:interface ;
+	lv2:extensionData work:interface, state:interface ;
+	lv2:requiredFeature work:schedule ;
 
 	lv2:port [
 	# input control port
@@ -878,7 +888,8 @@ lua:c1xa1
 	doap:license lic:Artistic-2.0 ;
 	lv2:project proj:lua ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
-  lv2:extensionData state:interface ;
+	lv2:extensionData work:interface, state:interface ;
+	lv2:requiredFeature work:schedule ;
 
 	lv2:port [
 	# input control port
@@ -925,7 +936,8 @@ lua:c2xa1
 	doap:license lic:Artistic-2.0 ;
 	lv2:project proj:lua ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
-  lv2:extensionData state:interface ;
+	lv2:extensionData work:interface, state:interface ;
+	lv2:requiredFeature work:schedule ;
 
 	lv2:port [
 	# input control port
@@ -978,7 +990,8 @@ lua:c4xa1
 	doap:license lic:Artistic-2.0 ;
 	lv2:project proj:lua ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
-  lv2:extensionData state:interface ;
+	lv2:extensionData work:interface, state:interface ;
+	lv2:requiredFeature work:schedule ;
 
 	lv2:port [
 	# input control port

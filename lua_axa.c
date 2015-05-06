@@ -198,15 +198,6 @@ cleanup(LV2_Handle instance)
 	free(handle);
 }
 
-static const void*
-extension_data(const char* uri)
-{
-	if(!strcmp(uri, LV2_STATE__interface))
-		return &lua_handle_state_iface;
-	else
-		return NULL;
-}
-
 const LV2_Descriptor a1xa1 = {
 	.URI						= LUA_A1XA1_URI,
 	.instantiate		= instantiate,

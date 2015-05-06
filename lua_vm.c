@@ -131,7 +131,7 @@ lua_vm_deinit(Lua_VM *lvm)
 	for(int i=(POOL_NUM-1); i>=0; i--)
 	{
 		if(!lvm->area[i])
-			continue; // this memory slot is used, skip it
+			continue; // this memory slot is unused, skip it
 
 		tlsf_remove_pool(lvm->tlsf, lvm->pool[i]);
 		lua_vm_mem_free(lvm->area[i], lvm->size[i]);
@@ -183,24 +183,28 @@ lua_vm_mem_free(void *area, size_t size)
 int
 lua_vm_mem_extend(Lua_VM *lvm)
 {
+	lua_handle_t *lua_handle = (void *)lvm - offsetof(lua_handle_t, lvm);
+
+	if(lua_handle->working) // request is already been processed
+		return -1;
+
 	for(int i=0; i<POOL_NUM; i++)
 	{
 		if(lvm->area[i])
 			continue;
-		
-		lvm->area[i] = lua_vm_mem_alloc(lvm->size[i]);
-		if(!lvm->area[i])
-			return -1;
 
-		lvm->pool[i] = tlsf_add_pool(lvm->tlsf, lvm->area[i], lvm->size[i]);
-		if(!lvm->pool[i])
-		{
-			lua_vm_mem_free(lvm->area[i], lvm->size[i]);
-			return -1;
-		}
+		const mem_request_t request = {
+			.i = i,
+			.mem = NULL
+		};
 
-		lvm->space += lvm->size[i];
-		printf("mem extended to %zu KB\n", lvm->space / 1024);
+		// schedule allocation of memory to _work
+		LV2_Worker_Status status = lua_handle->sched->schedule_work(
+			lua_handle->sched->handle, sizeof(mem_request_t), &request);
+
+		// toggle working flag
+		if(status == LV2_WORKER_SUCCESS)
+			lua_handle->working = 1;
 
 		return 0;
 	}
