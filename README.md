@@ -36,6 +36,10 @@ Get more information at: [http://open-music-kontrollers.ch/lv2/lua](http://open-
 * **Lua A1 x C2** 1x atom input to 2x control output
 * **Lua A1 x C4** 1x atom input to 4x control output
 
+#### Control+atom port input to control+atom port output
+
+* **Lua C4+A1 x C4+A1** 4x control + 1x atom input to 4x control + 1x atom output
+
 ### Dependencies
 
 * [LV2](http://lv2plug.in) (LV2 Plugin Standard)

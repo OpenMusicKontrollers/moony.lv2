@@ -60,6 +60,7 @@ add_library(lua MODULE
 	lua_cxa.c
 	lua_axa.c
 	lua_axc.c
+	lua_caxca.c
 
 	tlsf-3.0/tlsf.c
 

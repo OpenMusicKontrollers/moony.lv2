@@ -14,7 +14,7 @@
 # http://www.perlfoundation.org/artistic_license_2_0.
 
 @prefix lv2:  <http://lv2plug.in/ns/lv2core#> .
-@prefix owl:			<http://www.w3.org/2002/07/owl#> .
+@prefix owl:	<http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .
 @prefix kx:		<http://kxstudio.sf.net/ns/lv2ext/external-ui#> .
@@ -135,6 +135,16 @@ lua:c2xa1
 	rdfs:seeAlso <lua.ttl> .
 
 lua:c4xa1
+	a lv2:Plugin ;
+	lv2:binary <lua@LIB_EXT@> ;
+	@EO_UI_WRAP@ui:ui lua:common_eo ;
+	@UI_UI_WRAP@ui:ui lua:common_ui ;
+	@KX_UI_WRAP@ui:ui lua:common_kx ;
+	@X11_UI_WRAP@ui:ui lua:common_x11 ;
+	rdfs:seeAlso <lua.ttl> .
+
+# control/atom in, control/atom out
+lua:c4a1xc4a1
 	a lv2:Plugin ;
 	lv2:binary <lua@LIB_EXT@> ;
 	@EO_UI_WRAP@ui:ui lua:common_eo ;

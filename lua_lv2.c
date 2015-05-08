@@ -49,6 +49,9 @@ lv2_descriptor(uint32_t index)
 			return &c2xa1;
 		case 11:
 			return &c4xa1;
+		
+		case 12:
+			return &c4a1xc4a1;
 
 		default:
 			return NULL;

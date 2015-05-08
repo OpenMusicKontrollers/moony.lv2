@@ -328,7 +328,9 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 
 		&&	strcmp(plugin_uri, LUA_C1XA1_URI)
 		&&	strcmp(plugin_uri, LUA_C2XA1_URI)
-		&&	strcmp(plugin_uri, LUA_C4XA1_URI) )
+		&&	strcmp(plugin_uri, LUA_C4XA1_URI)
+		
+		&&	strcmp(plugin_uri, LUA_C4A1XC4A1_URI) )
 	{
 		return NULL;
 	}

@@ -66,6 +66,10 @@
 #define LUA_C2XA1_URI				LUA_URI"#c2xa1"
 #define LUA_C4XA1_URI				LUA_URI"#c4xa1"
 
+#define LUA_C1A1XC1A1_URI		LUA_URI"#c1a1xc1a1"
+#define LUA_C2A1XC2A1_URI		LUA_URI"#c2a1xc2a1"
+#define LUA_C4A1XC4A1_URI		LUA_URI"#c4a1xc4a1"
+
 extern const LV2_Descriptor c1xc1;
 extern const LV2_Descriptor c2xc2;
 extern const LV2_Descriptor c4xc4;
@@ -81,6 +85,8 @@ extern const LV2_Descriptor a1xc4;
 extern const LV2_Descriptor c1xa1;
 extern const LV2_Descriptor c2xa1;
 extern const LV2_Descriptor c4xa1;
+
+extern const LV2_Descriptor c4a1xc4a1;
 
 extern const LV2UI_Descriptor common_eo;
 extern const LV2UI_Descriptor common_ui;
