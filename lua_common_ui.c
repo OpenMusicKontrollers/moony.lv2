@@ -46,24 +46,45 @@ struct _UI {
 	int w, h;
 	Evas_Object *vbox;
 	Evas_Object *hbox;
-	Evas_Object *entry;
 	Evas_Object *error;
+	Evas_Object *message;
+	Evas_Object *entry;
+	Evas_Object *notify;
 	Evas_Object *load;
+	Evas_Object *status;
 	Evas_Object *save;
 	Evas_Object *compile;
 
 	char *chunk;
+	char *cache;
 };
+
+static char *
+_entry_cache(UI *ui, int update)
+{
+	if(update || !ui->cache || !strlen(ui->cache))
+	{
+		if(ui->cache)
+			free(ui->cache);
+
+		const char *chunk = elm_entry_entry_get(ui->entry);
+		ui->cache = elm_entry_markup_to_utf8(chunk);
+	}
+
+	return ui->cache;
+}
 
 static void
 _compile(UI *ui)
 {
 	// clear error
-	elm_entry_entry_set(ui->error, "");
+	elm_object_text_set(ui->error, "");
+	evas_object_hide(ui->message);
+
+	evas_object_show(ui->notify);
 
 	// get code from entry
-	const char *chunk = elm_entry_entry_get(ui->entry);
-	char *utf8 = elm_entry_markup_to_utf8(chunk);
+	char *utf8 = _entry_cache(ui, 1);
 	uint32_t size = strlen(utf8) + 1;
 
 	if(size <= MAX_CHUNK_LEN)
@@ -87,14 +108,10 @@ _compile(UI *ui)
 	else
 	{
 		char buf [64];
-		sprintf(buf, " <number>%i</number> ", size - MAX_CHUNK_LEN);
-		elm_entry_entry_set(ui->error,
-			"<code><string>Cannot compile script: too long by</string>");
-		elm_entry_entry_append(ui->error, buf);
-		elm_entry_entry_append(ui->error, "<string>characters.</string></code>");
+		sprintf(buf, "script too long by %i", size - MAX_CHUNK_LEN);
+		elm_object_text_set(ui->error, buf);
+		evas_object_show(ui->message);
 	}
-
-	free(utf8);
 }
 
 static void
@@ -220,14 +237,47 @@ _changed(void *data, Evas_Object *obj, void *event_info)
 	UI *ui = data;
 	
 	int pos = elm_entry_cursor_pos_get(ui->entry);
-	const char *chunk = elm_entry_entry_get(ui->entry);
-	char *utf8 = elm_entry_markup_to_utf8(chunk);
+	char *utf8 = _entry_cache(ui, 1);
 
 	enc.data = ui;
 	lua_to_markup(utf8, NULL);
 	elm_entry_cursor_pos_set(ui->entry, pos);
+}
 
-	free(utf8);
+static void
+_cursor(void *data, Evas_Object *obj, void *event_info)
+{
+	UI *ui = data;
+
+	int pos = elm_entry_cursor_pos_get(ui->entry);
+	char *utf8 = _entry_cache(ui, 0);
+
+	// count lines and chars
+	const char *end = utf8 + pos;
+	int l = 0;
+	int c = pos;
+	for(const char *ptr = utf8, *start = utf8; ptr < end; ptr++)
+	{
+		if(*ptr == '\n')
+		{
+			l += 1;
+			c -= ptr + 1 - start;
+			start = ptr + 1;
+		}
+	}
+
+	char buf [64];
+	sprintf(buf, "%i / %i", l + 1, c + 1);
+
+	elm_object_text_set(ui->status, buf);
+}
+
+static void
+_unfocused(void *data, Evas_Object *obj, void *event_info)
+{
+	UI *ui = data;
+
+	elm_object_text_set(ui->status, "");
 }
 
 static Evas_Object *
@@ -250,21 +300,35 @@ _content_get(eo_ui_t *eoui)
 	elm_entry_cnp_mode_set(ui->entry, ELM_CNP_MODE_PLAINTEXT);
 	elm_object_focus_set(ui->entry, EINA_TRUE);
 	evas_object_smart_callback_add(ui->entry, "changed,user", _changed, ui);
+	evas_object_smart_callback_add(ui->entry, "cursor,changed", _cursor, ui);
+	evas_object_smart_callback_add(ui->entry, "cursor,changed,manual", _cursor, ui);
+	evas_object_smart_callback_add(ui->entry, "unfocused", _unfocused, ui);
 	evas_object_size_hint_weight_set(ui->entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
 	evas_object_size_hint_align_set(ui->entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
 	evas_object_show(ui->entry);
 	elm_box_pack_end(ui->vbox, ui->entry);
-	
-	ui->error = elm_entry_add(ui->vbox);
-	elm_entry_entry_set(ui->error, "");
-	elm_entry_single_line_set(ui->error, EINA_FALSE);
-	elm_entry_scrollable_set(ui->error, EINA_TRUE);
-	elm_entry_editable_set(ui->error, EINA_FALSE);
-	elm_entry_cnp_mode_set(ui->error, ELM_CNP_MODE_PLAINTEXT);
-	evas_object_size_hint_weight_set(ui->error, EVAS_HINT_EXPAND, 0.125);
-	evas_object_size_hint_align_set(ui->error, EVAS_HINT_FILL, EVAS_HINT_FILL);
+
+	ui->error = elm_label_add(ui->vbox);
+	elm_object_text_set(ui->error, "");
 	evas_object_show(ui->error);
-	elm_box_pack_end(ui->vbox, ui->error);
+
+	ui->message = elm_notify_add(ui->vbox);
+	elm_notify_timeout_set(ui->message, 0);
+	elm_notify_align_set(ui->message, 0.5, 0.0);
+	elm_notify_allow_events_set(ui->message, EINA_TRUE);
+	evas_object_size_hint_weight_set(ui->message, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+	elm_object_content_set(ui->message, ui->error);
+
+	Evas_Object *label = elm_label_add(ui->vbox);
+	elm_object_text_set(label, "compiling ...");
+	evas_object_show(label);
+
+	ui->notify = elm_notify_add(ui->vbox);
+	elm_notify_timeout_set(ui->notify, 1);
+	elm_notify_align_set(ui->notify, 0.5, 0.5);
+	elm_notify_allow_events_set(ui->notify, EINA_FALSE);
+	evas_object_size_hint_weight_set(ui->notify, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+	elm_object_content_set(ui->notify, label);
 	
 	ui->hbox = elm_box_add(eoui->win);
 	elm_box_horizontal_set(ui->hbox, EINA_TRUE);
@@ -303,6 +367,11 @@ _content_get(eo_ui_t *eoui)
 	evas_object_size_hint_align_set(ui->compile, EVAS_HINT_FILL, EVAS_HINT_FILL);
 	evas_object_show(ui->compile);
 	elm_box_pack_end(ui->hbox, ui->compile);
+
+	ui->status = elm_label_add(ui->vbox);
+	elm_object_text_set(ui->status, "");
+	evas_object_show(ui->status);
+	elm_box_pack_end(ui->hbox, ui->status);
 
 	return ui->vbox;
 }
@@ -402,6 +471,9 @@ cleanup(LV2UI_Handle handle)
 	UI *ui = handle;
 
 	eoui_cleanup(&ui->eoui);
+
+	if(ui->cache)
+		free(ui->cache);
 	free(ui);
 }
 
@@ -430,9 +502,8 @@ port_event(LV2UI_Handle handle, uint32_t i, uint32_t buffer_size,
 		else if(prop->key == ui->uris.lua_error)
 		{
 			const char *error = LV2_ATOM_BODY_CONST(&prop->value);
-			elm_entry_entry_set(ui->error, "<code><string>");
-			elm_entry_entry_append(ui->error, error);
-			elm_entry_entry_append(ui->error, "</string></code>");
+			elm_object_text_set(ui->error, error);
+			evas_object_show(ui->message);
 		}
 	}
 }
