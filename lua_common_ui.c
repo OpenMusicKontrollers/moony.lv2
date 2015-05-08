@@ -135,7 +135,6 @@ _lua_markup(void *data, Evas_Object *obj, char **txt)
 			*txt = strdup("");
 
 			_compile(ui);
-			//TODO give some visual feedback here
 		}
 	}
 }
@@ -324,7 +323,7 @@ _content_get(eo_ui_t *eoui)
 	evas_object_show(label);
 
 	ui->notify = elm_notify_add(ui->vbox);
-	elm_notify_timeout_set(ui->notify, 1);
+	elm_notify_timeout_set(ui->notify, 0.5);
 	elm_notify_align_set(ui->notify, 0.5, 0.5);
 	elm_notify_allow_events_set(ui->notify, EINA_FALSE);
 	evas_object_size_hint_weight_set(ui->notify, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
@@ -502,7 +501,11 @@ port_event(LV2UI_Handle handle, uint32_t i, uint32_t buffer_size,
 		else if(prop->key == ui->uris.lua_error)
 		{
 			const char *error = LV2_ATOM_BODY_CONST(&prop->value);
-			elm_object_text_set(ui->error, error);
+			const char *err = strstr(error, "\"]:"); // search end mark of header [string ""]:
+			err = err
+				? err + 3 // skip header end mark
+				: error; // use whole error string alternatively
+			elm_object_text_set(ui->error, err);
 			evas_object_show(ui->message);
 		}
 	}
