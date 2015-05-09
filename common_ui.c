@@ -17,7 +17,7 @@
 
 #include <string.h>
 
-#include <lua_lv2.h>
+#include <moony.h>
 
 #include <Elementary.h>
 
@@ -31,9 +31,9 @@ struct _UI {
 	eo_ui_t eoui;
 
 	struct {
-		LV2_URID lua_message;
-		LV2_URID lua_code;
-		LV2_URID lua_error;
+		LV2_URID moony_message;
+		LV2_URID moony_code;
+		LV2_URID moony_error;
 		LV2_URID event_transfer;
 	} uris;
 
@@ -87,7 +87,7 @@ _compile(UI *ui)
 	char *utf8 = _entry_cache(ui, 1);
 	uint32_t size = strlen(utf8) + 1;
 
-	if(size <= MAX_CHUNK_LEN)
+	if(size <= MOONY_MAX_CHUNK_LEN)
 	{
 		uint32_t atom_size = sizeof(LV2_Atom) + size;
 		LV2_Atom *atom = calloc(1, atom_size);
@@ -108,7 +108,7 @@ _compile(UI *ui)
 	else
 	{
 		char buf [64];
-		sprintf(buf, "script too long by %i", size - MAX_CHUNK_LEN);
+		sprintf(buf, "script too long by %i", size - MOONY_MAX_CHUNK_LEN);
 		elm_object_text_set(ui->error, buf);
 		evas_object_show(ui->message);
 	}
@@ -170,13 +170,13 @@ _encoder_end(void *data)
 	free(ui->chunk);
 }
 
-static encoder_t enc = {
+static moony_encoder_t enc = {
 	.begin = _encoder_begin,
 	.append = _encoder_append,
 	.end = _encoder_end,
 	.data = NULL
 };
-encoder_t *encoder = &enc;
+moony_encoder_t *encoder = &enc;
 
 static void
 _load_chosen(void *data, Evas_Object *obj, void *event_info)
@@ -384,23 +384,23 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	const LV2_Feature *const *features)
 {
 
-	if(		strcmp(plugin_uri, LUA_C1XC1_URI)
-		&&	strcmp(plugin_uri, LUA_C2XC2_URI)
-		&&	strcmp(plugin_uri, LUA_C4XC4_URI)
+	if(		strcmp(plugin_uri, MOONY_C1XC1_URI)
+		&&	strcmp(plugin_uri, MOONY_C2XC2_URI)
+		&&	strcmp(plugin_uri, MOONY_C4XC4_URI)
 
-		&&	strcmp(plugin_uri, LUA_A1XA1_URI)
-		&&	strcmp(plugin_uri, LUA_A2XA2_URI)
-		&&	strcmp(plugin_uri, LUA_A4XA4_URI)
+		&&	strcmp(plugin_uri, MOONY_A1XA1_URI)
+		&&	strcmp(plugin_uri, MOONY_A2XA2_URI)
+		&&	strcmp(plugin_uri, MOONY_A4XA4_URI)
 
-		&&	strcmp(plugin_uri, LUA_A1XC1_URI)
-		&&	strcmp(plugin_uri, LUA_A1XC2_URI)
-		&&	strcmp(plugin_uri, LUA_A1XC4_URI)
+		&&	strcmp(plugin_uri, MOONY_A1XC1_URI)
+		&&	strcmp(plugin_uri, MOONY_A1XC2_URI)
+		&&	strcmp(plugin_uri, MOONY_A1XC4_URI)
 
-		&&	strcmp(plugin_uri, LUA_C1XA1_URI)
-		&&	strcmp(plugin_uri, LUA_C2XA1_URI)
-		&&	strcmp(plugin_uri, LUA_C4XA1_URI)
+		&&	strcmp(plugin_uri, MOONY_C1XA1_URI)
+		&&	strcmp(plugin_uri, MOONY_C2XA1_URI)
+		&&	strcmp(plugin_uri, MOONY_C4XA1_URI)
 		
-		&&	strcmp(plugin_uri, LUA_C4A1XC4A1_URI) )
+		&&	strcmp(plugin_uri, MOONY_C4A1XC4A1_URI) )
 	{
 		return NULL;
 	}
@@ -432,9 +432,9 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		return NULL;
 	}
 
-	ui->uris.lua_message = ui->map->map(ui->map->handle, LUA_MESSAGE_URI);
-	ui->uris.lua_code = ui->map->map(ui->map->handle, LUA_CODE_URI);
-	ui->uris.lua_error = ui->map->map(ui->map->handle, LUA_ERROR_URI);
+	ui->uris.moony_message = ui->map->map(ui->map->handle, MOONY_MESSAGE_URI);
+	ui->uris.moony_code = ui->map->map(ui->map->handle, MOONY_CODE_URI);
+	ui->uris.moony_error = ui->map->map(ui->map->handle, MOONY_ERROR_URI);
 	ui->uris.event_transfer = ui->map->map(ui->map->handle, LV2_ATOM__eventTransfer);
 
 	lv2_atom_forge_init(&ui->forge, ui->map);
@@ -487,12 +487,12 @@ port_event(LV2UI_Handle handle, uint32_t i, uint32_t buffer_size,
 	if( (i == 1) && (format == ui->uris.event_transfer) )
 	{
 		const LV2_Atom_Object *obj = buffer;
-		if(obj->body.otype != ui->uris.lua_message)
+		if(obj->body.otype != ui->uris.moony_message)
 			return;
 		
 		const LV2_Atom_Property_Body *prop = LV2_ATOM_CONTENTS_CONST(LV2_Atom_Object, obj);
 
-		if(prop->key == ui->uris.lua_code)
+		if(prop->key == ui->uris.moony_code)
 		{
 			const char *chunk = LV2_ATOM_BODY_CONST(&prop->value);
 
@@ -500,7 +500,7 @@ port_event(LV2UI_Handle handle, uint32_t i, uint32_t buffer_size,
 			lua_to_markup(chunk, NULL);
 			elm_entry_cursor_pos_set(ui->entry, 0);
 		}
-		else if(prop->key == ui->uris.lua_error)
+		else if(prop->key == ui->uris.moony_error)
 		{
 			const char *error = LV2_ATOM_BODY_CONST(&prop->value);
 			const char *err = strstr(error, "\"]:"); // search end mark of header [string ""]:
@@ -514,7 +514,7 @@ port_event(LV2UI_Handle handle, uint32_t i, uint32_t buffer_size,
 }
 
 const LV2UI_Descriptor common_eo = {
-	.URI						= LUA_COMMON_EO_URI,
+	.URI						= MOONY_COMMON_EO_URI,
 	.instantiate		= instantiate,
 	.cleanup				= cleanup,
 	.port_event			= port_event,
@@ -522,7 +522,7 @@ const LV2UI_Descriptor common_eo = {
 };
 
 const LV2UI_Descriptor common_ui = {
-	.URI						= LUA_COMMON_UI_URI,
+	.URI						= MOONY_COMMON_UI_URI,
 	.instantiate		= instantiate,
 	.cleanup				= cleanup,
 	.port_event			= port_event,
@@ -530,7 +530,7 @@ const LV2UI_Descriptor common_ui = {
 };
 
 const LV2UI_Descriptor common_x11 = {
-	.URI						= LUA_COMMON_X11_URI,
+	.URI						= MOONY_COMMON_X11_URI,
 	.instantiate		= instantiate,
 	.cleanup				= cleanup,
 	.port_event			= port_event,
@@ -538,7 +538,7 @@ const LV2UI_Descriptor common_x11 = {
 };
 
 const LV2UI_Descriptor common_kx = {
-	.URI						= LUA_COMMON_KX_URI,
+	.URI						= MOONY_COMMON_KX_URI,
 	.instantiate		= instantiate,
 	.cleanup				= cleanup,
 	.port_event			= port_event,

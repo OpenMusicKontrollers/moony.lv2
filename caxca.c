@@ -15,14 +15,14 @@
  * http://www.perlfoundation.org/artistic_license_2_0.
  */
 
-#include <lua_lv2.h>
+#include <moony.h>
 
 #include <lauxlib.h>
 
 typedef struct _Handle Handle;
 
 struct _Handle {
-	lua_handle_t lua_handle;
+	moony_t moony;
 
 	int max_val;
 
@@ -72,23 +72,23 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 	if(!handle)
 		return NULL;
 
-	if(lua_handle_init(&handle->lua_handle, features))
+	if(moony_init(&handle->moony, features))
 	{
 		free(handle);
 		return NULL;
 	}
-	lua_handle_open(&handle->lua_handle, handle->lua_handle.lvm.L);
+	moony_open(&handle->moony, handle->moony.vm.L);
 	
-	if(!strcmp(descriptor->URI, LUA_C1A1XC1A1_URI))
+	if(!strcmp(descriptor->URI, MOONY_C1A1XC1A1_URI))
 		handle->max_val = 1;
-	else if(!strcmp(descriptor->URI, LUA_C2A1XC2A1_URI))
+	else if(!strcmp(descriptor->URI, MOONY_C2A1XC2A1_URI))
 		handle->max_val = 2;
-	else if(!strcmp(descriptor->URI, LUA_C4A1XC4A1_URI))
+	else if(!strcmp(descriptor->URI, MOONY_C4A1XC4A1_URI))
 		handle->max_val = 4;
 	else
 		handle->max_val = 0; // never reached
 	
-	lv2_atom_forge_init(&handle->forge, handle->lua_handle.map);
+	lv2_atom_forge_init(&handle->forge, handle->moony.map);
 
 	return handle;
 }
@@ -117,17 +117,17 @@ activate(LV2_Handle instance)
 {
 	Handle *handle = (Handle *)instance;
 
-	lua_handle_activate(&handle->lua_handle, default_code[handle->max_val-1]);
+	moony_activate(&handle->moony, default_code[handle->max_val-1]);
 }
 
 static void
 run(LV2_Handle instance, uint32_t nsamples)
 {
 	Handle *handle = (Handle *)instance;
-	lua_State *L = handle->lua_handle.lvm.L;
+	lua_State *L = handle->moony.vm.L;
 
 	// handle UI comm
-	lua_handle_in(&handle->lua_handle, handle->control);
+	moony_in(&handle->moony, handle->control);
 
 	// prepare event_out sequence
 	LV2_Atom_Forge_Frame frame;
@@ -136,7 +136,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 	lv2_atom_forge_sequence_head(&handle->forge, &frame, 0);
 
 	// run
-	if(!lua_handle_bypass(&handle->lua_handle))
+	if(!moony_bypass(&handle->moony))
 	{
 		int top = lua_gettop(L);
 		lua_getglobal(L, "run");
@@ -160,7 +160,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 				lua_pushnumber(L, *handle->val_in[i]);
 
 			if(lua_pcall(L, 2+handle->max_val, LUA_MULTRET, 0))
-				lua_handle_error(&handle->lua_handle);
+				moony_error(&handle->moony);
 
 			int ret = lua_gettop(L) - top;
 			int max = ret > handle->max_val ? handle->max_val : ret; // discard superfluous returns
@@ -180,7 +180,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 	lv2_atom_forge_pop(&handle->forge, &frame);
 
 	// handle UI comm
-	lua_handle_out(&handle->lua_handle, handle->notify, nsamples - 1);
+	moony_out(&handle->moony, handle->notify, nsamples - 1);
 }
 
 static void
@@ -196,13 +196,13 @@ cleanup(LV2_Handle instance)
 {
 	Handle *handle = (Handle *)instance;
 
-	lua_handle_deinit(&handle->lua_handle);
+	moony_deinit(&handle->moony);
 	free(handle);
 }
 
 /*
 const LV2_Descriptor c1a1xc1a1 = {
-	.URI						= LUA_C1A1XC1A1_URI,
+	.URI						= MOONY_C1A1XC1A1_URI,
 	.instantiate		= instantiate,
 	.connect_port		= connect_port,
 	.activate				= activate,
@@ -213,7 +213,7 @@ const LV2_Descriptor c1a1xc1a1 = {
 };
 
 const LV2_Descriptor c2a1xc2a1 = {
-	.URI						= LUA_C2A1XC2A1_URI,
+	.URI						= MOONY_C2A1XC2A1_URI,
 	.instantiate		= instantiate,
 	.connect_port		= connect_port,
 	.activate				= activate,
@@ -225,7 +225,7 @@ const LV2_Descriptor c2a1xc2a1 = {
 */
 
 const LV2_Descriptor c4a1xc4a1 = {
-	.URI						= LUA_C4A1XC4A1_URI,
+	.URI						= MOONY_C4A1XC4A1_URI,
 	.instantiate		= instantiate,
 	.connect_port		= connect_port,
 	.activate				= activate,

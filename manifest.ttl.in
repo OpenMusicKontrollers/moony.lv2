@@ -19,7 +19,7 @@
 @prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .
 @prefix kx:		<http://kxstudio.sf.net/ns/lv2ext/external-ui#> .
 
-@prefix lua:	<http://open-music-kontrollers.ch/lv2/lua#> .
+@prefix moony:	<http://open-music-kontrollers.ch/lv2/moony#> .
 
 # to please sord_validate
 ui:EoUI
@@ -32,141 +32,141 @@ kx:Host
 	a lv2:Feature .
 
 # control in, control out
-lua:c1xc1
+moony:c1xc1
 	a lv2:Plugin ;
-	lv2:binary <lua@LIB_EXT@> ;
-	@EO_UI_WRAP@ui:ui lua:common_eo ;
-	@UI_UI_WRAP@ui:ui lua:common_ui ;
-	@KX_UI_WRAP@ui:ui lua:common_kx ;
-	@X11_UI_WRAP@ui:ui lua:common_x11 ;
-	rdfs:seeAlso <lua.ttl> .
+	lv2:binary <moony@LIB_EXT@> ;
+	@EO_UI_WRAP@ui:ui moony:common_eo ;
+	@UI_UI_WRAP@ui:ui moony:common_ui ;
+	@KX_UI_WRAP@ui:ui moony:common_kx ;
+	@X11_UI_WRAP@ui:ui moony:common_x11 ;
+	rdfs:seeAlso <moony.ttl> .
 
-lua:c2xc2
+moony:c2xc2
 	a lv2:Plugin ;
-	lv2:binary <lua@LIB_EXT@> ;
-	@EO_UI_WRAP@ui:ui lua:common_eo ;
-	@UI_UI_WRAP@ui:ui lua:common_ui ;
-	@KX_UI_WRAP@ui:ui lua:common_kx ;
-	@X11_UI_WRAP@ui:ui lua:common_x11 ;
-	rdfs:seeAlso <lua.ttl> .
+	lv2:binary <moony@LIB_EXT@> ;
+	@EO_UI_WRAP@ui:ui moony:common_eo ;
+	@UI_UI_WRAP@ui:ui moony:common_ui ;
+	@KX_UI_WRAP@ui:ui moony:common_kx ;
+	@X11_UI_WRAP@ui:ui moony:common_x11 ;
+	rdfs:seeAlso <moony.ttl> .
 
-lua:c4xc4
+moony:c4xc4
 	a lv2:Plugin ;
-	lv2:binary <lua@LIB_EXT@> ;
-	@EO_UI_WRAP@ui:ui lua:common_eo ;
-	@UI_UI_WRAP@ui:ui lua:common_ui ;
-	@KX_UI_WRAP@ui:ui lua:common_kx ;
-	@X11_UI_WRAP@ui:ui lua:common_x11 ;
-	rdfs:seeAlso <lua.ttl> .
+	lv2:binary <moony@LIB_EXT@> ;
+	@EO_UI_WRAP@ui:ui moony:common_eo ;
+	@UI_UI_WRAP@ui:ui moony:common_ui ;
+	@KX_UI_WRAP@ui:ui moony:common_kx ;
+	@X11_UI_WRAP@ui:ui moony:common_x11 ;
+	rdfs:seeAlso <moony.ttl> .
 
 # atom in, atom out
-lua:a1xa1
+moony:a1xa1
 	a lv2:Plugin ;
-	lv2:binary <lua@LIB_EXT@> ;
-	@EO_UI_WRAP@ui:ui lua:common_eo ;
-	@UI_UI_WRAP@ui:ui lua:common_ui ;
-	@KX_UI_WRAP@ui:ui lua:common_kx ;
-	@X11_UI_WRAP@ui:ui lua:common_x11 ;
-	rdfs:seeAlso <lua.ttl> .
+	lv2:binary <moony@LIB_EXT@> ;
+	@EO_UI_WRAP@ui:ui moony:common_eo ;
+	@UI_UI_WRAP@ui:ui moony:common_ui ;
+	@KX_UI_WRAP@ui:ui moony:common_kx ;
+	@X11_UI_WRAP@ui:ui moony:common_x11 ;
+	rdfs:seeAlso <moony.ttl> .
 
-lua:a2xa2
+moony:a2xa2
 	a lv2:Plugin ;
-	lv2:binary <lua@LIB_EXT@> ;
-	@EO_UI_WRAP@ui:ui lua:common_eo ;
-	@UI_UI_WRAP@ui:ui lua:common_ui ;
-	@KX_UI_WRAP@ui:ui lua:common_kx ;
-	@X11_UI_WRAP@ui:ui lua:common_x11 ;
-	rdfs:seeAlso <lua.ttl> .
+	lv2:binary <moony@LIB_EXT@> ;
+	@EO_UI_WRAP@ui:ui moony:common_eo ;
+	@UI_UI_WRAP@ui:ui moony:common_ui ;
+	@KX_UI_WRAP@ui:ui moony:common_kx ;
+	@X11_UI_WRAP@ui:ui moony:common_x11 ;
+	rdfs:seeAlso <moony.ttl> .
 
-lua:a4xa4
+moony:a4xa4
 	a lv2:Plugin ;
-	lv2:binary <lua@LIB_EXT@> ;
-	@EO_UI_WRAP@ui:ui lua:common_eo ;
-	@UI_UI_WRAP@ui:ui lua:common_ui ;
-	@KX_UI_WRAP@ui:ui lua:common_kx ;
-	@X11_UI_WRAP@ui:ui lua:common_x11 ;
-	rdfs:seeAlso <lua.ttl> .
+	lv2:binary <moony@LIB_EXT@> ;
+	@EO_UI_WRAP@ui:ui moony:common_eo ;
+	@UI_UI_WRAP@ui:ui moony:common_ui ;
+	@KX_UI_WRAP@ui:ui moony:common_kx ;
+	@X11_UI_WRAP@ui:ui moony:common_x11 ;
+	rdfs:seeAlso <moony.ttl> .
 
 # atom in, control out
-lua:a1xc1
+moony:a1xc1
 	a lv2:Plugin ;
-	lv2:binary <lua@LIB_EXT@> ;
-	@EO_UI_WRAP@ui:ui lua:common_eo ;
-	@UI_UI_WRAP@ui:ui lua:common_ui ;
-	@KX_UI_WRAP@ui:ui lua:common_kx ;
-	@X11_UI_WRAP@ui:ui lua:common_x11 ;
-	rdfs:seeAlso <lua.ttl> .
+	lv2:binary <moony@LIB_EXT@> ;
+	@EO_UI_WRAP@ui:ui moony:common_eo ;
+	@UI_UI_WRAP@ui:ui moony:common_ui ;
+	@KX_UI_WRAP@ui:ui moony:common_kx ;
+	@X11_UI_WRAP@ui:ui moony:common_x11 ;
+	rdfs:seeAlso <moony.ttl> .
 
-lua:a1xc2
+moony:a1xc2
 	a lv2:Plugin ;
-	lv2:binary <lua@LIB_EXT@> ;
-	@EO_UI_WRAP@ui:ui lua:common_eo ;
-	@UI_UI_WRAP@ui:ui lua:common_ui ;
-	@KX_UI_WRAP@ui:ui lua:common_kx ;
-	@X11_UI_WRAP@ui:ui lua:common_x11 ;
-	rdfs:seeAlso <lua.ttl> .
+	lv2:binary <moony@LIB_EXT@> ;
+	@EO_UI_WRAP@ui:ui moony:common_eo ;
+	@UI_UI_WRAP@ui:ui moony:common_ui ;
+	@KX_UI_WRAP@ui:ui moony:common_kx ;
+	@X11_UI_WRAP@ui:ui moony:common_x11 ;
+	rdfs:seeAlso <moony.ttl> .
 
-lua:a1xc4
+moony:a1xc4
 	a lv2:Plugin ;
-	lv2:binary <lua@LIB_EXT@> ;
-	@EO_UI_WRAP@ui:ui lua:common_eo ;
-	@UI_UI_WRAP@ui:ui lua:common_ui ;
-	@KX_UI_WRAP@ui:ui lua:common_kx ;
-	@X11_UI_WRAP@ui:ui lua:common_x11 ;
-	rdfs:seeAlso <lua.ttl> .
+	lv2:binary <moony@LIB_EXT@> ;
+	@EO_UI_WRAP@ui:ui moony:common_eo ;
+	@UI_UI_WRAP@ui:ui moony:common_ui ;
+	@KX_UI_WRAP@ui:ui moony:common_kx ;
+	@X11_UI_WRAP@ui:ui moony:common_x11 ;
+	rdfs:seeAlso <moony.ttl> .
 
 # control in, atom out
-lua:c1xa1
+moony:c1xa1
 	a lv2:Plugin ;
-	lv2:binary <lua@LIB_EXT@> ;
-	@EO_UI_WRAP@ui:ui lua:common_eo ;
-	@UI_UI_WRAP@ui:ui lua:common_ui ;
-	@KX_UI_WRAP@ui:ui lua:common_kx ;
-	@X11_UI_WRAP@ui:ui lua:common_x11 ;
-	rdfs:seeAlso <lua.ttl> .
+	lv2:binary <moony@LIB_EXT@> ;
+	@EO_UI_WRAP@ui:ui moony:common_eo ;
+	@UI_UI_WRAP@ui:ui moony:common_ui ;
+	@KX_UI_WRAP@ui:ui moony:common_kx ;
+	@X11_UI_WRAP@ui:ui moony:common_x11 ;
+	rdfs:seeAlso <moony.ttl> .
 
-lua:c2xa1
+moony:c2xa1
 	a lv2:Plugin ;
-	lv2:binary <lua@LIB_EXT@> ;
-	@EO_UI_WRAP@ui:ui lua:common_eo ;
-	@UI_UI_WRAP@ui:ui lua:common_ui ;
-	@KX_UI_WRAP@ui:ui lua:common_kx ;
-	@X11_UI_WRAP@ui:ui lua:common_x11 ;
-	rdfs:seeAlso <lua.ttl> .
+	lv2:binary <moony@LIB_EXT@> ;
+	@EO_UI_WRAP@ui:ui moony:common_eo ;
+	@UI_UI_WRAP@ui:ui moony:common_ui ;
+	@KX_UI_WRAP@ui:ui moony:common_kx ;
+	@X11_UI_WRAP@ui:ui moony:common_x11 ;
+	rdfs:seeAlso <moony.ttl> .
 
-lua:c4xa1
+moony:c4xa1
 	a lv2:Plugin ;
-	lv2:binary <lua@LIB_EXT@> ;
-	@EO_UI_WRAP@ui:ui lua:common_eo ;
-	@UI_UI_WRAP@ui:ui lua:common_ui ;
-	@KX_UI_WRAP@ui:ui lua:common_kx ;
-	@X11_UI_WRAP@ui:ui lua:common_x11 ;
-	rdfs:seeAlso <lua.ttl> .
+	lv2:binary <moony@LIB_EXT@> ;
+	@EO_UI_WRAP@ui:ui moony:common_eo ;
+	@UI_UI_WRAP@ui:ui moony:common_ui ;
+	@KX_UI_WRAP@ui:ui moony:common_kx ;
+	@X11_UI_WRAP@ui:ui moony:common_x11 ;
+	rdfs:seeAlso <moony.ttl> .
 
 # control/atom in, control/atom out
-lua:c4a1xc4a1
+moony:c4a1xc4a1
 	a lv2:Plugin ;
-	lv2:binary <lua@LIB_EXT@> ;
-	@EO_UI_WRAP@ui:ui lua:common_eo ;
-	@UI_UI_WRAP@ui:ui lua:common_ui ;
-	@KX_UI_WRAP@ui:ui lua:common_kx ;
-	@X11_UI_WRAP@ui:ui lua:common_x11 ;
-	rdfs:seeAlso <lua.ttl> .
+	lv2:binary <moony@LIB_EXT@> ;
+	@EO_UI_WRAP@ui:ui moony:common_eo ;
+	@UI_UI_WRAP@ui:ui moony:common_ui ;
+	@KX_UI_WRAP@ui:ui moony:common_kx ;
+	@X11_UI_WRAP@ui:ui moony:common_x11 ;
+	rdfs:seeAlso <moony.ttl> .
 
 # UI
-lua:common_eo
+moony:common_eo
 	a ui:EoUI ;
-	ui:binary <lua_ui@LIB_EXT@> ;
-	rdfs:seeAlso <lua.ttl> .
-lua:common_ui
+	ui:binary <moony_ui@LIB_EXT@> ;
+	rdfs:seeAlso <moony.ttl> .
+moony:common_ui
 	a ui:UI ;
-	ui:binary <lua_ui@LIB_EXT@> ;
-	rdfs:seeAlso <lua.ttl> .
-lua:common_x11
+	ui:binary <moony_ui@LIB_EXT@> ;
+	rdfs:seeAlso <moony.ttl> .
+moony:common_x11
 	a ui:X11UI ;
-	ui:binary <lua_ui@LIB_EXT@> ;
-	rdfs:seeAlso <lua.ttl> .
-lua:common_kx
+	ui:binary <moony_ui@LIB_EXT@> ;
+	rdfs:seeAlso <moony.ttl> .
+moony:common_kx
 	a kx:Widget ;
-	ui:binary <lua_ui@LIB_EXT@> ;
-	rdfs:seeAlso <lua.ttl> .
+	ui:binary <moony_ui@LIB_EXT@> ;
+	rdfs:seeAlso <moony.ttl> .

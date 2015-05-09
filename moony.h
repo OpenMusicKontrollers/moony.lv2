@@ -15,8 +15,8 @@
  * http://www.perlfoundation.org/artistic_license_2_0.
  */
 
-#ifndef _LUA_LV2_H
-#define _LUA_LV2_H
+#ifndef _MOONY_H
+#define _MOONY_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,39 +36,39 @@
 
 #include <lua.h>
 
-#define MAX_CHUNK_LEN				0x10000 // 64KB
-#define MAX_ERROR_LEN				0x400 // 1KB
+#define MOONY_MAX_CHUNK_LEN		0x10000 // 64KB
+#define MOONY_MAX_ERROR_LEN		0x400 // 1KB
 
-#define LUA_URI							"http://open-music-kontrollers.ch/lv2/lua"
+#define MOONY_URI							"http://open-music-kontrollers.ch/lv2/moony"
 
-#define LUA_MESSAGE_URI			LUA_URI"#message"
-#define LUA_CODE_URI				LUA_URI"#code"
-#define LUA_ERROR_URI				LUA_URI"#error"
+#define MOONY_MESSAGE_URI			MOONY_URI"#message"
+#define MOONY_CODE_URI				MOONY_URI"#code"
+#define MOONY_ERROR_URI				MOONY_URI"#error"
 
-#define LUA_COMMON_EO_URI		LUA_URI"#common_eo"
-#define LUA_COMMON_UI_URI		LUA_URI"#common_ui"
-#define LUA_COMMON_X11_URI	LUA_URI"#common_x11"
-#define LUA_COMMON_KX_URI		LUA_URI"#common_kx"
+#define MOONY_COMMON_EO_URI		MOONY_URI"#common_eo"
+#define MOONY_COMMON_UI_URI		MOONY_URI"#common_ui"
+#define MOONY_COMMON_X11_URI	MOONY_URI"#common_x11"
+#define MOONY_COMMON_KX_URI		MOONY_URI"#common_kx"
 
-#define LUA_C1XC1_URI				LUA_URI"#c1xc1"
-#define LUA_C2XC2_URI				LUA_URI"#c2xc2"
-#define LUA_C4XC4_URI				LUA_URI"#c4xc4"
+#define MOONY_C1XC1_URI				MOONY_URI"#c1xc1"
+#define MOONY_C2XC2_URI				MOONY_URI"#c2xc2"
+#define MOONY_C4XC4_URI				MOONY_URI"#c4xc4"
 
-#define LUA_A1XA1_URI				LUA_URI"#a1xa1"
-#define LUA_A2XA2_URI				LUA_URI"#a2xa2"
-#define LUA_A4XA4_URI				LUA_URI"#a4xa4"
+#define MOONY_A1XA1_URI				MOONY_URI"#a1xa1"
+#define MOONY_A2XA2_URI				MOONY_URI"#a2xa2"
+#define MOONY_A4XA4_URI				MOONY_URI"#a4xa4"
 
-#define LUA_A1XC1_URI				LUA_URI"#a1xc1"
-#define LUA_A1XC2_URI				LUA_URI"#a1xc2"
-#define LUA_A1XC4_URI				LUA_URI"#a1xc4"
+#define MOONY_A1XC1_URI				MOONY_URI"#a1xc1"
+#define MOONY_A1XC2_URI				MOONY_URI"#a1xc2"
+#define MOONY_A1XC4_URI				MOONY_URI"#a1xc4"
 
-#define LUA_C1XA1_URI				LUA_URI"#c1xa1"
-#define LUA_C2XA1_URI				LUA_URI"#c2xa1"
-#define LUA_C4XA1_URI				LUA_URI"#c4xa1"
+#define MOONY_C1XA1_URI				MOONY_URI"#c1xa1"
+#define MOONY_C2XA1_URI				MOONY_URI"#c2xa1"
+#define MOONY_C4XA1_URI				MOONY_URI"#c4xa1"
 
-#define LUA_C1A1XC1A1_URI		LUA_URI"#c1a1xc1a1"
-#define LUA_C2A1XC2A1_URI		LUA_URI"#c2a1xc2a1"
-#define LUA_C4A1XC4A1_URI		LUA_URI"#c4a1xc4a1"
+#define MOONY_C1A1XC1A1_URI		MOONY_URI"#c1a1xc1a1"
+#define MOONY_C2A1XC2A1_URI		MOONY_URI"#c2a1xc2a1"
+#define MOONY_C4A1XC4A1_URI		MOONY_URI"#c4a1xc4a1"
 
 extern const LV2_Descriptor c1xc1;
 extern const LV2_Descriptor c2xc2;
@@ -93,18 +93,18 @@ extern const LV2UI_Descriptor common_ui;
 extern const LV2UI_Descriptor common_x11;
 extern const LV2UI_Descriptor common_kx;
 
-// from lua_vm.c
-#define POOL_NUM 8
+// from vm.c
+#define MOONY_POOL_NUM 8
 
-typedef struct _Lua_VM Lua_VM;
-typedef struct _mem_request_t mem_request_t;
+typedef struct _moony_vm_t moony_vm_t;
+typedef struct _moony_mem_t moony_mem_t;
 
-struct _Lua_VM {
+struct _moony_vm_t {
 	tlsf_t tlsf;
 
-	size_t size [POOL_NUM];
-	void *area [POOL_NUM]; // 128K, 256K, 512K, 1M, 2M, 4M, 8M, 16M
-	pool_t pool [POOL_NUM];
+	size_t size [MOONY_POOL_NUM];
+	void *area [MOONY_POOL_NUM]; // 128K, 256K, 512K, 1M, 2M, 4M, 8M, 16M
+	pool_t pool [MOONY_POOL_NUM];
 
 	size_t space;
 	size_t used;
@@ -112,59 +112,59 @@ struct _Lua_VM {
 	lua_State *L;
 };
 
-struct _mem_request_t {
+struct _moony_mem_t {
 	int i;
 	void *mem;
 };
 
-int lua_vm_init(Lua_VM *lvm);
-int lua_vm_deinit(Lua_VM *lvm);
-void *lua_vm_mem_alloc(size_t size);
-void lua_vm_mem_free(void *area, size_t size);
-int lua_vm_mem_extend(Lua_VM *lvm);
+int moony_vm_init(moony_vm_t *vm);
+int moony_vm_deinit(moony_vm_t *vm);
+void *moony_vm_mem_alloc(size_t size);
+void moony_vm_mem_free(void *area, size_t size);
+int moony_vm_mem_extend(moony_vm_t *vm);
 
 // from encoder.l
 typedef void (*encoder_begin_t)(void *data);
 typedef void (*encoder_append_t)(const char *str, void *data);
 typedef void (*encoder_end_t)(void *data);
-typedef struct _encoder_t encoder_t;
+typedef struct _moony_encoder_t moony_encoder_t;
 
-struct _encoder_t {
+struct _moony_encoder_t {
 	encoder_begin_t begin;
 	encoder_append_t append;
 	encoder_end_t end;
 	void *data;
 };
-extern encoder_t *encoder;
+extern moony_encoder_t *encoder;
 
 void lua_to_markup(const char *utf8, FILE *f);
 
-// from lua_handle.c
-typedef struct _lua_handle_t lua_handle_t;
+// from moony.c
+typedef struct _moony_t moony_t;
 typedef struct _lseq_t lseq_t;
 typedef struct _lforge_t lforge_t;
 
-struct _lua_handle_t {
+struct _moony_t {
 	LV2_URID_Map *map;
 	LV2_URID_Unmap *unmap;
 	LV2_Atom_Forge forge;
 
 	struct {
-		LV2_URID lua_message;
-		LV2_URID lua_code;
-		LV2_URID lua_error;
+		LV2_URID moony_message;
+		LV2_URID moony_code;
+		LV2_URID moony_error;
 		LV2_URID midi_event;
 	} uris;
 	
 	LV2_Worker_Schedule *sched;
 	volatile int working;
 
-	Lua_VM lvm;
-	char chunk [MAX_CHUNK_LEN];
+	moony_vm_t vm;
+	char chunk [MOONY_MAX_CHUNK_LEN];
 	volatile int dirty_in;
 	volatile int dirty_out;
 	volatile int error_out;
-	char error [MAX_ERROR_LEN];
+	char error [MOONY_MAX_ERROR_LEN];
 };
 
 struct _lseq_t {
@@ -176,29 +176,29 @@ struct _lforge_t {
 	LV2_Atom_Forge *forge;
 };
 
-int lua_handle_init(lua_handle_t *lua_handle, const LV2_Feature *const *features);
-void lua_handle_deinit(lua_handle_t *lua_handle);
-void lua_handle_open(lua_handle_t *lua_handle, lua_State *L);
-void lua_handle_activate(lua_handle_t *lua_handle, const char *chunk);
-void lua_handle_in(lua_handle_t *lua_handle, const LV2_Atom_Sequence *seq);
-void lua_handle_out(lua_handle_t *lua_handle, LV2_Atom_Sequence *seq, uint32_t frames);
+int moony_init(moony_t *moony, const LV2_Feature *const *features);
+void moony_deinit(moony_t *moony);
+void moony_open(moony_t *moony, lua_State *L);
+void moony_activate(moony_t *moony, const char *chunk);
+void moony_in(moony_t *moony, const LV2_Atom_Sequence *seq);
+void moony_out(moony_t *moony, LV2_Atom_Sequence *seq, uint32_t frames);
 const void* extension_data(const char* uri);
 
 static inline int
-lua_handle_bypass(lua_handle_t *lua_handle)
+moony_bypass(moony_t *moony)
 {
-	return lua_handle->error[0] != '\0';
+	return moony->error[0] != '\0';
 }
 
 static inline void
-lua_handle_error(lua_handle_t *lua_handle)
+moony_error(moony_t *moony)
 {
-	lua_State *L = lua_handle->lvm.L;
+	lua_State *L = moony->vm.L;
 
-	strcpy(lua_handle->error, lua_tostring(L, -1));
+	strcpy(moony->error, lua_tostring(L, -1));
 	lua_pop(L, 1);
 
-	lua_handle->error_out = 1;
+	moony->error_out = 1;
 }
 
 // strdup fallback for windows
@@ -219,4 +219,4 @@ strndup(const char *s, size_t n)
 }
 #endif
 	
-#endif // _LUA_LV2_H
+#endif // _MOONY_H

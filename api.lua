@@ -1,5 +1,5 @@
 --[[
-	Lua LV2 API v.0.1
+	Moony LV2: Lua API v.0.1
 	=============================================================================
 	
 	Copyright (c) 2015 Hanspeter Portner (dev@open-music-kontrollers.ch)

@@ -15,7 +15,7 @@
  * http://www.perlfoundation.org/artistic_license_2_0.
  */
 
-#include <lua_lv2.h>
+#include <moony.h>
 
 #include <lauxlib.h>
 
@@ -69,8 +69,8 @@ struct _lframe_t {
 static void
 _latom_new(lua_State *L, const LV2_Atom *atom)
 {
-	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
-	LV2_Atom_Forge *forge = &lua_handle->forge;
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	LV2_Atom_Forge *forge = &moony->forge;
 
 	if(atom->type == forge->Object)
 	{
@@ -105,8 +105,8 @@ _latom_new(lua_State *L, const LV2_Atom *atom)
 static void
 _latom_body_new(lua_State *L, uint32_t size, LV2_URID type, const void *body)
 {
-	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
-	LV2_Atom_Forge *forge = &lua_handle->forge;
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	LV2_Atom_Forge *forge = &moony->forge;
 	size_t atom_size = sizeof(LV2_Atom) + size;
 
 	if(type == forge->Object)
@@ -241,13 +241,13 @@ _lseq__tostring(lua_State *L)
 static int
 _lseq_foreach(lua_State *L)
 {
-	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lseq_t *lseq = luaL_checkudata(L, 1, "lseq");
 
 	// reset iterator to beginning of sequence
 	lseq->itr = lv2_atom_sequence_begin(&lseq->seq->body);
 
-	lua_pushlightuserdata(L, lua_handle);
+	lua_pushlightuserdata(L, moony);
 	lua_pushcclosure(L, _lseq_foreach_itr, 1);
 	lua_pushvalue(L, 1);
 
@@ -354,14 +354,14 @@ _ltuple__tostring(lua_State *L)
 static int
 _ltuple_foreach(lua_State *L)
 {
-	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	ltuple_t *ltuple = luaL_checkudata(L, 1, "ltuple");
 
 	// reset iterator to beginning of tuple
 	ltuple->pos = 0;
 	ltuple->itr = lv2_atom_tuple_begin(ltuple->tuple);
 
-	lua_pushlightuserdata(L, lua_handle);
+	lua_pushlightuserdata(L, moony);
 	lua_pushcclosure(L, _ltuple_foreach_itr, 1);
 	lua_pushvalue(L, 1);
 
@@ -371,7 +371,7 @@ _ltuple_foreach(lua_State *L)
 static int
 _ltuple_unpack(lua_State *L)
 {
-	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	ltuple_t *ltuple = luaL_checkudata(L, 1, "ltuple");
 
 	uint32_t count = 0;
@@ -489,13 +489,13 @@ _lvec__tostring(lua_State *L)
 static int
 _lvec_foreach(lua_State *L)
 {
-	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lvec_t *lvec = luaL_checkudata(L, 1, "lvec");
 
 	// reset iterator to beginning of tuple
 	lvec->pos = 0;
 
-	lua_pushlightuserdata(L, lua_handle);
+	lua_pushlightuserdata(L, moony);
 	lua_pushcclosure(L, _lvec_foreach_itr, 1);
 	lua_pushvalue(L, 1);
 
@@ -505,7 +505,7 @@ _lvec_foreach(lua_State *L)
 static int
 _lvec_unpack(lua_State *L)
 {
-	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lvec_t *lvec = luaL_checkudata(L, 1, "lvec");
 
 	for(int i=0; i<lvec->count; i++)
@@ -625,13 +625,13 @@ _lobj__tostring(lua_State *L)
 static int
 _lobj_foreach(lua_State *L)
 {
-	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lobj_t *lobj = luaL_checkudata(L, 1, "lobj");
 
 	// reset iterator to beginning of tuple
 	lobj->itr = lv2_atom_object_begin(&lobj->obj->body);
 
-	lua_pushlightuserdata(L, lua_handle);
+	lua_pushlightuserdata(L, moony);
 	lua_pushcclosure(L, _lobj_foreach_itr, 1);
 	lua_pushvalue(L, 1);
 
@@ -649,8 +649,8 @@ static const luaL_Reg lobj_mt [] = {
 static void
 _latom_value(lua_State *L, const LV2_Atom *atom)
 {
-	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
-	LV2_Atom_Forge *forge = &lua_handle->forge;
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	LV2_Atom_Forge *forge = &moony->forge;
 
 	if(atom->type == forge->Int)
 		lua_pushinteger(L, ((const LV2_Atom_Int *)atom)->body);
@@ -672,7 +672,7 @@ _latom_value(lua_State *L, const LV2_Atom *atom)
 		lua_pushstring(L, LV2_ATOM_CONTENTS_CONST(LV2_Atom_String, atom));
 	else if(atom->type == forge->Literal)
 		lua_pushstring(L, LV2_ATOM_CONTENTS_CONST(LV2_Atom_Literal, atom));
-	else if(atom->type == lua_handle->uris.midi_event)
+	else if(atom->type == moony->uris.midi_event)
 	{
 		const uint8_t *m = LV2_ATOM_BODY_CONST(atom);
 		lua_createtable(L, atom->size, 0);
@@ -689,7 +689,7 @@ _latom_value(lua_State *L, const LV2_Atom *atom)
 static int
 _latom__index(lua_State *L)
 {
-	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	latom_t *latom = luaL_checkudata(L, 1, "latom");
 	const char *key = lua_tostring(L, 2);
 
@@ -697,9 +697,9 @@ _latom__index(lua_State *L)
 		lua_pushinteger(L, latom->atom->type);
 	else if(!strcmp(key, "value"))
 		_latom_value(L, latom->atom);
-	else if(!strcmp(key, "datatype") && (latom->atom->type == lua_handle->forge.Literal) )
+	else if(!strcmp(key, "datatype") && (latom->atom->type == moony->forge.Literal) )
 		lua_pushinteger(L, ((LV2_Atom_Literal *)latom->atom)->body.datatype);
-	else if(!strcmp(key, "lang") && (latom->atom->type == lua_handle->forge.Literal) )
+	else if(!strcmp(key, "lang") && (latom->atom->type == moony->forge.Literal) )
 		lua_pushinteger(L, ((LV2_Atom_Literal *)latom->atom)->body.lang);
 	else // look in metatable
 	{
@@ -714,10 +714,10 @@ _latom__index(lua_State *L)
 static int
 _latom__len(lua_State *L)
 {
-	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	latom_t *latom = luaL_checkudata(L, 1, "latom");
 
-	if(latom->atom->type == lua_handle->forge.Literal)
+	if(latom->atom->type == moony->forge.Literal)
 		lua_pushinteger(L, latom->atom->size - sizeof(LV2_Atom_Literal_Body));
 	else
 		lua_pushinteger(L, latom->atom->size);
@@ -926,12 +926,12 @@ _lforge_path(lua_State *L)
 static int
 _lforge_midi(lua_State *L)
 {
-	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	if(lua_istable(L, 2))
 	{
 		uint32_t size = lua_rawlen(L, 2);
-		lv2_atom_forge_atom(lforge->forge, size, lua_handle->uris.midi_event);
+		lv2_atom_forge_atom(lforge->forge, size, moony->uris.midi_event);
 		for(int i=1; i<=size; i++)
 		{
 			lua_rawgeti(L, -1, i);
@@ -1062,9 +1062,9 @@ static const luaL_Reg lforge_mt [] = {
 static int
 _llv2_map(lua_State *L)
 {
-	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	const char *uri = luaL_checkstring(L, 1);
-	LV2_URID urid = lua_handle->map->map(lua_handle->map->handle, uri);
+	LV2_URID urid = moony->map->map(moony->map->handle, uri);
 
 	if(urid)
 		lua_pushinteger(L, urid);
@@ -1077,9 +1077,9 @@ _llv2_map(lua_State *L)
 static int
 _llv2_unmap(lua_State *L)
 {
-	lua_handle_t *lua_handle = lua_touserdata(L, lua_upvalueindex(1));
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	LV2_URID urid = luaL_checkinteger(L, 1);
-	const char *uri = lua_handle->unmap->unmap(lua_handle->unmap->handle, urid);
+	const char *uri = moony->unmap->unmap(moony->unmap->handle, urid);
 
 	if(uri)
 		lua_pushstring(L, uri);
@@ -1097,9 +1097,9 @@ static const luaL_Reg llv2 [] = {
 };
 
 int
-lua_handle_init(lua_handle_t *lua_handle, const LV2_Feature *const *features)
+moony_init(moony_t *moony, const LV2_Feature *const *features)
 {
-	if(lua_vm_init(&lua_handle->lvm))
+	if(moony_vm_init(&moony->vm))
 	{
 		fprintf(stderr, "Lua VM cannot be initialized\n");
 		return -1;
@@ -1107,92 +1107,92 @@ lua_handle_init(lua_handle_t *lua_handle, const LV2_Feature *const *features)
 
 	for(int i=0; features[i]; i++)
 		if(!strcmp(features[i]->URI, LV2_URID__map))
-			lua_handle->map = (LV2_URID_Map *)features[i]->data;
+			moony->map = (LV2_URID_Map *)features[i]->data;
 		else if(!strcmp(features[i]->URI, LV2_URID__unmap))
-			lua_handle->unmap = (LV2_URID_Unmap *)features[i]->data;
+			moony->unmap = (LV2_URID_Unmap *)features[i]->data;
 		else if(!strcmp(features[i]->URI, LV2_WORKER__schedule))
-			lua_handle->sched = (LV2_Worker_Schedule *)features[i]->data;
+			moony->sched = (LV2_Worker_Schedule *)features[i]->data;
 
-	if(!lua_handle->map)
+	if(!moony->map)
 	{
 		fprintf(stderr, "Host does not support urid:map\n");
 		return -1;
 	}
-	if(!lua_handle->unmap)
+	if(!moony->unmap)
 	{
 		fprintf(stderr, "Host does not support urid:unmap\n");
 		return -1;
 	}
-	if(!lua_handle->sched)
+	if(!moony->sched)
 	{
 		fprintf(stderr, "Host does not support worker:schedule\n");
 		return -1;
 	}
 
-	lua_handle->uris.lua_message = lua_handle->map->map(lua_handle->map->handle, LUA_MESSAGE_URI);
-	lua_handle->uris.lua_code = lua_handle->map->map(lua_handle->map->handle, LUA_CODE_URI);
-	lua_handle->uris.lua_error = lua_handle->map->map(lua_handle->map->handle, LUA_ERROR_URI);
-	lua_handle->uris.midi_event = lua_handle->map->map(lua_handle->map->handle, LV2_MIDI__MidiEvent);
+	moony->uris.moony_message = moony->map->map(moony->map->handle, MOONY_MESSAGE_URI);
+	moony->uris.moony_code = moony->map->map(moony->map->handle, MOONY_CODE_URI);
+	moony->uris.moony_error = moony->map->map(moony->map->handle, MOONY_ERROR_URI);
+	moony->uris.midi_event = moony->map->map(moony->map->handle, LV2_MIDI__MidiEvent);
 
-	lv2_atom_forge_init(&lua_handle->forge, lua_handle->map);
+	lv2_atom_forge_init(&moony->forge, moony->map);
 
 	return 0;
 }
 
 void
-lua_handle_deinit(lua_handle_t *lua_handle)
+moony_deinit(moony_t *moony)
 {
-	lua_vm_deinit(&lua_handle->lvm);
+	moony_vm_deinit(&moony->vm);
 }
 
 void
-lua_handle_open(lua_handle_t *lua_handle, lua_State *L)
+moony_open(moony_t *moony, lua_State *L)
 {
 	luaL_newmetatable(L, "lseq");
-	lua_pushlightuserdata(L, lua_handle); // @ upvalueindex 1
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs (L, lseq_mt, 1);
 	lua_pop(L, 1);
 	
 	luaL_newmetatable(L, "lobj");
-	lua_pushlightuserdata(L, lua_handle); // @ upvalueindex 1
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs (L, lobj_mt, 1);
 	lua_pop(L, 1);
 	
 	luaL_newmetatable(L, "ltuple");
-	lua_pushlightuserdata(L, lua_handle); // @ upvalueindex 1
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs (L, ltuple_mt, 1);
 	lua_pop(L, 1);
 	
 	luaL_newmetatable(L, "lvec");
-	lua_pushlightuserdata(L, lua_handle); // @ upvalueindex 1
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs (L, lvec_mt, 1);
 	lua_pop(L, 1);
 	
 	luaL_newmetatable(L, "latom");
-	lua_pushlightuserdata(L, lua_handle); // @ upvalueindex 1
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs (L, latom_mt, 1);
 	lua_pop(L, 1);
 	
 	luaL_newmetatable(L, "lforge");
-	lua_pushlightuserdata(L, lua_handle); // @ upvalueindex 1
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs (L, lforge_mt, 1);
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -2, "__index");
 	lua_pop(L, 1);
 	
 	luaL_newmetatable(L, "lframe");
-	lua_pushlightuserdata(L, lua_handle); // @ upvalueindex 1
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs (L, lframe_mt, 1);
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -2, "__index");
 	lua_pop(L, 1);
 
 #define SET_CONST(L, ID) \
-	lua_pushinteger(L, lua_handle->forge.ID); \
+	lua_pushinteger(L, moony->forge.ID); \
 	lua_setfield(L, -2, #ID);
 
 	lua_newtable(L);
-	lua_pushlightuserdata(L, lua_handle); // @ upvalueindex 1
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs(L, llv2, 1);
 	//SET_CONST(L, Blank); // is depracated
 	SET_CONST(L, Bool);
@@ -1212,7 +1212,7 @@ lua_handle_open(lua_handle_t *lua_handle, lua_State *L)
 	SET_CONST(L, URI);
 	SET_CONST(L, URID);
 	SET_CONST(L, Vector);
-	lua_pushinteger(L, lua_handle->uris.midi_event);
+	lua_pushinteger(L, moony->uris.midi_event);
 		lua_setfield(L, -2, "Midi");
 	lua_setglobal(L, "lv2");
 
@@ -1226,39 +1226,39 @@ lua_handle_open(lua_handle_t *lua_handle, lua_State *L)
 }
 
 void
-lua_handle_in(lua_handle_t *lua_handle, const LV2_Atom_Sequence *seq)
+moony_in(moony_t *moony, const LV2_Atom_Sequence *seq)
 {
-	lua_State *L = lua_handle->lvm.L;
+	lua_State *L = moony->vm.L;
 
-	if(lua_handle->dirty_in)
+	if(moony->dirty_in)
 	{
 		// load chunk
-		if(luaL_dostring(L, lua_handle->chunk))
+		if(luaL_dostring(L, moony->chunk))
 		{
-			strcpy(lua_handle->error, lua_tostring(L, -1));
+			strcpy(moony->error, lua_tostring(L, -1));
 			lua_pop(L, 1);
 
-			lua_handle->error_out = 1;
+			moony->error_out = 1;
 		}
 		else
-			lua_handle->error[0] = 0x0; // reset error flag
+			moony->error[0] = 0x0; // reset error flag
 
-		lua_handle->dirty_in = 0;
+		moony->dirty_in = 0;
 	}
 
 	LV2_ATOM_SEQUENCE_FOREACH(seq, ev)
 	{
 		const LV2_Atom *atom = &ev->body;
 
-		if(atom->type == lua_handle->forge.String)
+		if(atom->type == moony->forge.String)
 		{
 			if(atom->size)
 			{
-				strncpy(lua_handle->chunk, LV2_ATOM_BODY_CONST(atom), atom->size);
-				lua_handle->dirty_in = 1;
+				strncpy(moony->chunk, LV2_ATOM_BODY_CONST(atom), atom->size);
+				moony->dirty_in = 1;
 			}
 			else
-				lua_handle->dirty_out = 1;
+				moony->dirty_out = 1;
 		}
 	}
 }
@@ -1267,28 +1267,28 @@ static LV2_State_Status
 _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 	LV2_State_Handle state, uint32_t flags, const LV2_Feature *const *features)
 {
-	lua_handle_t *lua_handle = (lua_handle_t *)instance;
+	moony_t *moony = (moony_t *)instance;
 
 	return store(
 		state,
-		lua_handle->uris.lua_code,
-		lua_handle->chunk,
-		strlen(lua_handle->chunk)+1,
-		lua_handle->forge.String,
+		moony->uris.moony_code,
+		moony->chunk,
+		strlen(moony->chunk)+1,
+		moony->forge.String,
 		LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
 }
 
 static LV2_State_Status
 _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_State_Handle state, uint32_t flags, const LV2_Feature *const *features)
 {
-	lua_handle_t *lua_handle = (lua_handle_t *)instance;
+	moony_t *moony = (moony_t *)instance;
 
 	size_t size;
 	uint32_t type;
 	uint32_t flags2;
 	const char *chunk = retrieve(
 		state,
-		lua_handle->uris.lua_code,
+		moony->uris.moony_code,
 		&size,
 		&type,
 		&flags2
@@ -1298,8 +1298,8 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 
 	if(chunk && size && type)
 	{
-		strncpy(lua_handle->chunk, chunk, size);
-		lua_handle->dirty_in = 1;
+		strncpy(moony->chunk, chunk, size);
+		moony->dirty_in = 1;
 	}
 
 	return LV2_STATE_SUCCESS;
@@ -1318,19 +1318,19 @@ _work(LV2_Handle instance,
 	uint32_t size,
 	const void *body)
 {
-	lua_handle_t *lua_handle = instance;
+	moony_t *moony = instance;
 
-	assert(size == sizeof(mem_request_t));
-	const mem_request_t *request = body;
+	assert(size == sizeof(moony_mem_t));
+	const moony_mem_t *request = body;
 	uint32_t i = request->i;
 
 	if(request->mem) // request to free memory from _work_response
 	{
-		lua_vm_mem_free(request->mem, lua_handle->lvm.size[i]);
+		moony_vm_mem_free(request->mem, moony->vm.size[i]);
 	}
-	else // request to allocate memory from lua_vm_mem_extend
+	else // request to allocate memory from moony_vm_mem_extend
 	{
-		lua_handle->lvm.area[i] = lua_vm_mem_alloc(lua_handle->lvm.size[i]);
+		moony->vm.area[i] = moony_vm_mem_alloc(moony->vm.size[i]);
 	
 		respond(target, size, body); // signal to _work_response
 	}
@@ -1342,38 +1342,38 @@ _work(LV2_Handle instance,
 static LV2_Worker_Status
 _work_response(LV2_Handle instance, uint32_t size, const void *body)
 {
-	lua_handle_t *lua_handle = instance;
+	moony_t *moony = instance;
 
-	assert(size == sizeof(mem_request_t));
-	const mem_request_t *request = body;
+	assert(size == sizeof(moony_mem_t));
+	const moony_mem_t *request = body;
 	uint32_t i = request->i;
 	
-	if(!lua_handle->lvm.area[i]) // allocation failed
+	if(!moony->vm.area[i]) // allocation failed
 		return LV2_WORKER_ERR_UNKNOWN;
 
 	// tlsf add pool
-	lua_handle->lvm.pool[i] = tlsf_add_pool(lua_handle->lvm.tlsf,
-		lua_handle->lvm.area[i], lua_handle->lvm.size[i]);
+	moony->vm.pool[i] = tlsf_add_pool(moony->vm.tlsf,
+		moony->vm.area[i], moony->vm.size[i]);
 
-	if(!lua_handle->lvm.pool[i]) // pool addition failed
+	if(!moony->vm.pool[i]) // pool addition failed
 	{
-		const mem_request_t req = {
+		const moony_mem_t req = {
 			.i = i,
-			.mem = lua_handle->lvm.area[i]
+			.mem = moony->vm.area[i]
 		};
-		lua_handle->lvm.area[i] = NULL;
+		moony->vm.area[i] = NULL;
 
 		// schedule freeing of memory to _work
-		LV2_Worker_Status status = lua_handle->sched->schedule_work(
-			lua_handle->sched->handle, sizeof(mem_request_t), &req);
+		LV2_Worker_Status status = moony->sched->schedule_work(
+			moony->sched->handle, sizeof(moony_mem_t), &req);
 
 		//TODO check status
 
 		return LV2_WORKER_ERR_UNKNOWN;
 	}
 		
-	lua_handle->lvm.space += lua_handle->lvm.size[i];
-	//printf("mem extended to %zu KB\n", lua_handle->lvm.space / 1024);
+	moony->vm.space += moony->vm.size[i];
+	//printf("mem extended to %zu KB\n", moony->vm.space / 1024);
 
 	return LV2_WORKER_SUCCESS;
 }
@@ -1382,10 +1382,10 @@ _work_response(LV2_Handle instance, uint32_t size, const void *body)
 static LV2_Worker_Status
 _end_run(LV2_Handle instance)
 {
-	lua_handle_t *lua_handle = instance;
+	moony_t *moony = instance;
 
 	// do nothing
-	lua_handle->working = 0;
+	moony->working = 0;
 
 	return LV2_WORKER_SUCCESS;
 }
@@ -1408,52 +1408,52 @@ extension_data(const char* uri)
 }
 
 void
-lua_handle_activate(lua_handle_t *lua_handle, const char *chunk)
+moony_activate(moony_t *moony, const char *chunk)
 {
-	lua_State *L = lua_handle->lvm.L;
+	lua_State *L = moony->vm.L;
 
 	// load chunk
-	strcpy(lua_handle->chunk, chunk);
-	luaL_dostring(L, lua_handle->chunk); // cannot fail
+	strcpy(moony->chunk, chunk);
+	luaL_dostring(L, moony->chunk); // cannot fail
 
-	lua_handle->dirty_out = 1; // trigger update of UI
+	moony->dirty_out = 1; // trigger update of UI
 }
 
 void
-lua_handle_out(lua_handle_t *lua_handle, LV2_Atom_Sequence *seq, uint32_t frames)
+moony_out(moony_t *moony, LV2_Atom_Sequence *seq, uint32_t frames)
 {
 	// prepare notify atom forge
-	LV2_Atom_Forge *forge = &lua_handle->forge;
+	LV2_Atom_Forge *forge = &moony->forge;
 	LV2_Atom_Forge_Frame notify_frame;
 	
 	uint32_t capacity = seq->atom.size;
 	lv2_atom_forge_set_buffer(forge, (uint8_t *)seq, capacity);
 	lv2_atom_forge_sequence_head(forge, &notify_frame, 0);
 
-	if(lua_handle->dirty_out)
+	if(moony->dirty_out)
 	{
-		uint32_t len = strlen(lua_handle->chunk) + 1;
+		uint32_t len = strlen(moony->chunk) + 1;
 		LV2_Atom_Forge_Frame obj_frame;
 		lv2_atom_forge_frame_time(forge, frames);
-		lv2_atom_forge_object(forge, &obj_frame, 0, lua_handle->uris.lua_message);
-		lv2_atom_forge_key(forge, lua_handle->uris.lua_code);
-		lv2_atom_forge_string(forge, lua_handle->chunk, len);
+		lv2_atom_forge_object(forge, &obj_frame, 0, moony->uris.moony_message);
+		lv2_atom_forge_key(forge, moony->uris.moony_code);
+		lv2_atom_forge_string(forge, moony->chunk, len);
 		lv2_atom_forge_pop(forge, &obj_frame);
 
-		lua_handle->dirty_out = 0; // reset flag
+		moony->dirty_out = 0; // reset flag
 	}
 
-	if(lua_handle->error_out)
+	if(moony->error_out)
 	{
-		uint32_t len = strlen(lua_handle->error) + 1;
+		uint32_t len = strlen(moony->error) + 1;
 		LV2_Atom_Forge_Frame obj_frame;
 		lv2_atom_forge_frame_time(forge, frames);
-		lv2_atom_forge_object(forge, &obj_frame, 0, lua_handle->uris.lua_message);
-		lv2_atom_forge_key(forge, lua_handle->uris.lua_error);
-		lv2_atom_forge_string(forge, lua_handle->error, len);
+		lv2_atom_forge_object(forge, &obj_frame, 0, moony->uris.moony_message);
+		lv2_atom_forge_key(forge, moony->uris.moony_error);
+		lv2_atom_forge_string(forge, moony->error, len);
 		lv2_atom_forge_pop(forge, &obj_frame);
 
-		lua_handle->error_out = 0; // reset flag
+		moony->error_out = 0; // reset flag
 	}
 	
 	lv2_atom_forge_pop(forge, &notify_frame);

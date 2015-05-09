@@ -30,7 +30,7 @@
 @prefix lic:	<http://opensource.org/licenses/> .
 @prefix omk:	<http://open-music-kontrollers.ch/ventosus#> .
 @prefix proj:	<http://open-music-kontrollers.ch/lv2/> .
-@prefix lua:	<http://open-music-kontrollers.ch/lv2/lua#> .
+@prefix moony:	<http://open-music-kontrollers.ch/lv2/moony#> .
 
 # Maintainer
 omk:me
@@ -40,214 +40,214 @@ omk:me
 	foaf:homepage <http://open-music-kontrollers.ch> .
 
 # Project
-proj:lua
+proj:moony
 	a doap:Project ;
 	doap:maintainer omk:me ;
-	doap:name "Lua Bundle" .
+	doap:name "Moony Bundle" .
 
 # Common UI
-lua:common_eo
+moony:common_eo
 	a ui:EoUI ;
 	ui:portNotification [
-		ui:plugin lua:c1xc1 ;
+		ui:plugin moony:c1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c2xc2 ;
+		ui:plugin moony:c2xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c4xc4 ;
+		ui:plugin moony:c4xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a1xa1 ;
+		ui:plugin moony:a1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a2xa2 ;
+		ui:plugin moony:a2xa2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a4xa4 ;
+		ui:plugin moony:a4xa4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a1xc1 ;
+		ui:plugin moony:a1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a1xc2 ;
+		ui:plugin moony:a1xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a1xc4 ;
+		ui:plugin moony:a1xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c1xa1 ;
+		ui:plugin moony:c1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c2xa1 ;
+		ui:plugin moony:c2xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c4xa1 ;
+		ui:plugin moony:c4xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c4a1xc4a1 ;
+		ui:plugin moony:c4a1xc4a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] .
-lua:common_ui
+moony:common_ui
 	a ui:UI ;
 	ui:portNotification [
-		ui:plugin lua:c1xc1 ;
+		ui:plugin moony:c1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c2xc2 ;
+		ui:plugin moony:c2xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c4xc4 ;
+		ui:plugin moony:c4xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a1xa1 ;
+		ui:plugin moony:a1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a2xa2 ;
+		ui:plugin moony:a2xa2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a4xa4 ;
+		ui:plugin moony:a4xa4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a1xc1 ;
+		ui:plugin moony:a1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a1xc2 ;
+		ui:plugin moony:a1xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a1xc4 ;
+		ui:plugin moony:a1xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c1xa1 ;
+		ui:plugin moony:c1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c2xa1 ;
+		ui:plugin moony:c2xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c4xa1 ;
+		ui:plugin moony:c4xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c4a1xc4a1 ;
+		ui:plugin moony:c4a1xc4a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] ;
 	lv2:requiredFeature ui:idleInterface ;
   lv2:extensionData ui:idleInterface, ui:showInterface .
-lua:common_x11
+moony:common_x11
 	a ui:X11UI ;
 	ui:portNotification [
-		ui:plugin lua:c1xc1 ;
+		ui:plugin moony:c1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c2xc2 ;
+		ui:plugin moony:c2xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c4xc4 ;
+		ui:plugin moony:c4xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a1xa1 ;
+		ui:plugin moony:a1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a2xa2 ;
+		ui:plugin moony:a2xa2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a4xa4 ;
+		ui:plugin moony:a4xa4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a1xc1 ;
+		ui:plugin moony:a1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a1xc2 ;
+		ui:plugin moony:a1xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a1xc4 ;
+		ui:plugin moony:a1xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c1xa1 ;
+		ui:plugin moony:c1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c2xa1 ;
+		ui:plugin moony:c2xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c4xa1 ;
+		ui:plugin moony:c4xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c4a1xc4a1 ;
+		ui:plugin moony:c4a1xc4a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
@@ -255,70 +255,70 @@ lua:common_x11
 	lv2:requiredFeature ui:idleInterface ;
 	lv2:optionalFeature ui:resize ;
   lv2:extensionData ui:idleInterface .
-lua:common_kx
+moony:common_kx
 	a kx:Widget ;
 	ui:portNotification [
-		ui:plugin lua:c1xc1 ;
+		ui:plugin moony:c1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c2xc2 ;
+		ui:plugin moony:c2xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c4xc4 ;
+		ui:plugin moony:c4xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a1xa1 ;
+		ui:plugin moony:a1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a2xa2 ;
+		ui:plugin moony:a2xa2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a4xa4 ;
+		ui:plugin moony:a4xa4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a1xc1 ;
+		ui:plugin moony:a1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a1xc2 ;
+		ui:plugin moony:a1xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:a1xc4 ;
+		ui:plugin moony:a1xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c1xa1 ;
+		ui:plugin moony:c1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c2xa1 ;
+		ui:plugin moony:c2xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c4xa1 ;
+		ui:plugin moony:c4xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin lua:c4a1xc4a1 ;
+		ui:plugin moony:c4a1xc4a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
@@ -326,12 +326,12 @@ lua:common_kx
 	lv2:requiredFeature kx:Host .
 
 # C1XC1 Plugin
-lua:c1xc1
+moony:c1xc1
 	a lv2:Plugin ,
 		lv2:ConverterPlugin ;
-	doap:name "Lua C1 x C1" ;
+	doap:name "Moony C1 x C1" ;
 	doap:license lic:Artistic-2.0 ;
-	lv2:project proj:lua ;
+	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule ;
@@ -372,12 +372,12 @@ lua:c1xc1
 	] .
 
 # C2XC2 Plugin
-lua:c2xc2
+moony:c2xc2
 	a lv2:Plugin ,
 		lv2:ConverterPlugin ;
-	doap:name "Lua C2 x C2" ;
+	doap:name "Moony C2 x C2" ;
 	doap:license lic:Artistic-2.0 ;
-	lv2:project proj:lua ;
+	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule ;
@@ -431,12 +431,12 @@ lua:c2xc2
 	] .
 
 # C4XC4 Plugin
-lua:c4xc4
+moony:c4xc4
 	a lv2:Plugin ,
 		lv2:ConverterPlugin ;
-	doap:name "Lua C4 x C4" ;
+	doap:name "Moony C4 x C4" ;
 	doap:license lic:Artistic-2.0 ;
-	lv2:project proj:lua ;
+	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule ;
@@ -516,12 +516,12 @@ lua:c4xc4
 	] .
 
 # A1XA1 Plugin
-lua:a1xa1
+moony:a1xa1
 	a lv2:Plugin ,
 		lv2:ConverterPlugin ;
-	doap:name "Lua A1 x A1" ;
+	doap:name "Moony A1 x A1" ;
 	doap:license lic:Artistic-2.0 ;
-	lv2:project proj:lua ;
+	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule ;
@@ -567,12 +567,12 @@ lua:a1xa1
 	] .
 
 # A2XA2 Plugin
-lua:a2xa2
+moony:a2xa2
 	a lv2:Plugin ,
 		lv2:ConverterPlugin ;
-	doap:name "Lua A2 x A2" ;
+	doap:name "Moony A2 x A2" ;
 	doap:license lic:Artistic-2.0 ;
-	lv2:project proj:lua ;
+	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule ;
@@ -634,12 +634,12 @@ lua:a2xa2
 	] .
 
 # A4XA4 Plugin
-lua:a4xa4
+moony:a4xa4
 	a lv2:Plugin ,
 		lv2:ConverterPlugin ;
-	doap:name "Lua A4 x A4" ;
+	doap:name "Moony A4 x A4" ;
 	doap:license lic:Artistic-2.0 ;
-	lv2:project proj:lua ;
+	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule ;
@@ -733,12 +733,12 @@ lua:a4xa4
 	] .
 
 # A1XC1 Plugin
-lua:a1xc1
+moony:a1xc1
 	a lv2:Plugin ,
 		lv2:ConverterPlugin ;
-	doap:name "Lua A1 x C1" ;
+	doap:name "Moony A1 x C1" ;
 	doap:license lic:Artistic-2.0 ;
-	lv2:project proj:lua ;
+	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule ;
@@ -781,12 +781,12 @@ lua:a1xc1
 	] .
 
 # A1XC2 Plugin
-lua:a1xc2
+moony:a1xc2
 	a lv2:Plugin ,
 		lv2:ConverterPlugin ;
-	doap:name "Lua A1 x C2" ;
+	doap:name "Moony A1 x C2" ;
 	doap:license lic:Artistic-2.0 ;
-	lv2:project proj:lua ;
+	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule ;
@@ -835,12 +835,12 @@ lua:a1xc2
 	] .
 
 # A1XC4 Plugin
-lua:a1xc4
+moony:a1xc4
 	a lv2:Plugin ,
 		lv2:ConverterPlugin ;
-	doap:name "Lua A1 x C4" ;
+	doap:name "Moony A1 x C4" ;
 	doap:license lic:Artistic-2.0 ;
-	lv2:project proj:lua ;
+	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule ;
@@ -901,12 +901,12 @@ lua:a1xc4
 	] .
 
 # C1XA1 Plugin
-lua:c1xa1
+moony:c1xa1
 	a lv2:Plugin ,
 		lv2:ConverterPlugin ;
-	doap:name "Lua C1 x A1" ;
+	doap:name "Moony C1 x A1" ;
 	doap:license lic:Artistic-2.0 ;
-	lv2:project proj:lua ;
+	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule ;
@@ -949,12 +949,12 @@ lua:c1xa1
 	] .
 
 # C2XA1 Plugin
-lua:c2xa1
+moony:c2xa1
 	a lv2:Plugin ,
 		lv2:ConverterPlugin ;
-	doap:name "Lua C2 x A1" ;
+	doap:name "Moony C2 x A1" ;
 	doap:license lic:Artistic-2.0 ;
-	lv2:project proj:lua ;
+	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule ;
@@ -1003,12 +1003,12 @@ lua:c2xa1
 	] .
 
 # C4XA1 Plugin
-lua:c4xa1
+moony:c4xa1
 	a lv2:Plugin ,
 		lv2:ConverterPlugin ;
-	doap:name "Lua C4 x A1" ;
+	doap:name "Moony C4 x A1" ;
 	doap:license lic:Artistic-2.0 ;
-	lv2:project proj:lua ;
+	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule ;
@@ -1069,12 +1069,12 @@ lua:c4xa1
 	] .
 
 # C4A1XC4A1 Plugin
-lua:c4a1xc4a1
+moony:c4a1xc4a1
 	a lv2:Plugin ,
 		lv2:ConverterPlugin ;
-	doap:name "Lua C4+A1 x C4+A1" ;
+	doap:name "Moony C4+A1 x C4+A1" ;
 	doap:license lic:Artistic-2.0 ;
-	lv2:project proj:lua ;
+	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule ;

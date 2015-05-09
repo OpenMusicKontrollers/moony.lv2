@@ -15,44 +15,21 @@
  * http://www.perlfoundation.org/artistic_license_2_0.
  */
 
-#include <lua_lv2.h>
+#include <moony.h>
 
-LV2_SYMBOL_EXPORT const LV2_Descriptor*
-lv2_descriptor(uint32_t index)
+LV2_SYMBOL_EXPORT const LV2UI_Descriptor*
+lv2ui_descriptor(uint32_t index)
 {
 	switch(index)
 	{
 		case 0:
-			return &c1xc1;
+			return &common_eo;
 		case 1:
-			return &c2xc2;
+			return &common_ui;
 		case 2:
-			return &c4xc4;
-
+			return &common_x11;
 		case 3:
-			return &a1xa1;
-		case 4:
-			return &a2xa2;
-		case 5:
-			return &a4xa4;
-
-		case 6:
-			return &a1xc1;
-		case 7:
-			return &a1xc2;
-		case 8:
-			return &a1xc4;
-
-		case 9:
-			return &c1xa1;
-		case 10:
-			return &c2xa1;
-		case 11:
-			return &c4xa1;
-		
-		case 12:
-			return &c4a1xc4a1;
-
+			return &common_kx;
 		default:
 			return NULL;
 	}

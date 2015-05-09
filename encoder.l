@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <lua_lv2.h>
+#include <moony.h>
 
 static void
 _add_plain(const char *content)

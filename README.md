@@ -1,14 +1,14 @@
-# Lua.lv2
+# Moony.lv2
 
 ## Realtime Lua as programmable glue in LV2
 
 ### Webpage 
 
-Get more information at: [http://open-music-kontrollers.ch/lv2/lua](http://open-music-kontrollers.ch/lv2/lua)
+Get more information at: [http://open-music-kontrollers.ch/lv2/moony](http://open-music-kontrollers.ch/lv2/moony)
 
 ### Build status
 
-[![Build Status](https://travis-ci.org/OpenMusicKontrollers/lua.lv2.svg)](https://travis-ci.org/OpenMusicKontrollers/lua.lv2)
+[![Build Status](https://travis-ci.org/OpenMusicKontrollers/moony.lv2.svg)](https://travis-ci.org/OpenMusicKontrollers/moony.lv2)
 
 ### Plugins
 
@@ -44,13 +44,12 @@ Get more information at: [http://open-music-kontrollers.ch/lv2/lua](http://open-
 
 * [LV2](http://lv2plug.in) (LV2 Plugin Standard)
 * [Lua](http://lua.org) (Lightweight embeddable language)
-* [EFL](http://docs.enlightenment.org/stable/elementary/) (Enlightenment Foundation Libraries)
-* [Elementary](http://docs.enlightenment.org/stable/efl/) (Lightweight GUI Toolkit)
+* [Elementary](http://enlightenment.org) (Lightweight GUI Toolkit)
 
 ### Build / install
 
-	git clone https://github.com/OpenMusicKontrollers/lua.lv2.git
-	cd lua.lv2
+	git clone https://github.com/OpenMusicKontrollers/moony.lv2.git
+	cd moony.lv2
 	git submodule update --init
 	mkdir build
 	cd build
