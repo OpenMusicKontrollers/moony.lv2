@@ -325,7 +325,7 @@ _content_get(eo_ui_t *eoui)
 	ui->notify = elm_notify_add(ui->vbox);
 	elm_notify_timeout_set(ui->notify, 0.5);
 	elm_notify_align_set(ui->notify, 0.5, 0.5);
-	elm_notify_allow_events_set(ui->notify, EINA_FALSE);
+	elm_notify_allow_events_set(ui->notify, EINA_TRUE);
 	evas_object_size_hint_weight_set(ui->notify, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
 	elm_object_content_set(ui->notify, label);
 	

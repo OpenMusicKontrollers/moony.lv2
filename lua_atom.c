@@ -997,6 +997,24 @@ _lforge_property(lua_State *L)
 }
 
 static int
+_lforge_sequence(lua_State *L)
+{
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lseq_t *lseq = luaL_checkudata(L, 2, "lseq");
+
+	LV2_ATOM_SEQUENCE_FOREACH(lseq->seq, ev)
+	{
+		const LV2_Atom *atom = &ev->body;
+
+		lv2_atom_forge_frame_time(lforge->forge, ev->time.frames);
+		lv2_atom_forge_raw(lforge->forge, atom, sizeof(LV2_Atom) + atom->size);
+		lv2_atom_forge_pad(lforge->forge, atom->size);
+	}
+
+	return 1;
+}
+
+static int
 _lforge_pop(lua_State *L)
 {
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
@@ -1034,6 +1052,7 @@ static const luaL_Reg lforge_mt [] = {
 	{"object", _lforge_object},
 	{"key", _lforge_key},
 	{"property", _lforge_property},
+	{"sequence", _lforge_sequence},
 
 	{"pop", _lforge_pop},
 
