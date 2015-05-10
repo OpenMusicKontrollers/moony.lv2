@@ -75,6 +75,24 @@ _entry_cache(UI *ui, int update)
 }
 
 static void
+_moony_message_fill(UI *ui, moony_message_t *msg, LV2_URID key,
+	uint32_t size, const char *str)
+{
+	uint32_t msg_size = sizeof(moony_message_t) + size;
+
+	msg->obj.atom.size = msg_size - sizeof(LV2_Atom);
+	msg->obj.atom.type = ui->forge.Object;
+	msg->obj.body.id = 0;
+	msg->obj.body.otype = ui->uris.moony_message;
+	msg->prop.context = 0;
+	msg->prop.key = key;
+	msg->prop.value.size = size;
+	msg->prop.value.type = ui->forge.String;
+	if(size && str)
+		strncpy(msg->body, str, size);
+}
+
+static void
 _compile(UI *ui)
 {
 	// clear error
@@ -89,21 +107,14 @@ _compile(UI *ui)
 
 	if(size <= MOONY_MAX_CHUNK_LEN)
 	{
-		uint32_t atom_size = sizeof(LV2_Atom) + size;
-		LV2_Atom *atom = calloc(1, atom_size);
-		if(!atom)
-		{
-			free(utf8);
-			return;
-		}
+		uint32_t msg_size = sizeof(moony_message_t) + size;
+		moony_message_t *msg = calloc(1, msg_size);
 
-		atom->size = size;
-		atom->type = ui->forge.String;
-		strcpy(LV2_ATOM_BODY(atom), utf8);
+		_moony_message_fill(ui, msg, ui->uris.moony_code, size, utf8);
+		
+		ui->write_function(ui->controller, 0, msg_size, ui->uris.event_transfer, msg);
 
-		ui->write_function(ui->controller, 0, atom_size, ui->uris.event_transfer, atom);
-
-		free(atom);
+		free(msg);
 	}
 	else
 	{
@@ -455,13 +466,14 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		return NULL;
 	}
 
-	LV2_Atom empty = {
-		.size = 0,
-		.type = ui->forge.String
-	};
+	uint32_t msg_size = sizeof(moony_message_t);
+	moony_message_t msg;
+
+	_moony_message_fill(ui, &msg, ui->uris.moony_code, 0, NULL);
+
 	// trigger update
-	ui->write_function(ui->controller, 0, sizeof(LV2_Atom),
-		ui->uris.event_transfer, &empty);
+	ui->write_function(ui->controller, 0, msg_size,
+		ui->uris.event_transfer, &msg);
 
 	return ui;
 }
@@ -486,29 +498,29 @@ port_event(LV2UI_Handle handle, uint32_t i, uint32_t buffer_size,
 
 	if( (i == 1) && (format == ui->uris.event_transfer) )
 	{
-		const LV2_Atom_Object *obj = buffer;
-		if(obj->body.otype != ui->uris.moony_message)
-			return;
-		
-		const LV2_Atom_Property_Body *prop = LV2_ATOM_CONTENTS_CONST(LV2_Atom_Object, obj);
+		const moony_message_t *msg = buffer;
 
-		if(prop->key == ui->uris.moony_code)
+		if(  (msg->obj.atom.type == ui->forge.Object)
+			&& (msg->obj.body.otype == ui->uris.moony_message) )
 		{
-			const char *chunk = LV2_ATOM_BODY_CONST(&prop->value);
+			if(msg->prop.key == ui->uris.moony_code)
+			{
+				const char *chunk = msg->body;
 
-			enc.data = ui;
-			lua_to_markup(chunk, NULL);
-			elm_entry_cursor_pos_set(ui->entry, 0);
-		}
-		else if(prop->key == ui->uris.moony_error)
-		{
-			const char *error = LV2_ATOM_BODY_CONST(&prop->value);
-			const char *err = strstr(error, "\"]:"); // search end mark of header [string ""]:
-			err = err
-				? err + 3 // skip header end mark
-				: error; // use whole error string alternatively
-			elm_object_text_set(ui->error, err);
-			evas_object_show(ui->message);
+				enc.data = ui;
+				lua_to_markup(chunk, NULL);
+				elm_entry_cursor_pos_set(ui->entry, 0);
+			}
+			else if(msg->prop.key == ui->uris.moony_error)
+			{
+				const char *error = msg->body;
+				const char *err = strstr(error, "\"]:"); // search end mark of header [string ""]:
+				err = err
+					? err + 3 // skip header end mark
+					: error; // use whole error string alternatively
+				elm_object_text_set(ui->error, err);
+				evas_object_show(ui->message);
+			}
 		}
 	}
 }

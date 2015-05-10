@@ -1248,13 +1248,15 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *seq)
 
 	LV2_ATOM_SEQUENCE_FOREACH(seq, ev)
 	{
-		const LV2_Atom *atom = &ev->body;
+		const moony_message_t *msg = (const moony_message_t *)&ev->body;
 
-		if(atom->type == moony->forge.String)
+		if(  (msg->obj.atom.type == moony->forge.Object)
+			&& (msg->obj.body.otype == moony->uris.moony_message)
+			&& (msg->prop.key == moony->uris.moony_code) )
 		{
-			if(atom->size)
+			if(msg->prop.value.size)
 			{
-				strncpy(moony->chunk, LV2_ATOM_BODY_CONST(atom), atom->size);
+				strncpy(moony->chunk, msg->body, msg->prop.value.size);
 				moony->dirty_in = 1;
 			}
 			else

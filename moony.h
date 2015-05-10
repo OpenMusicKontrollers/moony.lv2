@@ -218,5 +218,15 @@ strndup(const char *s, size_t n)
 	return (char *)strncpy(result, s, len);
 }
 #endif
+
+#define _ATOM_ALIGNED __attribute__((aligned(8)))
+
+typedef struct _moony_message_t moony_message_t;
+
+struct _moony_message_t {
+	LV2_Atom_Object obj _ATOM_ALIGNED;
+	LV2_Atom_Property_Body prop _ATOM_ALIGNED;
+	char body [0] _ATOM_ALIGNED;
+} _ATOM_ALIGNED;
 	
 #endif // _MOONY_H
