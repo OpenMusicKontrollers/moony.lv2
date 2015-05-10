@@ -14,31 +14,31 @@ Get more information at: [http://open-music-kontrollers.ch/lv2/moony](http://ope
 
 #### Control port input to control port output
 
-* **Lua C1 x C1** 1x control input to 1x control output
-* **Lua C2 x C2** 2x control input to 2x control output
-* **Lua C4 x C4** 4x control input to 4x control output
+* **C1 x C1** 1x control input to 1x control output
+* **C2 x C2** 2x control input to 2x control output
+* **C4 x C4** 4x control input to 4x control output
 
 #### Control port input to atom port output
 
-* **Lua C1 x A1** 1x control input to 1x atom output
-* **Lua C2 x A1** 2x control input to 1x atom output
-* **Lua C4 x A1** 4x control input to 1x atom output
+* **C1 x A1** 1x control input to 1x atom output
+* **C2 x A1** 2x control input to 1x atom output
+* **C4 x A1** 4x control input to 1x atom output
 
 #### Atom port input to atom port output
 
-* **Lua A1 x A1** 1x atom input to 1x atom output
-* **Lua A2 x A2** 2x atom input to 2x atom output
-* **Lua A4 x A4** 4x atom input to 4x atom output
+* **A1 x A1** 1x atom input to 1x atom output
+* **A2 x A2** 2x atom input to 2x atom output
+* **A4 x A4** 4x atom input to 4x atom output
 
 #### Atom port input to control port output
 
-* **Lua A1 x C1** 1x atom input to 1x control output
-* **Lua A1 x C2** 1x atom input to 2x control output
-* **Lua A1 x C4** 1x atom input to 4x control output
+* **A1 x C1** 1x atom input to 1x control output
+* **A1 x C2** 1x atom input to 2x control output
+* **A1 x C4** 1x atom input to 4x control output
 
 #### Control+atom port input to control+atom port output
 
-* **Lua C4+A1 x C4+A1** 4x control + 1x atom input to 4x control + 1x atom output
+* **C4+A1 x C4+A1** 4x control + 1x atom input to 4x control + 1x atom output
 
 ### Dependencies
 
