@@ -120,3 +120,54 @@ install(TARGETS moony_ui DESTINATION ${DEST})
 configure_file(${PROJECT_SOURCE_DIR}/manifest.ttl.in ${PROJECT_BINARY_DIR}/manifest.ttl)
 install(FILES ${PROJECT_BINARY_DIR}/manifest.ttl DESTINATION ${DEST})
 install(FILES ${PROJECT_SOURCE_DIR}/moony.ttl DESTINATION ${DEST})
+
+option(BUILD_TEST "Build test app" OFF)
+add_executable(test_moony
+	test_moony.c
+	api.c
+	vm.c
+
+	tlsf-3.0/tlsf.c
+
+	lua-5.3/lapi.c
+	lua-5.3/lcode.c
+	lua-5.3/lctype.c
+	lua-5.3/ldebug.c
+	lua-5.3/ldo.c
+	lua-5.3/ldump.c
+	lua-5.3/lfunc.c
+	lua-5.3/lgc.c
+	lua-5.3/llex.c
+	lua-5.3/lmem.c
+	lua-5.3/lobject.c
+	lua-5.3/lopcodes.c
+	lua-5.3/lparser.c
+	lua-5.3/lstate.c
+	lua-5.3/lstring.c
+	lua-5.3/ltable.c
+	lua-5.3/ltm.c
+	lua-5.3/lundump.c
+	lua-5.3/lvm.c
+	lua-5.3/lzio.c
+
+	lua-5.3/lbaselib.c
+	lua-5.3/lauxlib.c
+	lua-5.3/lcorolib.c
+	lua-5.3/lmathlib.c
+	lua-5.3/lstrlib.c
+	lua-5.3/ltablib.c
+	lua-5.3/lutf8lib.c)
+	#lua-5.3/lbitlib.c
+	#lua-5.3/ldblib.c
+	#lua-5.3/liolib.c
+	#lua-5.3/loslib.c
+	#lua-5.3/loadlib.c
+	#lua-5.3/linit.c
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+	target_compile_definitions(test_moony PUBLIC -DLUA_USE_LINUX)
+elseif(WIN32)
+	target_compile_definitions(test_moony PUBLIC)
+elseif(APPLE)
+	target_compile_definitions(test_moony PUBLIC -DLUA_USE_MACOSX)
+endif()
+target_link_libraries(test_moony ${LIBS} "-lm")

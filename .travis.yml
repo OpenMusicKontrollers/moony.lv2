@@ -15,4 +15,4 @@ install:
 before_script:
  - mkdir build && pushd build && cmake -DCMAKE_C_FLAGS="-std=gnu99" .. && popd
 script:
- - pushd build && make && sudo make install && popd
+ - pushd build && make && sudo make install; ./test_moony && popd
