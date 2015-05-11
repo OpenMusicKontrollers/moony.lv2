@@ -1,6 +1,6 @@
---[[
+--[[===========================================================================
 	Moony LV2: Lua API v.0.1
-	=============================================================================
+===============================================================================
 	
 	Copyright (c) 2015 Hanspeter Portner (dev@open-music-kontrollers.ch)
 	
@@ -18,8 +18,9 @@
 	http://www.perlfoundation.org/artistic_license_2_0.
 --]]
 
---[[
+--[[---------------------------------------------------------------------------
 	General usage
+-------------------------------------------------------------------------------
 
 	Plugin scripts need to define a 'run' function which gets called at each
 	plugin update period. The input and output arguments of the 'run' function
@@ -50,9 +51,9 @@ function run(seq, forge, a, b, c, d)
 	return a, b, c, d
 end
 
---[[
-	LV2 module
---]]
+--[[---------------------------------------------------------------------------
+	URI/URID (un)mapping
+-----------------------------------------------------------------------------]]
 
 -- Tables
 urid = map['http://foo.org#bar'] -- map URI to URID
@@ -77,163 +78,157 @@ urid = map.URID -- URID of LV2 URID
 urid = map.Vector -- URID of LV2 Vector
 urid = map.Midi -- URID of LV2 MIDI
 
---[[
+--[[---------------------------------------------------------------------------
 	Atom Sequence
---]]
-function _(seq)
-	-- length operator
-	n = #seq -- number of events in sequence
+-----------------------------------------------------------------------------]]
 
-	-- indexing by string key
-	t = seq.type -- type of atom, e.g. map.Sequence
+-- length operator
+n = #seq -- number of events in sequence
 
-	-- indexing by number key
-	frames, atom = seq[1] -- get first event (frame time + atom)
-	frames, atom = seq[#seq] -- get last event
+-- indexing by string key
+t = seq.type -- type of atom, e.g. map.Sequence
 
-	-- iteration
-	for frames, atom in seq:foreach() do -- iterate over all events in sequence
-	end
+-- indexing by number key
+atom = seq[1] -- get first event atom
+atom = seq[#seq] -- get last event atom
+
+-- iteration
+for frames, atom in seq:foreach() do -- iterate over all events in sequence
 end
 
---[[
+--[[---------------------------------------------------------------------------
 	Atom Forge
---]]
-function _(forge)
-	-- functions
-	forge:frame_time(frames) -- start a new event at frames (Lua integer)
-	forge:beat_time(beats) -- start a new event at beats (Lua number)
+-----------------------------------------------------------------------------]]
 
-	forge:atom(atom) -- push a whole atom (atom, object, tuple, vector, ...)
-	forge:int(1) -- push a Lua integer as 32bit integer
-	forge:long(2) -- push a Lua integer as 64bit integer
-	forge:float(0.1) -- push a Lua number as floating point
-	forge:double(0.4) -- push a Lua number as double-precision floating point
-	forge:bool(true) -- push Lua boolean
-	
-	forge:urid(URID) -- push a Lua number as URID
-	forge:string('hello') -- push a Lua string
-	forge:literal('world', datatype, lang) -- push a Lua string, integer, integer
-	forge:uri('http://foo.org#bar') -- push a Lua string as URI
-	forge:path('/tmp/test.lua') -- push a Lua string as path
+-- functions
+forge:frame_time(frames) -- start a new event at frames (Lua integer)
+forge:beat_time(beats) -- start a new event at beats (Lua number)
 
-	forge:midi({0x90, 0x4a, 0x7f}) -- push a Lua table as Midi message
-	tup = forge:tuple() -- start a new tuple (returns a frame for forge:pop)
-	obj = forge:object(id, otype) -- start a new object (returns a frame for forge:pop)
-	forge:key(key) -- push a new object property with key (Lua integer)
-	forge:property(context, key) -- push a new object property with context, key 9Lua integer)
-	forge:sequence(seq) -- append all events in seq to forge
-	
-	forge:pop(frame) -- finalize tuple or object frame
-end
+forge:atom(atom) -- push a whole atom (atom, object, tuple, vector, ...)
+forge:int(1) -- push a Lua integer as 32bit integer
+forge:long(2) -- push a Lua integer as 64bit integer
+forge:float(0.1) -- push a Lua number as floating point
+forge:double(0.4) -- push a Lua number as double-precision floating point
+forge:bool(true) -- push Lua boolean
 
---[[
+forge:urid(URID) -- push a Lua number as URID
+forge:string('hello') -- push a Lua string
+forge:literal('world', datatype, lang) -- push a Lua string, integer, integer
+forge:uri('http://foo.org#bar') -- push a Lua string as URI
+forge:path('/tmp/test.lua') -- push a Lua string as path
+
+forge:midi({0x90, 0x4a, 0x7f}) -- push a Lua table as Midi message
+tup = forge:tuple() -- start a new tuple (returns a frame for forge:pop)
+obj = forge:object(id, otype) -- start a new object (returns a frame for forge:pop)
+forge:key(key) -- push a new object property with key (Lua integer)
+forge:property(context, key) -- push a new object property with context, key 9Lua integer)
+forge:sequence(seq) -- append all events in seq to forge
+
+forge:pop(frame) -- finalize tuple or object frame
+
+--[[---------------------------------------------------------------------------
 	Atom Object
---]]
-function _(obj)
-	local foo = {
-		bar = map['http://foo.com#bar']
-	}
+-----------------------------------------------------------------------------]]
 
-	-- length operator
-	n = #obj -- number of properties in object 
+local foo = {
+	bar = map['http://foo.com#bar']
+}
 
-	-- indexing by string key
-	t = obj.type -- type of atom, e.g. map.Object
-	t = obj.id -- object id, e.g. 0
-	t = obj.otype -- object type , e.g. foo_bar
+-- length operator
+n = #obj -- number of properties in object 
 
-	-- indexing by property key (number)
-	atom = obj[foo.bar] -- get property value for key foo.bar
+-- indexing by string key
+t = obj.type -- type of atom, e.g. map.Object
+t = obj.id -- object id, e.g. 0
+t = obj.otype -- object type , e.g. foo_bar
 
-	-- iteration
-	for key, context, atom in obj:foreach() do -- iterate over all elements in object
-	end
+-- indexing by property key (URID as Lua integer)
+atom = obj[foo.bar] -- get property value for key foo.bar
+
+-- iteration
+for key, context, atom in obj:foreach() do -- iterate over all elements in object
 end
 
---[[
+--[[---------------------------------------------------------------------------
 	Atom Tuple
---]]
-function _(tup)
-	-- length operator
-	n = #tup -- number of elements in tuple 
+-----------------------------------------------------------------------------]]
 
-	-- indexing by string key
-	t = tup.type -- type of atom, e.g. map.Tuple
+-- length operator
+n = #tup -- number of elements in tuple 
 
-	-- indexing by number key
-	atom = tup[1] -- get first atom element
-	atom = tup[#tup] -- get last atom element
+-- indexing by string key
+t = tup.type -- type of atom, e.g. map.Tuple
 
-	-- iteration
-	for i, atom in tup:foreach() do -- iterate over all elements in tuple
-	end
+-- indexing by number key
+atom = tup[1] -- get first atom element
+atom = tup[#tup] -- get last atom element
 
-	-- unpacking
-	atom1, atom2, atom3 = tup:unpack() -- unpack all elements in tuple
+-- iteration
+for i, atom in tup:foreach() do -- iterate over all elements in tuple
 end
 
---[[
+-- unpacking
+atom1, atom2, atom3 = tup:unpack() -- unpack all elements in tuple
+
+--[[---------------------------------------------------------------------------
 	Atom Vector
---]]
-function _(vec)
-	-- length operator
-	n = #vec -- number of elements in vector
+-----------------------------------------------------------------------------]]
 
-	-- indexing by string key
-	t = vec.type -- type of atom, e.g. map.Vector
-	t = vec.child_type -- type of child atom, e.g. map.Float
-	t = vec.child_size -- byte size of child atom, e.g. 4
+-- length operator
+n = #vec -- number of elements in vector
 
-	-- indexing by number key
-	atom = vec[1] -- get first atom element
-	atom = vec[#vec] -- get last atom element
+-- indexing by string key
+t = vec.type -- type of atom, e.g. map.Vector
+t = vec.child_type -- type of child atom, e.g. map.Float
+t = vec.child_size -- byte size of child atom, e.g. 4
 
-	-- iteration
-	for i, atom in vec:foreach() do -- iterate over all elements in vector
-	end
+-- indexing by number key
+atom = vec[1] -- get first atom element
+atom = vec[#vec] -- get last atom element
 
-	-- unpacking
-	atom1, atom2, atom3 = vec:unpack() -- unpack all elements in vector
+-- iteration
+for i, atom in vec:foreach() do -- iterate over all elements in vector
 end
 
---[[
+-- unpacking
+atom1, atom2, atom3 = vec:unpack() -- unpack all elements in vector
+
+--[[---------------------------------------------------------------------------
 	First-class Atom
---]]
-function _(atom)
-	-- length operator
-	n = #atom -- byte size of atom
+-----------------------------------------------------------------------------]]
 
-	-- indexing by string key
-	t = atom.type -- type of atom, e.g. map.Int, map.Double, map.String
-	v = atom.value -- native Lua value for the corresponding atom
+-- length operator
+n = #atom -- byte size of atom
 
-	-- map.Bool
-	bool = atom.value -- Lua boolean, e.g. true or false
+-- indexing by string key
+t = atom.type -- type of atom, e.g. map.Int, map.Double, map.String
+v = atom.value -- native Lua value for the corresponding atom
 
-	-- map.Int, map.Long
-	int = atom.value -- Lua integer
+-- map.Bool
+bool = atom.value -- Lua boolean, e.g. true or false
 
-	-- map.Float, map.Double
-	float = atom.value -- Lua number
+-- map.Int, map.Long
+int = atom.value -- Lua integer
 
-	-- map.String
-	str = atom.value -- Lua string
+-- map.Float, map.Double
+float = atom.value -- Lua number
 
-	-- map.Literal
-	literal = atom.value -- Lua string
+-- map.String
+str = atom.value -- Lua string
 
-	-- map.URID
-	urid = atom.value -- Lua integer
+-- map.Literal
+literal = atom.value -- Lua string
 
-	-- map.URI
-	uri = atom.value -- Lua string
+-- map.URID
+urid = atom.value -- Lua integer
 
-	-- map.Path
-	path = atom.value -- Lua string
+-- map.URI
+uri = atom.value -- Lua string
 
-	-- map.Midi
-	midi = atom.value -- Lua table with single raw Midi bytes
-	m = #midi -- number of Midi bytes
-	status = m[1] -- Midi status byte
-end
+-- map.Path
+path = atom.value -- Lua string
+
+-- map.Midi
+midi = atom.value -- Lua table with single raw Midi bytes
+m = #midi -- number of Midi bytes
+status = m[1] -- Midi status byte
