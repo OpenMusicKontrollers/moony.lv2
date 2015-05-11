@@ -124,6 +124,8 @@ main(int argc, char **argv)
 	eina_init();
 
 	handle.ext_urid = ext_urid_new();
+	if(!handle.ext_urid)
+		return -1;
 
 	LV2_URID_Map map = {
 		.handle = &handle,
