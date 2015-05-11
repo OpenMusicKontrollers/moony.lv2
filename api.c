@@ -1146,6 +1146,73 @@ static const luaL_Reg lunmap_mt [] = {
 	{NULL, NULL}
 };
 
+static int
+_log(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	int n = lua_gettop(L);
+
+	if(!moony->log || !n)
+		return 0;
+
+	luaL_Buffer buf;
+	luaL_buffinit(L, &buf);
+
+	for(int i=1; i<=n; i++)
+	{
+		size_t len;
+		const char *str = NULL;
+		switch(lua_type(L, i))
+		{
+			case LUA_TNIL:
+				str = "(nil)";
+				break;
+			case LUA_TBOOLEAN:
+				str = lua_toboolean(L, i) ? "true" : "false";
+				break;
+			case LUA_TLIGHTUSERDATA:
+				str = lua_tostring(L, i);
+				if(!str)
+					str = "(lightuserdata)";
+				break;
+			case LUA_TNUMBER:
+				str = lua_tostring(L, i);
+				break;
+			case LUA_TSTRING:
+				str = lua_tostring(L, i);
+				break;
+			case LUA_TTABLE:
+				str = lua_tostring(L, i);
+				if(!str)
+					str = "(table)";
+				break;
+			case LUA_TFUNCTION:
+				str = "(function)";
+				break;
+			case LUA_TUSERDATA:
+				str = lua_tostring(L, i);
+				if(!str)
+					str = "(userdata)";
+				break;
+			case LUA_TTHREAD:
+				str = "(thread)";
+				break;
+		};
+		if(!str)
+			continue;
+		luaL_addstring(&buf, str);
+		if(i < n)
+			luaL_addchar(&buf, '\t');
+	}
+
+	luaL_pushresult(&buf);
+
+	const char *res = lua_tostring(L, -1);
+	moony->log->printf(moony->log->handle, moony->uris.log_trace, "%s", res);
+
+	return 0;
+}
+
 int
 moony_init(moony_t *moony, const LV2_Feature *const *features)
 {
@@ -1162,6 +1229,8 @@ moony_init(moony_t *moony, const LV2_Feature *const *features)
 			moony->unmap = (LV2_URID_Unmap *)features[i]->data;
 		else if(!strcmp(features[i]->URI, LV2_WORKER__schedule))
 			moony->sched = (LV2_Worker_Schedule *)features[i]->data;
+		else if(!strcmp(features[i]->URI, LV2_LOG__log))
+			moony->log = (LV2_Log_Log *)features[i]->data;
 
 	if(!moony->map)
 	{
@@ -1183,6 +1252,7 @@ moony_init(moony_t *moony, const LV2_Feature *const *features)
 	moony->uris.moony_code = moony->map->map(moony->map->handle, MOONY_CODE_URI);
 	moony->uris.moony_error = moony->map->map(moony->map->handle, MOONY_ERROR_URI);
 	moony->uris.midi_event = moony->map->map(moony->map->handle, LV2_MIDI__MidiEvent);
+	moony->uris.log_trace = moony->map->map(moony->map->handle, LV2_LOG__Trace);
 
 	lv2_atom_forge_init(&moony->forge, moony->map);
 
@@ -1279,11 +1349,10 @@ moony_open(moony_t *moony, lua_State *L)
 	lua_setmetatable(L, -2);
 	lua_setglobal(L, "unmap");
 
-	// delete print function as it is not realtime-safe
-	lua_pushnil(L);
+	// overwrite print function with LV2 log
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	lua_pushcclosure(L, _log, 1);
 	lua_setglobal(L, "print");
-
-	//TODO support for LV2_Log extension
 
 #undef SET_CONST
 }

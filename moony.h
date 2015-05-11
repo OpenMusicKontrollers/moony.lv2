@@ -30,6 +30,7 @@
 #include "lv2/lv2plug.in/ns/ext/midi/midi.h"
 #include "lv2/lv2plug.in/ns/ext/urid/urid.h"
 #include "lv2/lv2plug.in/ns/ext/worker/worker.h"
+#include "lv2/lv2plug.in/ns/ext/log/log.h"
 #include "lv2/lv2plug.in/ns/ext/state/state.h"
 #include "lv2/lv2plug.in/ns/lv2core/lv2.h"
 #include "lv2/lv2plug.in/ns/extensions/ui/ui.h"
@@ -154,10 +155,13 @@ struct _moony_t {
 		LV2_URID moony_code;
 		LV2_URID moony_error;
 		LV2_URID midi_event;
+		LV2_URID log_trace;
 	} uris;
 	
 	LV2_Worker_Schedule *sched;
 	volatile int working;
+	
+	LV2_Log_Log *log;
 
 	moony_vm_t vm;
 	char chunk [MOONY_MAX_CHUNK_LEN];
