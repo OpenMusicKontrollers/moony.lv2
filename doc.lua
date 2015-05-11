@@ -54,28 +54,28 @@ end
 	LV2 module
 --]]
 
--- Functions
-urid = lv2.map('http://foo.org#bar') -- map URI to URID
-uri = lv2.unmap(urid) -- unmap URID to URI
+-- Tables
+urid = map['http://foo.org#bar'] -- map URI to URID
+uri = unmap[urid] -- unmap URID to URI
 
 -- Constants
-urid = lv2.Bool -- URID of LV2 Bool
-urid = lv2.Chunk -- URID of LV2 Chunk
-urid = lv2.Double -- URID of LV2 Double
-urid = lv2.Float -- URID of LV2 Float
-urid = lv2.Int -- URID of LV2 Integer (32bit integer)
-urid = lv2.Long -- URID of LV2 Long (64bit integer)
-urid = lv2.Literal -- URID of LV2 Literal
-urid = lv2.Object -- URID of LV2 Object
-urid = lv2.Path -- URID of LV2 Path
-urid = lv2.Property -- URID of LV2 Property
-urid = lv2.Sequence -- URID of LV2 Sequence
-urid = lv2.String -- URID of LV2 String
-urid = lv2.Tuple -- URID of LV2 Tuple
-urid = lv2.URI -- URID of LV2 URI
-urid = lv2.URID -- URID of LV2 URID
-urid = lv2.Vector -- URID of LV2 Vector
-urid = lv2.Midi -- URID of LV2 MIDI
+urid = map.Bool -- URID of LV2 Bool
+urid = map.Chunk -- URID of LV2 Chunk
+urid = map.Double -- URID of LV2 Double
+urid = map.Float -- URID of LV2 Float
+urid = map.Int -- URID of LV2 Integer (32bit integer)
+urid = map.Long -- URID of LV2 Long (64bit integer)
+urid = map.Literal -- URID of LV2 Literal
+urid = map.Object -- URID of LV2 Object
+urid = map.Path -- URID of LV2 Path
+urid = map.Property -- URID of LV2 Property
+urid = map.Sequence -- URID of LV2 Sequence
+urid = map.String -- URID of LV2 String
+urid = map.Tuple -- URID of LV2 Tuple
+urid = map.URI -- URID of LV2 URI
+urid = map.URID -- URID of LV2 URID
+urid = map.Vector -- URID of LV2 Vector
+urid = map.Midi -- URID of LV2 MIDI
 
 --[[
 	Atom Sequence
@@ -85,7 +85,7 @@ function _(seq)
 	n = #seq -- number of events in sequence
 
 	-- indexing by string key
-	t = seq.type -- type of atom, e.g. lv2.Sequence
+	t = seq.type -- type of atom, e.g. map.Sequence
 
 	-- indexing by number key
 	frames, atom = seq[1] -- get first event (frame time + atom)
@@ -132,14 +132,14 @@ end
 --]]
 function _(obj)
 	local foo = {
-		bar = lv2.map('http://foo.com#bar')
+		bar = map['http://foo.com#bar']
 	}
 
 	-- length operator
 	n = #obj -- number of properties in object 
 
 	-- indexing by string key
-	t = obj.type -- type of atom, e.g. lv2.Object
+	t = obj.type -- type of atom, e.g. map.Object
 	t = obj.id -- object id, e.g. 0
 	t = obj.otype -- object type , e.g. foo_bar
 
@@ -159,7 +159,7 @@ function _(tup)
 	n = #tup -- number of elements in tuple 
 
 	-- indexing by string key
-	t = tup.type -- type of atom, e.g. lv2.Tuple
+	t = tup.type -- type of atom, e.g. map.Tuple
 
 	-- indexing by number key
 	atom = tup[1] -- get first atom element
@@ -181,8 +181,8 @@ function _(vec)
 	n = #vec -- number of elements in vector
 
 	-- indexing by string key
-	t = vec.type -- type of atom, e.g. lv2.Vector
-	t = vec.child_type -- type of child atom, e.g. lv2.Float
+	t = vec.type -- type of atom, e.g. map.Vector
+	t = vec.child_type -- type of child atom, e.g. map.Float
 	t = vec.child_size -- byte size of child atom, e.g. 4
 
 	-- indexing by number key
@@ -205,34 +205,34 @@ function _(atom)
 	n = #atom -- byte size of atom
 
 	-- indexing by string key
-	t = atom.type -- type of atom, e.g. lv2.Int, lv2.Double, lv2.String
+	t = atom.type -- type of atom, e.g. map.Int, map.Double, map.String
 	v = atom.value -- native Lua value for the corresponding atom
 
-	-- lv2.Bool
+	-- map.Bool
 	bool = atom.value -- Lua boolean, e.g. true or false
 
-	-- lv2.Int, lv2.Long
+	-- map.Int, map.Long
 	int = atom.value -- Lua integer
 
-	-- lv2.Float, lv2.Double
+	-- map.Float, map.Double
 	float = atom.value -- Lua number
 
-	-- lv2.String
+	-- map.String
 	str = atom.value -- Lua string
 
-	-- lv2.Literal
+	-- map.Literal
 	literal = atom.value -- Lua string
 
-	-- lv2.URID
+	-- map.URID
 	urid = atom.value -- Lua integer
 
-	-- lv2.URI
+	-- map.URI
 	uri = atom.value -- Lua string
 
-	-- lv2.Path
+	-- map.Path
 	path = atom.value -- Lua string
 
-	-- lv2.Midi
+	-- map.Midi
 	midi = atom.value -- Lua table with single raw Midi bytes
 	m = #midi -- number of Midi bytes
 	status = m[1] -- Midi status byte

@@ -1060,39 +1060,89 @@ static const luaL_Reg lforge_mt [] = {
 };
 
 static int
-_llv2_map(lua_State *L)
+_lmap__index(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	const char *uri = luaL_checkstring(L, 1);
-	LV2_URID urid = moony->map->map(moony->map->handle, uri);
 
-	if(urid)
-		lua_pushinteger(L, urid);
-	else
-		lua_pushnil(L);
+	lua_pushvalue(L, 2);
+	lua_rawget(L, 1); // rawget(self, uri)
+
+	if(lua_isnil(L, -1)) // no yet cached
+	{
+		const char *uri = luaL_checkstring(L, 2);
+		LV2_URID urid = moony->map->map(moony->map->handle, uri); // non-rt
+		if(urid)
+		{
+			lua_pushinteger(L, urid);
+
+			// cache it
+			lua_pushvalue(L, 2); // uri
+			lua_pushvalue(L, -2); // urid
+			lua_rawset(L, 1);  // self
+		}
+		else
+			lua_pushnil(L);
+	}
 
 	return 1;
 }
 
 static int
-_llv2_unmap(lua_State *L)
+_lmap__call(lua_State *L)
 {
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	LV2_URID urid = luaL_checkinteger(L, 1);
-	const char *uri = moony->unmap->unmap(moony->unmap->handle, urid);
-
-	if(uri)
-		lua_pushstring(L, uri);
-	else
-		lua_pushnil(L);
+	lua_settop(L, 2);
+	lua_gettable(L, -2); // self[uri]
 
 	return 1;
 }
 
-static const luaL_Reg llv2 [] = {
-	{"map", _llv2_map},
-	{"unmap", _llv2_unmap},
+static const luaL_Reg lmap_mt [] = {
+	{"__index", _lmap__index},
+	{"__call", _lmap__index},
+	{NULL, NULL}
+};
 
+static int
+_lunmap__index(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	
+	lua_pushvalue(L, 2);
+	lua_rawget(L, 1); // rawget(self, urid)
+
+	if(lua_isnil(L, -1)) // no yet cached
+	{
+		LV2_URID urid = luaL_checkinteger(L, 2);
+		const char *uri = moony->unmap->unmap(moony->unmap->handle, urid); // non-rt
+
+		if(uri)
+		{
+			lua_pushstring(L, uri);
+
+			// cache it
+			lua_pushvalue(L, 2); // urid
+			lua_pushvalue(L, -2); // uri
+			lua_rawset(L, 1);  // self
+		}
+		else
+			lua_pushnil(L);
+	}
+
+	return 1;
+}
+
+static int
+_lunmap__call(lua_State *L)
+{
+	lua_settop(L, 2);
+	lua_gettable(L, -2); // self[uri]
+
+	return 1;
+}
+
+static const luaL_Reg lunmap_mt [] = {
+	{"__index", _lunmap__index},
+	{"__call", _lunmap__index},
 	{NULL, NULL}
 };
 
@@ -1191,30 +1241,43 @@ moony_open(moony_t *moony, lua_State *L)
 	lua_pushinteger(L, moony->forge.ID); \
 	lua_setfield(L, -2, #ID);
 
+	// lv2.map
+	lua_newtable(L);
+	{
+		//SET_CONST(L, Blank); // is depracated
+		SET_CONST(L, Bool);
+		SET_CONST(L, Chunk);
+		SET_CONST(L, Double);
+		SET_CONST(L, Float);
+		SET_CONST(L, Int);
+		SET_CONST(L, Long);
+		SET_CONST(L, Literal);
+		SET_CONST(L, Object);
+		SET_CONST(L, Path);
+		SET_CONST(L, Property);
+		//SET_CONST(L, Resource); // is deprecated
+		SET_CONST(L, Sequence);
+		SET_CONST(L, String);
+		SET_CONST(L, Tuple);
+		SET_CONST(L, URI);
+		SET_CONST(L, URID);
+		SET_CONST(L, Vector);
+		lua_pushinteger(L, moony->uris.midi_event);
+			lua_setfield(L, -2, "Midi");
+	}
 	lua_newtable(L);
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
-	luaL_setfuncs(L, llv2, 1);
-	//SET_CONST(L, Blank); // is depracated
-	SET_CONST(L, Bool);
-	SET_CONST(L, Chunk);
-	SET_CONST(L, Double);
-	SET_CONST(L, Float);
-	SET_CONST(L, Int);
-	SET_CONST(L, Long);
-	SET_CONST(L, Literal);
-	SET_CONST(L, Object);
-	SET_CONST(L, Path);
-	SET_CONST(L, Property);
-	//SET_CONST(L, Resource); // is deprecated
-	SET_CONST(L, Sequence);
-	SET_CONST(L, String);
-	SET_CONST(L, Tuple);
-	SET_CONST(L, URI);
-	SET_CONST(L, URID);
-	SET_CONST(L, Vector);
-	lua_pushinteger(L, moony->uris.midi_event);
-		lua_setfield(L, -2, "Midi");
-	lua_setglobal(L, "lv2");
+	luaL_setfuncs(L, lmap_mt, 1);
+	lua_setmetatable(L, -2);
+	lua_setglobal(L, "map");
+
+	// lv2.unmap
+	lua_newtable(L);
+	lua_newtable(L);
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	luaL_setfuncs(L, lunmap_mt, 1);
+	lua_setmetatable(L, -2);
+	lua_setglobal(L, "unmap");
 
 	// delete print function as it is not realtime-safe
 	lua_pushnil(L);

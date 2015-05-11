@@ -170,27 +170,6 @@ checkKw(char*s)
 			CHECK(local, LOCAL);
 			CHECK(load, CALLER);
 			CHECK(loadfile, CALLER);
-			
-			CHECK(lv2.map, CALLER);
-			CHECK(lv2.unmap, CALLER);
-
-			CHECK(lv2.Bool, NUMBER);
-			CHECK(lv2.Chunk, NUMBER);
-			CHECK(lv2.Double, NUMBER);
-			CHECK(lv2.Float, NUMBER);
-			CHECK(lv2.Int, NUMBER);
-			CHECK(lv2.Long, NUMBER);
-			CHECK(lv2.Literal, NUMBER);
-			CHECK(lv2.Object, NUMBER);
-			CHECK(lv2.Path, NUMBER);
-			CHECK(lv2.Property, NUMBER);
-			CHECK(lv2.Sequence, NUMBER);
-			CHECK(lv2.String, NUMBER);
-			CHECK(lv2.Tuple, NUMBER);
-			CHECK(lv2.URI, NUMBER);
-			CHECK(lv2.URID, NUMBER);
-			CHECK(lv2.Vector, NUMBER);
-			CHECK(lv2.Midi, NUMBER);
 			break;
 		case 'm':
 			CHECK(math.frexp, CALLER)
@@ -228,6 +207,25 @@ checkKw(char*s)
 			CHECK(math.pow, CALLER)
 			CHECK(math.log, CALLER)
 			CHECK(math.atan, CALLER)
+
+			CHECK(map, CALLER);
+			CHECK(map.Bool, NUMBER);
+			CHECK(map.Chunk, NUMBER);
+			CHECK(map.Double, NUMBER);
+			CHECK(map.Float, NUMBER);
+			CHECK(map.Int, NUMBER);
+			CHECK(map.Long, NUMBER);
+			CHECK(map.Literal, NUMBER);
+			CHECK(map.Object, NUMBER);
+			CHECK(map.Path, NUMBER);
+			CHECK(map.Property, NUMBER);
+			CHECK(map.Sequence, NUMBER);
+			CHECK(map.String, NUMBER);
+			CHECK(map.Tuple, NUMBER);
+			CHECK(map.URI, NUMBER);
+			CHECK(map.URID, NUMBER);
+			CHECK(map.Vector, NUMBER);
+			CHECK(map.Midi, NUMBER);
 			break;
 		case 'n':
 			CHECK(nil, NIL);
@@ -294,6 +292,8 @@ checkKw(char*s)
 			break;
 		case 'u':
 			CHECK(until, UNTIL);
+			
+			CHECK(unmap, CALLER);
 
 			CHECK(utf8.offset, CALLER);
 			CHECK(utf8.charpattern, CALLER);
