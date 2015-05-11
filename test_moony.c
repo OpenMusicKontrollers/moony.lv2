@@ -32,7 +32,8 @@ struct _handle_t {
 	ext_urid_t *ext_urid;
 
 	LV2_Atom_Forge forge;
-	uint8_t buf [8192];
+
+	uint8_t buf [8192] __attribute__((aligned(8)));
 };
 
 static int
