@@ -16,6 +16,7 @@
 --]]
 
 -- map/unmap
+print('[test] map/unmap')
 do
 	local uri = 'http://test.org#foo'
 
@@ -28,6 +29,7 @@ do
 end
 
 -- Int
+print('[test] Int')
 do
 	local function producer(forge)
 		forge:frame_time(0)
@@ -56,6 +58,7 @@ do
 end
 
 -- Long
+print('[test] Long')
 do
 	local function producer(forge)
 		forge:frame_time(0)
@@ -75,6 +78,7 @@ do
 end
 
 -- Float
+print('[test] Float')
 do
 	local function producer(forge)
 		forge:frame_time(0)
@@ -94,6 +98,7 @@ do
 end
 
 -- Double
+print('[test] Double')
 do
 	local function producer(forge)
 		forge:frame_time(0)
@@ -113,6 +118,7 @@ do
 end
 
 -- Bool
+print('[test] Bool')
 do
 	local function producer(forge)
 		forge:frame_time(0)
@@ -142,6 +148,7 @@ do
 end
 
 -- String
+print('[test] String')
 do
 	local str = 'hello world'
 
@@ -163,6 +170,7 @@ do
 end
 
 -- Literal
+print('[test] Literal')
 do
 	local str = 'hello world'
 	local datatype = map['http://test.org#datatype']
@@ -188,6 +196,7 @@ do
 end
 
 -- URI
+print('[test] URI')
 do
 	local uri = 'http://test.org'
 
@@ -209,6 +218,7 @@ do
 end
 
 -- Path
+print('[test] Path')
 do
 	local path = '/tmp/lua.lua'
 
@@ -230,6 +240,7 @@ do
 end
 
 -- URID
+print('[test] URID')
 do
 	local uri = 'http://test.org#uri'
 	local urid = map[uri]
@@ -253,6 +264,7 @@ do
 end
 
 -- Midi
+print('[test] Midi')
 do
 	local m = {0x90, 0x2a, 0x7f}
 
@@ -278,6 +290,7 @@ do
 end
 
 -- Tuple
+print('[test] Tuple')
 do
 	local function producer(forge)
 		forge:frame_time(0)
@@ -323,6 +336,7 @@ do
 end
 
 -- Object
+print('[test] Object')
 do
 	local id = 0
 	local otype = map['http://test.org#type']

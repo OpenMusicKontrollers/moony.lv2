@@ -116,6 +116,28 @@ _sched(LV2_Worker_Schedule_Handle instance, uint32_t size, const void *data)
 	return LV2_WORKER_SUCCESS;
 }
 
+static int
+_vprintf(void *data, LV2_URID type, const char *fmt, va_list args)
+{
+	vfprintf(stderr, fmt, args);
+	fputc('\n', stderr);
+
+	return 0;
+}
+
+static int
+_printf(void *data, LV2_URID type, const char *fmt, ...)
+{
+  va_list args;
+	int ret;
+
+  va_start (args, fmt);
+	ret = _vprintf(data, type, fmt, args);
+  va_end(args);
+
+	return ret;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -139,6 +161,11 @@ main(int argc, char **argv)
 		.handle = &handle,
 		.schedule_work = _sched
 	};
+	LV2_Log_Log log = {
+		.handle = &handle,
+		.printf = _printf,
+		.vprintf = _vprintf
+	};
 
 	const LV2_Feature feat_map = {
 		.URI = LV2_URID__map,
@@ -152,11 +179,16 @@ main(int argc, char **argv)
 		.URI = LV2_WORKER__schedule,
 		.data = &sched
 	};
+	const LV2_Feature feat_log = {
+		.URI = LV2_LOG__log,
+		.data = &log
+	};
 
 	const LV2_Feature *const features [] = {
 		&feat_map,
 		&feat_unmap,
 		&feat_sched,
+		&feat_log,
 		NULL
 	};
 	
@@ -192,7 +224,7 @@ main(int argc, char **argv)
 	ext_urid_free(handle.ext_urid);
 	eina_shutdown();
 
-	printf("sucess\n");
+	printf("\n[test] Sucessful\n");
 
 	return 0;
 }
