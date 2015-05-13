@@ -353,6 +353,8 @@ do
 		
 		forge:property(key2, context2)
 		forge:long(13)
+
+		forge:pop(obj)
 	end
 
 	local function consumer(seq)
