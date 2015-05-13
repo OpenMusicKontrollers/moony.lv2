@@ -968,7 +968,7 @@ _lforge_object(lua_State *L)
 	luaL_getmetatable(L, "lframe");
 	lua_setmetatable(L, -2);
 
-	lv2_atom_forge_object(lforge->forge, &lframe->frame, 0, otype);
+	lv2_atom_forge_object(lforge->forge, &lframe->frame, id, otype);
 
 	return 1;
 }

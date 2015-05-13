@@ -52,6 +52,13 @@ function run(seq, forge, a, b, c, d)
 end
 
 --[[---------------------------------------------------------------------------
+	Logging	
+-----------------------------------------------------------------------------]]
+
+-- Moony overwrites Lua's 'print' function to use the LV2 log extension.
+print('hello', 'world', 2015, true)
+
+--[[---------------------------------------------------------------------------
 	URI/URID (un)mapping
 -----------------------------------------------------------------------------]]
 
@@ -111,7 +118,7 @@ forge:float(0.1) -- push a Lua number as floating point
 forge:double(0.4) -- push a Lua number as double-precision floating point
 forge:bool(true) -- push Lua boolean
 
-forge:urid(URID) -- push a Lua number as URID
+forge:urid(URID) -- push a Lua integer as URID
 forge:string('hello') -- push a Lua string
 forge:literal('world', datatype, lang) -- push a Lua string, integer, integer
 forge:uri('http://foo.org#bar') -- push a Lua string as URI
@@ -133,14 +140,17 @@ forge:pop(frame) -- finalize tuple or object frame
 local foo = {
 	bar = map['http://foo.com#bar']
 }
+local bar = {
+	foo = map['http://bar.com#foo']
+}
 
 -- length operator
 n = #obj -- number of properties in object 
 
 -- indexing by string key
 t = obj.type -- type of atom, e.g. map.Object
-t = obj.id -- object id, e.g. 0
-t = obj.otype -- object type , e.g. foo_bar
+t = obj.id -- object id, e.g. foo.bar
+t = obj.otype -- object type , e.g. bar.foo
 
 -- indexing by property key (URID as Lua integer)
 atom = obj[foo.bar] -- get property value for key foo.bar
@@ -218,6 +228,8 @@ str = atom.value -- Lua string
 
 -- map.Literal
 literal = atom.value -- Lua string
+datatype = atom.datatype -- URID as Lua integer
+lang = atom.lang -- URID as Lua integer
 
 -- map.URID
 urid = atom.value -- Lua integer
