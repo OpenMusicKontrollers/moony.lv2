@@ -52,7 +52,7 @@ function run(seq, forge, a, b, c, d)
 end
 
 --[[---------------------------------------------------------------------------
-	Logging	
+	Logging
 -----------------------------------------------------------------------------]]
 
 -- Moony overwrites Lua's 'print' function to use the LV2 log extension.
@@ -125,10 +125,13 @@ forge:uri('http://foo.org#bar') -- push a Lua string as URI
 forge:path('/tmp/test.lua') -- push a Lua string as path
 
 forge:midi({0x90, 0x4a, 0x7f}) -- push a Lua table as Midi message
+forge:midi(0x90, 0x4a, 0x7f) -- push individual Lua integers as Midi message
+forge:chunk({0x01, 0x02, 0x03, 0x04}) -- push a Lua table as atom chunk
+forge:chunk(0x01, 0x02, 0x03, 0x04) -- push individual Lua integers as atom chunk
 tup = forge:tuple() -- start a new tuple (returns a frame for forge:pop)
 obj = forge:object(id, otype) -- start a new object (returns a frame for forge:pop)
 forge:key(key) -- push a new object property with key (Lua integer)
-forge:property(context, key) -- push a new object property with context, key 9Lua integer)
+forge:property(context, key) -- push a new object property with key, context (Lua integer)
 forge:sequence(seq) -- append all events in seq to forge
 
 forge:pop(frame) -- finalize tuple or object frame
@@ -204,6 +207,30 @@ end
 atom1, atom2, atom3 = vec:unpack() -- unpack all elements in vector
 
 --[[---------------------------------------------------------------------------
+	Atom Midi
+-----------------------------------------------------------------------------]]
+midi = atom.value -- Lua table with single raw Midi bytes
+bytes = #midi -- number of Midi bytes
+status = midi[1] -- Midi status byte as Lua integer
+-- or
+bytes = #atom -- number of Midi bytes
+status = atom[1] -- direct access of Midi status byte
+-- or
+status, note, vel = atom:unpack() -- unpack all raw Midi bytes to stack
+
+--[[---------------------------------------------------------------------------
+	Atom Chunk
+-----------------------------------------------------------------------------]]
+chunk = atom.value -- Lua table with single raw chunk bytes
+bytes = #chunk -- number of chunk bytes
+c1 = chunk[1] -- first chunk byte as Lua integer
+-- or
+bytes = #atom -- number of chunk bytes
+c1 = atom[1] -- direct access of individual chunk bytes
+-- or
+c1, c2, c3, c4= atom:unpack() -- unpack all raw chunk bytes to stack
+
+--[[---------------------------------------------------------------------------
 	First-class Atom
 -----------------------------------------------------------------------------]]
 
@@ -239,8 +266,3 @@ uri = atom.value -- Lua string
 
 -- map.Path
 path = atom.value -- Lua string
-
--- map.Midi
-midi = atom.value -- Lua table with single raw Midi bytes
-m = #midi -- number of Midi bytes
-status = m[1] -- Midi status byte

@@ -92,6 +92,12 @@ _latom_new(lua_State *L, const LV2_Atom *atom)
 			/ lvec->vec->body.child_size;
 		luaL_getmetatable(L, "lvec");
 	}
+	else if( (atom->type == forge->Chunk) || (atom->type == moony->uris.midi_event) )
+	{
+		latom_t *latom = lua_newuserdata(L, sizeof(latom_t));
+		latom->atom = atom;
+		luaL_getmetatable(L, "lchunk");
+	}
 	else
 	{
 		latom_t *latom = lua_newuserdata(L, sizeof(latom_t));
@@ -137,6 +143,15 @@ _latom_body_new(lua_State *L, uint32_t size, LV2_URID type, const void *body)
 		lvec->count = (lvec->vec->atom.size - sizeof(LV2_Atom_Vector_Body))
 			/ lvec->vec->body.child_size;
 		luaL_getmetatable(L, "lvec");
+	}
+	else if( (type == forge->Chunk) || (type == moony->uris.midi_event) )
+	{
+		latom_t *latom = lua_newuserdata(L, sizeof(latom_t) + atom_size);
+		latom->atom = (const LV2_Atom *)latom->body;
+		latom->body->size = size;
+		latom->body->type = type;
+		memcpy(LV2_ATOM_BODY(latom->body), body, size);
+		luaL_getmetatable(L, "lchunk");
 	}
 	else
 	{
@@ -527,6 +542,91 @@ static const luaL_Reg lvec_mt [] = {
 };
 
 static int
+_lchunk__index(lua_State *L)
+{
+	latom_t *lchunk = luaL_checkudata(L, 1, "lchunk");
+	const uint8_t *payload = LV2_ATOM_BODY_CONST(lchunk->atom);
+
+	if(lua_isnumber(L, 2))
+	{
+		int index = lua_tointeger(L, 2); // indexing start from 1
+		if( (index > 0) && (index <= lchunk->atom->size) )
+			lua_pushinteger(L, payload[index-1]);
+		else // index is out of bounds
+			lua_pushnil(L);
+	}
+	else if(lua_isstring(L, 2))
+	{
+		const char *key = lua_tostring(L, 2);
+
+		if(!strcmp(key, "type"))
+		{
+			lua_pushinteger(L, lchunk->atom->type);
+		}
+		else if(!strcmp(key, "value"))
+		{
+			lua_createtable(L, lchunk->atom->size, 0);
+			for(int i=0; i<lchunk->atom->size; i++)
+			{
+				lua_pushinteger(L, payload[i]);
+				lua_rawseti(L, -2, i+1);
+			}
+		}
+		else // look in metatable
+		{
+			lua_getmetatable(L, 1);
+			lua_pushvalue(L, 2);
+			lua_rawget(L, -2);
+		}
+	}
+	else
+		lua_pushnil(L); // unsupported key
+
+	return 1;
+}
+
+static int
+_lchunk__len(lua_State *L)
+{
+	latom_t *lchunk = luaL_checkudata(L, 1, "lchunk");
+
+	lua_pushinteger(L, lchunk->atom->size);
+
+	return 1;
+}
+
+static int
+_lchunk__tostring(lua_State *L)
+{
+	latom_t *lchunk = luaL_checkudata(L, 1, "lchunk");
+
+	lua_pushstring(L, "Atom_Chunk");
+
+	return 1;
+}
+
+static int
+_lchunk_unpack(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	latom_t *lchunk = luaL_checkudata(L, 1, "lchunk");
+	const uint8_t *payload = LV2_ATOM_BODY_CONST(lchunk->atom);
+
+	for(int i=0; i<lchunk->atom->size; i++)
+		lua_pushinteger(L, payload[i]);
+
+	return lchunk->atom->size;
+}
+
+static const luaL_Reg lchunk_mt [] = {
+	{"__index", _lchunk__index},
+	{"__len", _lchunk__len},
+	{"__tostring", _lchunk__tostring},
+	{"unpack", _lchunk_unpack},
+	{NULL, NULL}
+};
+
+static int
 _lobj_foreach_itr(lua_State *L)
 {
 	lobj_t *lobj = luaL_checkudata(L, 1, "lobj");
@@ -672,16 +772,6 @@ _latom_value(lua_State *L, const LV2_Atom *atom)
 		lua_pushstring(L, LV2_ATOM_CONTENTS_CONST(LV2_Atom_String, atom));
 	else if(atom->type == forge->Literal)
 		lua_pushstring(L, LV2_ATOM_CONTENTS_CONST(LV2_Atom_Literal, atom));
-	else if(atom->type == moony->uris.midi_event)
-	{
-		const uint8_t *m = LV2_ATOM_BODY_CONST(atom);
-		lua_createtable(L, atom->size, 0);
-		for(int i=0; i<atom->size; i++)
-		{
-			lua_pushinteger(L, m[i]);
-			lua_rawseti(L, -2, i+1);
-		}
-	}
 	else // unknown type
 		lua_pushnil(L);
 }
@@ -924,25 +1014,60 @@ _lforge_path(lua_State *L)
 }
 
 static int
-_lforge_midi(lua_State *L)
+_lforge_bytes(lua_State *L, moony_t *moony, LV2_URID type)
 {
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	if(lua_istable(L, 2))
 	{
 		uint32_t size = lua_rawlen(L, 2);
-		lv2_atom_forge_atom(lforge->forge, size, moony->uris.midi_event);
+		lv2_atom_forge_atom(lforge->forge, size, type);
 		for(int i=1; i<=size; i++)
 		{
 			lua_rawgeti(L, -1, i);
-			uint8_t m = luaL_checkinteger(L, -1);
+			uint8_t byte = luaL_checkinteger(L, -1);
 			lua_pop(L, 1);
-			lv2_atom_forge_raw(lforge->forge, &m, 1);
+			lv2_atom_forge_raw(lforge->forge, &byte, 1);
+		}
+		lv2_atom_forge_pad(lforge->forge, size);
+	}
+	else if(luaL_testudata(L, 1, "lchunk")) //TODO remove? duplicate to forge:atom()
+	{
+		latom_t *lchunk = lua_touserdata(L, 1);
+		uint32_t size = sizeof(LV2_Atom) + lchunk->atom->size;
+		lv2_atom_forge_atom(lforge->forge, size, type);
+		lv2_atom_forge_raw(lforge->forge, LV2_ATOM_BODY_CONST(lchunk->atom), lchunk->atom->size);
+		lv2_atom_forge_pad(lforge->forge, lchunk->atom->size);
+	}
+	else // bytes as individual function arguments
+	{
+		uint32_t size = lua_gettop(L) - 1;
+
+		lv2_atom_forge_atom(lforge->forge, size, type);
+		for(int i=0; i<size; i++)
+		{
+			uint8_t byte = luaL_checkinteger(L, i+2);
+			lv2_atom_forge_raw(lforge->forge, &byte, 1);
 		}
 		lv2_atom_forge_pad(lforge->forge, size);
 	}
 
 	return 0;
+}
+
+static int
+_lforge_chunk(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	return _lforge_bytes(L, moony, moony->forge.Chunk);
+}
+
+static int
+_lforge_midi(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	return _lforge_bytes(L, moony, moony->uris.midi_event);
 }
 
 static int
@@ -1046,7 +1171,7 @@ static const luaL_Reg lforge_mt [] = {
 	{"path", _lforge_path},
 
 	//TODO vector
-	//TODO chunk
+	{"chunk", _lforge_chunk},
 	{"midi", _lforge_midi},
 	{"tuple", _lforge_tuple},
 	{"object", _lforge_object},
@@ -1288,6 +1413,11 @@ moony_open(moony_t *moony, lua_State *L)
 	luaL_setfuncs (L, lvec_mt, 1);
 	lua_pop(L, 1);
 	
+	luaL_newmetatable(L, "lchunk");
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	luaL_setfuncs (L, lchunk_mt, 1);
+	lua_pop(L, 1);
+
 	luaL_newmetatable(L, "latom");
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs (L, latom_mt, 1);

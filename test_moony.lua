@@ -271,19 +271,90 @@ do
 	local function producer(forge)
 		forge:frame_time(0)
 		forge:midi(m)
+
+		forge:frame_time(0)
+		forge:midi(table.unpack(m))
 	end
 
 	local function consumer(seq)
-		assert(#seq == 1)
+		assert(#seq == 2)
 		local atom = seq[1]
 		assert(atom.type == map.Midi)
 		assert(type(atom.value) == 'table')
 		assert(#atom == #m)
+		assert(#atom.value == #m)
 		assert(atom.value[0] == nil)
 		assert(atom.value[1] == 0x90)
 		assert(atom.value[2] == 0x2a)
 		assert(atom.value[3] == 0x7f)
 		assert(atom.value[4] == nil)
+
+		atom = seq[2]
+		assert(atom.type == map.Midi)
+		assert(#atom == #m)
+		assert(atom[0] == nil)
+		assert(atom[1] == 0x90)
+		assert(atom[2] == 0x2a)
+		assert(atom[3] == 0x7f)
+		assert(atom[4] == nil)
+
+		local status, note, vel = atom:unpack()
+		assert(status == m[1])
+		assert(note == m[2])
+		assert(vel == m[3])
+	end
+
+	test(producer, consumer)
+end
+
+-- Chunk
+print('[test] Chunk')
+do
+	local c = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06}
+
+	local function producer(forge)
+		forge:frame_time(0)
+		forge:chunk(c)
+
+		forge:frame_time(0)
+		forge:chunk(table.unpack(c))
+	end
+
+	local function consumer(seq)
+		assert(#seq == 2)
+		local atom = seq[1]
+		assert(atom.type == map.Chunk)
+		assert(type(atom.value) == 'table')
+		assert(#atom == #c)
+		assert(#atom.value == #c)
+		assert(atom.value[0] == nil)
+		assert(atom.value[1] == 0x01)
+		assert(atom.value[2] == 0x02)
+		assert(atom.value[3] == 0x03)
+		assert(atom.value[4] == 0x04)
+		assert(atom.value[5] == 0x05)
+		assert(atom.value[6] == 0x06)
+		assert(atom.value[7] == nil)
+
+		atom = seq[2]
+		assert(atom.type == map.Chunk)
+		assert(#atom == #c)
+		assert(atom[0] == nil)
+		assert(atom[1] == 0x01)
+		assert(atom[2] == 0x02)
+		assert(atom[3] == 0x03)
+		assert(atom[4] == 0x04)
+		assert(atom[5] == 0x05)
+		assert(atom[6] == 0x06)
+		assert(atom[7] == nil)
+
+		local c1, c2, c3, c4, c5, c6 = atom:unpack()
+		assert(c1 == c[1])
+		assert(c2 == c[2])
+		assert(c3 == c[3])
+		assert(c4 == c[4])
+		assert(c5 == c[5])
+		assert(c6 == c[6])
 	end
 
 	test(producer, consumer)
