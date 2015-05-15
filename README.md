@@ -53,7 +53,7 @@ Get more information at: [http://open-music-kontrollers.ch/lv2/moony](http://ope
 	git submodule update --init
 	mkdir build
 	cd build
-	cmake -DCMAKE_C_FLAGS="-std=gnu99" ..
+	cmake -DCMAKE_C_FLAGS="-std=gnu99" -DCMAKE_BUILD_TYPE="Release" ..
 	make
 	sudo make install
 
@@ -61,9 +61,9 @@ If you want to run the unit test, do instead:
 	
 	.
 	.
-	cmake -DCMAKE_C_FLAGS="-std=gnu99" -DBUILD_TEST=1 ..
+	cmake -DCMAKE_C_FLAGS="-std=gnu99" -DCMAKE_BUILD_TYPE="Debug" -DBUILD_TESTING=1 ..
 	make
-	./test_moony ../test_moony.lua
+	ARGS="-VV" make test
 	.
 	.
 
