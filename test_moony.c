@@ -110,7 +110,6 @@ _sched(LV2_Worker_Schedule_Handle instance, uint32_t size, const void *data)
 {
 	handle_t *handle = instance;
 
-	printf("_sched %u\n", size);
 	//TODO
 
 	return LV2_WORKER_SUCCESS;

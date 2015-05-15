@@ -15,6 +15,8 @@
  * http://www.perlfoundation.org/artistic_license_2_0.
  */
 
+#include <limits.h> // INT_MAX
+
 #include <moony.h>
 
 #include <lauxlib.h>
@@ -389,14 +391,30 @@ _ltuple_unpack(lua_State *L)
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	ltuple_t *ltuple = luaL_checkudata(L, 1, "ltuple");
 
-	uint32_t count = 0;
+	int n = lua_gettop(L);
+	int min = n > 1
+		? luaL_checkinteger(L, 2)
+		: 1;
+	int max = n > 2
+		? luaL_checkinteger(L, 3)
+		: INT_MAX;
+
+	int pos = 1;
+	int count = 0;
 	LV2_ATOM_TUPLE_FOREACH(ltuple->tuple, atom)
 	{
-		// push atom
-		_latom_new(L, atom);
+		if(pos >= min)
+		{
+			if(pos <= max)
+			{
+				_latom_new(L, atom);
+				count += 1;
+			}
+			else
+				break;
+		}
 
-		// increase counter
-		count++;
+		pos += 1;
 	}
 
 	return count;
@@ -523,13 +541,37 @@ _lvec_unpack(lua_State *L)
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lvec_t *lvec = luaL_checkudata(L, 1, "lvec");
 
-	for(int i=0; i<lvec->count; i++)
+	int n = lua_gettop(L);
+	int min = 1;
+	int max = lvec->count;
+
+	if(n > 1) // check provided index ranges
 	{
-		_latom_body_new(L, lvec->vec->body.child_size, lvec->vec->body.child_type,
-			LV2_ATOM_VECTOR_ITEM_CONST(lvec->vec, i));
+		min = luaL_checkinteger(L, 2);
+		min = min < 1
+			? 1
+			: (min > lvec->count
+				? lvec->count
+				: min);
+
+		if(n > 2)
+		{
+			max = luaL_checkinteger(L, 3);
+			max = max < 1
+				? 1
+				: (max > lvec->count
+					? lvec->count
+					: max);
+		}
 	}
 
-	return lvec->count;
+	for(int i=min; i<=max; i++)
+	{
+		_latom_body_new(L, lvec->vec->body.child_size, lvec->vec->body.child_type,
+			LV2_ATOM_VECTOR_ITEM_CONST(lvec->vec, i-1));
+	}
+
+	return max - min + 1;
 }
 
 static const luaL_Reg lvec_mt [] = {
@@ -612,10 +654,34 @@ _lchunk_unpack(lua_State *L)
 	latom_t *lchunk = luaL_checkudata(L, 1, "lchunk");
 	const uint8_t *payload = LV2_ATOM_BODY_CONST(lchunk->atom);
 
-	for(int i=0; i<lchunk->atom->size; i++)
-		lua_pushinteger(L, payload[i]);
+	int n = lua_gettop(L);
+	int min = 1;
+	int max = lchunk->atom->size;
 
-	return lchunk->atom->size;
+	if(n > 1) // check provided index ranges
+	{
+		min = luaL_checkinteger(L, 2);
+		min = min < 1
+			? 1
+			: (min > lchunk->atom->size
+				? lchunk->atom->size
+				: min);
+
+		if(n > 2)
+		{
+			max = luaL_checkinteger(L, 3);
+			max = max < 1
+				? 1
+				: (max > lchunk->atom->size
+					? lchunk->atom->size
+					: max);
+		}
+	}
+
+	for(int i=min; i<=max; i++)
+		lua_pushinteger(L, payload[i-1]);
+
+	return max - min + 1;
 }
 
 static const luaL_Reg lchunk_mt [] = {

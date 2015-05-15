@@ -302,6 +302,26 @@ do
 		assert(status == m[1])
 		assert(note == m[2])
 		assert(vel == m[3])
+		
+		status, note, vel = atom:unpack(1, 2)
+		assert(status == m[1])
+		assert(note == m[2])
+		assert(vel == nil)
+		
+		note, vel = atom:unpack(2, 3)
+		assert(note == m[2])
+		assert(vel == m[3])
+		
+		status, note, vel = atom:unpack(-1, 5)
+		assert(status == m[1])
+		assert(note == m[2])
+		assert(vel == m[3])
+
+		assert(atom:unpack(-1) == atom:unpack(0))
+		assert(atom:unpack(0) == atom:unpack(1))
+		
+		assert(#{atom:unpack()} == #{atom:unpack(-100, 100)})
+		assert(#{atom:unpack(1, 2)} == #{atom:unpack(2, 3)})
 	end
 
 	test(producer, consumer)
@@ -355,6 +375,21 @@ do
 		assert(c4 == c[4])
 		assert(c5 == c[5])
 		assert(c6 == c[6])
+
+		c1, c2 = atom:unpack(1, 2)
+		c4, c5, c6 = atom:unpack(4, 6)
+		assert(c1 == c[1])
+		assert(c2 == c[2])
+		assert(c3 == c[3])
+		assert(c4 == c[4])
+		assert(c5 == c[5])
+		assert(c6 == c[6])
+
+		assert(atom:unpack(-1) == atom:unpack(0))
+		assert(atom:unpack(0) == atom:unpack(1))
+		
+		assert(#{atom:unpack()} == #{atom:unpack(-100, 100)})
+		assert(#{atom:unpack(1, 2)} == #{atom:unpack(2, 3)})
 	end
 
 	test(producer, consumer)
@@ -401,6 +436,21 @@ do
 		for i, sub in atom:foreach() do
 			assert(atom[i].value == sub.value)
 		end
+
+		local subsub
+		sub, subsub = atom:unpack(1, 1)
+		assert(sub.type == map.Int)
+		assert(subsub == nil)
+		
+		sub, subsub = atom:unpack(2)
+		assert(sub.type == map.Float)
+		assert(subsub.type == map.Long)
+		
+		assert(atom:unpack(-1).type == atom:unpack(0).type)
+		assert(atom:unpack(0).type == atom:unpack(1).type)
+		
+		assert(#{atom:unpack()} == #{atom:unpack(-100, 100)})
+		assert(#{atom:unpack(1, 2)} == #{atom:unpack(3, 4)})
 	end
 
 	test(producer, consumer)
@@ -453,3 +503,6 @@ do
 
 	test(producer, consumer)
 end
+
+-- Vector
+-- TODO

@@ -182,6 +182,8 @@ end
 
 -- unpacking
 atom1, atom2, atom3 = tup:unpack() -- unpack all elements in tuple
+atom2, atom3 = tup:unpack(2, 3) -- unpack given range of elements 
+atom2, atom3 = tup:unpack(2) -- unpack starting from given index
 
 --[[---------------------------------------------------------------------------
 	Atom Vector
@@ -205,6 +207,8 @@ end
 
 -- unpacking
 atom1, atom2, atom3 = vec:unpack() -- unpack all elements in vector
+atom2, atom3 = vec:unpack(2, 3) -- unpack given range of elements
+atom2, atom3 = vec:unpack(2) -- unpack starting from given index
 
 --[[---------------------------------------------------------------------------
 	Atom Midi
@@ -217,6 +221,8 @@ bytes = #atom -- number of Midi bytes
 status = atom[1] -- direct access of Midi status byte
 -- or
 status, note, vel = atom:unpack() -- unpack all raw Midi bytes to stack
+status, note = atom:unpack(1, 2) -- unpack given range of bytes
+note, vel = atom:unpack(2) -- unpack starting from given index
 
 --[[---------------------------------------------------------------------------
 	Atom Chunk
@@ -229,6 +235,8 @@ bytes = #atom -- number of chunk bytes
 c1 = atom[1] -- direct access of individual chunk bytes
 -- or
 c1, c2, c3, c4= atom:unpack() -- unpack all raw chunk bytes to stack
+c2, c3, c4= atom:unpack(2, 4) -- unpack given range of elements
+c3, c4= atom:unpack(3) -- unpack starting from given index
 
 --[[---------------------------------------------------------------------------
 	First-class Atom
