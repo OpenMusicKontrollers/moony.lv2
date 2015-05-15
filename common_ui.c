@@ -378,7 +378,9 @@ _content_get(eo_ui_t *eoui)
 	evas_object_show(ui->compile);
 	elm_box_pack_end(ui->hbox, ui->compile);
 	elm_object_tooltip_text_set(ui->compile, "Shift + Enter");
+#if defined(ELM_1_9)
 	elm_object_tooltip_orient_set(ui->compile, ELM_TOOLTIP_ORIENT_TOP);
+#endif
 
 	ui->status = elm_label_add(ui->vbox);
 	elm_object_text_set(ui->status, "");
