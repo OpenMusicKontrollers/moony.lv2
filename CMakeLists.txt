@@ -19,7 +19,7 @@ endif()
 
 find_package(PkgConfig) # ${PKG_CONFIG_FOUND}
 find_package(FLEX)
-include (CheckCCompilerFlag)
+include(CheckCCompilerFlag)
 
 # check for visibility support in compiler on Unices
 if(NOT WIN32)
@@ -37,13 +37,11 @@ pkg_search_module(ELM REQUIRED elementary>=1.8)
 include_directories(${ELM_INCLUDE_DIRS})
 set(LIBS_UI ${LIBS_UI} ${ELM_LDFLAGS})
 
-if((${ELM_VERSION} VERSION_EQUAL "1.13.0") OR (${ELM_VERSION} VERSION_GREATER "1.13.0"))
-	add_definitions("-DELM_HAS_FAKE")
-endif()
+pkg_search_module(ECORE_X OPTIONAL ecore-x)
 
-option(BUILD_X11_WRAPPER "Build X11 UI wrapper" OFF)
-if(${BUILD_X11_WRAPPER})
+if(${ECORE_X_FOUND} AND ((${ELM_VERSION} VERSION_EQUAL "1.13.0") OR (${ELM_VERSION} VERSION_GREATER "1.13.0")))
 	set(X11_UI_WRAP "")
+	add_definitions("-DX11_UI_WRAP")
 else()
 	set(X11_UI_WRAP "#")
 endif()
@@ -121,8 +119,9 @@ configure_file(${PROJECT_SOURCE_DIR}/manifest.ttl.in ${PROJECT_BINARY_DIR}/manif
 install(FILES ${PROJECT_BINARY_DIR}/manifest.ttl DESTINATION ${DEST})
 install(FILES ${PROJECT_SOURCE_DIR}/moony.ttl DESTINATION ${DEST})
 
-option(BUILD_TEST "Build test app" OFF)
-if(${BUILD_TEST})
+include(CTest)
+
+if(${BUILD_TESTING})
 	pkg_search_module(EINA REQUIRED eina>=1.8)
 	include_directories(${EINA_INCLUDE_DIRS})
 
@@ -177,4 +176,6 @@ if(${BUILD_TEST})
 		target_compile_definitions(test_moony PUBLIC -DLUA_USE_MACOSX)
 	endif()
 	target_link_libraries(test_moony ${EINA_LDFLAGS} "-lm")
+
+	add_test(API-Test test_moony ${PROJECT_SOURCE_DIR}/test_moony.lua)
 endif()
