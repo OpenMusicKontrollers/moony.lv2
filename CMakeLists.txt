@@ -183,3 +183,28 @@ if(${BUILD_TESTING})
 
 	add_test(API-Test test_moony ${PROJECT_SOURCE_DIR}/test_moony.lua)
 endif()
+
+# CPack
+set(CPACK_GENERATOR "TBZ2;DEB")
+
+set(CPACK_PACKAGE_NAME "moony-lv2")
+set(CPACK_PACKER_VERSION "0.1.0-Beta1")
+set(CPACK_PACKAGE_CONTACT "Hanspeter Portner <dev@open-music-kontrollers.ch>")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Realtime Lua as programmable glue in LV2")
+SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/README.md")
+SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/COPYING")
+SET(CPACK_STRIP_FILES "lib/lv2/moony.lv2/moony.so;lib/lv2/moony.lv2/moon_ui.so")
+
+# Debian
+set(CPACK_DEBIAN_PACKAGE_NAME ${CPACK_PACKAGE_NAME})
+set(CPACK_DEBIAN_PACKAGE_VERSION ${CPACK_PACKAGE_VERSION})
+set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
+set(CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS "lv2core (>= 4.0-4~), lv2-extensions-good, libelementary-dev")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libelementary2")
+set(CPACK_DEBIAN_PACKAGE_PROVIDES "lv2-plugin")
+set(CPACK_DEBIAN_PACKAGE_MAINAINER ${CPACK_PACKAGE_CONTACT})
+set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://open-music-kontrollers.ch/lv2/moony/")
+set(CPACK_DEBIAN_PACKAGE_DESCRIPTION ${CPACK_PACKAGE_DESCRIPTION_SUMMARY})
+set(CPACK_DEBIAN_PACKAGE_SECTION "libs")
+
+include(CPack)
