@@ -41,6 +41,8 @@ static const char *default_code [4] = {
 	"function run(seq, forge, a)\n"
 	"  for frames, atom in seq:foreach() do\n"
 	"    -- your code here\n"
+	"    forge:frame_time(frames)\n"
+	"    forge:atom(atom)\n"
 	"  end\n"
 	"\n"
 	"  return a\n"
@@ -49,6 +51,8 @@ static const char *default_code [4] = {
 	"function run(seq, forge, a, b)\n"
 	"  for frames, atom in seq:foreach() do\n"
 	"    -- your code here\n"
+	"    forge:frame_time(frames)\n"
+	"    forge:atom(atom)\n"
 	"  end\n"
 	"\n"
 	"  return a, b\n"
@@ -59,6 +63,8 @@ static const char *default_code [4] = {
 	"function run(seq, forge, a, b, c, d)\n"
 	"  for frames, atom in seq:foreach() do\n"
 	"    -- your code here\n"
+	"    forge:frame_time(frames)\n"
+	"    forge:atom(atom)\n"
 	"  end\n"
 	"\n"
 	"  return a, b, c, d\n"
@@ -78,7 +84,6 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 		return NULL;
 	}
 	moony_open(&handle->moony, handle->moony.vm.L);
-	moony_activate(&handle->moony, default_code[handle->max_val-1]);
 	
 	if(!strcmp(descriptor->URI, MOONY_C1A1XC1A1_URI))
 		handle->max_val = 1;
@@ -88,6 +93,7 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 		handle->max_val = 4;
 	else
 		handle->max_val = 0; // never reached
+	moony_activate(&handle->moony, default_code[handle->max_val-1]);
 	
 	lv2_atom_forge_init(&handle->forge, handle->moony.map);
 

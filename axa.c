@@ -39,15 +39,21 @@ static const char *default_code [4] = {
 	"function run(seq, forge)\n"
 	"  for frames, atom in seq:foreach() do\n"
 	"    -- your code here\n"
+	"    forge:frame_time(frames)\n"
+	"    forge:atom(atom)\n"
 	"  end\n"
 	"end",
 
 	"function run(seq1, seq2, forge1, forge2)\n"
 	"  for frames, atom in seq1:foreach() do\n"
 	"    -- your code here\n"
+	"    forge1:frame_time(frames)\n"
+	"    forge1:atom(atom)\n"
 	"  end\n"
 	"  for frames, atom in seq2:foreach() do\n"
 	"    -- your code here\n"
+	"    forge2:frame_time(frames)\n"
+	"    forge2:atom(atom)\n"
 	"  end\n"
 	"end",
 
@@ -56,15 +62,23 @@ static const char *default_code [4] = {
 	"function run(seq1, seq2, seq3, seq4, forge1, forge2, forge3, forge4)\n"
 	"  for frames, atom in seq1:foreach() do\n"
 	"    -- your code here\n"
+	"    forge1:frame_time(frames)\n"
+	"    forge1:atom(atom)\n"
 	"  end\n"
 	"  for frames, atom in seq2:foreach() do\n"
 	"    -- your code here\n"
+	"    forge2:frame_time(frames)\n"
+	"    forge2:atom(atom)\n"
 	"  end\n"
 	"  for frames, atom in seq3:foreach() do\n"
 	"    -- your code here\n"
+	"    forge3:frame_time(frames)\n"
+	"    forge3:atom(atom)\n"
 	"  end\n"
 	"  for frames, atom in seq4:foreach() do\n"
 	"    -- your code here\n"
+	"    forge4:frame_time(frames)\n"
+	"    forge4:atom(atom)\n"
 	"  end\n"
 	"end"
 };
@@ -82,7 +96,6 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 		return NULL;
 	}
 	moony_open(&handle->moony, handle->moony.vm.L);
-	moony_activate(&handle->moony, default_code[handle->max_val-1]);
 	
 	if(!strcmp(descriptor->URI, MOONY_A1XA1_URI))
 		handle->max_val = 1;
@@ -92,6 +105,7 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 		handle->max_val = 4;
 	else
 		handle->max_val = 0; // never reached
+	moony_activate(&handle->moony, default_code[handle->max_val-1]);
 
 	for(int i=0; i<handle->max_val; i++)
 		lv2_atom_forge_init(&handle->forge[i], handle->moony.map);

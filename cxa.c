@@ -64,7 +64,6 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 		return NULL;
 	}
 	moony_open(&handle->moony, handle->moony.vm.L);
-	moony_activate(&handle->moony, default_code[handle->max_val-1]);
 	
 	if(!strcmp(descriptor->URI, MOONY_C1XA1_URI))
 		handle->max_val = 1;
@@ -74,6 +73,7 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 		handle->max_val = 4;
 	else
 		handle->max_val = 0; // never reached
+	moony_activate(&handle->moony, default_code[handle->max_val-1]);
 
 	lv2_atom_forge_init(&handle->forge, handle->moony.map);
 
