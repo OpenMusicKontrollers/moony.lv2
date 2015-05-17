@@ -954,13 +954,23 @@ static int
 _lforge_atom(lua_State *L)
 {
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
-	const LV2_Atom **atom_ptr = lua_touserdata(L, 2); // TODO check for latom, lobj, ltuple, lvec
-	const LV2_Atom *atom = *atom_ptr;
+	if(  luaL_testudata(L, 2, "lseq")
+		|| luaL_testudata(L, 2, "lobj")
+		|| luaL_testudata(L, 2, "ltuple")
+		|| luaL_testudata(L, 2, "lvec")
+		|| luaL_testudata(L, 2, "lchunk")
+		|| luaL_testudata(L, 2, "latom") )
+	{
+		const LV2_Atom **atom_ptr = lua_touserdata(L, 2);
+		const LV2_Atom *atom = *atom_ptr;
 
-	lv2_atom_forge_raw(lforge->forge, atom, sizeof(LV2_Atom) + atom->size);
-	lv2_atom_forge_pad(lforge->forge, atom->size);
+		lv2_atom_forge_raw(lforge->forge, atom, sizeof(LV2_Atom) + atom->size);
+		lv2_atom_forge_pad(lforge->forge, atom->size);
 
-	return 0;
+		return 0;
+	}
+
+	return luaL_error(L, "Atom expected at position #2");
 }
 
 static int
@@ -1096,13 +1106,13 @@ _lforge_bytes(lua_State *L, moony_t *moony, LV2_URID type)
 		}
 		lv2_atom_forge_pad(lforge->forge, size);
 	}
-	else if(luaL_testudata(L, 1, "lchunk")) //TODO remove? duplicate to forge:atom()
+	else if(luaL_testudata(L, 2, "lchunk")) //to convert between chunk <-> midi
 	{
-		latom_t *lchunk = lua_touserdata(L, 1);
-		uint32_t size = sizeof(LV2_Atom) + lchunk->atom->size;
+		latom_t *lchunk = lua_touserdata(L, 2);
+		uint32_t size = lchunk->atom->size;
 		lv2_atom_forge_atom(lforge->forge, size, type);
-		lv2_atom_forge_raw(lforge->forge, LV2_ATOM_BODY_CONST(lchunk->atom), lchunk->atom->size);
-		lv2_atom_forge_pad(lforge->forge, lchunk->atom->size);
+		lv2_atom_forge_raw(lforge->forge, LV2_ATOM_BODY_CONST(lchunk->atom), size);
+		lv2_atom_forge_pad(lforge->forge, size);
 	}
 	else // bytes as individual function arguments
 	{

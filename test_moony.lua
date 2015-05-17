@@ -504,5 +504,30 @@ do
 	test(producer, consumer)
 end
 
+-- Atom
+print('[test] Atom')
+do
+	local forge0 = nil
+
+	local function producer(forge)
+		forge0 = forge
+
+		forge:frame_time(0)
+		forge:int(12)
+	end
+
+	local function consumer(seq)
+		assert(#seq == 1)
+		local atom = seq[1]
+		assert(atom.type == map.Int)
+		assert(atom.value == 12)
+
+		forge0:frame_time(0)
+		forge0:atom(atom)
+	end
+
+	test(producer, consumer)
+end
+
 -- Vector
 -- TODO
