@@ -64,6 +64,7 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 		free(handle);
 		return NULL;
 	}
+	moony_activate(&handle->moony, default_code[handle->max_val-1]);
 	
 	if(!strcmp(descriptor->URI, MOONY_C1XC1_URI))
 		handle->max_val = 1;
@@ -82,14 +83,14 @@ connect_port(LV2_Handle instance, uint32_t port, void *data)
 {
 	Handle *handle = (Handle *)instance;
 
-	if(port == 0)
+	if(port < handle->max_val)
+		handle->val_in[port] = (const float *)data;
+	else if(port < handle->max_val*2)
+		handle->val_out[port - handle->max_val] = (float *)data;
+	else if(port == handle->max_val*2)
 		handle->control = (const LV2_Atom_Sequence *)data;
-	else if(port == 1)
+	else if(port == handle->max_val*2 + 1)
 		handle->notify = (LV2_Atom_Sequence *)data;
-	else if( (port - 2) < handle->max_val)
-		handle->val_in[port - 2] = (const float *)data;
-	else if( (port - 2) < handle->max_val*2)
-		handle->val_out[port - 2 - handle->max_val] = (float *)data;
 }
 
 static void
@@ -97,7 +98,7 @@ activate(LV2_Handle instance)
 {
 	Handle *handle = (Handle *)instance;
 
-	moony_activate(&handle->moony, default_code[handle->max_val-1]);
+	// nothing
 }
 
 static void

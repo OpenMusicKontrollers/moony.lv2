@@ -43,6 +43,10 @@ struct _UI {
 	LV2UI_Write_Function write_function;
 	LV2UI_Controller controller;
 
+	LV2UI_Port_Map *port_map;
+	uint32_t control_port;
+	uint32_t notify_port;
+
 	int w, h;
 	Evas_Object *vbox;
 	Evas_Object *hbox;
@@ -112,7 +116,8 @@ _compile(UI *ui)
 
 		_moony_message_fill(ui, msg, ui->uris.moony_code, size, utf8);
 		
-		ui->write_function(ui->controller, 0, msg_size, ui->uris.event_transfer, msg);
+		ui->write_function(ui->controller, ui->control_port, msg_size,
+			ui->uris.event_transfer, msg);
 
 		free(msg);
 	}
@@ -435,8 +440,12 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		return NULL;
 
 	for(int i=0; features[i]; i++)
+	{
 		if(!strcmp(features[i]->URI, LV2_URID__map))
 			ui->map = (LV2_URID_Map *)features[i]->data;
+		else if(!strcmp(features[i]->URI, LV2_UI__portMap))
+			ui->port_map = (LV2UI_Port_Map *)features[i]->data;
+	}
 
 	if(!ui->map)
 	{
@@ -444,6 +453,16 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		free(ui);
 		return NULL;
 	}
+	if(!ui->port_map)
+	{
+		fprintf(stderr, "%s: Host does not support ui:portMap\n", descriptor->URI);
+		free(ui);
+		return NULL;
+	}
+
+	// query port index of "control" port
+	ui->control_port = ui->port_map->port_index(ui->port_map->handle, "control");
+	ui->notify_port = ui->port_map->port_index(ui->port_map->handle, "notify");
 
 	ui->uris.moony_message = ui->map->map(ui->map->handle, MOONY_MESSAGE_URI);
 	ui->uris.moony_code = ui->map->map(ui->map->handle, MOONY_CODE_URI);
@@ -456,7 +475,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	eoui->driver = driver;
 	eoui->content_get = _content_get;
 	eoui->w = 720,
-	eoui->h = 720;
+	eoui->h = 480;
 
 	ui->write_function = write_function;
 	ui->controller = controller;
@@ -474,7 +493,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	_moony_message_fill(ui, &msg, ui->uris.moony_code, 0, NULL);
 
 	// trigger update
-	ui->write_function(ui->controller, 0, msg_size,
+	ui->write_function(ui->controller, ui->control_port, msg_size,
 		ui->uris.event_transfer, &msg);
 
 	return ui;
@@ -493,12 +512,12 @@ cleanup(LV2UI_Handle handle)
 }
 
 static void
-port_event(LV2UI_Handle handle, uint32_t i, uint32_t buffer_size,
+port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 	uint32_t format, const void *buffer)
 {
 	UI *ui = handle;
 
-	if( (i == 1) && (format == ui->uris.event_transfer) )
+	if( (port_index == ui->notify_port) && (format == ui->uris.event_transfer) )
 	{
 		const moony_message_t *msg = buffer;
 
