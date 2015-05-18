@@ -35,22 +35,12 @@ lv2_descriptor(uint32_t index)
 			return &a2xa2;
 		case 5:
 			return &a4xa4;
-
-		case 6:
-			return &a1xc1;
-		case 7:
-			return &a1xc2;
-		case 8:
-			return &a1xc4;
-
-		case 9:
-			return &c1xa1;
-		case 10:
-			return &c2xa1;
-		case 11:
-			return &c4xa1;
 		
-		case 12:
+		case 6:
+			return &c1a1xc1a1;
+		case 7:
+			return &c2a1xc2a1;
+		case 8:
 			return &c4a1xc4a1;
 
 		default:

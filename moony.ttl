@@ -80,32 +80,12 @@ moony:common_eo
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin moony:a1xc1 ;
+		ui:plugin moony:c1a1xc1a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin moony:a1xc2 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:a1xc4 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:c1xa1 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:c2xa1 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:c4xa1 ;
+		ui:plugin moony:c2a1xc2a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
@@ -149,32 +129,12 @@ moony:common_ui
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin moony:a1xc1 ;
+		ui:plugin moony:c1a1xc1a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin moony:a1xc2 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:a1xc4 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:c1xa1 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:c2xa1 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:c4xa1 ;
+		ui:plugin moony:c2a1xc2a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
@@ -219,32 +179,12 @@ moony:common_x11
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin moony:a1xc1 ;
+		ui:plugin moony:c1a1xc1a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin moony:a1xc2 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:a1xc4 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:c1xa1 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:c2xa1 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:c4xa1 ;
+		ui:plugin moony:c2a1xc2a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
@@ -290,32 +230,12 @@ moony:common_kx
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin moony:a1xc1 ;
+		ui:plugin moony:c1a1xc1a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] , [
-		ui:plugin moony:a1xc2 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:a1xc4 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:c1xa1 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:c2xa1 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:c4xa1 ;
+		ui:plugin moony:c2a1xc2a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
@@ -760,11 +680,11 @@ moony:a4xa4
 		rsz:minimumSize 65536 ;
 	] .
 
-# A1XC1 Plugin
-moony:a1xc1
+# C1A1XC1A1 Plugin
+moony:c1a1xc1a1
 	a lv2:Plugin ,
 		lv2:ConverterPlugin ;
-	doap:name "Moony A1 x C1" ;
+	doap:name "Moony C1+A1 x C1+A1" ;
 	doap:license lic:Artistic-2.0 ;
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
@@ -783,287 +703,13 @@ moony:a1xc1
 		lv2:name "Event In 1" ;
 		lv2:designation lv2:control ;
 	] , [
-	# output port
-	  a lv2:OutputPort ,
-			lv2:ControlPort ;
-		lv2:index 1 ;
-		lv2:symbol "output_1" ;
-		lv2:name "Output 1" ;
-	] , [
-	# input control port
-	  a lv2:InputPort ,
-			atom:AtomPort ;
-		atom:bufferType atom:Sequence ;
-		atom:supports atom:Object ;
-		lv2:index 2 ;
-		lv2:symbol "control" ;
-		lv2:name "Control" ;
-		rsz:minimumSize 65536 ;
-	] , [
-	# output notify port
-	  a lv2:OutputPort ,
-			atom:AtomPort ;
-		atom:bufferType atom:Sequence ;
-		atom:supports atom:Object ;
-		lv2:index 3 ;
-		lv2:symbol "notify" ;
-		lv2:name "Notify" ;
-		rsz:minimumSize 65536 ;
-	] .
-
-# A1XC2 Plugin
-moony:a1xc2
-	a lv2:Plugin ,
-		lv2:ConverterPlugin ;
-	doap:name "Moony A1 x C2" ;
-	doap:license lic:Artistic-2.0 ;
-	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
-	lv2:extensionData work:interface, state:interface ;
-	lv2:requiredFeature work:schedule ;
-
-	lv2:port [
-	# input event port
-	  a lv2:InputPort ,
-			atom:AtomPort ;
-		atom:bufferType atom:Sequence ;
-		atom:supports midi:MidiEvent ;
-		atom:supports time:Position ;
-		lv2:index 0 ;
-		lv2:symbol "event_in_1" ;
-		lv2:name "Event In 1" ;
-		lv2:designation lv2:control ;
-	] , [
-	# output port
-	  a lv2:OutputPort ,
-			lv2:ControlPort ;
-		lv2:index 1 ;
-		lv2:symbol "output_1" ;
-		lv2:name "Output 1" ;
-	] , [
-	  a lv2:OutputPort ,
-			lv2:ControlPort ;
-		lv2:index 2 ;
-		lv2:symbol "output_2" ;
-		lv2:name "Output 2" ;
-	] , [
-	# input control port
-	  a lv2:InputPort ,
-			atom:AtomPort ;
-		atom:bufferType atom:Sequence ;
-		atom:supports atom:Object ;
-		lv2:index 3 ;
-		lv2:symbol "control" ;
-		lv2:name "Control" ;
-		rsz:minimumSize 65536 ;
-	] , [
-	# output notify port
-	  a lv2:OutputPort ,
-			atom:AtomPort ;
-		atom:bufferType atom:Sequence ;
-		atom:supports atom:Object ;
-		lv2:index 4 ;
-		lv2:symbol "notify" ;
-		lv2:name "Notify" ;
-		rsz:minimumSize 65536 ;
-	] .
-
-# A1XC4 Plugin
-moony:a1xc4
-	a lv2:Plugin ,
-		lv2:ConverterPlugin ;
-	doap:name "Moony A1 x C4" ;
-	doap:license lic:Artistic-2.0 ;
-	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
-	lv2:extensionData work:interface, state:interface ;
-	lv2:requiredFeature work:schedule ;
-
-	lv2:port [
-	# input event port
-	  a lv2:InputPort ,
-			atom:AtomPort ;
-		atom:bufferType atom:Sequence ;
-		atom:supports midi:MidiEvent ;
-		atom:supports time:Position ;
-		lv2:index 0 ;
-		lv2:symbol "event_in_1" ;
-		lv2:name "Event In 1" ;
-		lv2:designation lv2:control ;
-	] , [
-	# output port
-	  a lv2:OutputPort ,
-			lv2:ControlPort ;
-		lv2:index 1 ;
-		lv2:symbol "output_1" ;
-		lv2:name "Output 1" ;
-	] , [
-	  a lv2:OutputPort ,
-			lv2:ControlPort ;
-		lv2:index 2 ;
-		lv2:symbol "output_2" ;
-		lv2:name "Output 2" ;
-	] , [
-	  a lv2:OutputPort ,
-			lv2:ControlPort ;
-		lv2:index 3 ;
-		lv2:symbol "output_3" ;
-		lv2:name "Output 3" ;
-	] , [
-	  a lv2:OutputPort ,
-			lv2:ControlPort ;
-		lv2:index 4 ;
-		lv2:symbol "output_4" ;
-		lv2:name "Output 4" ;
-	] , [
-	# input control port
-	  a lv2:InputPort ,
-			atom:AtomPort ;
-		atom:bufferType atom:Sequence ;
-		atom:supports atom:Object ;
-		lv2:index 5 ;
-		lv2:symbol "control" ;
-		lv2:name "Control" ;
-		rsz:minimumSize 65536 ;
-	] , [
-	# output notify port
-	  a lv2:OutputPort ,
-			atom:AtomPort ;
-		atom:bufferType atom:Sequence ;
-		atom:supports atom:Object ;
-		lv2:index 6 ;
-		lv2:symbol "notify" ;
-		lv2:name "Notify" ;
-		rsz:minimumSize 65536 ;
-	] .
-
-# C1XA1 Plugin
-moony:c1xa1
-	a lv2:Plugin ,
-		lv2:ConverterPlugin ;
-	doap:name "Moony C1 x A1" ;
-	doap:license lic:Artistic-2.0 ;
-	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
-	lv2:extensionData work:interface, state:interface ;
-	lv2:requiredFeature work:schedule ;
-
-	lv2:port [
-	# input event port
-	  a lv2:OutputPort ,
-			atom:AtomPort ;
-		atom:bufferType atom:Sequence ;
-		atom:supports midi:MidiEvent ;
-		atom:supports time:Position ;
-		lv2:index 0 ;
-		lv2:symbol "event_ou_1" ;
-		lv2:name "Event Out 1" ;
-		lv2:designation lv2:control ;
-	] , [
-	# output port
-	  a lv2:InputPort ,
-			lv2:ControlPort ;
-		lv2:index 1 ;
-		lv2:symbol "input_1" ;
-		lv2:name "Input 1" ;
-	] , [
-	# input control port
-	  a lv2:InputPort ,
-			atom:AtomPort ;
-		atom:bufferType atom:Sequence ;
-		atom:supports atom:Object ;
-		lv2:index 2 ;
-		lv2:symbol "control" ;
-		lv2:name "Control" ;
-		rsz:minimumSize 65536 ;
-	] , [
-	# output notify port
-	  a lv2:OutputPort ,
-			atom:AtomPort ;
-		atom:bufferType atom:Sequence ;
-		atom:supports atom:Object ;
-		lv2:index 3 ;
-		lv2:symbol "notify" ;
-		lv2:name "Notify" ;
-		rsz:minimumSize 65536 ;
-	] .
-
-# C2XA1 Plugin
-moony:c2xa1
-	a lv2:Plugin ,
-		lv2:ConverterPlugin ;
-	doap:name "Moony C2 x A1" ;
-	doap:license lic:Artistic-2.0 ;
-	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
-	lv2:extensionData work:interface, state:interface ;
-	lv2:requiredFeature work:schedule ;
-
-	lv2:port [
-	# input event port
-	  a lv2:OutputPort ,
-			atom:AtomPort ;
-		atom:bufferType atom:Sequence ;
-		atom:supports midi:MidiEvent ;
-		atom:supports time:Position ;
-		lv2:index 0 ;
-		lv2:symbol "event_out_1" ;
-		lv2:name "Event Out 1" ;
-		lv2:designation lv2:control ;
-	] , [
-	# input port
-	  a lv2:InputPort ,
-			lv2:ControlPort ;
-		lv2:index 1 ;
-		lv2:symbol "input_1" ;
-		lv2:name "Input 1" ;
-	] , [
-	  a lv2:InputPort ,
-			lv2:ControlPort ;
-		lv2:index 2 ;
-		lv2:symbol "input_2" ;
-		lv2:name "Input 2" ;
-	] , [
-	# input control port
-	  a lv2:InputPort ,
-			atom:AtomPort ;
-		atom:bufferType atom:Sequence ;
-		atom:supports atom:Object ;
-		lv2:index 3 ;
-		lv2:symbol "control" ;
-		lv2:name "Control" ;
-		rsz:minimumSize 65536 ;
-	] , [
-	# output notify port
-	  a lv2:OutputPort ,
-			atom:AtomPort ;
-		atom:bufferType atom:Sequence ;
-		atom:supports atom:Object ;
-		lv2:index 4 ;
-		lv2:symbol "notify" ;
-		lv2:name "Notify" ;
-		rsz:minimumSize 65536 ;
-	] .
-
-# C4XA1 Plugin
-moony:c4xa1
-	a lv2:Plugin ,
-		lv2:ConverterPlugin ;
-	doap:name "Moony C4 x A1" ;
-	doap:license lic:Artistic-2.0 ;
-	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
-	lv2:extensionData work:interface, state:interface ;
-	lv2:requiredFeature work:schedule ;
-
-	lv2:port [
 	# output event port
 	  a lv2:OutputPort ,
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports midi:MidiEvent ;
 		atom:supports time:Position ;
-		lv2:index 0 ;
+		lv2:index 1 ;
 		lv2:symbol "event_out_1" ;
 		lv2:name "Event Out 1" ;
 		lv2:designation lv2:control ;
@@ -1071,34 +717,23 @@ moony:c4xa1
 	# input port
 	  a lv2:InputPort ,
 			lv2:ControlPort ;
-		lv2:index 1 ;
+		lv2:index 2 ;
 		lv2:symbol "input_1" ;
 		lv2:name "Input 1" ;
 	] , [
-	  a lv2:InputPort ,
-			lv2:ControlPort ;
-		lv2:index 2 ;
-		lv2:symbol "input_2" ;
-		lv2:name "Input 2" ;
-	] , [
-	  a lv2:InputPort ,
+	# output port
+	  a lv2:OutputPort ,
 			lv2:ControlPort ;
 		lv2:index 3 ;
-		lv2:symbol "input_3" ;
-		lv2:name "Input 3" ;
-	] , [
-	  a lv2:InputPort ,
-			lv2:ControlPort ;
-		lv2:index 4 ;
-		lv2:symbol "input_4" ;
-		lv2:name "Input 4" ;
+		lv2:symbol "output_1" ;
+		lv2:name "Output 1" ;
 	] , [
 	# input control port
 	  a lv2:InputPort ,
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports atom:Object ;
-		lv2:index 5 ;
+		lv2:index 4 ;
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
 		rsz:minimumSize 65536 ;
@@ -1108,7 +743,88 @@ moony:c4xa1
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports atom:Object ;
+		lv2:index 5 ;
+		lv2:symbol "notify" ;
+		lv2:name "Notify" ;
+		rsz:minimumSize 65536 ;
+	] .
+
+# C2A1XC2A1 Plugin
+moony:c2a1xc2a1
+	a lv2:Plugin ,
+		lv2:ConverterPlugin ;
+	doap:name "Moony C2+A1 x C2+A1" ;
+	doap:license lic:Artistic-2.0 ;
+	lv2:project proj:moony ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
+	lv2:extensionData work:interface, state:interface ;
+	lv2:requiredFeature work:schedule ;
+
+	lv2:port [
+	# input event port
+	  a lv2:InputPort ,
+			atom:AtomPort ;
+		atom:bufferType atom:Sequence ;
+		atom:supports midi:MidiEvent ;
+		atom:supports time:Position ;
+		lv2:index 0 ;
+		lv2:symbol "event_in_1" ;
+		lv2:name "Event In 1" ;
+		lv2:designation lv2:control ;
+	] , [
+	# output event port
+	  a lv2:OutputPort ,
+			atom:AtomPort ;
+		atom:bufferType atom:Sequence ;
+		atom:supports midi:MidiEvent ;
+		atom:supports time:Position ;
+		lv2:index 1 ;
+		lv2:symbol "event_out_1" ;
+		lv2:name "Event Out 1" ;
+		lv2:designation lv2:control ;
+	] , [
+	# input port
+	  a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 2 ;
+		lv2:symbol "input_1" ;
+		lv2:name "Input 1" ;
+	] , [
+	  a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 3 ;
+		lv2:symbol "input_2" ;
+		lv2:name "Input 2" ;
+	] , [
+	# output port
+	  a lv2:OutputPort ,
+			lv2:ControlPort ;
+		lv2:index 4 ;
+		lv2:symbol "output_1" ;
+		lv2:name "Output 1" ;
+	] , [
+	  a lv2:OutputPort ,
+			lv2:ControlPort ;
+		lv2:index 5 ;
+		lv2:symbol "output_2" ;
+		lv2:name "Output 2" ;
+	] , [
+	# input control port
+	  a lv2:InputPort ,
+			atom:AtomPort ;
+		atom:bufferType atom:Sequence ;
+		atom:supports atom:Object ;
 		lv2:index 6 ;
+		lv2:symbol "control" ;
+		lv2:name "Control" ;
+		rsz:minimumSize 65536 ;
+	] , [
+	# output notify port
+	  a lv2:OutputPort ,
+			atom:AtomPort ;
+		atom:bufferType atom:Sequence ;
+		atom:supports atom:Object ;
+		lv2:index 7 ;
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
 		rsz:minimumSize 65536 ;

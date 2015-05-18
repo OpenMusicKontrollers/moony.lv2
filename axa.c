@@ -35,7 +35,7 @@ struct _Handle {
 	LV2_Atom_Forge forge [4];
 };
 
-static const char *default_code [4] = {
+static const char *default_code [3] = {
 	"function run(seq, forge)\n"
 	"  for frames, atom in seq:foreach() do\n"
 	"    -- your code here\n"
@@ -56,8 +56,6 @@ static const char *default_code [4] = {
 	"    forge2:atom(atom)\n"
 	"  end\n"
 	"end",
-
-	NULL,
 
 	"function run(seq1, seq2, seq3, seq4, forge1, forge2, forge3, forge4)\n"
 	"  for frames, atom in seq1:foreach() do\n"
@@ -104,8 +102,8 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 	else if(!strcmp(descriptor->URI, MOONY_A4XA4_URI))
 		handle->max_val = 4;
 	else
-		handle->max_val = 0; // never reached
-	moony_activate(&handle->moony, default_code[handle->max_val-1]);
+		handle->max_val = 1;
+	moony_activate(&handle->moony, default_code[handle->max_val >> 1]);
 
 	for(int i=0; i<handle->max_val; i++)
 		lv2_atom_forge_init(&handle->forge[i], handle->moony.map);

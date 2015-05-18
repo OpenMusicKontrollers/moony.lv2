@@ -59,14 +59,6 @@
 #define MOONY_A2XA2_URI				MOONY_URI"#a2xa2"
 #define MOONY_A4XA4_URI				MOONY_URI"#a4xa4"
 
-#define MOONY_A1XC1_URI				MOONY_URI"#a1xc1"
-#define MOONY_A1XC2_URI				MOONY_URI"#a1xc2"
-#define MOONY_A1XC4_URI				MOONY_URI"#a1xc4"
-
-#define MOONY_C1XA1_URI				MOONY_URI"#c1xa1"
-#define MOONY_C2XA1_URI				MOONY_URI"#c2xa1"
-#define MOONY_C4XA1_URI				MOONY_URI"#c4xa1"
-
 #define MOONY_C1A1XC1A1_URI		MOONY_URI"#c1a1xc1a1"
 #define MOONY_C2A1XC2A1_URI		MOONY_URI"#c2a1xc2a1"
 #define MOONY_C4A1XC4A1_URI		MOONY_URI"#c4a1xc4a1"
@@ -79,14 +71,8 @@ extern const LV2_Descriptor a1xa1;
 extern const LV2_Descriptor a2xa2;
 extern const LV2_Descriptor a4xa4;
 
-extern const LV2_Descriptor a1xc1;
-extern const LV2_Descriptor a1xc2;
-extern const LV2_Descriptor a1xc4;
-
-extern const LV2_Descriptor c1xa1;
-extern const LV2_Descriptor c2xa1;
-extern const LV2_Descriptor c4xa1;
-
+extern const LV2_Descriptor c1a1xc1a1;
+extern const LV2_Descriptor c2a1xc2a1;
 extern const LV2_Descriptor c4a1xc4a1;
 
 extern const LV2UI_Descriptor common_eo;

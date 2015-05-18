@@ -59,9 +59,7 @@ add_library(moony MODULE
 	vm.c
 
 	cxc.c
-	cxa.c
 	axa.c
-	axc.c
 	caxca.c
 
 	tlsf-3.0/tlsf.c

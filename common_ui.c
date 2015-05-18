@@ -409,15 +409,9 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		&&	strcmp(plugin_uri, MOONY_A1XA1_URI)
 		&&	strcmp(plugin_uri, MOONY_A2XA2_URI)
 		&&	strcmp(plugin_uri, MOONY_A4XA4_URI)
-
-		&&	strcmp(plugin_uri, MOONY_A1XC1_URI)
-		&&	strcmp(plugin_uri, MOONY_A1XC2_URI)
-		&&	strcmp(plugin_uri, MOONY_A1XC4_URI)
-
-		&&	strcmp(plugin_uri, MOONY_C1XA1_URI)
-		&&	strcmp(plugin_uri, MOONY_C2XA1_URI)
-		&&	strcmp(plugin_uri, MOONY_C4XA1_URI)
 		
+		&&	strcmp(plugin_uri, MOONY_C1A1XC1A1_URI)
+		&&	strcmp(plugin_uri, MOONY_C2A1XC2A1_URI)
 		&&	strcmp(plugin_uri, MOONY_C4A1XC4A1_URI) )
 	{
 		return NULL;
