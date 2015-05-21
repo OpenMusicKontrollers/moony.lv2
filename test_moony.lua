@@ -15,17 +15,17 @@
 	http://www.perlfoundation.org/artistic_license_2_0.
 --]]
 
--- map/unmap
-print('[test] map/unmap')
+-- Map/unmap
+print('[test] Map/unmap')
 do
 	local uri = 'http://test.org#foo'
 
-	assert(map[uri] == map[uri])
-	assert(map(uri) == map(uri))
+	assert(Map[uri] == Map[uri])
+	assert(Map(uri) == Map(uri))
 
-	local urid = map[uri]
-	assert(unmap[urid] == unmap[urid])
-	assert(unmap(urid) == unmap(urid))
+	local urid = Map[uri]
+	assert(Unmap[urid] == Unmap[urid])
+	assert(Unmap(urid) == Unmap(urid))
 end
 
 -- Int
@@ -42,13 +42,13 @@ do
 	local function consumer(seq)
 		assert(#seq == 2)
 		local atom = seq[1]
-		assert(atom.type == map.Int)
+		assert(atom.type == Atom.Int)
 		assert(#atom == 4)
 		assert(type(atom.value) == 'number')
 		assert(atom.value == 0x7fffffff)
 		
 		local atom = seq[2]
-		assert(atom.type == map.Int)
+		assert(atom.type == Atom.Int)
 		assert(#atom == 4)
 		assert(type(atom.value) == 'number')
 		assert(atom.value ~= 0xffffffff)
@@ -68,7 +68,7 @@ do
 	local function consumer(seq)
 		assert(#seq == 1)
 		local atom = seq[1]
-		assert(atom.type == map.Long)
+		assert(atom.type == Atom.Long)
 		assert(#atom == 8)
 		assert(type(atom.value) == 'number')
 		assert(atom.value == 0x100000000)
@@ -88,7 +88,7 @@ do
 	local function consumer(seq)
 		assert(#seq == 1)
 		local atom = seq[1]
-		assert(atom.type == map.Float)
+		assert(atom.type == Atom.Float)
 		assert(#atom == 4)
 		assert(type(atom.value) == 'number')
 		assert(atom.value == 2.0)
@@ -108,7 +108,7 @@ do
 	local function consumer(seq)
 		assert(#seq == 1)
 		local atom = seq[1]
-		assert(atom.type == map.Double)
+		assert(atom.type == Atom.Double)
 		assert(#atom == 8)
 		assert(type(atom.value) == 'number')
 		assert(atom.value == 0.12)
@@ -131,13 +131,13 @@ do
 	local function consumer(seq)
 		assert(#seq == 2)
 		local atom = seq[1]
-		assert(atom.type == map.Bool)
+		assert(atom.type == Atom.Bool)
 		assert(#atom == 4)
 		assert(type(atom.value) == 'boolean')
 		assert(atom.value == true)
 		
 		local atom = seq[2]
-		assert(atom.type == map.Bool)
+		assert(atom.type == Atom.Bool)
 		assert(#atom == 4)
 		assert(type(atom.value) == 'boolean')
 		assert(type(atom.value) == 'boolean')
@@ -160,7 +160,7 @@ do
 	local function consumer(seq)
 		assert(#seq == 1)
 		local atom = seq[1]
-		assert(atom.type == map.String)
+		assert(atom.type == Atom.String)
 		assert(#atom == string.len(str) + 1)
 		assert(type(atom.value) == 'string')
 		assert(atom.value == str)
@@ -173,8 +173,8 @@ end
 print('[test] Literal')
 do
 	local str = 'hello world'
-	local datatype = map['http://test.org#datatype']
-	local lang = map['http://test.org#lang']
+	local datatype = Map['http://test.org#datatype']
+	local lang = Map['http://test.org#lang']
 
 	local function producer(forge)
 		forge:frame_time(0)
@@ -184,7 +184,7 @@ do
 	local function consumer(seq)
 		assert(#seq == 1)
 		local atom = seq[1]
-		assert(atom.type == map.Literal)
+		assert(atom.type == Atom.Literal)
 		assert(type(atom.value) == 'string')
 		assert(#atom == string.len(str) + 1)
 		assert(atom.value == str)
@@ -208,7 +208,7 @@ do
 	local function consumer(seq)
 		assert(#seq == 1)
 		local atom = seq[1]
-		assert(atom.type == map.URI)
+		assert(atom.type == Atom.URI)
 		assert(#atom == string.len(uri) + 1)
 		assert(type(atom.value) == 'string')
 		assert(atom.value == uri)
@@ -230,7 +230,7 @@ do
 	local function consumer(seq)
 		assert(#seq == 1)
 		local atom = seq[1]
-		assert(atom.type == map.Path)
+		assert(atom.type == Atom.Path)
 		assert(#atom == string.len(path) + 1)
 		assert(type(atom.value) == 'string')
 		assert(atom.value == path)
@@ -243,7 +243,7 @@ end
 print('[test] URID')
 do
 	local uri = 'http://test.org#uri'
-	local urid = map[uri]
+	local urid = Map[uri]
 
 	local function producer(forge)
 		forge:frame_time(0)
@@ -253,11 +253,11 @@ do
 	local function consumer(seq)
 		assert(#seq == 1)
 		local atom = seq[1]
-		assert(atom.type == map.URID)
+		assert(atom.type == Atom.URID)
 		assert(#atom == 4)
 		assert(type(atom.value) == 'number')
 		assert(atom.value == urid)
-		assert(unmap[atom.value] == uri)
+		assert(Unmap[atom.value] == uri)
 	end
 
 	test(producer, consumer)
@@ -279,7 +279,7 @@ do
 	local function consumer(seq)
 		assert(#seq == 2)
 		local atom = seq[1]
-		assert(atom.type == map.Midi)
+		assert(atom.type == MIDI.Event)
 		assert(type(atom.value) == 'table')
 		assert(#atom == #m)
 		assert(#atom.value == #m)
@@ -290,7 +290,7 @@ do
 		assert(atom.value[4] == nil)
 
 		atom = seq[2]
-		assert(atom.type == map.Midi)
+		assert(atom.type == MIDI.Event)
 		assert(#atom == #m)
 		assert(atom[0] == nil)
 		assert(atom[1] == 0x90)
@@ -343,7 +343,7 @@ do
 	local function consumer(seq)
 		assert(#seq == 2)
 		local atom = seq[1]
-		assert(atom.type == map.Chunk)
+		assert(atom.type == Atom.Chunk)
 		assert(type(atom.value) == 'table')
 		assert(#atom == #c)
 		assert(#atom.value == #c)
@@ -357,7 +357,7 @@ do
 		assert(atom.value[7] == nil)
 
 		atom = seq[2]
-		assert(atom.type == map.Chunk)
+		assert(atom.type == Atom.Chunk)
 		assert(#atom == #c)
 		assert(atom[0] == nil)
 		assert(atom[1] == 0x01)
@@ -401,33 +401,33 @@ do
 	local function producer(forge)
 		forge:frame_time(0)
 		local tup = forge:tuple()
-		forge:int(1)
-		forge:float(2.0)
-		forge:long(3)
-		forge:double(4.0)
-		forge:pop(tup)
+		tup:int(1)
+		tup:float(2.0)
+		tup:long(3)
+		tup:double(4.0)
+		tup:pop()
 	end
 
 	local function consumer(seq)
 		assert(#seq == 1)
 		local atom = seq[1]
-		assert(atom.type == map.Tuple)
+		assert(atom.type == Atom.Tuple)
 		assert(#atom == 4)
 
 		local sub = atom[1]
-		assert(sub.type == map.Int)
+		assert(sub.type == Atom.Int)
 		assert(sub.value == 1)
 		
 		sub = atom[2]
-		assert(sub.type == map.Float)
+		assert(sub.type == Atom.Float)
 		assert(sub.value == 2.0)
 		
 		sub = atom[3]
-		assert(sub.type == map.Long)
+		assert(sub.type == Atom.Long)
 		assert(sub.value == 3)
 		
 		sub = atom[4]
-		assert(sub.type == map.Double)
+		assert(sub.type == Atom.Double)
 		assert(sub.value == 4.0)
 
 		assert(atom[0] == nil)
@@ -439,12 +439,12 @@ do
 
 		local subsub
 		sub, subsub = atom:unpack(1, 1)
-		assert(sub.type == map.Int)
+		assert(sub.type == Atom.Int)
 		assert(subsub == nil)
 		
 		sub, subsub = atom:unpack(2)
-		assert(sub.type == map.Float)
-		assert(subsub.type == map.Long)
+		assert(sub.type == Atom.Float)
+		assert(subsub.type == Atom.Long)
 		
 		assert(atom:unpack(-1).type == atom:unpack(0).type)
 		assert(atom:unpack(0).type == atom:unpack(1).type)
@@ -460,34 +460,34 @@ end
 print('[test] Object')
 do
 	local id = 0
-	local otype = map['http://test.org#type']
-	local key1 = map['http://test.org#key1']
-	local context2 = map['http://test.org#context2']
-	local key2 = map['http://test.org#key2']
+	local otype = Map['http://test.org#type']
+	local key1 = Map['http://test.org#key1']
+	local context2 = Map['http://test.org#context2']
+	local key2 = Map['http://test.org#key2']
 
 	local function producer(forge)
 		forge:frame_time(0)
 		local obj = forge:object(id, otype)
 
-		forge:key(key1)
-		forge:int(12)
+		obj:key(key1)
+		obj:int(12)
 		
-		forge:property(key2, context2)
-		forge:long(13)
+		obj:property(key2, context2)
+		obj:long(13)
 
-		forge:pop(obj)
+		obj:pop()
 	end
 
 	local function consumer(seq)
 		assert(#seq == 1)
 		local atom = seq[1]
-		assert(atom.type == map.Object)
+		assert(atom.type == Atom.Object)
 		assert(atom.id == 0)
 		assert(atom.otype == otype)
 		assert(#atom == 2)
 
 		local sub = atom[key1]
-		assert(sub.type == map.Int)
+		assert(sub.type == Atom.Int)
 		
 		sub = atom[key2]
 		assert(sub.value == 13)
@@ -519,11 +519,147 @@ do
 	local function consumer(seq)
 		assert(#seq == 1)
 		local atom = seq[1]
-		assert(atom.type == map.Int)
+		assert(atom.type == Atom.Int)
 		assert(atom.value == 12)
 
 		forge0:frame_time(0)
 		forge0:atom(atom)
+	end
+
+	test(producer, consumer)
+end
+
+-- OSC
+print('[test] OSC')
+do
+	local function producer(forge)
+		forge:frame_time(0)
+		forge:osc_message('/hello', 'sif', 'world', 12, 13.0)
+		
+		forge:frame_time(1)
+		forge:osc_message('/hallo', 'Shdt', 'velo', 12, 13.0, 1)
+		
+		forge:frame_time(2)
+		forge:osc_message('/yup', 'c', string.byte('a'))
+		
+		forge:frame_time(3)
+		forge:osc_message('/singletons', 'TFNI')
+		
+		forge:frame_time(4)
+		local bndl = forge:osc_bundle(1)
+		bndl:osc_message('/one', 'i', 1)
+		bndl:osc_message('/two', 'i', 2)
+		bndl:osc_message('/three', 'i', 3)
+		local nested = bndl:osc_bundle(1)
+		nested:pop()
+		bndl:pop()
+	end
+
+	local function consumer(seq)
+		assert(#seq == 5)
+
+		local atom = seq[1]
+		assert(atom.type == Atom.Object)
+		assert(atom.id == OSC.event)
+		assert(atom.otype == OSC.message)
+		local path = atom[OSC.path]
+		assert(path.type == Atom.String)
+		assert(path.value == '/hello')
+		local fmt = atom[OSC.format]
+		assert(fmt.type == Atom.String)
+		assert(fmt.value == 'sif')
+		local args = atom[OSC.message]
+		assert(args.type == Atom.Tuple)
+		assert(#args == 3)
+		assert(args[0] == nil)
+		assert(args[1].type == Atom.String)
+		assert(args[1].value == 'world')
+		assert(args[2].type == Atom.Int)
+		assert(args[2].value == 12)
+		assert(args[3].type == Atom.Float)
+		assert(args[3].value == 13.0)
+		assert(args[4] == nil)
+		
+		atom = seq[2]
+		assert(atom.type == Atom.Object)
+		assert(atom.id == OSC.event)
+		assert(atom.otype == OSC.message)
+		path = atom[OSC.path]
+		assert(path.type == Atom.String)
+		assert(path.value == '/hallo')
+		fmt = atom[OSC.format]
+		assert(fmt.type == Atom.String)
+		assert(fmt.value == 'Shdt')
+		args = atom[OSC.message]
+		assert(args.type == Atom.Tuple)
+		assert(#args == 4)
+		assert(args[0] == nil)
+		assert(args[1].type == Atom.String)
+		assert(args[1].value == 'velo')
+		assert(args[2].type == Atom.Long)
+		assert(args[2].value == 12)
+		assert(args[3].type == Atom.Double)
+		assert(args[3].value == 13.0)
+		assert(args[4].type == Atom.Long)
+		assert(args[4].value == 1)
+		assert(args[5] == nil)
+		
+		atom = seq[3]
+		assert(atom.type == Atom.Object)
+		assert(atom.id == OSC.event)
+		assert(atom.otype == OSC.message)
+		path = atom[OSC.path]
+		assert(path.type == Atom.String)
+		assert(path.value == '/yup')
+		fmt = atom[OSC.format]
+		assert(fmt.type == Atom.String)
+		assert(fmt.value == 'c')
+		args = atom[OSC.message]
+		assert(args.type == Atom.Tuple)
+		assert(#args == 1)
+		assert(args[0] == nil)
+		assert(args[1].type == Atom.Int)
+		assert(string.char(args[1].value) == 'a')
+		assert(args[2] == nil)
+		
+		atom = seq[4]
+		assert(atom.type == Atom.Object)
+		assert(atom.id == OSC.event)
+		assert(atom.otype == OSC.message)
+		path = atom[OSC.path]
+		assert(path.type == Atom.String)
+		assert(path.value == '/singletons')
+		fmt = atom[OSC.format]
+		assert(fmt.type == Atom.String)
+		assert(fmt.value == 'TFNI')
+		args = atom[OSC.message]
+		assert(args.type == Atom.Tuple)
+		assert(#args == 4)
+		assert(args[0] == nil)
+		assert(args[1].type == Atom.Bool)
+		assert(args[1].value == true)
+		assert(args[2].type == Atom.Bool)
+		assert(args[2].value == false)
+		assert(args[3].type == nil)
+		assert(args[4].type == Atom.Float)
+		assert(args[4].value == math.huge)
+		assert(args[5] == nil)
+		
+		atom = seq[5]
+		assert(atom.type == Atom.Object)
+		assert(atom.id == OSC.event)
+		assert(atom.otype == OSC.bundle)
+		local timestamp = atom[OSC.timestamp]
+		assert(timestamp.type == Atom.Long)
+		assert(timestamp.value == 1)
+		local itms = atom[OSC.bundle]
+		assert(itms.type == Atom.Tuple)
+		assert(#itms == 4)
+		assert(itms[1].otype == OSC.message)
+		assert(itms[2].otype == OSC.message)
+		assert(itms[3].otype == OSC.message)
+		assert(itms[4].otype == OSC.bundle)
+		assert(#itms[4][OSC.bundle] == 0)
 	end
 
 	test(producer, consumer)

@@ -56,34 +56,57 @@ end
 -----------------------------------------------------------------------------]]
 
 -- Moony overwrites Lua's 'print' function to use the LV2 log extension.
+-- This may be useful for debugging purposes
 print('hello', 'world', 2015, true)
 
 --[[---------------------------------------------------------------------------
-	URI/URID (un)mapping
+	URI/URID (un)Mapping
 -----------------------------------------------------------------------------]]
 
 -- Tables
-urid = map['http://foo.org#bar'] -- map URI to URID
-uri = unmap[urid] -- unmap URID to URI
+urid = Map['http://foo.org#bar'] -- Map URI to URID
+uri = Unmap[urid] -- Unmap URID to URI
 
 -- Constants
-urid = map.Bool -- URID of LV2 Bool
-urid = map.Chunk -- URID of LV2 Chunk
-urid = map.Double -- URID of LV2 Double
-urid = map.Float -- URID of LV2 Float
-urid = map.Int -- URID of LV2 Integer (32bit integer)
-urid = map.Long -- URID of LV2 Long (64bit integer)
-urid = map.Literal -- URID of LV2 Literal
-urid = map.Object -- URID of LV2 Object
-urid = map.Path -- URID of LV2 Path
-urid = map.Property -- URID of LV2 Property
-urid = map.Sequence -- URID of LV2 Sequence
-urid = map.String -- URID of LV2 String
-urid = map.Tuple -- URID of LV2 Tuple
-urid = map.URI -- URID of LV2 URI
-urid = map.URID -- URID of LV2 URID
-urid = map.Vector -- URID of LV2 Vector
-urid = map.Midi -- URID of LV2 MIDI
+urid = Atom.Bool -- URID of LV2 Bool
+urid = Atom.Chunk -- URID of LV2 Chunk
+urid = Atom.Double -- URID of LV2 Double
+urid = Atom.Float -- URID of LV2 Float
+urid = Atom.Int -- URID of LV2 Integer (32bit integer)
+urid = Atom.Long -- URID of LV2 Long (64bit integer)
+urid = Atom.Literal -- URID of LV2 Literal
+urid = Atom.Object -- URID of LV2 Object
+urid = Atom.Path -- URID of LV2 Path
+urid = Atom.Property -- URID of LV2 Property
+urid = Atom.Sequence -- URID of LV2 Sequence
+urid = Atom.String -- URID of LV2 String
+urid = Atom.Tuple -- URID of LV2 Tuple
+urid = Atom.URI -- URID of LV2 URI
+urid = Atom.URID -- URID of LV2 URID
+urid = Atom.Vector -- URID of LV2 Vector
+
+-- URID of LV2 MIDI Event
+urid = MIDI.Event
+
+-- URIDs of LV2 Time Position object
+urid = Time.Position
+urid = Time.barBeat
+urid = Time.bar
+urid = Time.beat
+urid = Time.beatUnit
+urid = Time.beatsPerBar
+urid = Time.beatsPerMinute
+urid = Time.frame
+urid = Time.framesPerSecond
+urid = Time.speed
+
+-- URIDs of OSC objects
+urid = OSC.event
+urid = OSC.timestamp
+urid = OSC.bundle
+urid = OSC.message
+urid = OSC.path
+urid = OSC.format
 
 --[[---------------------------------------------------------------------------
 	Atom Sequence
@@ -93,7 +116,7 @@ urid = map.Midi -- URID of LV2 MIDI
 n = #seq -- number of events in sequence
 
 -- indexing by string key
-t = seq.type -- type of atom, e.g. map.Sequence
+t = seq.type -- type of atom, e.g. Atom.Sequence
 
 -- indexing by number key
 atom = seq[1] -- get first event atom
@@ -124,34 +147,41 @@ forge:literal('world', datatype, lang) -- push a Lua string, integer, integer
 forge:uri('http://foo.org#bar') -- push a Lua string as URI
 forge:path('/tmp/test.lua') -- push a Lua string as path
 
-forge:midi({0x90, 0x4a, 0x7f}) -- push a Lua table as Midi message
-forge:midi(0x90, 0x4a, 0x7f) -- push individual Lua integers as Midi message
+forge:midi({0x90, 0x4a, 0x7f}) -- push a Lua table as MIDI message
+forge:midi(0x90, 0x4a, 0x7f) -- push individual Lua integers as MIDI message
 forge:chunk({0x01, 0x02, 0x03, 0x04}) -- push a Lua table as atom chunk
 forge:chunk(0x01, 0x02, 0x03, 0x04) -- push individual Lua integers as atom chunk
-tup = forge:tuple() -- start a new tuple (returns a frame for forge:pop)
-obj = forge:object(id, otype) -- start a new object (returns a frame for forge:pop)
-forge:key(key) -- push a new object property with key (Lua integer)
-forge:property(context, key) -- push a new object property with key, context (Lua integer)
-forge:sequence(seq) -- append all events in seq to forge
 
-forge:pop(frame) -- finalize tuple or object frame
+bndl = forge:osc_bundle(1) -- start a new OSC bundle with timestamp (returns a derived forge container)
+bndl:osc_message('/hello', 'si', 'world', 2015) -- push a complete OSC message
+bndl:pop() -- finalize derived forge container
+
+tup = forge:tuple() -- start a new tuple (returns a derived forge container)
+tup:pop() -- finalize derived forge container
+
+obj = forge:object(id, otype) -- start a new object (returns a derived forge container)
+obj:key(key) -- push a new object property with key (Lua integer)
+obj:property(key, context) -- push a new object property with key, context (Lua integer)
+obj:pop() -- finalize derived forge container
+
+forge:sequence(seq) -- append all events in seq to forge
 
 --[[---------------------------------------------------------------------------
 	Atom Object
 -----------------------------------------------------------------------------]]
 
 local foo = {
-	bar = map['http://foo.com#bar']
+	bar = Map['http://foo.com#bar']
 }
 local bar = {
-	foo = map['http://bar.com#foo']
+	foo = Map['http://bar.com#foo']
 }
 
 -- length operator
 n = #obj -- number of properties in object 
 
 -- indexing by string key
-t = obj.type -- type of atom, e.g. map.Object
+t = obj.type -- type of atom, e.g. Atom.Object
 t = obj.id -- object id, e.g. foo.bar
 t = obj.otype -- object type , e.g. bar.foo
 
@@ -170,7 +200,7 @@ end
 n = #tup -- number of elements in tuple 
 
 -- indexing by string key
-t = tup.type -- type of atom, e.g. map.Tuple
+t = tup.type -- type of atom, e.g. Atom.Tuple
 
 -- indexing by number key
 atom = tup[1] -- get first atom element
@@ -193,8 +223,8 @@ atom2, atom3 = tup:unpack(2) -- unpack starting from given index
 n = #vec -- number of elements in vector
 
 -- indexing by string key
-t = vec.type -- type of atom, e.g. map.Vector
-t = vec.child_type -- type of child atom, e.g. map.Float
+t = vec.type -- type of atom, e.g. Atom.Vector
+t = vec.child_type -- type of child atom, e.g. Atom.Float
 t = vec.child_size -- byte size of child atom, e.g. 4
 
 -- indexing by number key
@@ -211,16 +241,16 @@ atom2, atom3 = vec:unpack(2, 3) -- unpack given range of elements
 atom2, atom3 = vec:unpack(2) -- unpack starting from given index
 
 --[[---------------------------------------------------------------------------
-	Atom Midi
+	Atom MIDI
 -----------------------------------------------------------------------------]]
-midi = atom.value -- Lua table with single raw Midi bytes
-bytes = #midi -- number of Midi bytes
-status = midi[1] -- Midi status byte as Lua integer
+midi = atom.value -- Lua table with single raw MIDI bytes
+bytes = #midi -- number of MIDI bytes
+status = midi[1] -- MIDI status byte as Lua integer
 -- or
-bytes = #atom -- number of Midi bytes
-status = atom[1] -- direct access of Midi status byte
+bytes = #atom -- number of MIDI bytes
+status = atom[1] -- direct access of MIDI status byte
 -- or
-status, note, vel = atom:unpack() -- unpack all raw Midi bytes to stack
+status, note, vel = atom:unpack() -- unpack all raw MIDI bytes to stack
 status, note = atom:unpack(1, 2) -- unpack given range of bytes
 note, vel = atom:unpack(2) -- unpack starting from given index
 
@@ -246,31 +276,31 @@ c3, c4= atom:unpack(3) -- unpack starting from given index
 n = #atom -- byte size of atom
 
 -- indexing by string key
-t = atom.type -- type of atom, e.g. map.Int, map.Double, map.String
+t = atom.type -- type of atom, e.g. Atom.Int, Atom.Double, Atom.String
 v = atom.value -- native Lua value for the corresponding atom
 
--- map.Bool
+-- Atom.Bool
 bool = atom.value -- Lua boolean, e.g. true or false
 
--- map.Int, map.Long
+-- Atom.Int, Atom.Long
 int = atom.value -- Lua integer
 
--- map.Float, map.Double
+-- Atom.Float, Atom.Double
 float = atom.value -- Lua number
 
--- map.String
+-- Atom.String
 str = atom.value -- Lua string
 
--- map.Literal
+-- Atom.Literal
 literal = atom.value -- Lua string
 datatype = atom.datatype -- URID as Lua integer
 lang = atom.lang -- URID as Lua integer
 
--- map.URID
+-- Atom.URID
 urid = atom.value -- Lua integer
 
--- map.URI
+-- Atom.URI
 uri = atom.value -- Lua string
 
--- map.Path
+-- Atom.Path
 path = atom.value -- Lua string

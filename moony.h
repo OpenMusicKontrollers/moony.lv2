@@ -28,6 +28,7 @@
 #include "lv2/lv2plug.in/ns/ext/atom/util.h"
 #include "lv2/lv2plug.in/ns/ext/atom/forge.h"
 #include "lv2/lv2plug.in/ns/ext/midi/midi.h"
+#include "lv2/lv2plug.in/ns/ext/time/time.h"
 #include "lv2/lv2plug.in/ns/ext/urid/urid.h"
 #include "lv2/lv2plug.in/ns/ext/worker/worker.h"
 #include "lv2/lv2plug.in/ns/ext/log/log.h"
@@ -140,8 +141,28 @@ struct _moony_t {
 		LV2_URID moony_message;
 		LV2_URID moony_code;
 		LV2_URID moony_error;
-		LV2_URID midi_event;
+
 		LV2_URID log_trace;
+		
+		LV2_URID midi_event;
+
+		LV2_URID time_position;
+		LV2_URID time_barBeat;
+		LV2_URID time_bar;
+		LV2_URID time_beat;
+		LV2_URID time_beatUnit;
+		LV2_URID time_beatsPerBar;
+		LV2_URID time_beatsPerMinute;
+		LV2_URID time_frame;
+		LV2_URID time_framesPerSecond;
+		LV2_URID time_speed;
+		
+		LV2_URID osc_event;
+		LV2_URID osc_timestamp;
+		LV2_URID osc_bundle;
+		LV2_URID osc_message;
+		LV2_URID osc_path;
+		LV2_URID osc_format;
 	} uris;
 	
 	LV2_Worker_Schedule *sched;
@@ -164,6 +185,8 @@ struct _lseq_t {
 
 struct _lforge_t {
 	LV2_Atom_Forge *forge;
+	int depth;
+	LV2_Atom_Forge_Frame frame [2];
 };
 
 int moony_init(moony_t *moony, const LV2_Feature *const *features);

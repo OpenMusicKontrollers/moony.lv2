@@ -173,6 +173,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 			for(int i=0; i<handle->max_val; i++)
 			{
 				lforge_t *lforge = lua_newuserdata(L, sizeof(lforge_t));
+				lforge->depth = 0;
 				lforge->forge = &handle->forge[i];
 				luaL_getmetatable(L, "lforge");
 				lua_setmetatable(L, -2);

@@ -16,6 +16,7 @@
  */
 
 #include <limits.h> // INT_MAX
+#include <math.h> // INFINITY
 
 #include <moony.h>
 
@@ -36,7 +37,6 @@
 typedef struct _lobj_t lobj_t;
 typedef struct _ltuple_t ltuple_t;
 typedef struct _lvec_t lvec_t;
-typedef struct _lframe_t lframe_t;
 typedef struct _latom_t latom_t;
 
 struct _lobj_t {
@@ -62,10 +62,6 @@ struct _lvec_t {
 struct _latom_t {
 	const LV2_Atom *atom;
 	LV2_Atom body [0];
-};
-
-struct _lframe_t {
-	LV2_Atom_Forge_Frame frame;
 };
 
 static void
@@ -850,7 +846,12 @@ _latom__index(lua_State *L)
 	const char *key = lua_tostring(L, 2);
 
 	if(!strcmp(key, "type"))
-		lua_pushinteger(L, latom->atom->type);
+	{
+		if(latom->atom->type)
+			lua_pushinteger(L, latom->atom->type);
+		else
+			lua_pushnil(L); // null atom
+	}
 	else if(!strcmp(key, "value"))
 		_latom_value(L, latom->atom);
 	else if(!strcmp(key, "datatype") && (latom->atom->type == moony->forge.Literal) )
@@ -1147,14 +1148,156 @@ _lforge_midi(lua_State *L)
 }
 
 static int
+_lforge_osc_bundle(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+
+	uint64_t timestamp = luaL_checkinteger(L, 2);
+
+	lforge_t *lframe = lua_newuserdata(L, sizeof(lforge_t));
+	lframe->depth = 2;
+	lframe->forge = lforge->forge;
+	luaL_getmetatable(L, "lforge");
+	lua_setmetatable(L, -2);
+
+	lv2_atom_forge_object(lforge->forge, &lframe->frame[0],
+		moony->uris.osc_event, moony->uris.osc_bundle);
+
+	lv2_atom_forge_key(lforge->forge, moony->uris.osc_timestamp);
+	lv2_atom_forge_long(lforge->forge, timestamp);
+	
+	lv2_atom_forge_key(lforge->forge, moony->uris.osc_bundle);
+	lv2_atom_forge_tuple(lforge->forge, &lframe->frame[1]);
+
+	return 1;
+}
+
+static int
+_lforge_osc_message(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+
+	const char *path = luaL_checkstring(L, 2);
+	const char *fmt = luaL_checkstring(L, 3);
+
+	LV2_Atom_Forge_Frame obj_frame;
+	LV2_Atom_Forge_Frame tup_frame;
+
+	lv2_atom_forge_object(lforge->forge, &obj_frame,
+		moony->uris.osc_event, moony->uris.osc_message);
+
+	lv2_atom_forge_key(lforge->forge, moony->uris.osc_path);
+	lv2_atom_forge_string(lforge->forge, path, strlen(path) + 1);
+	
+	lv2_atom_forge_key(lforge->forge, moony->uris.osc_format);
+	lv2_atom_forge_string(lforge->forge, fmt, strlen(fmt) + 1);
+	
+	lv2_atom_forge_key(lforge->forge, moony->uris.osc_message);
+	lv2_atom_forge_tuple(lforge->forge, &tup_frame);
+
+	int pos = 4;
+	for(const char *type = fmt; *type; type++)
+	{
+		switch(*type)
+		{
+			case 'i':
+			{
+				int32_t i = luaL_checkinteger(L, pos++);
+				lv2_atom_forge_int(lforge->forge, i);
+				break;
+			}
+			case 'f':
+			{
+				float f = luaL_checknumber(L, pos++);
+				lv2_atom_forge_float(lforge->forge, f);
+				break;
+			}
+			case 's':
+			case 'S':
+			{
+				const char *s = luaL_checkstring(L, pos++);
+				lv2_atom_forge_string(lforge->forge, s, strlen(s) + 1);
+				break;
+			}
+			case 'b':
+			{
+				//TODO
+				break;
+			}
+
+			case 'T':
+			{
+				lv2_atom_forge_bool(lforge->forge, 1);
+				break;
+			}
+			case 'F':
+			{
+				lv2_atom_forge_bool(lforge->forge, 0);
+				break;
+			}
+			case 'N':
+			{
+				lv2_atom_forge_atom(lforge->forge, 0, 0);
+				break;
+			}
+			case 'I':
+			{
+				lv2_atom_forge_float(lforge->forge, INFINITY);
+				break;
+			}
+
+			case 'h':
+			{
+				int64_t h = luaL_checkinteger(L, pos++);
+				lv2_atom_forge_long(lforge->forge, h);
+				break;
+			}
+			case 'd':
+			{
+				double d = luaL_checknumber(L, pos++);
+				lv2_atom_forge_double(lforge->forge, d);
+				break;
+			}
+			case 't':
+			{
+				uint64_t t = luaL_checkinteger(L, pos++);
+				lv2_atom_forge_long(lforge->forge, t);
+				break;
+			}
+
+			case 'c':
+			{
+				char c = luaL_checkinteger(L, pos++);
+				lv2_atom_forge_int(lforge->forge, c);
+				break;
+			}
+			case 'm':
+			{
+				//TODO
+				break;
+			}
+		}
+	}
+
+	lv2_atom_forge_pop(lforge->forge, &tup_frame);
+	lv2_atom_forge_pop(lforge->forge, &obj_frame);
+
+	return 0;
+}
+
+static int
 _lforge_tuple(lua_State *L)
 {
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
-	lframe_t *lframe = lua_newuserdata(L, sizeof(lframe_t));
-	luaL_getmetatable(L, "lframe");
+	lforge_t *lframe = lua_newuserdata(L, sizeof(lforge_t));
+	lframe->depth = 1;
+	lframe->forge = lforge->forge;
+	luaL_getmetatable(L, "lforge");
 	lua_setmetatable(L, -2);
 
-	lv2_atom_forge_tuple(lforge->forge, &lframe->frame);
+	lv2_atom_forge_tuple(lforge->forge, &lframe->frame[0]);
 
 	return 1;
 }
@@ -1165,11 +1308,13 @@ _lforge_object(lua_State *L)
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	LV2_URID id = luaL_checkinteger(L, 2);
 	LV2_URID otype = luaL_checkinteger(L, 3);
-	lframe_t *lframe = lua_newuserdata(L, sizeof(lframe_t));
-	luaL_getmetatable(L, "lframe");
+	lforge_t *lframe = lua_newuserdata(L, sizeof(lforge_t));
+	lframe->depth = 1;
+	lframe->forge = lforge->forge;
+	luaL_getmetatable(L, "lforge");
 	lua_setmetatable(L, -2);
 
-	lv2_atom_forge_object(lforge->forge, &lframe->frame, id, otype);
+	lv2_atom_forge_object(lforge->forge, &lframe->frame[0], id, otype);
 
 	return 1;
 }
@@ -1219,16 +1364,12 @@ static int
 _lforge_pop(lua_State *L)
 {
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
-	lframe_t *lframe = luaL_checkudata(L, 2, "lframe");
 
-	lv2_atom_forge_pop(lforge->forge, &lframe->frame);
+	for(int i=lforge->depth; i>0; i--)
+		lv2_atom_forge_pop(lforge->forge, &lforge->frame[i-1]);
 
 	return 0;
 }
-
-static const luaL_Reg lframe_mt [] = {
-	{NULL, NULL}
-};
 
 static const luaL_Reg lforge_mt [] = {
 	{"frame_time", _lforge_frame_time},
@@ -1249,6 +1390,8 @@ static const luaL_Reg lforge_mt [] = {
 	//TODO vector
 	{"chunk", _lforge_chunk},
 	{"midi", _lforge_midi},
+	{"osc_bundle", _lforge_osc_bundle},
+	{"osc_message", _lforge_osc_message},
 	{"tuple", _lforge_tuple},
 	{"object", _lforge_object},
 	{"key", _lforge_key},
@@ -1452,8 +1595,30 @@ moony_init(moony_t *moony, const LV2_Feature *const *features)
 	moony->uris.moony_message = moony->map->map(moony->map->handle, MOONY_MESSAGE_URI);
 	moony->uris.moony_code = moony->map->map(moony->map->handle, MOONY_CODE_URI);
 	moony->uris.moony_error = moony->map->map(moony->map->handle, MOONY_ERROR_URI);
-	moony->uris.midi_event = moony->map->map(moony->map->handle, LV2_MIDI__MidiEvent);
+
 	moony->uris.log_trace = moony->map->map(moony->map->handle, LV2_LOG__Trace);
+	
+	moony->uris.midi_event = moony->map->map(moony->map->handle, LV2_MIDI__MidiEvent);
+
+	moony->uris.time_position = moony->map->map(moony->map->handle, LV2_TIME__Position);
+	moony->uris.time_barBeat = moony->map->map(moony->map->handle, LV2_TIME__barBeat);
+	moony->uris.time_bar = moony->map->map(moony->map->handle, LV2_TIME__bar);
+	moony->uris.time_beat = moony->map->map(moony->map->handle, LV2_TIME__beat);
+	moony->uris.time_beatUnit = moony->map->map(moony->map->handle, LV2_TIME__beatUnit);
+	moony->uris.time_beatsPerBar = moony->map->map(moony->map->handle, LV2_TIME__beatsPerBar);
+	moony->uris.time_beatsPerMinute = moony->map->map(moony->map->handle, LV2_TIME__beatsPerMinute);
+	moony->uris.time_frame = moony->map->map(moony->map->handle, LV2_TIME__frame);
+	moony->uris.time_framesPerSecond = moony->map->map(moony->map->handle, LV2_TIME__framesPerSecond);
+	moony->uris.time_speed = moony->map->map(moony->map->handle, LV2_TIME__speed);
+
+#define OSC_PREFIX "http://opensoundcontrol.org#"
+	moony->uris.osc_event = moony->map->map(moony->map->handle, OSC_PREFIX"event");
+	moony->uris.osc_timestamp = moony->map->map(moony->map->handle, OSC_PREFIX"timestamp");
+	moony->uris.osc_bundle = moony->map->map(moony->map->handle, OSC_PREFIX"bundle");
+	moony->uris.osc_message = moony->map->map(moony->map->handle, OSC_PREFIX"message");
+	moony->uris.osc_path = moony->map->map(moony->map->handle, OSC_PREFIX"path");
+	moony->uris.osc_format = moony->map->map(moony->map->handle, OSC_PREFIX"format");
+#undef OSC_PREFIX
 
 	lv2_atom_forge_init(&moony->forge, moony->map);
 
@@ -1505,19 +1670,11 @@ moony_open(moony_t *moony, lua_State *L)
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -2, "__index");
 	lua_pop(L, 1);
-	
-	luaL_newmetatable(L, "lframe");
-	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
-	luaL_setfuncs (L, lframe_mt, 1);
-	lua_pushvalue(L, -1);
-	lua_setfield(L, -2, "__index");
-	lua_pop(L, 1);
 
 #define SET_CONST(L, ID) \
 	lua_pushinteger(L, moony->forge.ID); \
 	lua_setfield(L, -2, #ID);
 
-	// lv2.map
 	lua_newtable(L);
 	{
 		//SET_CONST(L, Blank); // is depracated
@@ -1538,14 +1695,65 @@ moony_open(moony_t *moony, lua_State *L)
 		SET_CONST(L, URI);
 		SET_CONST(L, URID);
 		SET_CONST(L, Vector);
-		lua_pushinteger(L, moony->uris.midi_event);
-			lua_setfield(L, -2, "Midi");
 	}
+	lua_setglobal(L, "Atom");
+
+	lua_newtable(L);
+	{
+		lua_pushinteger(L, moony->uris.midi_event);
+			lua_setfield(L, -2, "Event");
+	}
+	lua_setglobal(L, "MIDI");
+
+	lua_newtable(L);
+	{
+		lua_pushinteger(L, moony->uris.time_position);
+			lua_setfield(L, -2, "Position");
+		lua_pushinteger(L, moony->uris.time_barBeat);
+			lua_setfield(L, -2, "barBeat");
+		lua_pushinteger(L, moony->uris.time_bar);
+			lua_setfield(L, -2, "bar");
+		lua_pushinteger(L, moony->uris.time_beat);
+			lua_setfield(L, -2, "beat");
+		lua_pushinteger(L, moony->uris.time_beatUnit);
+			lua_setfield(L, -2, "beatUnit");
+		lua_pushinteger(L, moony->uris.time_beatsPerBar);
+			lua_setfield(L, -2, "beatsPerBar");
+		lua_pushinteger(L, moony->uris.time_beatsPerMinute);
+			lua_setfield(L, -2, "beatsPerMinute");
+		lua_pushinteger(L, moony->uris.time_frame);
+			lua_setfield(L, -2, "frame");
+		lua_pushinteger(L, moony->uris.time_framesPerSecond);
+			lua_setfield(L, -2, "framesPerSecond");
+		lua_pushinteger(L, moony->uris.time_speed);
+			lua_setfield(L, -2, "speed");
+	}
+	lua_setglobal(L, "Time");
+
+	lua_newtable(L);
+	{
+		lua_pushinteger(L, moony->uris.osc_event);
+			lua_setfield(L, -2, "event");
+		lua_pushinteger(L, moony->uris.osc_timestamp);
+			lua_setfield(L, -2, "timestamp");
+		lua_pushinteger(L, moony->uris.osc_bundle);
+			lua_setfield(L, -2, "bundle");
+		lua_pushinteger(L, moony->uris.osc_message);
+			lua_setfield(L, -2, "message");
+		lua_pushinteger(L, moony->uris.osc_path);
+			lua_setfield(L, -2, "path");
+		lua_pushinteger(L, moony->uris.osc_format);
+			lua_setfield(L, -2, "format");
+	}
+	lua_setglobal(L, "OSC");
+
+	// lv2.map
+	lua_newtable(L);
 	lua_newtable(L);
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs(L, lmap_mt, 1);
 	lua_setmetatable(L, -2);
-	lua_setglobal(L, "map");
+	lua_setglobal(L, "Map");
 
 	// lv2.unmap
 	lua_newtable(L);
@@ -1553,7 +1761,7 @@ moony_open(moony_t *moony, lua_State *L)
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs(L, lunmap_mt, 1);
 	lua_setmetatable(L, -2);
-	lua_setglobal(L, "unmap");
+	lua_setglobal(L, "Unmap");
 
 	// overwrite print function with LV2 log
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
