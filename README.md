@@ -18,26 +18,16 @@ Get more information at: [http://open-music-kontrollers.ch/lv2/moony](http://ope
 * **C2 x C2** 2x control input to 2x control output
 * **C4 x C4** 4x control input to 4x control output
 
-#### Control port input to atom port output
-
-* **C1 x A1** 1x control input to 1x atom output
-* **C2 x A1** 2x control input to 1x atom output
-* **C4 x A1** 4x control input to 1x atom output
-
 #### Atom port input to atom port output
 
 * **A1 x A1** 1x atom input to 1x atom output
 * **A2 x A2** 2x atom input to 2x atom output
 * **A4 x A4** 4x atom input to 4x atom output
 
-#### Atom port input to control port output
-
-* **A1 x C1** 1x atom input to 1x control output
-* **A1 x C2** 1x atom input to 2x control output
-* **A1 x C4** 1x atom input to 4x control output
-
 #### Control+atom port input to control+atom port output
 
+* **C1+A1 x C1+A1** 1x control + 1x atom input to 1x control + 1x atom output
+* **C2+A1 x C2+A1** 2x control + 1x atom input to 2x control + 1x atom output
 * **C4+A1 x C4+A1** 4x control + 1x atom input to 4x control + 1x atom output
 
 ### Dependencies
