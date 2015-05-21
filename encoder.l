@@ -127,6 +127,24 @@ checkKw(char*s)
 			CHECK(and, AND);
 			CHECK(assert, CALLER);
 			break;
+		case 'A':
+			CHECK(Atom.Bool, NUMBER);
+			CHECK(Atom.Chunk, NUMBER);
+			CHECK(Atom.Double, NUMBER);
+			CHECK(Atom.Float, NUMBER);
+			CHECK(Atom.Int, NUMBER);
+			CHECK(Atom.Long, NUMBER);
+			CHECK(Atom.Literal, NUMBER);
+			CHECK(Atom.Object, NUMBER);
+			CHECK(Atom.Path, NUMBER);
+			CHECK(Atom.Property, NUMBER);
+			CHECK(Atom.Sequence, NUMBER);
+			CHECK(Atom.String, NUMBER);
+			CHECK(Atom.Tuple, NUMBER);
+			CHECK(Atom.URI, NUMBER);
+			CHECK(Atom.URID, NUMBER);
+			CHECK(Atom.Vector, NUMBER);
+			break;
 		case 'b':
 			CHECK(break, BREAK);
 			break;
@@ -207,25 +225,10 @@ checkKw(char*s)
 			CHECK(math.pow, CALLER)
 			CHECK(math.log, CALLER)
 			CHECK(math.atan, CALLER)
-
-			CHECK(map, CALLER);
-			CHECK(map.Bool, NUMBER);
-			CHECK(map.Chunk, NUMBER);
-			CHECK(map.Double, NUMBER);
-			CHECK(map.Float, NUMBER);
-			CHECK(map.Int, NUMBER);
-			CHECK(map.Long, NUMBER);
-			CHECK(map.Literal, NUMBER);
-			CHECK(map.Object, NUMBER);
-			CHECK(map.Path, NUMBER);
-			CHECK(map.Property, NUMBER);
-			CHECK(map.Sequence, NUMBER);
-			CHECK(map.String, NUMBER);
-			CHECK(map.Tuple, NUMBER);
-			CHECK(map.URI, NUMBER);
-			CHECK(map.URID, NUMBER);
-			CHECK(map.Vector, NUMBER);
-			CHECK(map.Midi, NUMBER);
+			break;
+		case 'M':
+			CHECK(Map, CALLER);
+			CHECK(MIDI.Event, NUMBER);
 			break;
 		case 'n':
 			CHECK(nil, NIL);
@@ -235,6 +238,14 @@ checkKw(char*s)
 		case 'o':
 			CHECK(or, OR);
 			//TODO os
+			break;
+		case 'O':
+			CHECK(OSC.event, NUMBER);
+			CHECK(OSC.timestamp, NUMBER);
+			CHECK(OSC.bundle, NUMBER);
+			CHECK(OSC.message, NUMBER);
+			CHECK(OSC.path, NUMBER);
+			CHECK(OSC.format, NUMBER);
 			break;
 		case 'p':
 			CHECK(pairs, CALLER);
@@ -290,10 +301,20 @@ checkKw(char*s)
 			CHECK(table.remove, CALLER);
 			CHECK(table.pack, CALLER);
 			break;
+		case 'T':
+			CHECK(Time.Position, NUMBER);
+			CHECK(Time.barBeat, NUMBER);
+			CHECK(Time.bar, NUMBER);
+			CHECK(Time.beat, NUMBER);
+			CHECK(Time.beatUnit, NUMBER);
+			CHECK(Time.beatsPerBar, NUMBER);
+			CHECK(Time.beatsPerMinute, NUMBER);
+			CHECK(Time.frame, NUMBER);
+			CHECK(Time.framesPerSecond, NUMBER);
+			CHECK(Time.speed, NUMBER);
+			break;
 		case 'u':
 			CHECK(until, UNTIL);
-			
-			CHECK(unmap, CALLER);
 
 			CHECK(utf8.offset, CALLER);
 			CHECK(utf8.charpattern, CALLER);
@@ -301,6 +322,9 @@ checkKw(char*s)
 			CHECK(utf8.len, CALLER);
 			CHECK(utf8.codepoint, CALLER);
 			CHECK(utf8.char, CALLER);
+			break;
+		case 'U':	
+			CHECK(Unmap, CALLER);
 			break;
 		case 'w':
 			CHECK(while, WHILE);
