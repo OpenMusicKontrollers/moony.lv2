@@ -352,7 +352,7 @@ eoui_instantiate(eo_ui_t *eoui, const LV2UI_Descriptor *descriptor,
 			for(int i=0; features[i]; i++)
 			{
 				if(!strcmp(features[i]->URI, LV2_UI__parent))
-					eoui->x11.parent = (Ecore_X_Window)features[i]->data;
+					eoui->x11.parent = (Ecore_X_Window)(uintptr_t)features[i]->data;
 				else if(!strcmp(features[i]->URI, LV2_UI__resize))
 					eoui->x11.resize = (LV2UI_Resize *)features[i]->data;
 				else if(!strcmp(features[i]->URI, LV2_UI__idleInterface))
