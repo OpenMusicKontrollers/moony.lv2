@@ -24,6 +24,8 @@
 @prefix midi: <http://lv2plug.in/ns/ext/midi#> .
 @prefix time: <http://lv2plug.in/ns/ext/time#> .
 @prefix state: <http://lv2plug.in/ns/ext/state#> .
+@prefix pset:	<http://lv2plug.in/ns/ext/presets#> .
+@prefix rdfs:	<http://www.w3.org/2000/01/rdf-schema#> .
 @prefix rsz:  <http://lv2plug.in/ns/ext/resize-port#> .
 @prefix kx:		<http://kxstudio.sf.net/ns/lv2ext/external-ui#> .
 
@@ -934,3 +936,59 @@ moony:c4a1xc4a1
 		lv2:name "Notify" ;
 		rsz:minimumSize 65536 ;
 	] .
+
+# Template presets
+moony:template-control_through
+	a pset:Preset ;
+	lv2:appliesTo moony:c1xc1 ;
+	lv2:appliesTo moony:c2xc2 ;
+	lv2:appliesTo moony:c4xc4 ;
+	rdfs:label "Through" ;
+	rdfs:seeAlso <template.ttl> .
+
+moony:template-atom_through
+	a pset:Preset ;
+	lv2:appliesTo moony:a1xa1 ;
+	lv2:appliesTo moony:c1a1xc1a1 ;
+	lv2:appliesTo moony:c2a1xc2a1 ;
+	lv2:appliesTo moony:c4a1xc4a1 ;
+	rdfs:label "Through" ;
+	rdfs:seeAlso <template.ttl> .
+moony:template-midi_responder
+	a pset:Preset ;
+	lv2:appliesTo moony:a1xa1 ;
+	lv2:appliesTo moony:c1a1xc1a1 ;
+	lv2:appliesTo moony:c2a1xc2a1 ;
+	lv2:appliesTo moony:c4a1xc4a1 ;
+	rdfs:label "MIDI responder" ;
+	rdfs:seeAlso <template.ttl> .
+moony:template-osc_responder
+	a pset:Preset ;
+	lv2:appliesTo moony:a1xa1 ;
+	lv2:appliesTo moony:c1a1xc1a1 ;
+	lv2:appliesTo moony:c2a1xc2a1 ;
+	lv2:appliesTo moony:c4a1xc4a1 ;
+	rdfs:label "OSC responder" ;
+	rdfs:seeAlso <template.ttl> .
+
+moony:template-atom_through2
+	a pset:Preset ;
+	lv2:appliesTo moony:a2xa2 ;
+	rdfs:label "Through" ;
+	rdfs:seeAlso <template.ttl> .
+moony:template-atom_multiplex2
+	a pset:Preset ;
+	lv2:appliesTo moony:a2xa2 ;
+	rdfs:label "Multiplex" ;
+	rdfs:seeAlso <template.ttl> .
+
+moony:template-atom_through4
+	a pset:Preset ;
+	lv2:appliesTo moony:a4xa4 ;
+	rdfs:label "Through" ;
+	rdfs:seeAlso <template.ttl> .
+moony:template-atom_multiplex4
+	a pset:Preset ;
+	lv2:appliesTo moony:a4xa4 ;
+	rdfs:label "Multiplex" ;
+	rdfs:seeAlso <template.ttl> .

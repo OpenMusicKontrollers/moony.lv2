@@ -43,10 +43,12 @@ if((${ELM_VERSION} VERSION_EQUAL "1.9.0") OR (${ELM_VERSION} VERSION_GREATER "1.
 	add_definitions("-DELM_1_9")
 endif()
 
-if(${ECORE_X_FOUND} AND ((${ELM_VERSION} VERSION_EQUAL "1.13.0") OR (${ELM_VERSION} VERSION_GREATER "1.13.0")))
+if((DEFINED ECORE_X_FOUND) AND ((${ELM_VERSION} VERSION_EQUAL "1.13.0") OR (${ELM_VERSION} VERSION_GREATER "1.13.0")))
+	message(STATUS "X11 UI wrap enabled")
 	set(X11_UI_WRAP "")
 	add_definitions("-DX11_UI_WRAP")
 else()
+	message(STATUS "X11 UI wrap disabled")
 	set(X11_UI_WRAP "#")
 endif()
 
@@ -120,6 +122,7 @@ install(TARGETS moony_ui DESTINATION ${DEST})
 configure_file(${PROJECT_SOURCE_DIR}/manifest.ttl.in ${PROJECT_BINARY_DIR}/manifest.ttl)
 install(FILES ${PROJECT_BINARY_DIR}/manifest.ttl DESTINATION ${DEST})
 install(FILES ${PROJECT_SOURCE_DIR}/moony.ttl DESTINATION ${DEST})
+install(FILES ${PROJECT_SOURCE_DIR}/template.ttl DESTINATION ${DEST})
 
 include(CTest)
 

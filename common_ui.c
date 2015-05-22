@@ -525,6 +525,9 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 				enc.data = ui;
 				lua_to_markup(chunk, NULL);
 				elm_entry_cursor_pos_set(ui->entry, 0);
+				
+				_changed(ui, ui->entry, NULL);
+				evas_object_show(ui->notify);
 			}
 			else if(msg->prop.key == ui->uris.moony_error)
 			{

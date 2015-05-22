@@ -1180,7 +1180,7 @@ _lforge_osc_message(lua_State *L)
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 
 	const char *path = luaL_checkstring(L, 2);
-	const char *fmt = luaL_checkstring(L, 3);
+	const char *fmt = luaL_optstring(L, 3, "");
 
 	LV2_Atom_Forge_Frame obj_frame;
 	LV2_Atom_Forge_Frame tup_frame;
@@ -1848,6 +1848,7 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 	{
 		strncpy(moony->chunk, chunk, size);
 		moony->dirty_in = 1;
+		moony->dirty_out = 1;
 	}
 
 	return LV2_STATE_SUCCESS;
