@@ -166,7 +166,8 @@ obj:key(key) -- push a new object property with key (Lua integer)
 obj:property(key, context) -- push a new object property with key, context (Lua integer)
 obj:pop() -- finalize derived forge container
 
-forge:sequence(seq) -- append all events in seq to forge
+seq = forge:sequence(unit) -- start a nested sequence (returns a derived forge container)
+seq:pop()
 
 --[[---------------------------------------------------------------------------
 	Atom Object

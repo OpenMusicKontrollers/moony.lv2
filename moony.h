@@ -178,6 +178,7 @@ struct _moony_t {
 struct _lseq_t {
 	const LV2_Atom_Sequence *seq;
 	const LV2_Atom_Event *itr;
+	LV2_Atom body [0];
 };
 
 struct _lforge_t {

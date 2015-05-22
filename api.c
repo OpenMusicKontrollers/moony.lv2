@@ -90,6 +90,13 @@ _latom_new(lua_State *L, const LV2_Atom *atom)
 			/ lvec->vec->body.child_size;
 		luaL_getmetatable(L, "lvec");
 	}
+	else if(atom->type == forge->Sequence)
+	{
+		lseq_t *lseq = lua_newuserdata(L, sizeof(lseq_t));
+		lseq->seq = (const LV2_Atom_Sequence *)atom;
+		lseq->itr = NULL;
+		luaL_getmetatable(L, "lseq");
+	}
 	else if( (atom->type == forge->Chunk) || (atom->type == moony->uris.midi_event) )
 	{
 		latom_t *latom = lua_newuserdata(L, sizeof(latom_t));
@@ -141,6 +148,16 @@ _latom_body_new(lua_State *L, uint32_t size, LV2_URID type, const void *body)
 		lvec->count = (lvec->vec->atom.size - sizeof(LV2_Atom_Vector_Body))
 			/ lvec->vec->body.child_size;
 		luaL_getmetatable(L, "lvec");
+	}
+	else if(type == forge->Sequence)
+	{
+		lseq_t *lseq = lua_newuserdata(L, sizeof(lseq_t) + atom_size);
+		lseq->seq = (const LV2_Atom_Sequence *)lseq->body;
+		lseq->body->size = size;
+		lseq->body->type = type;
+		memcpy(LV2_ATOM_BODY(lseq->body), body, size);
+		lseq->itr = NULL;
+		luaL_getmetatable(L, "lseq");
 	}
 	else if( (type == forge->Chunk) || (type == moony->uris.midi_event) )
 	{
@@ -1363,16 +1380,14 @@ static int
 _lforge_sequence(lua_State *L)
 {
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
-	lseq_t *lseq = luaL_checkudata(L, 2, "lseq");
-
-	LV2_ATOM_SEQUENCE_FOREACH(lseq->seq, ev)
-	{
-		const LV2_Atom *atom = &ev->body;
-
-		lv2_atom_forge_frame_time(lforge->forge, ev->time.frames);
-		lv2_atom_forge_raw(lforge->forge, atom, sizeof(LV2_Atom) + atom->size);
-		lv2_atom_forge_pad(lforge->forge, atom->size);
-	}
+	LV2_URID unit = luaL_optinteger(L, 2, 0); //TODO use proper unit
+	lforge_t *lframe = lua_newuserdata(L, sizeof(lforge_t));
+	lframe->depth = 1;
+	lframe->forge = lforge->forge;
+	luaL_getmetatable(L, "lforge");
+	lua_setmetatable(L, -2);
+	
+	lv2_atom_forge_sequence_head(lforge->forge, &lframe->frame[0], unit);
 
 	return 1;
 }

@@ -695,5 +695,37 @@ do
 	test(producer, consumer)
 end
 
+-- Sequence
+print('[test] Sequence')
+do
+
+	local function producer(forge)
+		forge:frame_time(0)
+		local subseq = forge:sequence()
+
+		subseq:frame_time(1)
+		subseq:int(1)
+		
+		subseq:frame_time(2)
+		subseq:int(2)
+
+		subseq:pop()
+	end
+
+	local function consumer(seq)
+		assert(#seq == 1)
+		local subseq = seq[1]
+		assert(subseq.type == Atom.Sequence)
+		assert(#subseq == 2)
+
+		for frames, atom in subseq:foreach() do
+			assert(atom.type == Atom.Int)
+			assert(atom.value == frames)
+		end
+	end
+
+	test(producer, consumer)
+end
+
 -- Vector
 -- TODO
