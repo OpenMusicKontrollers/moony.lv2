@@ -38,7 +38,7 @@ Get more information at: [http://open-music-kontrollers.ch/lv2/moony](http://ope
 
 ### Build / install
 
-	git clone deletehttps://github.com/OpenMusicKontrollers/moony.lv2.git
+	git clone https://github.com/OpenMusicKontrollers/moony.lv2.git
 	cd moony.lv2
 	mkdir build
 	cd build
