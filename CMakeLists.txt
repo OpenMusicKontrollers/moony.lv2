@@ -5,6 +5,7 @@ project(moony.lv2)
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/tlsf-3.0)
 include_directories(${PROJECT_SOURCE_DIR}/eo_ui.lv2)
+include_directories(${PROJECT_SOURCE_DIR}/osc.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/lua-5.3)
 include_directories(${PROJECT_BINARY_DIR})
 
@@ -122,7 +123,7 @@ install(TARGETS moony_ui DESTINATION ${DEST})
 configure_file(${PROJECT_SOURCE_DIR}/manifest.ttl.in ${PROJECT_BINARY_DIR}/manifest.ttl)
 install(FILES ${PROJECT_BINARY_DIR}/manifest.ttl DESTINATION ${DEST})
 install(FILES ${PROJECT_SOURCE_DIR}/moony.ttl DESTINATION ${DEST})
-install(FILES ${PROJECT_SOURCE_DIR}/template.ttl DESTINATION ${DEST})
+install(FILES ${PROJECT_SOURCE_DIR}/presets.ttl DESTINATION ${DEST})
 
 include(CTest)
 

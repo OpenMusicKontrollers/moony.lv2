@@ -240,12 +240,14 @@ checkKw(char*s)
 			//TODO os
 			break;
 		case 'O':
-			CHECK(OSC.event, NUMBER);
-			CHECK(OSC.timestamp, NUMBER);
-			CHECK(OSC.bundle, NUMBER);
-			CHECK(OSC.message, NUMBER);
-			CHECK(OSC.path, NUMBER);
-			CHECK(OSC.format, NUMBER);
+			CHECK(OSC.Event, NUMBER);
+			CHECK(OSC.Bundle, NUMBER);
+			CHECK(OSC.Message, NUMBER);
+			CHECK(OSC.bundleTimestamp, NUMBER);
+			CHECK(OSC.bundleItems, NUMBER);
+			CHECK(OSC.messagePath, NUMBER);
+			CHECK(OSC.messageFormat, NUMBER);
+			CHECK(OSC.messageArguments, NUMBER);
 			break;
 		case 'p':
 			CHECK(pairs, CALLER);

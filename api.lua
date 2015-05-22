@@ -101,12 +101,14 @@ urid = Time.framesPerSecond
 urid = Time.speed
 
 -- URIDs of OSC objects
-urid = OSC.event
-urid = OSC.timestamp
-urid = OSC.bundle
-urid = OSC.message
-urid = OSC.path
-urid = OSC.format
+urid = OSC.Event
+urid = OSC.Bundle
+urid = OSC.Message
+urid = OSC.bundleTimestamp
+urid = OSC.bundleItems
+urid = OSC.messagePath
+urid = OSC.messageFormat
+urid = OSC.messageArguments
 
 --[[---------------------------------------------------------------------------
 	Atom Sequence

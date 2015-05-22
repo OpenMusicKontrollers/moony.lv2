@@ -944,7 +944,7 @@ moony:template-control_through
 	lv2:appliesTo moony:c2xc2 ;
 	lv2:appliesTo moony:c4xc4 ;
 	rdfs:label "Through" ;
-	rdfs:seeAlso <template.ttl> .
+	rdfs:seeAlso <presets.ttl> .
 
 moony:template-atom_through
 	a pset:Preset ;
@@ -953,7 +953,7 @@ moony:template-atom_through
 	lv2:appliesTo moony:c2a1xc2a1 ;
 	lv2:appliesTo moony:c4a1xc4a1 ;
 	rdfs:label "Through" ;
-	rdfs:seeAlso <template.ttl> .
+	rdfs:seeAlso <presets.ttl> .
 moony:template-midi_responder
 	a pset:Preset ;
 	lv2:appliesTo moony:a1xa1 ;
@@ -961,7 +961,7 @@ moony:template-midi_responder
 	lv2:appliesTo moony:c2a1xc2a1 ;
 	lv2:appliesTo moony:c4a1xc4a1 ;
 	rdfs:label "MIDI responder" ;
-	rdfs:seeAlso <template.ttl> .
+	rdfs:seeAlso <presets.ttl> .
 moony:template-osc_responder
 	a pset:Preset ;
 	lv2:appliesTo moony:a1xa1 ;
@@ -969,26 +969,26 @@ moony:template-osc_responder
 	lv2:appliesTo moony:c2a1xc2a1 ;
 	lv2:appliesTo moony:c4a1xc4a1 ;
 	rdfs:label "OSC responder" ;
-	rdfs:seeAlso <template.ttl> .
+	rdfs:seeAlso <presets.ttl> .
 
 moony:template-atom_through2
 	a pset:Preset ;
 	lv2:appliesTo moony:a2xa2 ;
 	rdfs:label "Through" ;
-	rdfs:seeAlso <template.ttl> .
+	rdfs:seeAlso <presets.ttl> .
 moony:template-atom_multiplex2
 	a pset:Preset ;
 	lv2:appliesTo moony:a2xa2 ;
 	rdfs:label "Multiplex" ;
-	rdfs:seeAlso <template.ttl> .
+	rdfs:seeAlso <presets.ttl> .
 
 moony:template-atom_through4
 	a pset:Preset ;
 	lv2:appliesTo moony:a4xa4 ;
 	rdfs:label "Through" ;
-	rdfs:seeAlso <template.ttl> .
+	rdfs:seeAlso <presets.ttl> .
 moony:template-atom_multiplex4
 	a pset:Preset ;
 	lv2:appliesTo moony:a4xa4 ;
 	rdfs:label "Multiplex" ;
-	rdfs:seeAlso <template.ttl> .
+	rdfs:seeAlso <presets.ttl> .

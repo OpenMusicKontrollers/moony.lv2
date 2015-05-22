@@ -36,6 +36,8 @@
 #include "lv2/lv2plug.in/ns/lv2core/lv2.h"
 #include "lv2/lv2plug.in/ns/extensions/ui/ui.h"
 
+#include <lv2_osc.h>
+
 #include <lua.h>
 
 #define MOONY_MAX_CHUNK_LEN		0x10000 // 64KB
@@ -156,14 +158,9 @@ struct _moony_t {
 		LV2_URID time_frame;
 		LV2_URID time_framesPerSecond;
 		LV2_URID time_speed;
-		
-		LV2_URID osc_event;
-		LV2_URID osc_timestamp;
-		LV2_URID osc_bundle;
-		LV2_URID osc_message;
-		LV2_URID osc_path;
-		LV2_URID osc_format;
 	} uris;
+
+	osc_forge_t oforge;
 	
 	LV2_Worker_Schedule *sched;
 	volatile int working;

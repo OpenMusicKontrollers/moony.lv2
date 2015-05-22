@@ -1153,6 +1153,9 @@ _lforge_osc_bundle(lua_State *L)
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 
+	osc_forge_t *oforge = &moony->oforge;
+	LV2_Atom_Forge *forge = lforge->forge;
+
 	uint64_t timestamp = luaL_checkinteger(L, 2);
 
 	lforge_t *lframe = lua_newuserdata(L, sizeof(lforge_t));
@@ -1161,14 +1164,7 @@ _lforge_osc_bundle(lua_State *L)
 	luaL_getmetatable(L, "lforge");
 	lua_setmetatable(L, -2);
 
-	lv2_atom_forge_object(lforge->forge, &lframe->frame[0],
-		moony->uris.osc_event, moony->uris.osc_bundle);
-
-	lv2_atom_forge_key(lforge->forge, moony->uris.osc_timestamp);
-	lv2_atom_forge_long(lforge->forge, timestamp);
-	
-	lv2_atom_forge_key(lforge->forge, moony->uris.osc_bundle);
-	lv2_atom_forge_tuple(lforge->forge, &lframe->frame[1]);
+	osc_forge_bundle_push(oforge, forge, lframe->frame, timestamp);
 
 	return 1;
 }
@@ -1179,23 +1175,15 @@ _lforge_osc_message(lua_State *L)
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 
+	osc_forge_t *oforge = &moony->oforge;
+	LV2_Atom_Forge *forge = lforge->forge;
+
 	const char *path = luaL_checkstring(L, 2);
 	const char *fmt = luaL_optstring(L, 3, "");
 
-	LV2_Atom_Forge_Frame obj_frame;
-	LV2_Atom_Forge_Frame tup_frame;
+	LV2_Atom_Forge_Frame frame [2];
 
-	lv2_atom_forge_object(lforge->forge, &obj_frame,
-		moony->uris.osc_event, moony->uris.osc_message);
-
-	lv2_atom_forge_key(lforge->forge, moony->uris.osc_path);
-	lv2_atom_forge_string(lforge->forge, path, strlen(path) + 1);
-	
-	lv2_atom_forge_key(lforge->forge, moony->uris.osc_format);
-	lv2_atom_forge_string(lforge->forge, fmt, strlen(fmt) + 1);
-	
-	lv2_atom_forge_key(lforge->forge, moony->uris.osc_message);
-	lv2_atom_forge_tuple(lforge->forge, &tup_frame);
+	osc_forge_message_push(oforge, forge, frame, path, fmt);
 
 	int pos = 4;
 	for(const char *type = fmt; *type; type++)
@@ -1205,84 +1193,113 @@ _lforge_osc_message(lua_State *L)
 			case 'i':
 			{
 				int32_t i = luaL_checkinteger(L, pos++);
-				lv2_atom_forge_int(lforge->forge, i);
+				osc_forge_int32(oforge, forge, i);
 				break;
 			}
 			case 'f':
 			{
 				float f = luaL_checknumber(L, pos++);
-				lv2_atom_forge_float(lforge->forge, f);
+				osc_forge_float(oforge, forge, f);
 				break;
 			}
 			case 's':
 			case 'S':
 			{
 				const char *s = luaL_checkstring(L, pos++);
-				lv2_atom_forge_string(lforge->forge, s, strlen(s) + 1);
+				osc_forge_string(oforge, forge, s);
 				break;
 			}
 			case 'b':
 			{
-				//TODO
+				if(lua_istable(L, pos))
+				{
+					int n = lua_rawlen(L, pos);
+
+					lv2_atom_forge_atom(forge, n, forge->Chunk);
+					for(int i=1; i<=n; i++)
+					{
+						lua_rawgeti(L, pos, i);
+						uint8_t b = luaL_checkinteger(L, -1);
+						lua_pop(L, 1);
+						lv2_atom_forge_raw(forge, &b, 1);
+					}
+					lv2_atom_forge_pad(forge, n);
+				}
+				pos += 1;
+
 				break;
 			}
 
 			case 'T':
 			{
-				lv2_atom_forge_bool(lforge->forge, 1);
+				osc_forge_true(oforge, forge);
 				break;
 			}
 			case 'F':
 			{
-				lv2_atom_forge_bool(lforge->forge, 0);
+				osc_forge_false(oforge, forge);
 				break;
 			}
 			case 'N':
 			{
-				lv2_atom_forge_atom(lforge->forge, 0, 0);
+				osc_forge_nil(oforge, forge);
 				break;
 			}
 			case 'I':
 			{
-				lv2_atom_forge_float(lforge->forge, INFINITY);
+				osc_forge_bang(oforge, forge);
 				break;
 			}
 
 			case 'h':
 			{
 				int64_t h = luaL_checkinteger(L, pos++);
-				lv2_atom_forge_long(lforge->forge, h);
+				osc_forge_int64(oforge, forge, h);
 				break;
 			}
 			case 'd':
 			{
 				double d = luaL_checknumber(L, pos++);
-				lv2_atom_forge_double(lforge->forge, d);
+				osc_forge_double(oforge, forge, d);
 				break;
 			}
 			case 't':
 			{
 				uint64_t t = luaL_checkinteger(L, pos++);
-				lv2_atom_forge_long(lforge->forge, t);
+				osc_forge_timestamp(oforge, forge, t);
 				break;
 			}
 
 			case 'c':
 			{
 				char c = luaL_checkinteger(L, pos++);
-				lv2_atom_forge_int(lforge->forge, c);
+				osc_forge_char(oforge, forge, c);
 				break;
 			}
 			case 'm':
 			{
-				//TODO
+				if(lua_istable(L, pos))
+				{
+					int n = lua_rawlen(L, pos);
+
+					lv2_atom_forge_atom(forge, n, moony->oforge.MIDI_MidiEvent);
+					for(int i=1; i<=n; i++)
+					{
+						lua_rawgeti(L, pos, i);
+						uint8_t b = luaL_checkinteger(L, -1);
+						lua_pop(L, 1);
+						lv2_atom_forge_raw(forge, &b, 1);
+					}
+					lv2_atom_forge_pad(forge, n);
+				}
+				pos += 1;
+
 				break;
 			}
 		}
 	}
 
-	lv2_atom_forge_pop(lforge->forge, &tup_frame);
-	lv2_atom_forge_pop(lforge->forge, &obj_frame);
+	osc_forge_message_pop(oforge, forge, frame);
 
 	return 0;
 }
@@ -1611,15 +1628,7 @@ moony_init(moony_t *moony, const LV2_Feature *const *features)
 	moony->uris.time_framesPerSecond = moony->map->map(moony->map->handle, LV2_TIME__framesPerSecond);
 	moony->uris.time_speed = moony->map->map(moony->map->handle, LV2_TIME__speed);
 
-#define OSC_PREFIX "http://opensoundcontrol.org#"
-	moony->uris.osc_event = moony->map->map(moony->map->handle, OSC_PREFIX"event");
-	moony->uris.osc_timestamp = moony->map->map(moony->map->handle, OSC_PREFIX"timestamp");
-	moony->uris.osc_bundle = moony->map->map(moony->map->handle, OSC_PREFIX"bundle");
-	moony->uris.osc_message = moony->map->map(moony->map->handle, OSC_PREFIX"message");
-	moony->uris.osc_path = moony->map->map(moony->map->handle, OSC_PREFIX"path");
-	moony->uris.osc_format = moony->map->map(moony->map->handle, OSC_PREFIX"format");
-#undef OSC_PREFIX
-
+	osc_forge_init(&moony->oforge, moony->map);
 	lv2_atom_forge_init(&moony->forge, moony->map);
 
 	return 0;
@@ -1732,18 +1741,25 @@ moony_open(moony_t *moony, lua_State *L)
 
 	lua_newtable(L);
 	{
-		lua_pushinteger(L, moony->uris.osc_event);
-			lua_setfield(L, -2, "event");
-		lua_pushinteger(L, moony->uris.osc_timestamp);
-			lua_setfield(L, -2, "timestamp");
-		lua_pushinteger(L, moony->uris.osc_bundle);
-			lua_setfield(L, -2, "bundle");
-		lua_pushinteger(L, moony->uris.osc_message);
-			lua_setfield(L, -2, "message");
-		lua_pushinteger(L, moony->uris.osc_path);
-			lua_setfield(L, -2, "path");
-		lua_pushinteger(L, moony->uris.osc_format);
-			lua_setfield(L, -2, "format");
+		lua_pushinteger(L, moony->oforge.OSC_Event);
+			lua_setfield(L, -2, "Event");
+
+		lua_pushinteger(L, moony->oforge.OSC_Bundle);
+			lua_setfield(L, -2, "Bundle");
+		lua_pushinteger(L, moony->oforge.OSC_Message);
+			lua_setfield(L, -2, "Message");
+		
+		lua_pushinteger(L, moony->oforge.OSC_bundleTimestamp);
+			lua_setfield(L, -2, "bundleTimestamp");
+		lua_pushinteger(L, moony->oforge.OSC_bundleItems);
+			lua_setfield(L, -2, "bundleItems");
+		
+		lua_pushinteger(L, moony->oforge.OSC_messagePath);
+			lua_setfield(L, -2, "messagePath");
+		lua_pushinteger(L, moony->oforge.OSC_messageFormat);
+			lua_setfield(L, -2, "messageFormat");
+		lua_pushinteger(L, moony->oforge.OSC_messageArguments);
+			lua_setfield(L, -2, "messageArguments");
 	}
 	lua_setglobal(L, "OSC");
 

@@ -1,0 +1,250 @@
+# Copyright (c) 2015 Hanspeter Portner (dev@open-music-kontrollers.ch)
+#
+# This is free software: you can redistribute it and/or modify
+# it under the terms of the Artistic License 2.0 as published by
+# The Perl Foundation.
+#
+# This source is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# Artistic License 2.0 for more details.
+#
+# You should have received a copy of the Artistic License 2.0
+# along the source as a COPYING file. If not, obtain it from
+# http://www.perlfoundation.org/artistic_license_2_0.
+
+@prefix atom:		<http://lv2plug.in/ns/ext/atom#> .
+@prefix lv2:		<http://lv2plug.in/ns/lv2core#> .
+@prefix pset:		<http://lv2plug.in/ns/ext/presets#> .
+@prefix rdf:		<http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:		<http://www.w3.org/2000/01/rdf-schema#> .
+@prefix state:	<http://lv2plug.in/ns/ext/state#> .
+@prefix xsd:		<http://www.w3.org/2001/XMLSchema#> .
+
+@prefix moony:	<http://open-music-kontrollers.ch/lv2/moony#> .
+
+# to please sord_validate
+moony:code
+	a rdf:Property .
+
+moony:template-control_through
+	state:state [
+		moony:code """function run(...)
+	return ...
+end"""
+	] .
+
+moony:template-atom_through
+	state:state [
+		moony:code """function run(seq, forge, ...)
+	for frames, atom in seq:foreach() do
+		forge:frame_time(frames)
+		forge:atom(atom)
+	end
+
+	return ...
+end"""
+	] .
+
+moony:template-atom_through2
+	state:state [
+		moony:code """function run(seq1, seq2, forge1, forge2)
+	for frames, atom in seq1:foreach() do
+		forge1:frame_time(frames)
+		forge1:atom(atom)
+	end
+
+	for frames, atom in seq2:foreach() do
+		forge2:frame_time(frames)
+		forge2:atom(atom)
+	end
+end"""
+	] .
+
+moony:template-atom_through4
+	state:state [
+		moony:code """function run(seq1, seq2, seq3, seq4, forge1, forge2, forge3, forge4)
+	for frames, atom in seq1:foreach() do
+		forge1:frame_time(frames)
+		forge1:atom(atom)
+	end
+
+	for frames, atom in seq2:foreach() do
+		forge2:frame_time(frames)
+		forge2:atom(atom)
+	end
+
+	for frames, atom in seq3:foreach() do
+		forge3:frame_time(frames)
+		forge3:atom(atom)
+	end
+
+	for frames, atom in seq4:foreach() do
+		forge4:frame_time(frames)
+		forge4:atom(atom)
+	end
+end"""
+	] .
+
+moony:template-atom_multiplex2
+	state:state [
+		moony:code """function multiplex(seq1, seq2)
+  return coroutine.wrap(function()
+    local iterator1 = seq1:foreach()
+    local iterator2 = seq2:foreach()
+
+    local frames1, atom1 = iterator1(seq1)
+    local frames2, atom2 = iterator2(seq2)
+
+    while(frames1 or frames2) do
+      if(frames1 and (frames1 <= frames2)) then
+        coroutine.yield(frames1, atom1)
+        frames1, atom1 = iterator1(seq1)
+      else
+        coroutine.yield(frames2, atom2)
+        frames2, atom2 = iterator2(seq2)
+      end
+    end
+  end)
+end
+
+function run(seq1, seq2, forge1, forge2)
+	for frames, atom in multiplex(seq1, seq2) do
+		forge1:frame_time(frames)
+		forge1:atom(atom)
+
+		forge2:frame_time(frames)
+		forge2:atom(atom)
+	end
+end"""
+	] .
+
+moony:template-atom_multiplex4
+	state:state [
+		moony:code """function nxt(frames)
+	local I = nil
+	local F = math.huge
+
+	for i, f in pairs(frames) do
+		if f and f < F then
+			I, F = i, f
+		end
+	end
+
+	return I, F
+end
+
+seq = {}
+itr = {}
+frames = {}
+atom = {}
+
+function multiplex(...)
+	seq[1], seq[2], seq[3], seq[4] = ...
+
+  return coroutine.wrap(function()
+		for i, s in ipairs(seq) do
+			itr[i] = s:foreach()
+			frames[i], atom[i] = itr[i](s)
+		end
+
+		local i, f = nxt(frames)
+		while i do
+			coroutine.yield(f, atom[i])
+			frames[i], atom[i] = itr[i](seq[i])
+			i, f = nxt(frames)
+		end
+  end)
+end
+
+function run(seq1, seq2, seq3, seq4, forge1, forge2, forge3, forge4)
+	for frames, atom in multiplex(seq1, seq2, seq3, seq4) do
+		forge1:frame_time(frames)
+		forge1:atom(atom)
+		
+		forge2:frame_time(frames)
+		forge2:atom(atom)
+		
+		forge3:frame_time(frames)
+		forge3:atom(atom)
+		
+		forge4:frame_time(frames)
+		forge4:atom(atom)
+	end
+end"""
+	] .
+
+moony:template-midi_responder
+	state:state [
+		moony:code """midi_mt = {
+	__call = function(self, frames, atom, data)
+		if atom.type == MIDI.Event then
+			local status = atom[1]
+			local cmd = status & 0xf0
+			local meth = self[cmd]
+			if meth then
+				meth(self, frames, data, status & 0x0f, atom:unpack(2))
+			end
+		end
+	end
+}
+
+midi_responder = {
+	[0x90] = function(self, frames, forge, chan, note, vel)
+		--forge:frame_time(frames)
+		--forge:midi(0x90 | chan, note, vel)
+	end,
+	[0x80] = function(self, frames, forge, chan, note, vel)
+		--forge:frame_time(frames)
+		--forge:int(0x80 | chan, note, vel)
+	end
+}
+setmetatable(midi_responder, midi_mt)
+
+function run(seq, forge)
+	for frames, atom in seq:foreach() do
+		midi_responder(frames, atom, forge)
+	end
+end"""
+	] .
+
+moony:template-osc_responder
+	state:state [
+		moony:code """osc_mt = {
+  __call = function(self, frames, atom, data)
+    if atom.type == Atom.Object and atom.id == OSC.Event then
+      if atom.otype == OSC.Bundle then
+        --local timestamp = atom[OSC.bundleTimestamp]
+        for i, itm  in atom[OSC.bundleItems]:foreach() do
+          self(frames, itm, data)
+        end
+      elseif atom.otype == OSC.Message then
+        local path = atom[OSC.messagePath]
+        --local fmt = atom[OSC.messageFormat]
+        local meth = path and self[path.value]
+        if meth then
+          meth(self, frames, data, atom[OSC.messageArguments]:unpack())
+        end
+      end
+    end
+  end
+}
+
+osc_responder = {
+  ['/ping'] = function(self, frames, forge, ...)
+    --forge:frame_time(frames)
+    --forge:osc_message('/pong')
+  end,
+  ['/pong'] = function(self, frames, forge, ...)
+    --forge:frame_time(frames)
+    --forge:osc_message('/tok')
+  end
+}
+setmetatable(osc_responder, osc_mt)
+
+function run(seq, forge)
+  for frames, atom in seq:foreach() do
+    osc_responder(frames, atom, forge)
+  end
+end"""
+	] .

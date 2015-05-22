@@ -546,6 +546,9 @@ do
 		forge:osc_message('/singletons', 'TFNI')
 		
 		forge:frame_time(4)
+		forge:osc_message('/chunky', 'mb', {0x90, 0x20, 0x7f}, {0x01, 0x02, 0x03, 0x04})
+		
+		forge:frame_time(5)
 		local bndl = forge:osc_bundle(1)
 		bndl:osc_message('/one', 'i', 1)
 		bndl:osc_message('/two', 'i', 2)
@@ -556,19 +559,19 @@ do
 	end
 
 	local function consumer(seq)
-		assert(#seq == 5)
+		assert(#seq == 6)
 
 		local atom = seq[1]
 		assert(atom.type == Atom.Object)
-		assert(atom.id == OSC.event)
-		assert(atom.otype == OSC.message)
-		local path = atom[OSC.path]
+		assert(atom.id == OSC.Event)
+		assert(atom.otype == OSC.Message)
+		local path = atom[OSC.messagePath]
 		assert(path.type == Atom.String)
 		assert(path.value == '/hello')
-		local fmt = atom[OSC.format]
+		local fmt = atom[OSC.messageFormat]
 		assert(fmt.type == Atom.String)
 		assert(fmt.value == 'sif')
-		local args = atom[OSC.message]
+		local args = atom[OSC.messageArguments]
 		assert(args.type == Atom.Tuple)
 		assert(#args == 3)
 		assert(args[0] == nil)
@@ -582,15 +585,15 @@ do
 		
 		atom = seq[2]
 		assert(atom.type == Atom.Object)
-		assert(atom.id == OSC.event)
-		assert(atom.otype == OSC.message)
-		path = atom[OSC.path]
+		assert(atom.id == OSC.Event)
+		assert(atom.otype == OSC.Message)
+		path = atom[OSC.messagePath]
 		assert(path.type == Atom.String)
 		assert(path.value == '/hallo')
-		fmt = atom[OSC.format]
+		fmt = atom[OSC.messageFormat]
 		assert(fmt.type == Atom.String)
 		assert(fmt.value == 'Shdt')
-		args = atom[OSC.message]
+		args = atom[OSC.messageArguments]
 		assert(args.type == Atom.Tuple)
 		assert(#args == 4)
 		assert(args[0] == nil)
@@ -606,15 +609,15 @@ do
 		
 		atom = seq[3]
 		assert(atom.type == Atom.Object)
-		assert(atom.id == OSC.event)
-		assert(atom.otype == OSC.message)
-		path = atom[OSC.path]
+		assert(atom.id == OSC.Event)
+		assert(atom.otype == OSC.Message)
+		path = atom[OSC.messagePath]
 		assert(path.type == Atom.String)
 		assert(path.value == '/yup')
-		fmt = atom[OSC.format]
+		fmt = atom[OSC.messageFormat]
 		assert(fmt.type == Atom.String)
 		assert(fmt.value == 'c')
-		args = atom[OSC.message]
+		args = atom[OSC.messageArguments]
 		assert(args.type == Atom.Tuple)
 		assert(#args == 1)
 		assert(args[0] == nil)
@@ -624,15 +627,15 @@ do
 		
 		atom = seq[4]
 		assert(atom.type == Atom.Object)
-		assert(atom.id == OSC.event)
-		assert(atom.otype == OSC.message)
-		path = atom[OSC.path]
+		assert(atom.id == OSC.Event)
+		assert(atom.otype == OSC.Message)
+		path = atom[OSC.messagePath]
 		assert(path.type == Atom.String)
 		assert(path.value == '/singletons')
-		fmt = atom[OSC.format]
+		fmt = atom[OSC.messageFormat]
 		assert(fmt.type == Atom.String)
 		assert(fmt.value == 'TFNI')
-		args = atom[OSC.message]
+		args = atom[OSC.messageArguments]
 		assert(args.type == Atom.Tuple)
 		assert(#args == 4)
 		assert(args[0] == nil)
@@ -647,19 +650,46 @@ do
 		
 		atom = seq[5]
 		assert(atom.type == Atom.Object)
-		assert(atom.id == OSC.event)
-		assert(atom.otype == OSC.bundle)
-		local timestamp = atom[OSC.timestamp]
+		assert(atom.id == OSC.Event)
+		assert(atom.otype == OSC.Message)
+		path = atom[OSC.messagePath]
+		assert(path.type == Atom.String)
+		assert(path.value == '/chunky')
+		fmt = atom[OSC.messageFormat]
+		assert(fmt.type == Atom.String)
+		assert(fmt.value == 'mb')
+		args = atom[OSC.messageArguments]
+		assert(args.type == Atom.Tuple)
+		assert(#args == 2)
+		assert(args[0] == nil)
+		assert(args[1].type == MIDI.Event)
+		assert(#args[1] == 3)
+		assert(args[1][1] == 0x90)
+		assert(args[1][2] == 0x20)
+		assert(args[1][3] == 0x7f)
+		assert(args[2].type == Atom.Chunk)
+		assert(#args[2] == 4)
+		assert(args[2][1] == 0x01)
+		assert(args[2][2] == 0x02)
+		assert(args[2][3] == 0x03)
+		assert(args[2][4] == 0x04)
+		assert(args[5] == nil)
+		
+		atom = seq[6]
+		assert(atom.type == Atom.Object)
+		assert(atom.id == OSC.Event)
+		assert(atom.otype == OSC.Bundle)
+		local timestamp = atom[OSC.bundleTimestamp]
 		assert(timestamp.type == Atom.Long)
 		assert(timestamp.value == 1)
-		local itms = atom[OSC.bundle]
+		local itms = atom[OSC.bundleItems]
 		assert(itms.type == Atom.Tuple)
 		assert(#itms == 4)
-		assert(itms[1].otype == OSC.message)
-		assert(itms[2].otype == OSC.message)
-		assert(itms[3].otype == OSC.message)
-		assert(itms[4].otype == OSC.bundle)
-		assert(#itms[4][OSC.bundle] == 0)
+		assert(itms[1].otype == OSC.Message)
+		assert(itms[2].otype == OSC.Message)
+		assert(itms[3].otype == OSC.Message)
+		assert(itms[4].otype == OSC.Bundle)
+		assert(#itms[4][OSC.bundleItems] == 0)
 	end
 
 	test(producer, consumer)
