@@ -64,6 +64,26 @@ struct _latom_t {
 	LV2_Atom body [0];
 };
 
+static const char *moony_ref [MOONY_UDATA_COUNT] = {
+	[MOONY_UDATA_SEQ]		= "lseq",
+	[MOONY_UDATA_OBJ]		= "lobj",
+	[MOONY_UDATA_TUPLE]	= "ltuple",
+	[MOONY_UDATA_VEC]		= "lvec",
+	[MOONY_UDATA_CHUNK]	= "lchunk",
+	[MOONY_UDATA_ATOM]	= "latom",
+	[MOONY_UDATA_FORGE]	= "lforge"
+};
+
+static const size_t moony_sz [MOONY_UDATA_COUNT] = {
+	[MOONY_UDATA_SEQ]		= sizeof(lseq_t),
+	[MOONY_UDATA_OBJ]		= sizeof(lobj_t),
+	[MOONY_UDATA_TUPLE]	= sizeof(ltuple_t),
+	[MOONY_UDATA_VEC]		= sizeof(lvec_t),
+	[MOONY_UDATA_CHUNK]	= sizeof(latom_t),
+	[MOONY_UDATA_ATOM]	= sizeof(latom_t),
+	[MOONY_UDATA_FORGE]	= sizeof(lforge_t)
+};
+
 static void
 _latom_new(lua_State *L, const LV2_Atom *atom)
 {
@@ -72,45 +92,37 @@ _latom_new(lua_State *L, const LV2_Atom *atom)
 
 	if(atom->type == forge->Object)
 	{
-		lobj_t *lobj = lua_newuserdata(L, sizeof(lobj_t));
+		lobj_t *lobj = moony_newuserdata(L, moony, MOONY_UDATA_OBJ);
 		lobj->obj = (const LV2_Atom_Object *)atom;
-		luaL_getmetatable(L, "lobj");
 	}
 	else if(atom->type == forge->Tuple)
 	{
-		ltuple_t *ltuple = lua_newuserdata(L, sizeof(ltuple_t));
+		ltuple_t *ltuple = moony_newuserdata(L, moony, MOONY_UDATA_TUPLE);
 		ltuple->tuple = (const LV2_Atom_Tuple *)atom;
-		luaL_getmetatable(L, "ltuple");
 	}
 	else if(atom->type == forge->Vector)
 	{
-		lvec_t *lvec = lua_newuserdata(L, sizeof(lvec_t));
+		lvec_t *lvec = moony_newuserdata(L, moony, MOONY_UDATA_VEC);
 		lvec->vec = (const LV2_Atom_Vector *)atom;
 		lvec->count = (lvec->vec->atom.size - sizeof(LV2_Atom_Vector_Body))
 			/ lvec->vec->body.child_size;
-		luaL_getmetatable(L, "lvec");
 	}
 	else if(atom->type == forge->Sequence)
 	{
-		lseq_t *lseq = lua_newuserdata(L, sizeof(lseq_t));
+		lseq_t *lseq = moony_newuserdata(L, moony, MOONY_UDATA_SEQ);
 		lseq->seq = (const LV2_Atom_Sequence *)atom;
 		lseq->itr = NULL;
-		luaL_getmetatable(L, "lseq");
 	}
 	else if( (atom->type == forge->Chunk) || (atom->type == moony->uris.midi_event) )
 	{
-		latom_t *latom = lua_newuserdata(L, sizeof(latom_t));
+		latom_t *latom = moony_newuserdata(L, moony, MOONY_UDATA_CHUNK);
 		latom->atom = atom;
-		luaL_getmetatable(L, "lchunk");
 	}
 	else
 	{
-		latom_t *latom = lua_newuserdata(L, sizeof(latom_t));
+		latom_t *latom = moony_newuserdata(L, moony, MOONY_UDATA_ATOM);
 		latom->atom = atom;
-		luaL_getmetatable(L, "latom");
 	}
-
-	lua_setmetatable(L, -2);
 }
 
 static void
@@ -1175,11 +1187,9 @@ _lforge_osc_bundle(lua_State *L)
 
 	uint64_t timestamp = luaL_checkinteger(L, 2);
 
-	lforge_t *lframe = lua_newuserdata(L, sizeof(lforge_t));
+	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
 	lframe->depth = 2;
 	lframe->forge = lforge->forge;
-	luaL_getmetatable(L, "lforge");
-	lua_setmetatable(L, -2);
 
 	osc_forge_bundle_push(oforge, forge, lframe->frame, timestamp);
 
@@ -1324,12 +1334,11 @@ _lforge_osc_message(lua_State *L)
 static int
 _lforge_tuple(lua_State *L)
 {
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
-	lforge_t *lframe = lua_newuserdata(L, sizeof(lforge_t));
+	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
 	lframe->depth = 1;
 	lframe->forge = lforge->forge;
-	luaL_getmetatable(L, "lforge");
-	lua_setmetatable(L, -2);
 
 	lv2_atom_forge_tuple(lforge->forge, &lframe->frame[0]);
 
@@ -1339,14 +1348,13 @@ _lforge_tuple(lua_State *L)
 static int
 _lforge_object(lua_State *L)
 {
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	LV2_URID id = luaL_checkinteger(L, 2);
 	LV2_URID otype = luaL_checkinteger(L, 3);
-	lforge_t *lframe = lua_newuserdata(L, sizeof(lforge_t));
+	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
 	lframe->depth = 1;
 	lframe->forge = lforge->forge;
-	luaL_getmetatable(L, "lforge");
-	lua_setmetatable(L, -2);
 
 	lv2_atom_forge_object(lforge->forge, &lframe->frame[0], id, otype);
 
@@ -1379,13 +1387,12 @@ _lforge_property(lua_State *L)
 static int
 _lforge_sequence(lua_State *L)
 {
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	LV2_URID unit = luaL_optinteger(L, 2, 0); //TODO use proper unit
-	lforge_t *lframe = lua_newuserdata(L, sizeof(lforge_t));
+	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
 	lframe->depth = 1;
 	lframe->forge = lforge->forge;
-	luaL_getmetatable(L, "lforge");
-	lua_setmetatable(L, -2);
 	
 	lv2_atom_forge_sequence_head(lforge->forge, &lframe->frame[0], unit);
 
@@ -1794,12 +1801,62 @@ moony_open(moony_t *moony, lua_State *L)
 	lua_setmetatable(L, -2);
 	lua_setglobal(L, "Unmap");
 
+#define UDATA_OFFSET (LUA_RIDX_LAST + 1)
+	// create userdata caches
+	lua_newtable(L);
+		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_SEQ);
+	lua_newtable(L);
+		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_OBJ);
+	lua_newtable(L);
+		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_TUPLE);
+	lua_newtable(L);
+		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_VEC);
+	lua_newtable(L);
+		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_CHUNK);
+	lua_newtable(L);
+		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_ATOM);
+	lua_newtable(L);
+		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_FORGE);
+
 	// overwrite print function with LV2 log
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	lua_pushcclosure(L, _log, 1);
 	lua_setglobal(L, "print");
 
 #undef SET_CONST
+}
+
+void *
+moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type)
+{
+	assert( (type >= MOONY_UDATA_SEQ) && (type < MOONY_UDATA_COUNT) );
+
+	int *itr = &moony->itr[type];
+	void *data = NULL;
+
+	lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + type); // ref
+	lua_rawgeti(L, -1, *itr); // udata?
+	if(lua_isnil(L, -1)) // no cached udata, create one!
+	{
+		lua_pop(L, 1); // nil
+
+		data = lua_newuserdata(L, moony_sz[type]);
+		luaL_getmetatable(L, moony_ref[type]);
+		lua_setmetatable(L, -2);
+		lua_pushvalue(L, -1);
+		lua_rawseti(L, -3, *itr); // store in cache
+	}
+	else // there is a cached udata, use it!
+	{
+		data = lua_touserdata(L, -1);
+		//printf("moony_newuserdata: %s %i %p\n", moony_ref[type], *itr, data);
+	}
+	lua_remove(L, -2); // ref
+	*itr += 1;
+
+	return data;
+
+#undef UDATA_OFFSET
 }
 
 void

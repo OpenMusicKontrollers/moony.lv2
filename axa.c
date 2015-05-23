@@ -162,21 +162,17 @@ run(LV2_Handle instance, uint32_t nsamples)
 			// push sequence
 			for(int i=0; i<handle->max_val; i++)
 			{
-				lseq_t *lseq = lua_newuserdata(L, sizeof(lseq_t));
+				lseq_t *lseq = moony_newuserdata(L, &handle->moony, MOONY_UDATA_SEQ);
 				lseq->seq = handle->event_in[i];
 				lseq->itr = NULL;
-				luaL_getmetatable(L, "lseq");
-				lua_setmetatable(L, -2);
 			}
 
 			// push forge
 			for(int i=0; i<handle->max_val; i++)
 			{
-				lforge_t *lforge = lua_newuserdata(L, sizeof(lforge_t));
+				lforge_t *lforge = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE);
 				lforge->depth = 0;
 				lforge->forge = &handle->forge[i];
-				luaL_getmetatable(L, "lforge");
-				lua_setmetatable(L, -2);
 			}
 				
 			if(lua_pcall(L, 2*handle->max_val, 0, 0))
@@ -184,7 +180,8 @@ run(LV2_Handle instance, uint32_t nsamples)
 		}
 		else
 			lua_pop(L, 1);
-	
+
+		moony_freeuserdata(&handle->moony);
 		lua_gc(L, LUA_GCSTEP, 0);
 	}
 

@@ -107,6 +107,18 @@ struct _moony_mem_t {
 	void *mem;
 };
 
+typedef enum _moony_udata_t {
+	MOONY_UDATA_SEQ		= 0,
+	MOONY_UDATA_OBJ,
+	MOONY_UDATA_TUPLE,
+	MOONY_UDATA_VEC,
+	MOONY_UDATA_CHUNK,
+	MOONY_UDATA_ATOM,
+	MOONY_UDATA_FORGE,
+
+	MOONY_UDATA_COUNT
+} moony_udata_t;
+
 int moony_vm_init(moony_vm_t *vm);
 int moony_vm_deinit(moony_vm_t *vm);
 void *moony_vm_mem_alloc(size_t size);
@@ -173,6 +185,9 @@ struct _moony_t {
 	volatile int dirty_out;
 	volatile int error_out;
 	char error [MOONY_MAX_ERROR_LEN];
+
+	// udata cache
+	int itr [MOONY_UDATA_COUNT];
 };
 
 struct _lseq_t {
@@ -194,6 +209,16 @@ void moony_activate(moony_t *moony, const char *chunk);
 void moony_in(moony_t *moony, const LV2_Atom_Sequence *seq);
 void moony_out(moony_t *moony, LV2_Atom_Sequence *seq, uint32_t frames);
 const void* extension_data(const char* uri);
+
+void *
+moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type);
+
+static inline void
+moony_freeuserdata(moony_t *moony)
+{
+	for(int i=0; i<MOONY_UDATA_COUNT; i++)
+		moony->itr[i] = 0; // reset iterator
+}
 
 static inline int
 moony_bypass(moony_t *moony)

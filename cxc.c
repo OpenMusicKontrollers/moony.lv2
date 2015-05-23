@@ -134,6 +134,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 		else
 			lua_pop(L, 1);
 
+		//moony_freeuserdata(&handle->moony);
 		lua_gc(L, LUA_GCSTEP, 0);
 	}
 

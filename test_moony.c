@@ -56,10 +56,8 @@ _test(lua_State *L)
 	{
 		lua_pushvalue(L, 1); // producer
 
-		lforge_t *lforge = lua_newuserdata(L, sizeof(lforge_t));
+		lforge_t *lforge = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE);
 		lforge->forge = forge;
-		luaL_getmetatable(L, "lforge");
-		lua_setmetatable(L, -2);
 
 		if(lua_pcall(L, 1, 0, 0))
 		{
@@ -73,7 +71,7 @@ _test(lua_State *L)
 	{
 		lua_pushvalue(L, 2); // consumer
 
-		lseq_t *lseq = lua_newuserdata(L, sizeof(lseq_t));
+		lseq_t *lseq = moony_newuserdata(L, &handle->moony, MOONY_UDATA_SEQ);
 		lseq->seq = (const LV2_Atom_Sequence *)handle->buf;
 		lseq->itr = NULL;
 		luaL_getmetatable(L, "lseq");
