@@ -34,6 +34,7 @@ Get more information at: [http://open-music-kontrollers.ch/lv2/moony](http://ope
 
 * [LV2](http://lv2plug.in) (LV2 Plugin Standard)
 * [Lua](http://lua.org) (Lightweight embeddable language)
+* [Flex](http://flex.sourceforge.net) (Fast Lexical Analyzer)
 * [Elementary](http://enlightenment.org) (Lightweight GUI Toolkit)
 
 ### Build / install

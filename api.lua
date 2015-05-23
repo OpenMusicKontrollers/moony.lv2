@@ -154,8 +154,8 @@ forge:midi(0x90, 0x4a, 0x7f) -- push individual Lua integers as MIDI message
 forge:chunk({0x01, 0x02, 0x03, 0x04}) -- push a Lua table as atom chunk
 forge:chunk(0x01, 0x02, 0x03, 0x04) -- push individual Lua integers as atom chunk
 
-bndl = forge:osc_bundle(1) -- start a new OSC bundle with timestamp (returns a derived forge container)
-bndl:osc_message('/hello', 'si', 'world', 2015) -- push a complete OSC message
+bndl = forge:bundle(1) -- start a new OSC bundle with timestamp (returns a derived forge container)
+bndl:message('/hello', 'si', 'world', 2015) -- push a complete OSC message
 bndl:pop() -- finalize derived forge container
 
 tup = forge:tuple() -- start a new tuple (returns a derived forge container)
@@ -168,6 +168,11 @@ obj:pop() -- finalize derived forge container
 
 seq = forge:sequence(unit) -- start a nested sequence (returns a derived forge container)
 seq:pop()
+
+-- All forge function but forge:pop return a forge; either itself or a
+-- derived one, depending on context. One can thus fill values in sequence, e.g:
+forge:frame_time(0):midi(0x90, 0x20, 0x7f):frame_time(1):midi(0x80, 0x20, 0x00)
+forge:frame_time(2):object(id, otype):key(key):int(1):pop()
 
 --[[---------------------------------------------------------------------------
 	Atom Object

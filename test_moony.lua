@@ -35,8 +35,7 @@ do
 		forge:frame_time(0)
 		forge:int(0x7fffffff)
 		
-		forge:frame_time(0)
-		forge:int(0xffffffff)
+		forge:frame_time(0):int(0xffffffff)
 	end
 
 	local function consumer(seq)
@@ -61,8 +60,7 @@ end
 print('[test] Long')
 do
 	local function producer(forge)
-		forge:frame_time(0)
-		forge:long(0x100000000)
+		forge:frame_time(0):long(0x100000000)
 	end
 
 	local function consumer(seq)
@@ -101,8 +99,7 @@ end
 print('[test] Double')
 do
 	local function producer(forge)
-		forge:frame_time(0)
-		forge:double(0.12)
+		forge:frame_time(0):double(0.12)
 	end
 
 	local function consumer(seq)
@@ -121,11 +118,8 @@ end
 print('[test] Bool')
 do
 	local function producer(forge)
-		forge:frame_time(0)
-		forge:bool(true)
-
-		forge:frame_time(0)
-		forge:bool(false)
+		forge:frame_time(0):bool(true)
+		forge:frame_time(0):bool(false)
 	end
 
 	local function consumer(seq)
@@ -246,8 +240,7 @@ do
 	local urid = Map[uri]
 
 	local function producer(forge)
-		forge:frame_time(0)
-		forge:urid(urid)
+		forge:frame_time(0):urid(urid)
 	end
 
 	local function consumer(seq)
@@ -269,8 +262,7 @@ do
 	local m = {0x90, 0x2a, 0x7f}
 
 	local function producer(forge)
-		forge:frame_time(0)
-		forge:midi(m)
+		forge:frame_time(0):midi(m)
 
 		forge:frame_time(0)
 		forge:midi(table.unpack(m))
@@ -401,11 +393,8 @@ do
 	local function producer(forge)
 		forge:frame_time(0)
 		local tup = forge:tuple()
-		tup:int(1)
-		tup:float(2.0)
-		tup:long(3)
-		tup:double(4.0)
-		tup:pop()
+		assert(tup ~= forge)
+		tup:int(1):float(2.0):long(3):double(4.0):pop()
 	end
 
 	local function consumer(seq)
@@ -466,16 +455,15 @@ do
 	local key2 = Map['http://test.org#key2']
 
 	local function producer(forge)
-		forge:frame_time(0)
+		assert(forge:frame_time(0) == forge)
 		local obj = forge:object(id, otype)
+		assert(obj ~= forge)
 
-		obj:key(key1)
-		obj:int(12)
+		assert(obj:key(key1):int(12) == obj)
 		
-		obj:property(key2, context2)
-		obj:long(13)
+		obj:property(key2, context2):long(13)
 
-		obj:pop()
+		assert(obj:pop() == nil)
 	end
 
 	local function consumer(seq)
@@ -522,8 +510,7 @@ do
 		assert(atom.type == Atom.Int)
 		assert(atom.value == 12)
 
-		forge0:frame_time(0)
-		forge0:atom(atom)
+		forge0:frame_time(0):atom(atom)
 	end
 
 	test(producer, consumer)
@@ -534,28 +521,28 @@ print('[test] OSC')
 do
 	local function producer(forge)
 		forge:frame_time(0)
-		forge:osc_message('/hello', 'sif', 'world', 12, 13.0)
+		forge:message('/hello', 'sif', 'world', 12, 13.0)
 		
 		forge:frame_time(1)
-		forge:osc_message('/hallo', 'Shdt', 'velo', 12, 13.0, 1)
+		forge:message('/hallo', 'Shdt', 'velo', 12, 13.0, 1)
 		
 		forge:frame_time(2)
-		forge:osc_message('/yup', 'c', string.byte('a'))
+		forge:message('/yup', 'c', string.byte('a'))
 		
 		forge:frame_time(3)
-		forge:osc_message('/singletons', 'TFNI')
+		forge:message('/singletons', 'TFNI')
 		
 		forge:frame_time(4)
-		forge:osc_message('/chunky', 'mb', {0x90, 0x20, 0x7f}, {0x01, 0x02, 0x03, 0x04})
+		forge:message('/chunky', 'mb', {0x90, 0x20, 0x7f}, {0x01, 0x02, 0x03, 0x04})
 		
 		forge:frame_time(5)
-		local bndl = forge:osc_bundle(1)
-		bndl:osc_message('/one', 'i', 1)
-		bndl:osc_message('/two', 'i', 2)
-		bndl:osc_message('/three', 'i', 3)
-		local nested = bndl:osc_bundle(1)
-		nested:pop()
-		bndl:pop()
+		local bndl = forge:bundle(1)
+		assert(bndl ~= forge)
+		bndl:message('/one', 'i', 1)
+		bndl:message('/two', 'i', 2)
+		bndl:message('/three', 'i', 3)
+		bndl:bundle(1):pop() -- nested
+		assert(bndl:pop() == nil)
 	end
 
 	local function consumer(seq)
@@ -702,14 +689,12 @@ do
 	local function producer(forge)
 		forge:frame_time(0)
 		local subseq = forge:sequence()
+		assert(subseq ~= forge)
 
-		subseq:frame_time(1)
-		subseq:int(1)
-		
-		subseq:frame_time(2)
-		subseq:int(2)
+		subseq:frame_time(1):int(1)
+		subseq:frame_time(2):int(2)
 
-		subseq:pop()
+		assert(subseq:pop() == nil)
 	end
 
 	local function consumer(seq)

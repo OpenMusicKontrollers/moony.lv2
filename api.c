@@ -966,7 +966,8 @@ _lforge_frame_time(lua_State *L)
 
 	lv2_atom_forge_frame_time(lforge->forge, val);
 
-	return 0;
+	lua_settop(L, 1);
+	return 1;
 }
 
 static int
@@ -977,7 +978,8 @@ _lforge_beat_time(lua_State *L)
 
 	lv2_atom_forge_beat_time(lforge->forge, val);
 
-	return 0;
+	lua_settop(L, 1);
+	return 1;
 }
 
 static int
@@ -997,7 +999,8 @@ _lforge_atom(lua_State *L)
 		lv2_atom_forge_raw(lforge->forge, atom, sizeof(LV2_Atom) + atom->size);
 		lv2_atom_forge_pad(lforge->forge, atom->size);
 
-		return 0;
+		lua_settop(L, 1);
+		return 1;
 	}
 
 	return luaL_error(L, "Atom expected at position #2");
@@ -1011,7 +1014,8 @@ _lforge_int(lua_State *L)
 
 	lv2_atom_forge_int(lforge->forge, val);
 
-	return 0;
+	lua_settop(L, 1);
+	return 1;
 }
 
 static int
@@ -1022,7 +1026,8 @@ _lforge_long(lua_State *L)
 
 	lv2_atom_forge_long(lforge->forge, val);
 
-	return 0;
+	lua_settop(L, 1);
+	return 1;
 }
 
 static int
@@ -1033,7 +1038,8 @@ _lforge_float(lua_State *L)
 
 	lv2_atom_forge_float(lforge->forge, val);
 
-	return 0;
+	lua_settop(L, 1);
+	return 1;
 }
 
 static int
@@ -1044,7 +1050,8 @@ _lforge_double(lua_State *L)
 
 	lv2_atom_forge_double(lforge->forge, val);
 
-	return 0;
+	lua_settop(L, 1);
+	return 1;
 }
 
 static int
@@ -1055,7 +1062,8 @@ _lforge_bool(lua_State *L)
 
 	lv2_atom_forge_bool(lforge->forge, val);
 
-	return 0;
+	lua_settop(L, 1);
+	return 1;
 }
 
 static int
@@ -1066,7 +1074,8 @@ _lforge_urid(lua_State *L)
 
 	lv2_atom_forge_urid(lforge->forge, val);
 
-	return 0;
+	lua_settop(L, 1);
+	return 1;
 }
 
 static int
@@ -1078,7 +1087,8 @@ _lforge_string(lua_State *L)
 
 	lv2_atom_forge_string(lforge->forge, val, size);
 
-	return 0;
+	lua_settop(L, 1);
+	return 1;
 }
 
 static int
@@ -1092,7 +1102,8 @@ _lforge_literal(lua_State *L)
 
 	lv2_atom_forge_literal(lforge->forge, val, size, datatype, lang);
 
-	return 0;
+	lua_settop(L, 1);
+	return 1;
 }
 
 static int
@@ -1104,7 +1115,8 @@ _lforge_uri(lua_State *L)
 
 	lv2_atom_forge_uri(lforge->forge, val, size);
 
-	return 0;
+	lua_settop(L, 1);
+	return 1;
 }
 
 static int
@@ -1116,7 +1128,8 @@ _lforge_path(lua_State *L)
 
 	lv2_atom_forge_path(lforge->forge, val, size);
 
-	return 0;
+	lua_settop(L, 1);
+	return 1;
 }
 
 static int
@@ -1157,7 +1170,8 @@ _lforge_bytes(lua_State *L, moony_t *moony, LV2_URID type)
 		lv2_atom_forge_pad(lforge->forge, size);
 	}
 
-	return 0;
+	lua_settop(L, 1);
+	return 1;
 }
 
 static int
@@ -1193,7 +1207,7 @@ _lforge_osc_bundle(lua_State *L)
 
 	osc_forge_bundle_push(oforge, forge, lframe->frame, timestamp);
 
-	return 1;
+	return 1; // derived forge
 }
 
 static int
@@ -1328,7 +1342,8 @@ _lforge_osc_message(lua_State *L)
 
 	osc_forge_message_pop(oforge, forge, frame);
 
-	return 0;
+	lua_settop(L, 1);
+	return 1;
 }
 
 static int
@@ -1342,7 +1357,7 @@ _lforge_tuple(lua_State *L)
 
 	lv2_atom_forge_tuple(lforge->forge, &lframe->frame[0]);
 
-	return 1;
+	return 1; // derived forge
 }
 
 static int
@@ -1358,7 +1373,7 @@ _lforge_object(lua_State *L)
 
 	lv2_atom_forge_object(lforge->forge, &lframe->frame[0], id, otype);
 
-	return 1;
+	return 1; // derived forge
 }
 
 static int
@@ -1369,6 +1384,7 @@ _lforge_key(lua_State *L)
 
 	lv2_atom_forge_key(lforge->forge, key);
 
+	lua_settop(L, 1);
 	return 1;
 }
 
@@ -1381,6 +1397,7 @@ _lforge_property(lua_State *L)
 
 	lv2_atom_forge_property_head(lforge->forge, key, context);
 
+	lua_settop(L, 1);
 	return 1;
 }
 
@@ -1396,7 +1413,7 @@ _lforge_sequence(lua_State *L)
 	
 	lv2_atom_forge_sequence_head(lforge->forge, &lframe->frame[0], unit);
 
-	return 1;
+	return 1; // derived forge
 }
 
 static int
@@ -1406,6 +1423,7 @@ _lforge_pop(lua_State *L)
 
 	for(int i=lforge->depth; i>0; i--)
 		lv2_atom_forge_pop(lforge->forge, &lforge->frame[i-1]);
+	lforge->depth = 0; // reset depth
 
 	return 0;
 }
@@ -1429,8 +1447,8 @@ static const luaL_Reg lforge_mt [] = {
 	//TODO vector
 	{"chunk", _lforge_chunk},
 	{"midi", _lforge_midi},
-	{"osc_bundle", _lforge_osc_bundle},
-	{"osc_message", _lforge_osc_message},
+	{"bundle", _lforge_osc_bundle},
+	{"message", _lforge_osc_message},
 	{"tuple", _lforge_tuple},
 	{"object", _lforge_object},
 	{"key", _lforge_key},
