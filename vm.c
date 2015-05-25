@@ -55,7 +55,7 @@ lua_alloc(void *ud, void *ptr, size_t osize, size_t nsize)
 
 	vm->used += nsize - (ptr ? osize : 0);
 	if(vm->used > (vm->space >> 1))
-		moony_vm_mem_extend(vm); // TODO make this rt-safe via worker
+		moony_vm_mem_extend(vm);
 
 	if(nsize == 0)
 	{
@@ -78,7 +78,7 @@ moony_vm_init(moony_vm_t *vm)
 {
 	memset(vm, 0x0, sizeof(moony_vm_t));
 
-	// initialzie array of increasing pool sizes
+	// initialize array of increasing pool sizes
 	vm->size[0] = MEM_SIZE;
 	for(int i=1, sum=MEM_SIZE; i<MOONY_POOL_NUM; i++, sum*=2)
 		vm->size[i] = sum;
@@ -106,8 +106,6 @@ moony_vm_init(moony_vm_t *vm)
 	luaL_requiref(vm->L, "math", luaopen_math, 1);
 	lua_pop(vm->L, 6);
 
-	//TODO overwrite print function
-	
 	//luaL_requiref(vm->L, "io", luaopen_io, 1);
 	//luaL_requiref(vm->L, "os", luaopen_os, 1);
 	//luaL_requiref(vm->L, "bit32", luaopen_bit32, 1);
@@ -183,7 +181,7 @@ moony_vm_mem_free(void *area, size_t size)
 	free(area);
 }
 
-// non-rt
+// rt
 int
 moony_vm_mem_extend(moony_vm_t *vm)
 {
