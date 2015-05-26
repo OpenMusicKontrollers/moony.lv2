@@ -9,6 +9,8 @@ include_directories(${PROJECT_SOURCE_DIR}/osc.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/lua-5.3)
 include_directories(${PROJECT_BINARY_DIR})
 
+set(CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
+
 set(DEST lib/lv2/moony.lv2)
 if(WIN32)
 	set(LIB_EXT ".dll")
