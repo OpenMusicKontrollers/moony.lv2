@@ -57,13 +57,10 @@ _test(lua_State *L)
 		lua_pushvalue(L, 1); // producer
 
 		lforge_t *lforge = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE);
+		lforge->depth = 0;
 		lforge->forge = forge;
 
-		if(lua_pcall(L, 1, 0, 0))
-		{
-			fprintf(stderr, "err: %s\n", lua_tostring(L, -1));
-			exit(-1);
-		}
+		lua_call(L, 1, 0);
 	}
 	lv2_atom_forge_pop(forge, &frame);
 
@@ -74,14 +71,8 @@ _test(lua_State *L)
 		lseq_t *lseq = moony_newuserdata(L, &handle->moony, MOONY_UDATA_SEQ);
 		lseq->seq = (const LV2_Atom_Sequence *)handle->buf;
 		lseq->itr = NULL;
-		luaL_getmetatable(L, "lseq");
-		lua_setmetatable(L, -2);
 			
-		if(lua_pcall(L, 1, 0, 0))
-		{
-			fprintf(stderr, "err: %s\n", lua_tostring(L, -1));
-			exit(-1);
-		}
+		lua_call(L, 1, 0);
 	}
 
 	return 0;
@@ -210,7 +201,7 @@ main(int argc, char **argv)
 	lua_pushcclosure(L, _test, 1);
 	lua_setglobal(L, "test");
 
-	if(luaL_dofile(L, argv[1]))
+	if(luaL_dofile(L, argv[1])) // wraps around lua_pcall
 	{
 		fprintf(stderr, "err: %s\n", lua_tostring(L, -1));
 		return -1;

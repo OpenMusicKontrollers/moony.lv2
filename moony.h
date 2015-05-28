@@ -176,6 +176,7 @@ struct _moony_t {
 	
 	LV2_Worker_Schedule *sched;
 	volatile int working;
+	volatile int fully_extended;
 	
 	LV2_Log_Log *log;
 

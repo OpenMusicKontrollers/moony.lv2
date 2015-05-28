@@ -135,7 +135,6 @@ moony_vm_deinit(moony_vm_t *vm)
 		moony_vm_mem_free(vm->area[i], vm->size[i]);
 		vm->space -= vm->size[i];
 
-		vm->size[i] = 0;
 		vm->area[i] = NULL;
 		vm->pool[i] = NULL;
 	}
@@ -187,12 +186,13 @@ moony_vm_mem_extend(moony_vm_t *vm)
 {
 	moony_t *moony = (void *)vm - offsetof(moony_t, vm);
 
-	if(moony->working) // request is already been processed
+	// request processing or fully extended?
+	if(moony->working || moony->fully_extended)
 		return -1;
 
 	for(int i=0; i<MOONY_POOL_NUM; i++)
 	{
-		if(vm->area[i])
+		if(vm->area[i]) // pool already allocated/in-use
 			continue;
 
 		const moony_mem_t request = {
@@ -210,6 +210,8 @@ moony_vm_mem_extend(moony_vm_t *vm)
 
 		return 0;
 	}
+
+	moony->fully_extended = 1;
 
 	return -1;
 }

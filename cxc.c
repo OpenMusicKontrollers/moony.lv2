@@ -100,6 +100,35 @@ activate(LV2_Handle instance)
 	// nothing
 }
 
+static int
+_run(lua_State *L)
+{
+	Handle *handle = lua_touserdata(L, lua_upvalueindex(1));
+
+	int top = lua_gettop(L);
+	lua_getglobal(L, "run");
+	if(lua_isfunction(L, -1))
+	{
+		for(int i=0; i<handle->max_val; i++)
+			lua_pushnumber(L, *handle->val_in[i]);
+
+		lua_call(L, handle->max_val, LUA_MULTRET);
+
+		int ret = lua_gettop(L) - top;
+		int max = ret > handle->max_val ? handle->max_val : ret; // discard superfluous returns
+		for(int i=0; i<max; i++)
+			*handle->val_out[i] = luaL_optnumber(L, i+1, 0.f);
+		for(int i=ret; i<handle->max_val; i++) // fill in missing returns with 0.f
+			*handle->val_out[i] = 0.f;
+
+		lua_pop(L, ret);
+	}
+	else
+		lua_pop(L, 1);
+
+	return 0;
+}
+
 static void
 run(LV2_Handle instance, uint32_t nsamples)
 {
@@ -112,27 +141,10 @@ run(LV2_Handle instance, uint32_t nsamples)
 	// run
 	if(!moony_bypass(&handle->moony))
 	{
-		int top = lua_gettop(L);
-		lua_getglobal(L, "run");
-		if(lua_isfunction(L, -1))
-		{
-			for(int i=0; i<handle->max_val; i++)
-				lua_pushnumber(L, *handle->val_in[i]);
-
-			if(lua_pcall(L, handle->max_val, LUA_MULTRET, 0))
-				moony_error(&handle->moony);
-
-			int ret = lua_gettop(L) - top;
-			int max = ret > handle->max_val ? handle->max_val : ret; // discard superfluous returns
-			for(int i=0; i<max; i++)
-				*handle->val_out[i] = luaL_optnumber(L, i+1, 0.f);
-			for(int i=ret; i<handle->max_val; i++) // fill in missing returns with 0.f
-				*handle->val_out[i] = 0.f;
-
-			lua_pop(L, ret);
-		}
-		else
-			lua_pop(L, 1);
+		lua_pushlightuserdata(L, handle);
+		lua_pushcclosure(L, _run, 1);
+		if(lua_pcall(L, 0, 0, 0))
+			moony_error(&handle->moony);
 
 		//moony_freeuserdata(&handle->moony);
 		lua_gc(L, LUA_GCSTEP, 0);

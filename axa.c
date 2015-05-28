@@ -134,6 +134,38 @@ activate(LV2_Handle instance)
 	// nothing
 }
 
+static int
+_run(lua_State *L)
+{
+	Handle *handle = lua_touserdata(L, lua_upvalueindex(1));
+
+	lua_getglobal(L, "run");
+	if(lua_isfunction(L, -1))
+	{
+		// push sequence
+		for(int i=0; i<handle->max_val; i++)
+		{
+			lseq_t *lseq = moony_newuserdata(L, &handle->moony, MOONY_UDATA_SEQ);
+			lseq->seq = handle->event_in[i];
+			lseq->itr = NULL;
+		}
+
+		// push forge
+		for(int i=0; i<handle->max_val; i++)
+		{
+			lforge_t *lforge = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE);
+			lforge->depth = 0;
+			lforge->forge = &handle->forge[i];
+		}
+			
+		lua_call(L, 2*handle->max_val, 0);
+	}
+	else
+		lua_pop(L, 1);
+
+	return 0;
+}
+
 static void
 run(LV2_Handle instance, uint32_t nsamples)
 {
@@ -156,30 +188,10 @@ run(LV2_Handle instance, uint32_t nsamples)
 	// run
 	if(!moony_bypass(&handle->moony))
 	{
-		lua_getglobal(L, "run");
-		if(lua_isfunction(L, -1))
-		{
-			// push sequence
-			for(int i=0; i<handle->max_val; i++)
-			{
-				lseq_t *lseq = moony_newuserdata(L, &handle->moony, MOONY_UDATA_SEQ);
-				lseq->seq = handle->event_in[i];
-				lseq->itr = NULL;
-			}
-
-			// push forge
-			for(int i=0; i<handle->max_val; i++)
-			{
-				lforge_t *lforge = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE);
-				lforge->depth = 0;
-				lforge->forge = &handle->forge[i];
-			}
-				
-			if(lua_pcall(L, 2*handle->max_val, 0, 0))
-				moony_error(&handle->moony);
-		}
-		else
-			lua_pop(L, 1);
+		lua_pushlightuserdata(L, handle);
+		lua_pushcclosure(L, _run, 1);
+		if(lua_pcall(L, 0, 0, 0))
+			moony_error(&handle->moony);
 
 		moony_freeuserdata(&handle->moony);
 		lua_gc(L, LUA_GCSTEP, 0);
