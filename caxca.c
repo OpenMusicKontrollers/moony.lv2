@@ -26,6 +26,7 @@ struct _Handle {
 
 	int max_val;
 
+	uint32_t sample_count;
 	const LV2_Atom_Sequence *event_in;
 	LV2_Atom_Sequence *event_out;
 	const float *val_in [4];
@@ -38,7 +39,7 @@ struct _Handle {
 };
 
 static const char *default_code [3] = {
-	"function run(seq, forge, a)\n"
+	"function run(n, seq, forge, a)\n"
 	"  for frames, atom in seq:foreach() do\n"
 	"    -- your code here\n"
 	"    forge:frame_time(frames)\n"
@@ -48,7 +49,7 @@ static const char *default_code [3] = {
 	"  return a\n"
 	"end",
 
-	"function run(seq, forge, a, b)\n"
+	"function run(n, seq, forge, a, b)\n"
 	"  for frames, atom in seq:foreach() do\n"
 	"    -- your code here\n"
 	"    forge:frame_time(frames)\n"
@@ -58,7 +59,7 @@ static const char *default_code [3] = {
 	"  return a, b\n"
 	"end",
 
-	"function run(seq, forge, a, b, c, d)\n"
+	"function run(n, seq, forge, a, b, c, d)\n"
 	"  for frames, atom in seq:foreach() do\n"
 	"    -- your code here\n"
 	"    forge:frame_time(frames)\n"
@@ -134,6 +135,8 @@ _run(lua_State *L)
 	lua_getglobal(L, "run");
 	if(lua_isfunction(L, -1))
 	{
+		lua_pushinteger(L, handle->sample_count);
+
 		// push sequence
 		lseq_t *lseq = moony_newuserdata(L, &handle->moony, MOONY_UDATA_SEQ);
 		lseq->seq = handle->event_in;
@@ -149,7 +152,7 @@ _run(lua_State *L)
 		for(int i=0; i<handle->max_val; i++)
 			lua_pushnumber(L, *handle->val_in[i]);
 
-		lua_call(L, 2+handle->max_val, LUA_MULTRET);
+		lua_call(L, 3 + handle->max_val, LUA_MULTRET);
 
 		int ret = lua_gettop(L) - top;
 		int max = ret > handle->max_val ? handle->max_val : ret; // discard superfluous returns
@@ -171,6 +174,8 @@ run(LV2_Handle instance, uint32_t nsamples)
 {
 	Handle *handle = (Handle *)instance;
 	lua_State *L = handle->moony.vm.L;
+
+	handle->sample_count = nsamples;
 
 	// handle UI comm
 	moony_in(&handle->moony, handle->control);

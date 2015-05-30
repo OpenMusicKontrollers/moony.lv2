@@ -26,6 +26,7 @@ struct _Handle {
 
 	int max_val;
 
+	uint32_t sample_count;
 	const float *val_in [4];
 	float *val_out [4];
 	
@@ -34,17 +35,17 @@ struct _Handle {
 };
 
 static const char *default_code [3] = {
-	"function run(a)\n"
+	"function run(n, a)\n"
 	"  -- your code here\n"
 	"  return a\n"
 	"end",
 
-	"function run(a, b)\n"
+	"function run(n, a, b)\n"
 	"  -- your code here\n"
 	"  return a, b\n"
 	"end",
 
-	"function run(a, b, c, d)\n"
+	"function run(n, a, b, c, d)\n"
 	"  -- your code here\n"
 	"  return a, b, c, d\n"
 	"end"
@@ -109,10 +110,12 @@ _run(lua_State *L)
 	lua_getglobal(L, "run");
 	if(lua_isfunction(L, -1))
 	{
+		lua_pushinteger(L, handle->sample_count);
+
 		for(int i=0; i<handle->max_val; i++)
 			lua_pushnumber(L, *handle->val_in[i]);
 
-		lua_call(L, handle->max_val, LUA_MULTRET);
+		lua_call(L, 1 + handle->max_val, LUA_MULTRET);
 
 		int ret = lua_gettop(L) - top;
 		int max = ret > handle->max_val ? handle->max_val : ret; // discard superfluous returns
@@ -134,6 +137,8 @@ run(LV2_Handle instance, uint32_t nsamples)
 {
 	Handle *handle = (Handle *)instance;
 	lua_State *L = handle->moony.vm.L;
+
+	handle->sample_count = nsamples;
 
 	// handle UI comm
 	moony_in(&handle->moony, handle->control);

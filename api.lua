@@ -42,7 +42,7 @@
 --]]
 
 -- code example for plugin 'C4+A1xC4+A1' in a clone configuration
-function run(seq, forge, a, b, c, d)
+function run(nsamples, seq, forge, a, b, c, d)
 	for frames, atom in seq:foreach() do
 		forge:frame_time(frames)
 		forge:atom(atom)
