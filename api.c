@@ -84,6 +84,8 @@ static const size_t moony_sz [MOONY_UDATA_COUNT] = {
 	[MOONY_UDATA_FORGE]	= sizeof(lforge_t)
 };
 
+static const char *forge_buffer_overflow = "forge buffer overflow";
+
 static void
 _latom_new(lua_State *L, const LV2_Atom *atom)
 {
@@ -966,7 +968,8 @@ _lforge_frame_time(lua_State *L)
 
 	if(val >= lforge->last.frames)
 	{
-		lv2_atom_forge_frame_time(lforge->forge, val);
+		if(!lv2_atom_forge_frame_time(lforge->forge, val))
+			luaL_error(L, forge_buffer_overflow);
 		lforge->last.frames = val;
 
 		lua_settop(L, 1);
@@ -984,7 +987,8 @@ _lforge_beat_time(lua_State *L)
 
 	if(val >= lforge->last.beats)
 	{
-		lv2_atom_forge_beat_time(lforge->forge, val);
+		if(!lv2_atom_forge_beat_time(lforge->forge, val))
+			luaL_error(L, forge_buffer_overflow);
 		lforge->last.beats = val;
 
 		lua_settop(L, 1);
@@ -1008,7 +1012,8 @@ _lforge_atom(lua_State *L)
 		const LV2_Atom **atom_ptr = lua_touserdata(L, 2);
 		const LV2_Atom *atom = *atom_ptr;
 
-		lv2_atom_forge_raw(lforge->forge, atom, sizeof(LV2_Atom) + atom->size);
+		if(!lv2_atom_forge_raw(lforge->forge, atom, sizeof(LV2_Atom) + atom->size))
+			luaL_error(L, forge_buffer_overflow);
 		lv2_atom_forge_pad(lforge->forge, atom->size);
 
 		lua_settop(L, 1);
@@ -1024,7 +1029,8 @@ _lforge_int(lua_State *L)
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	int32_t val = luaL_checkinteger(L, 2);
 
-	lv2_atom_forge_int(lforge->forge, val);
+	if(!lv2_atom_forge_int(lforge->forge, val))
+		luaL_error(L, forge_buffer_overflow);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1036,7 +1042,8 @@ _lforge_long(lua_State *L)
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	int64_t val = luaL_checkinteger(L, 2);
 
-	lv2_atom_forge_long(lforge->forge, val);
+	if(!lv2_atom_forge_long(lforge->forge, val))
+		luaL_error(L, forge_buffer_overflow);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1048,7 +1055,8 @@ _lforge_float(lua_State *L)
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	float val = luaL_checknumber(L, 2);
 
-	lv2_atom_forge_float(lforge->forge, val);
+	if(!lv2_atom_forge_float(lforge->forge, val))
+		luaL_error(L, forge_buffer_overflow);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1060,7 +1068,8 @@ _lforge_double(lua_State *L)
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	double val = luaL_checknumber(L, 2);
 
-	lv2_atom_forge_double(lforge->forge, val);
+	if(!lv2_atom_forge_double(lforge->forge, val))
+		luaL_error(L, forge_buffer_overflow);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1072,7 +1081,8 @@ _lforge_bool(lua_State *L)
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	uint32_t val = lua_toboolean(L, 2);
 
-	lv2_atom_forge_bool(lforge->forge, val);
+	if(!lv2_atom_forge_bool(lforge->forge, val))
+		luaL_error(L, forge_buffer_overflow);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1084,7 +1094,8 @@ _lforge_urid(lua_State *L)
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	LV2_URID val = luaL_checkinteger(L, 2);
 
-	lv2_atom_forge_urid(lforge->forge, val);
+	if(!lv2_atom_forge_urid(lforge->forge, val))
+		luaL_error(L, forge_buffer_overflow);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1097,7 +1108,8 @@ _lforge_string(lua_State *L)
 	size_t size;
 	const char *val = luaL_checklstring(L, 2, &size);
 
-	lv2_atom_forge_string(lforge->forge, val, size);
+	if(!lv2_atom_forge_string(lforge->forge, val, size))
+		luaL_error(L, forge_buffer_overflow);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1112,7 +1124,8 @@ _lforge_literal(lua_State *L)
 	LV2_URID datatype = luaL_checkinteger(L, 3);
 	LV2_URID lang = luaL_checkinteger(L, 4);
 
-	lv2_atom_forge_literal(lforge->forge, val, size, datatype, lang);
+	if(!lv2_atom_forge_literal(lforge->forge, val, size, datatype, lang))
+		luaL_error(L, forge_buffer_overflow);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1125,7 +1138,8 @@ _lforge_uri(lua_State *L)
 	size_t size;
 	const char *val = luaL_checklstring(L, 2, &size);
 
-	lv2_atom_forge_uri(lforge->forge, val, size);
+	if(!lv2_atom_forge_uri(lforge->forge, val, size))
+		luaL_error(L, forge_buffer_overflow);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1138,7 +1152,8 @@ _lforge_path(lua_State *L)
 	size_t size;
 	const char *val = luaL_checklstring(L, 2, &size);
 
-	lv2_atom_forge_path(lforge->forge, val, size);
+	if(!lv2_atom_forge_path(lforge->forge, val, size))
+		luaL_error(L, forge_buffer_overflow);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1151,13 +1166,15 @@ _lforge_bytes(lua_State *L, moony_t *moony, LV2_URID type)
 	if(lua_istable(L, 2))
 	{
 		uint32_t size = lua_rawlen(L, 2);
-		lv2_atom_forge_atom(lforge->forge, size, type);
+		if(!lv2_atom_forge_atom(lforge->forge, size, type))
+			luaL_error(L, forge_buffer_overflow);
 		for(int i=1; i<=size; i++)
 		{
 			lua_rawgeti(L, -1, i);
 			uint8_t byte = luaL_checkinteger(L, -1);
 			lua_pop(L, 1);
-			lv2_atom_forge_raw(lforge->forge, &byte, 1);
+			if(!lv2_atom_forge_raw(lforge->forge, &byte, 1))
+				luaL_error(L, forge_buffer_overflow);
 		}
 		lv2_atom_forge_pad(lforge->forge, size);
 	}
@@ -1165,19 +1182,23 @@ _lforge_bytes(lua_State *L, moony_t *moony, LV2_URID type)
 	{
 		latom_t *lchunk = lua_touserdata(L, 2);
 		uint32_t size = lchunk->atom->size;
-		lv2_atom_forge_atom(lforge->forge, size, type);
-		lv2_atom_forge_raw(lforge->forge, LV2_ATOM_BODY_CONST(lchunk->atom), size);
+		if(!lv2_atom_forge_atom(lforge->forge, size, type))
+			luaL_error(L, forge_buffer_overflow);
+		if(!lv2_atom_forge_raw(lforge->forge, LV2_ATOM_BODY_CONST(lchunk->atom), size))
+			luaL_error(L, forge_buffer_overflow);
 		lv2_atom_forge_pad(lforge->forge, size);
 	}
 	else // bytes as individual function arguments
 	{
 		uint32_t size = lua_gettop(L) - 1;
 
-		lv2_atom_forge_atom(lforge->forge, size, type);
+		if(!lv2_atom_forge_atom(lforge->forge, size, type))
+			luaL_error(L, forge_buffer_overflow);
 		for(int i=0; i<size; i++)
 		{
 			uint8_t byte = luaL_checkinteger(L, i+2);
-			lv2_atom_forge_raw(lforge->forge, &byte, 1);
+			if(!lv2_atom_forge_raw(lforge->forge, &byte, 1))
+				luaL_error(L, forge_buffer_overflow);
 		}
 		lv2_atom_forge_pad(lforge->forge, size);
 	}
@@ -1218,7 +1239,8 @@ _lforge_osc_bundle(lua_State *L)
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
 
-	osc_forge_bundle_push(oforge, forge, lframe->frame, timestamp);
+	if(!osc_forge_bundle_push(oforge, forge, lframe->frame, timestamp))
+		luaL_error(L, forge_buffer_overflow);
 
 	return 1; // derived forge
 }
@@ -1237,7 +1259,8 @@ _lforge_osc_message(lua_State *L)
 
 	LV2_Atom_Forge_Frame frame [2];
 
-	osc_forge_message_push(oforge, forge, frame, path, fmt);
+	if(!osc_forge_message_push(oforge, forge, frame, path, fmt))
+		luaL_error(L, forge_buffer_overflow);
 
 	int pos = 4;
 	for(const char *type = fmt; *type; type++)
@@ -1247,20 +1270,23 @@ _lforge_osc_message(lua_State *L)
 			case 'i':
 			{
 				int32_t i = luaL_checkinteger(L, pos++);
-				osc_forge_int32(oforge, forge, i);
+				if(!osc_forge_int32(oforge, forge, i))
+					luaL_error(L, forge_buffer_overflow);
 				break;
 			}
 			case 'f':
 			{
 				float f = luaL_checknumber(L, pos++);
-				osc_forge_float(oforge, forge, f);
+				if(!osc_forge_float(oforge, forge, f))
+					luaL_error(L, forge_buffer_overflow);
 				break;
 			}
 			case 's':
 			case 'S':
 			{
 				const char *s = luaL_checkstring(L, pos++);
-				osc_forge_string(oforge, forge, s);
+				if(!osc_forge_string(oforge, forge, s))
+					luaL_error(L, forge_buffer_overflow);
 				break;
 			}
 			case 'b':
@@ -1269,13 +1295,15 @@ _lforge_osc_message(lua_State *L)
 				{
 					int n = lua_rawlen(L, pos);
 
-					lv2_atom_forge_atom(forge, n, forge->Chunk);
+					if(!lv2_atom_forge_atom(forge, n, forge->Chunk))
+						luaL_error(L, forge_buffer_overflow);
 					for(int i=1; i<=n; i++)
 					{
 						lua_rawgeti(L, pos, i);
 						uint8_t b = luaL_checkinteger(L, -1);
 						lua_pop(L, 1);
-						lv2_atom_forge_raw(forge, &b, 1);
+						if(!lv2_atom_forge_raw(forge, &b, 1))
+							luaL_error(L, forge_buffer_overflow);
 					}
 					lv2_atom_forge_pad(forge, n);
 				}
@@ -1286,48 +1314,56 @@ _lforge_osc_message(lua_State *L)
 
 			case 'T':
 			{
-				osc_forge_true(oforge, forge);
+				if(!osc_forge_true(oforge, forge))
+					luaL_error(L, forge_buffer_overflow);
 				break;
 			}
 			case 'F':
 			{
-				osc_forge_false(oforge, forge);
+				if(!osc_forge_false(oforge, forge))
+					luaL_error(L, forge_buffer_overflow);
 				break;
 			}
 			case 'N':
 			{
-				osc_forge_nil(oforge, forge);
+				if(!osc_forge_nil(oforge, forge))
+					luaL_error(L, forge_buffer_overflow);
 				break;
 			}
 			case 'I':
 			{
-				osc_forge_bang(oforge, forge);
+				if(!osc_forge_bang(oforge, forge))
+					luaL_error(L, forge_buffer_overflow);
 				break;
 			}
 
 			case 'h':
 			{
 				int64_t h = luaL_checkinteger(L, pos++);
-				osc_forge_int64(oforge, forge, h);
+				if(!osc_forge_int64(oforge, forge, h))
+					luaL_error(L, forge_buffer_overflow);
 				break;
 			}
 			case 'd':
 			{
 				double d = luaL_checknumber(L, pos++);
-				osc_forge_double(oforge, forge, d);
+				if(!osc_forge_double(oforge, forge, d))
+					luaL_error(L, forge_buffer_overflow);
 				break;
 			}
 			case 't':
 			{
 				uint64_t t = luaL_checkinteger(L, pos++);
-				osc_forge_timestamp(oforge, forge, t);
+				if(!osc_forge_timestamp(oforge, forge, t))
+					luaL_error(L, forge_buffer_overflow);
 				break;
 			}
 
 			case 'c':
 			{
 				char c = luaL_checkinteger(L, pos++);
-				osc_forge_char(oforge, forge, c);
+				if(!osc_forge_char(oforge, forge, c))
+					luaL_error(L, forge_buffer_overflow);
 				break;
 			}
 			case 'm':
@@ -1336,13 +1372,15 @@ _lforge_osc_message(lua_State *L)
 				{
 					int n = lua_rawlen(L, pos);
 
-					lv2_atom_forge_atom(forge, n, moony->oforge.MIDI_MidiEvent);
+					if(!lv2_atom_forge_atom(forge, n, moony->oforge.MIDI_MidiEvent))
+						luaL_error(L, forge_buffer_overflow);
 					for(int i=1; i<=n; i++)
 					{
 						lua_rawgeti(L, pos, i);
 						uint8_t b = luaL_checkinteger(L, -1);
 						lua_pop(L, 1);
-						lv2_atom_forge_raw(forge, &b, 1);
+						if(!lv2_atom_forge_raw(forge, &b, 1))
+							luaL_error(L, forge_buffer_overflow);
 					}
 					lv2_atom_forge_pad(forge, n);
 				}
@@ -1369,7 +1407,8 @@ _lforge_tuple(lua_State *L)
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
 
-	lv2_atom_forge_tuple(lforge->forge, &lframe->frame[0]);
+	if(!lv2_atom_forge_tuple(lforge->forge, &lframe->frame[0]))
+		luaL_error(L, forge_buffer_overflow);
 
 	return 1; // derived forge
 }
@@ -1386,7 +1425,8 @@ _lforge_object(lua_State *L)
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
 
-	lv2_atom_forge_object(lforge->forge, &lframe->frame[0], id, otype);
+	if(!lv2_atom_forge_object(lforge->forge, &lframe->frame[0], id, otype))
+		luaL_error(L, forge_buffer_overflow);
 
 	return 1; // derived forge
 }
@@ -1397,7 +1437,8 @@ _lforge_key(lua_State *L)
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	LV2_URID key = luaL_checkinteger(L, 2);
 
-	lv2_atom_forge_key(lforge->forge, key);
+	if(!lv2_atom_forge_key(lforge->forge, key))
+		luaL_error(L, forge_buffer_overflow);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1410,7 +1451,8 @@ _lforge_property(lua_State *L)
 	LV2_URID key = luaL_checkinteger(L, 2);
 	LV2_URID context = luaL_checkinteger(L, 3);
 
-	lv2_atom_forge_property_head(lforge->forge, key, context);
+	if(!lv2_atom_forge_property_head(lforge->forge, key, context))
+		luaL_error(L, forge_buffer_overflow);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1427,7 +1469,8 @@ _lforge_sequence(lua_State *L)
 	lframe->last.frames = 0;
 	lframe->forge = lforge->forge;
 	
-	lv2_atom_forge_sequence_head(lforge->forge, &lframe->frame[0], unit);
+	if(!lv2_atom_forge_sequence_head(lforge->forge, &lframe->frame[0], unit))
+		luaL_error(L, forge_buffer_overflow);
 
 	return 1; // derived forge
 }
