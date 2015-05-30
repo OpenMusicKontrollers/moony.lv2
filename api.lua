@@ -169,7 +169,7 @@ obj:pop() -- finalize derived forge container
 seq = forge:sequence(unit) -- start a nested sequence (returns a derived forge container)
 seq:pop()
 
--- All forge function but forge:pop return a forge; either itself or a
+-- All forge functions but forge:pop return a forge; either itself or a
 -- derived one, depending on context. One can thus fill values in sequence, e.g:
 forge:frame_time(0):midi(0x90, 0x20, 0x7f):frame_time(1):midi(0x80, 0x20, 0x00)
 forge:frame_time(2):object(id, otype):key(key):int(1):pop()

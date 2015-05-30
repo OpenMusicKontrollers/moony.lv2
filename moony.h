@@ -200,6 +200,10 @@ struct _lseq_t {
 struct _lforge_t {
 	LV2_Atom_Forge *forge;
 	int depth;
+	union {
+		int64_t frames;	// Time in audio frames
+		double  beats; // Time in beats
+	} last;
 	LV2_Atom_Forge_Frame frame [2];
 };
 

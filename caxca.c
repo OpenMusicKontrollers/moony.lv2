@@ -142,6 +142,7 @@ _run(lua_State *L)
 		// push forge
 		lforge_t *lforge = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE);
 		lforge->depth = 0;
+		lforge->last.frames = 0;
 		lforge->forge = &handle->forge;
 
 		// push values

@@ -964,10 +964,16 @@ _lforge_frame_time(lua_State *L)
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	int64_t val = luaL_checkinteger(L, 2);
 
-	lv2_atom_forge_frame_time(lforge->forge, val);
+	if(val >= lforge->last.frames)
+	{
+		lv2_atom_forge_frame_time(lforge->forge, val);
+		lforge->last.frames = val;
 
-	lua_settop(L, 1);
-	return 1;
+		lua_settop(L, 1);
+		return 1;
+	}
+
+	return luaL_error(L, "invalid frame time, must not decrease");
 }
 
 static int
@@ -976,10 +982,16 @@ _lforge_beat_time(lua_State *L)
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	double val = luaL_checknumber(L, 2);
 
-	lv2_atom_forge_beat_time(lforge->forge, val);
+	if(val >= lforge->last.beats)
+	{
+		lv2_atom_forge_beat_time(lforge->forge, val);
+		lforge->last.beats = val;
 
-	lua_settop(L, 1);
-	return 1;
+		lua_settop(L, 1);
+		return 1;
+	}
+
+	return luaL_error(L, "invalid beat time, must not decrease");
 }
 
 static int
@@ -1203,6 +1215,7 @@ _lforge_osc_bundle(lua_State *L)
 
 	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
 	lframe->depth = 2;
+	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
 
 	osc_forge_bundle_push(oforge, forge, lframe->frame, timestamp);
@@ -1353,6 +1366,7 @@ _lforge_tuple(lua_State *L)
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
 	lframe->depth = 1;
+	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
 
 	lv2_atom_forge_tuple(lforge->forge, &lframe->frame[0]);
@@ -1369,6 +1383,7 @@ _lforge_object(lua_State *L)
 	LV2_URID otype = luaL_checkinteger(L, 3);
 	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
 	lframe->depth = 1;
+	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
 
 	lv2_atom_forge_object(lforge->forge, &lframe->frame[0], id, otype);
@@ -1409,6 +1424,7 @@ _lforge_sequence(lua_State *L)
 	LV2_URID unit = luaL_optinteger(L, 2, 0); //TODO use proper unit
 	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
 	lframe->depth = 1;
+	lframe->last.frames = 0;
 	lframe->forge = lforge->forge;
 	
 	lv2_atom_forge_sequence_head(lforge->forge, &lframe->frame[0], unit);

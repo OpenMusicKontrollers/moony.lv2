@@ -58,6 +58,7 @@ _test(lua_State *L)
 
 		lforge_t *lforge = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE);
 		lforge->depth = 0;
+		lforge->last.frames = 0;
 		lforge->forge = forge;
 
 		lua_call(L, 1, 0);
