@@ -150,6 +150,11 @@ run(LV2_Handle instance, uint32_t nsamples)
 		lua_gc(L, LUA_GCSTEP, 0);
 	}
 
+	// clear output ports upon error
+	if(moony_bypass(&handle->moony))
+		for(int i=0; i<handle->max_val; i++)
+			*handle->val_out[i] = 0.f;
+
 	// handle UI comm
 	moony_out(&handle->moony, handle->notify, nsamples - 1);
 }

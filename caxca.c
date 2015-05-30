@@ -193,6 +193,10 @@ run(LV2_Handle instance, uint32_t nsamples)
 		lua_gc(L, LUA_GCSTEP, 0);
 	}
 
+	// clear output sequence buffer upon error
+	if(moony_bypass(&handle->moony))
+		lv2_atom_forge_sequence_head(&handle->forge, &frame, 0);
+
 	lv2_atom_forge_pop(&handle->forge, &frame);
 
 	// handle UI comm
