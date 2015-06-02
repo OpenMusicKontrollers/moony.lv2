@@ -96,8 +96,8 @@ moony:template-atom_multiplex2
     local frames1, atom1 = iterator1(seq1)
     local frames2, atom2 = iterator2(seq2)
 
-    while(frames1 or frames2) do
-      if(frames1 and (frames1 <= frames2)) then
+    while frames1 or frames2 do
+      if frames1 and (frames1 <= frames2) then
         coroutine.yield(frames1, atom1)
         frames1, atom1 = iterator1(seq1)
       else
