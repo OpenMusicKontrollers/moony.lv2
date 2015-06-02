@@ -184,3 +184,210 @@ derived one, depending on context. One can thus fill values in sequence, e.g:
 forge:frame_time(0):midi(0x90, 0x20, 0x7f):frame_time(1):midi(0x80, 0x20, 0x00)
 forge:frame_time(2):object(id, otype):key(key):int(1):pop()
 ```
+
+### Atom Object
+
+``` lua
+local foo = {
+	bar = Map['http://foo.com#bar']
+}
+local bar = {
+	foo = Map['http://bar.com#foo']
+}
+```
+
+#### length operator
+
+``` lua
+n = #obj -- number of properties in object 
+```
+
+#### indexing by string key
+
+``` lua
+t = obj.type -- type of atom, e.g. Atom.Object
+t = obj.id -- object id, e.g. foo.bar
+t = obj.otype -- object type , e.g. bar.foo
+```
+
+#### indexing by property key (URID as Lua integer)
+
+``` lua
+atom = obj[foo.bar] -- get property value for key foo.bar
+```
+
+#### iteration
+
+``` lua
+for key, context, atom in obj:foreach() do -- iterate over all elements in object
+end
+```
+
+### Atom Tuple
+
+#### length operator
+
+``` lua
+n = #tup -- number of elements in tuple 
+```
+
+#### indexing by string key
+
+``` lua
+t = tup.type -- type of atom, e.g. Atom.Tuple
+```
+
+#### indexing by number key
+
+``` lua
+atom = tup[1] -- get first atom element
+atom = tup[#tup] -- get last atom element
+```
+
+#### iteration
+
+``` lua
+for i, atom in tup:foreach() do -- iterate over all elements in tuple
+end
+```
+
+#### unpacking
+
+``` lua
+atom1, atom2, atom3 = tup:unpack() -- unpack all elements in tuple
+atom2, atom3 = tup:unpack(2, 3) -- unpack given range of elements 
+atom2, atom3 = tup:unpack(2) -- unpack starting from given index
+```
+
+### Atom Vector
+
+#### length operator
+
+``` lua
+n = #vec -- number of elements in vector
+```
+
+#### indexing by string key
+
+``` lua
+t = vec.type -- type of atom, e.g. Atom.Vector
+t = vec.child_type -- type of child atom, e.g. Atom.Float
+t = vec.child_size -- byte size of child atom, e.g. 4
+```
+
+#### indexing by number key
+
+``` lua
+atom = vec[1] -- get first atom element
+atom = vec[#vec] -- get last atom element
+```
+
+#### iteration
+
+``` lua
+for i, atom in vec:foreach() do -- iterate over all elements in vector
+end
+```
+
+#### unpacking
+
+``` lua
+atom1, atom2, atom3 = vec:unpack() -- unpack all elements in vector
+atom2, atom3 = vec:unpack(2, 3) -- unpack given range of elements
+atom2, atom3 = vec:unpack(2) -- unpack starting from given index
+```
+
+### Atom MIDI
+
+``` lua
+midi = atom.value -- Lua table with single raw MIDI bytes
+bytes = #midi -- number of MIDI bytes
+status = midi[1] -- MIDI status byte as Lua integer
+-- or
+bytes = #atom -- number of MIDI bytes
+status = atom[1] -- direct access of MIDI status byte
+-- or
+status, note, vel = atom:unpack() -- unpack all raw MIDI bytes to stack
+status, note = atom:unpack(1, 2) -- unpack given range of bytes
+note, vel = atom:unpack(2) -- unpack starting from given index
+```
+
+### Atom Chunk
+
+``` lua
+chunk = atom.value -- Lua table with single raw chunk bytes
+bytes = #chunk -- number of chunk bytes
+c1 = chunk[1] -- first chunk byte as Lua integer
+-- or
+bytes = #atom -- number of chunk bytes
+c1 = atom[1] -- direct access of individual chunk bytes
+-- or
+c1, c2, c3, c4= atom:unpack() -- unpack all raw chunk bytes to stack
+c2, c3, c4= atom:unpack(2, 4) -- unpack given range of elements
+c3, c4= atom:unpack(3) -- unpack starting from given index
+```
+
+### First-class Atom
+
+#### length operator
+
+``` lua
+n = #atom -- byte size of atom
+```
+
+#### indexing by string key
+
+``` lua
+t = atom.type -- type of atom, e.g. Atom.Int, Atom.Double, Atom.String
+v = atom.value -- native Lua value for the corresponding atom
+```
+
+#### Atom.Bool
+
+``` lua
+bool = atom.value -- Lua boolean, e.g. true or false
+```
+
+#### Atom.Int, Atom.Long
+
+``` lua
+int = atom.value -- Lua integer
+```
+
+#### Atom.Float, Atom.Double
+
+``` lua
+float = atom.value -- Lua number
+```
+
+#### Atom.String
+
+``` lua
+str = atom.value -- Lua string
+```
+
+#### Atom.Literal
+
+``` lua
+literal = atom.value -- Lua string
+datatype = atom.datatype -- URID as Lua integer
+lang = atom.lang -- URID as Lua integer
+```
+
+#### Atom.URID
+
+``` lua
+urid = atom.value -- Lua integer
+```
+
+#### Atom.URI
+
+``` lua
+uri = atom.value -- Lua string
+```
+
+#### Atom.Path
+
+``` lua
+path = atom.value -- Lua string
+```
