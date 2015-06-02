@@ -1,6 +1,6 @@
 # Moony.lv2
 
-## Lua API v.0.1
+## Lua API (0.1.0 Beta1)
 
 ### General usage
 	
@@ -299,32 +299,62 @@ atom2, atom3 = vec:unpack(2) -- unpack starting from given index
 
 ### Atom MIDI
 
+#### length operator
+
 ``` lua
-midi = atom.value -- Lua table with single raw MIDI bytes
 bytes = #midi -- number of MIDI bytes
-status = midi[1] -- MIDI status byte as Lua integer
--- or
-bytes = #atom -- number of MIDI bytes
-status = atom[1] -- direct access of MIDI status byte
--- or
-status, note, vel = atom:unpack() -- unpack all raw MIDI bytes to stack
-status, note = atom:unpack(1, 2) -- unpack given range of bytes
-note, vel = atom:unpack(2) -- unpack starting from given index
+```
+
+#### indexing by string key
+
+``` lua
+t = midi.type -- type of atom, e.g. MIDI.Event
+m = midi.value -- Lua table with single raw MIDI bytes
+status = m[1] -- MIDI status byte as Lua integer
+```
+
+#### indexing by number key
+
+``` lua
+status = midi[1] -- direct access of MIDI status byte
+```
+
+#### unpacking
+
+``` lua
+status, note, vel = midi:unpack() -- unpack all raw MIDI bytes to stack
+status, note = midi:unpack(1, 2) -- unpack given range of bytes
+note, vel = midi:unpack(2) -- unpack starting from given index
 ```
 
 ### Atom Chunk
 
+#### length operator
+
 ``` lua
-chunk = atom.value -- Lua table with single raw chunk bytes
 bytes = #chunk -- number of chunk bytes
-c1 = chunk[1] -- first chunk byte as Lua integer
--- or
-bytes = #atom -- number of chunk bytes
-c1 = atom[1] -- direct access of individual chunk bytes
--- or
-c1, c2, c3, c4= atom:unpack() -- unpack all raw chunk bytes to stack
-c2, c3, c4= atom:unpack(2, 4) -- unpack given range of elements
-c3, c4= atom:unpack(3) -- unpack starting from given index
+```
+
+#### indexing by string key
+
+``` lua
+t = chunk.type -- type of atom, e.g. Atom.Chunk
+c = chunk.value -- Lua table with single raw chunk bytes
+c1 = c[1] -- first byte as Lua integer
+```
+
+#### indexing by number key
+
+``` lua
+c1 = chunk[1] -- direct access of individual chunk bytes
+```
+
+#### unpacking
+
+``` lua
+c1, c2, c3, c4 = chunk:unpack() -- unpack all raw chunk bytes to stack
+c2, c3, c4 = chunk:unpack(2, 4) -- unpack given range of elements
+c3, c4 = chunk:unpack(3) -- unpack starting from given index
 ```
 
 ### First-class Atom
