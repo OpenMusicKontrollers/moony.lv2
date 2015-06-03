@@ -2126,10 +2126,8 @@ moony_activate(moony_t *moony, const char *chunk)
 {
 	lua_State *L = moony->vm.L;
 
-	// load chunk
 	strcpy(moony->chunk, chunk);
-	luaL_dostring(L, moony->chunk); // cannot fail
-
+	moony->dirty_in = 1; // trigger update
 	moony->dirty_out = 1; // trigger update of UI
 }
 
