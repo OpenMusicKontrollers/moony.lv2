@@ -1986,7 +1986,7 @@ _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 		state,
 		moony->uris.moony_code,
 		moony->chunk,
-		strlen(moony->chunk)+1,
+		strlen(moony->chunk),
 		moony->forge.String,
 		LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
 }
@@ -2144,7 +2144,7 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *seq, uint32_t frames)
 
 	if(moony->dirty_out)
 	{
-		uint32_t len = strlen(moony->chunk) + 1;
+		uint32_t len = strlen(moony->chunk);
 		LV2_Atom_Forge_Frame obj_frame;
 		lv2_atom_forge_frame_time(forge, frames);
 		lv2_atom_forge_object(forge, &obj_frame, 0, moony->uris.moony_message);
@@ -2157,7 +2157,7 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *seq, uint32_t frames)
 
 	if(moony->error_out)
 	{
-		uint32_t len = strlen(moony->error) + 1;
+		uint32_t len = strlen(moony->error);
 		LV2_Atom_Forge_Frame obj_frame;
 		lv2_atom_forge_frame_time(forge, frames);
 		lv2_atom_forge_object(forge, &obj_frame, 0, moony->uris.moony_message);
