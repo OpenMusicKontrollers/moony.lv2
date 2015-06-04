@@ -1459,6 +1459,120 @@ _lforge_property(lua_State *L)
 }
 
 static int
+_lforge_vector(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	LV2_URID child_type = luaL_checkinteger(L, 2);
+	LV2_Atom_Forge_Frame frame;
+
+	int is_table = lua_istable(L, 3);
+
+	int n = is_table
+		? lua_rawlen(L, 3)
+		: lua_gettop(L) - 2;
+
+	if(  (child_type == lforge->forge->Int)
+		|| (child_type == lforge->forge->URID) )
+	{
+		uint32_t child_size = sizeof(int32_t);
+		if(!lv2_atom_forge_vector_head(lforge->forge, &frame, child_size, child_type))
+			luaL_error(L, forge_buffer_overflow);
+
+		for(int i=1; i<=n; i++)
+		{
+			if(is_table)
+				lua_rawgeti(L, 3, i);
+			int32_t v = luaL_checkinteger(L, is_table ? -1 : i+2);
+			if(is_table)
+				lua_pop(L, 1);
+
+			if(!lv2_atom_forge_raw(lforge->forge, &v, child_size))
+				luaL_error(L, forge_buffer_overflow);
+		}
+	}
+	else if(child_type == lforge->forge->Bool)
+	{
+		uint32_t child_size = sizeof(int32_t);
+		if(!lv2_atom_forge_vector_head(lforge->forge, &frame, child_size, child_type))
+			luaL_error(L, forge_buffer_overflow);
+
+		for(int i=1; i<=n; i++)
+		{
+			if(is_table)
+				lua_rawgeti(L, 3, i);
+			int32_t v = lua_toboolean(L, is_table ? -1 : i+2);
+			if(is_table)
+				lua_pop(L, 1);
+
+			if(!lv2_atom_forge_raw(lforge->forge, &v, child_size))
+				luaL_error(L, forge_buffer_overflow);
+		}
+	}
+	else if(child_type == lforge->forge->Long)
+	{
+		uint32_t child_size = sizeof(int64_t);
+		if(!lv2_atom_forge_vector_head(lforge->forge, &frame, child_size, child_type))
+			luaL_error(L, forge_buffer_overflow);
+
+		for(int i=1; i<=n; i++)
+		{
+			if(is_table)
+				lua_rawgeti(L, 3, i);
+			int64_t v = luaL_checkinteger(L, is_table ? -1 : i+2);
+			if(is_table)
+				lua_pop(L, 1);
+
+			if(!lv2_atom_forge_raw(lforge->forge, &v, child_size))
+				luaL_error(L, forge_buffer_overflow);
+		}
+	}
+	else if(child_type == lforge->forge->Float)
+	{
+		uint32_t child_size = sizeof(float);
+		if(!lv2_atom_forge_vector_head(lforge->forge, &frame, child_size, child_type))
+			luaL_error(L, forge_buffer_overflow);
+
+		for(int i=1; i<=n; i++)
+		{
+			if(is_table)
+				lua_rawgeti(L, 3, i);
+			float v = luaL_checknumber(L, is_table ? -1 : i+2);
+			if(is_table)
+				lua_pop(L, 1);
+
+			if(!lv2_atom_forge_raw(lforge->forge, &v, child_size))
+				luaL_error(L, forge_buffer_overflow);
+		}
+	}
+	else if(child_type == lforge->forge->Double)
+	{
+		uint32_t child_size = sizeof(double);
+		if(!lv2_atom_forge_vector_head(lforge->forge, &frame, child_size, child_type))
+			luaL_error(L, forge_buffer_overflow);
+
+		for(int i=1; i<=n; i++)
+		{
+			if(is_table)
+				lua_rawgeti(L, 3, i);
+			double v = luaL_checknumber(L, is_table ? -1 : i+2);
+			if(is_table)
+				lua_pop(L, 1);
+
+			if(!lv2_atom_forge_raw(lforge->forge, &v, child_size))
+				luaL_error(L, forge_buffer_overflow);
+		}
+	}
+	else
+		luaL_error(L, "vector supports only fixed sized atoms (e.g. Int, Long, Float, Double, URID, Bool)");
+
+	lv2_atom_forge_pop(lforge->forge, &frame);
+
+	lua_settop(L, 1);
+	return 1;
+}
+
+static int
 _lforge_sequence(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1503,7 +1617,6 @@ static const luaL_Reg lforge_mt [] = {
 	{"uri", _lforge_uri},
 	{"path", _lforge_path},
 
-	//TODO vector
 	{"chunk", _lforge_chunk},
 	{"midi", _lforge_midi},
 	{"bundle", _lforge_osc_bundle},
@@ -1512,6 +1625,7 @@ static const luaL_Reg lforge_mt [] = {
 	{"object", _lforge_object},
 	{"key", _lforge_key},
 	{"property", _lforge_property},
+	{"vector", _lforge_vector},
 	{"sequence", _lforge_sequence},
 
 	{"pop", _lforge_pop},

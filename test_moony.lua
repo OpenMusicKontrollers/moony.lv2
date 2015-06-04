@@ -713,4 +713,94 @@ do
 end
 
 -- Vector
--- TODO
+print('[test] Vector')
+do
+
+	local function producer(forge)
+		forge:frame_time(0)
+		forge:vector(Atom.Int, {1, 2, 3, 4})
+
+		forge:frame_time(1)
+		forge:vector(Atom.Long, 5, 6, 7, 8)
+		
+		forge:frame_time(2)
+		forge:vector(Atom.Bool, {true, false})
+		
+		forge:frame_time(3)
+		forge:vector(Atom.Float, 1.0, 2.0)
+		
+		forge:frame_time(4)
+		forge:vector(Atom.Double, {3.3, 4.4})
+		
+		forge:frame_time(5)
+		forge:vector(Atom.URID, Atom.Int, Atom.Long)
+	end
+
+	local function consumer(seq)
+		assert(#seq == 6)
+
+		local vec = seq[1]
+		assert(vec.type == Atom.Vector)
+		assert(#vec == 4)
+		assert(vec.child_type == Atom.Int)
+		assert(vec.child_size == 4)
+
+		for i, atom in vec:foreach() do
+			assert(atom.type == Atom.Int)
+			assert(atom.value == i)
+		end
+		
+		vec = seq[2]
+		assert(vec.type == Atom.Vector)
+		assert(#vec == 4)
+		assert(vec.child_type == Atom.Long)
+		assert(vec.child_size == 8)
+
+		for i, atom in vec:foreach() do
+			assert(atom.type == Atom.Long)
+			assert(atom.value == i + 4)
+		end
+
+		vec = seq[3]
+		assert(vec.type == Atom.Vector)
+		assert(#vec == 2)
+		assert(vec.child_type == Atom.Bool)
+		assert(vec.child_size == 4)
+		assert(vec[0] == nil)
+		assert(vec[1].value == true)
+		assert(vec[2].value == false)
+		assert(vec[3] == nil)
+
+		vec = seq[4]
+		assert(vec.type == Atom.Vector)
+		assert(#vec == 2)
+		assert(vec.child_type == Atom.Float)
+		assert(vec.child_size == 4)
+		local a, b = vec:unpack()
+		assert(a.value == 1.0)
+		assert(b.value == 2.0)
+		
+		vec = seq[5]
+		assert(vec.type == Atom.Vector)
+		assert(#vec == 2)
+		assert(vec.child_type == Atom.Double)
+		assert(vec.child_size == 8)
+		local a, b = vec:unpack()
+		assert(a.value == 3.3)
+		assert(b.value == 4.4)
+		
+		vec = seq[6]
+		assert(vec.type == Atom.Vector)
+		assert(#vec == 2)
+		assert(vec.child_type == Atom.URID)
+		assert(vec.child_size == 4)
+		local a, b = vec:unpack(1, 1)
+		assert(a.value == Atom.Int)
+		assert(b == nil)
+		local a, b = vec:unpack(2, 2)
+		assert(a.value == Atom.Long)
+		assert(b == nil)
+	end
+
+	test(producer, consumer)
+end

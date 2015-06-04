@@ -161,6 +161,9 @@ forge:midi(0x90, 0x4a, 0x7f) -- push individual Lua integers as MIDI message
 forge:chunk({0x01, 0x02, 0x03, 0x04}) -- push a Lua table as atom chunk
 forge:chunk(0x01, 0x02, 0x03, 0x04) -- push individual Lua integers as atom chunk
 
+forge:vector(URID, {a, b, c, d}) -- push a vector of fixed-sized type URID
+forge:vector(URID, a, b, c, d) -- push a vector of fixed-sized type URID
+
 bndl = forge:bundle(1) -- start a new OSC bundle with timestamp (returns a derived forge container)
 bndl:message('/hello', 'si', 'world', 2015) -- push a complete OSC message
 bndl:pop() -- finalize derived forge container
@@ -176,6 +179,9 @@ obj:pop() -- finalize derived forge container
 seq = forge:sequence(unit) -- start a nested sequence (returns a derived forge container)
 seq:pop()
 ```
+
+Vector forge only supports fixed-sized Atom types: e.g. Int, Long, Float, Double,
+URID and Bool.
 
 All forge functions but forge:pop return a forge; either itself or a
 derived one, depending on context. One can thus fill values in sequence, e.g:
