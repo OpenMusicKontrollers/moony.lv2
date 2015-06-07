@@ -200,7 +200,10 @@ run(LV2_Handle instance, uint32_t nsamples)
 
 	// clear output sequence buffer upon error
 	if(moony_bypass(&handle->moony))
+	{
+		lv2_atom_forge_set_buffer(&handle->forge, (uint8_t *)handle->event_out, capacity);
 		lv2_atom_forge_sequence_head(&handle->forge, &frame, 0);
+	}
 
 	lv2_atom_forge_pop(&handle->forge, &frame);
 
