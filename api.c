@@ -1464,6 +1464,7 @@ _lforge_vector(lua_State *L)
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	LV2_URID child_type = luaL_checkinteger(L, 2);
+	uint32_t child_size;
 	LV2_Atom_Forge_Frame frame;
 
 	int is_table = lua_istable(L, 3);
@@ -1475,7 +1476,7 @@ _lforge_vector(lua_State *L)
 	if(  (child_type == lforge->forge->Int)
 		|| (child_type == lforge->forge->URID) )
 	{
-		uint32_t child_size = sizeof(int32_t);
+		child_size = sizeof(int32_t);
 		if(!lv2_atom_forge_vector_head(lforge->forge, &frame, child_size, child_type))
 			luaL_error(L, forge_buffer_overflow);
 
@@ -1493,7 +1494,7 @@ _lforge_vector(lua_State *L)
 	}
 	else if(child_type == lforge->forge->Bool)
 	{
-		uint32_t child_size = sizeof(int32_t);
+		child_size = sizeof(int32_t);
 		if(!lv2_atom_forge_vector_head(lforge->forge, &frame, child_size, child_type))
 			luaL_error(L, forge_buffer_overflow);
 
@@ -1511,7 +1512,7 @@ _lforge_vector(lua_State *L)
 	}
 	else if(child_type == lforge->forge->Long)
 	{
-		uint32_t child_size = sizeof(int64_t);
+		child_size = sizeof(int64_t);
 		if(!lv2_atom_forge_vector_head(lforge->forge, &frame, child_size, child_type))
 			luaL_error(L, forge_buffer_overflow);
 
@@ -1529,7 +1530,7 @@ _lforge_vector(lua_State *L)
 	}
 	else if(child_type == lforge->forge->Float)
 	{
-		uint32_t child_size = sizeof(float);
+		child_size = sizeof(float);
 		if(!lv2_atom_forge_vector_head(lforge->forge, &frame, child_size, child_type))
 			luaL_error(L, forge_buffer_overflow);
 
@@ -1547,7 +1548,7 @@ _lforge_vector(lua_State *L)
 	}
 	else if(child_type == lforge->forge->Double)
 	{
-		uint32_t child_size = sizeof(double);
+		child_size = sizeof(double);
 		if(!lv2_atom_forge_vector_head(lforge->forge, &frame, child_size, child_type))
 			luaL_error(L, forge_buffer_overflow);
 
@@ -1567,6 +1568,7 @@ _lforge_vector(lua_State *L)
 		luaL_error(L, "vector supports only fixed sized atoms (e.g. Int, Long, Float, Double, URID, Bool)");
 
 	lv2_atom_forge_pop(lforge->forge, &frame);
+	lv2_atom_forge_pad(lforge->forge, n*child_size);
 
 	lua_settop(L, 1);
 	return 1;
