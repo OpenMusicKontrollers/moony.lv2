@@ -963,6 +963,14 @@ moony:template-midi_responder
 	lv2:appliesTo moony:c4a1xc4a1 ;
 	rdfs:label "MIDI responder" ;
 	rdfs:seeAlso <presets.ttl> .
+moony:template-midi_sequencer
+	a pset:Preset ;
+	lv2:appliesTo moony:a1xa1 ;
+	lv2:appliesTo moony:c1a1xc1a1 ;
+	lv2:appliesTo moony:c2a1xc2a1 ;
+	lv2:appliesTo moony:c4a1xc4a1 ;
+	rdfs:label "MIDI sequencer" ;
+	rdfs:seeAlso <presets.ttl> .
 moony:template-osc_responder
 	a pset:Preset ;
 	lv2:appliesTo moony:a1xa1 ;
