@@ -58,7 +58,7 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 	if(!handle)
 		return NULL;
 
-	if(moony_init(&handle->moony, features))
+	if(moony_init(&handle->moony, rate, features))
 	{
 		free(handle);
 		return NULL;

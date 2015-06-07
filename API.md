@@ -106,6 +106,27 @@ urid = OSC.messagePath
 urid = OSC.messageFormat
 urid = OSC.messageArguments
 ```
+
+#### URIDs of Core
+
+``` lua
+urid = Core.sampleRate
+```
+
+#### URIDs of Buf\_Size
+
+``` lua
+urid = Buf_Size.minBlockLength -- only defined if exported by host
+urid = Buf_Size.maxBlockLength -- only defined if exported by host
+urid = Buf_Size.sequenceSize -- only defined if exported by host
+```
+
+#### Options Table
+
+``` lua
+sampleRate = Options[Core.sampleRate]
+sequenceSize = Options[Buf_Size.sequenceSize]
+```
 	
 ### Atom Sequence
 

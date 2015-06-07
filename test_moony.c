@@ -181,7 +181,7 @@ main(int argc, char **argv)
 		NULL
 	};
 	
-	if(moony_init(&handle.moony, features))
+	if(moony_init(&handle.moony, 48000, features))
 		return -1;
 
 	lua_State *L = handle.moony.vm.L;

@@ -27,6 +27,7 @@
 @prefix pset:	<http://lv2plug.in/ns/ext/presets#> .
 @prefix rdfs:	<http://www.w3.org/2000/01/rdf-schema#> .
 @prefix rsz:  <http://lv2plug.in/ns/ext/resize-port#> .
+@prefix bufsz: <http://lv2plug.in/ns/ext/buf-size#> .
 @prefix kx:		<http://kxstudio.sf.net/ns/lv2ext/external-ui#> .
 
 @prefix osc:  <http://opensoundcontrol.org#> .
@@ -256,7 +257,7 @@ moony:c1xc1
 	doap:name "Moony C1 x C1" ;
 	doap:license lic:Artistic-2.0 ;
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule ;
 
@@ -304,7 +305,7 @@ moony:c2xc2
 	doap:name "Moony C2 x C2" ;
 	doap:license lic:Artistic-2.0 ;
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule ;
 
@@ -365,7 +366,7 @@ moony:c4xc4
 	doap:name "Moony C4 x C4" ;
 	doap:license lic:Artistic-2.0 ;
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule ;
 
@@ -452,7 +453,7 @@ moony:a1xa1
 	doap:name "Moony A1 x A1" ;
 	doap:license lic:Artistic-2.0 ;
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule ;
 
@@ -507,7 +508,7 @@ moony:a2xa2
 	doap:name "Moony A2 x A2" ;
 	doap:license lic:Artistic-2.0 ;
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule ;
 
@@ -580,7 +581,7 @@ moony:a4xa4
 	doap:name "Moony A4 x A4" ;
 	doap:license lic:Artistic-2.0 ;
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule ;
 
@@ -689,7 +690,7 @@ moony:c1a1xc1a1
 	doap:name "Moony C1+A1 x C1+A1" ;
 	doap:license lic:Artistic-2.0 ;
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule ;
 
@@ -758,7 +759,7 @@ moony:c2a1xc2a1
 	doap:name "Moony C2+A1 x C2+A1" ;
 	doap:license lic:Artistic-2.0 ;
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule ;
 
@@ -839,7 +840,7 @@ moony:c4a1xc4a1
 	doap:name "Moony C4+A1 x C4+A1" ;
 	doap:license lic:Artistic-2.0 ;
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule ;
 

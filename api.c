@@ -1788,13 +1788,15 @@ _log(lua_State *L)
 }
 
 int
-moony_init(moony_t *moony, const LV2_Feature *const *features)
+moony_init(moony_t *moony, double sample_rate, const LV2_Feature *const *features)
 {
 	if(moony_vm_init(&moony->vm))
 	{
 		fprintf(stderr, "Lua VM cannot be initialized\n");
 		return -1;
 	}
+	
+	LV2_Options_Option *opts = NULL;
 
 	for(int i=0; features[i]; i++)
 		if(!strcmp(features[i]->URI, LV2_URID__map))
@@ -1805,6 +1807,8 @@ moony_init(moony_t *moony, const LV2_Feature *const *features)
 			moony->sched = (LV2_Worker_Schedule *)features[i]->data;
 		else if(!strcmp(features[i]->URI, LV2_LOG__log))
 			moony->log = (LV2_Log_Log *)features[i]->data;
+		else if(!strcmp(features[i]->URI, LV2_OPTIONS__options))
+			opts = (LV2_Options_Option *)features[i]->data;
 
 	if(!moony->map)
 	{
@@ -1821,6 +1825,22 @@ moony_init(moony_t *moony, const LV2_Feature *const *features)
 		fprintf(stderr, "Host does not support worker:schedule\n");
 		return -1;
 	}
+	
+	if(opts)
+	{
+		for(LV2_Options_Option *opt = opts;
+			(opt->key != 0) && (opt->value != NULL);
+			opt++)
+		{
+			if(opt->key == moony->uris.bufsz_min_block_length)
+				moony->opts.min_block_length = *(int32_t *)opt->value;
+			else if(opt->key == moony->uris.bufsz_max_block_length)
+				moony->opts.max_block_length = *(int32_t *)opt->value;
+			else if(opt->key == moony->uris.bufsz_sequence_size)
+				moony->opts.sequence_size = *(int32_t *)opt->value;
+		}
+	}
+	moony->opts.sample_rate = sample_rate;
 
 	moony->uris.moony_message = moony->map->map(moony->map->handle, MOONY_MESSAGE_URI);
 	moony->uris.moony_code = moony->map->map(moony->map->handle, MOONY_CODE_URI);
@@ -1840,6 +1860,11 @@ moony_init(moony_t *moony, const LV2_Feature *const *features)
 	moony->uris.time_frame = moony->map->map(moony->map->handle, LV2_TIME__frame);
 	moony->uris.time_framesPerSecond = moony->map->map(moony->map->handle, LV2_TIME__framesPerSecond);
 	moony->uris.time_speed = moony->map->map(moony->map->handle, LV2_TIME__speed);
+	
+	moony->uris.bufsz_max_block_length = moony->map->map(moony->map->handle, LV2_BUF_SIZE__maxBlockLength);
+	moony->uris.bufsz_min_block_length = moony->map->map(moony->map->handle, LV2_BUF_SIZE__minBlockLength);
+	moony->uris.bufsz_sequence_size = moony->map->map(moony->map->handle, LV2_BUF_SIZE__sequenceSize);
+	moony->uris.core_sample_rate = moony->map->map(moony->map->handle, LV2_CORE__sampleRate);
 
 	osc_forge_init(&moony->oforge, moony->map);
 	lv2_atom_forge_init(&moony->forge, moony->map);
@@ -1975,6 +2000,56 @@ moony_open(moony_t *moony, lua_State *L)
 			lua_setfield(L, -2, "messageArguments");
 	}
 	lua_setglobal(L, "OSC");
+
+	lua_newtable(L);
+	{
+		lua_pushinteger(L, moony->uris.core_sample_rate);
+			lua_setfield(L, -2, "sampleRate");
+	}
+	lua_setglobal(L, "Core");
+	
+	lua_newtable(L);
+	{
+		lua_pushinteger(L, moony->uris.bufsz_min_block_length);
+			lua_setfield(L, -2, "minBlockLength");
+		lua_pushinteger(L, moony->uris.bufsz_max_block_length);
+			lua_setfield(L, -2, "maxBlockLength");
+		lua_pushinteger(L, moony->uris.bufsz_sequence_size);
+			lua_setfield(L, -2, "sequenceSize");
+	}
+	lua_setglobal(L, "Buf_Size");
+
+	lua_newtable(L);
+	{
+		if(moony->opts.min_block_length)
+		{
+			lua_pushinteger(L, moony->uris.bufsz_min_block_length);
+			lua_pushinteger(L, moony->opts.min_block_length);
+			lua_rawset(L, -3);
+		}
+	
+		if(moony->opts.max_block_length)
+		{
+			lua_pushinteger(L, moony->uris.bufsz_max_block_length);
+			lua_pushinteger(L, moony->opts.max_block_length);
+			lua_rawset(L, -3);
+		}
+		
+		if(moony->opts.sequence_size)
+		{
+			lua_pushinteger(L, moony->uris.bufsz_sequence_size);
+			lua_pushinteger(L, moony->opts.sequence_size);
+			lua_rawset(L, -3);
+		}
+	
+		if(moony->opts.sample_rate)
+		{
+			lua_pushinteger(L, moony->uris.core_sample_rate);
+			lua_pushinteger(L, moony->opts.sample_rate);
+			lua_rawset(L, -3);
+		}
+	}
+	lua_setglobal(L, "Options");
 
 	// lv2.map
 	lua_newtable(L);

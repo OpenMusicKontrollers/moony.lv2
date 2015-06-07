@@ -804,3 +804,14 @@ do
 
 	test(producer, consumer)
 end
+
+-- Options
+print('[test] Options')
+do
+
+	assert(Core.sampleRate == Map['http://lv2plug.in/ns/lv2core#sampleRate'])
+	assert(Options[Core.sampleRate] == 48000)
+	assert(Options[Buf_Size.minBlockLength] == nil)
+	assert(Options[Buf_Size.maxBlockLength] == nil)
+	assert(Options[Buf_Size.sequenceSize] == nil)
+end

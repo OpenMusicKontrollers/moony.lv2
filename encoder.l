@@ -87,6 +87,7 @@ enum {
 	TK_WHILE,
 	TK_CONCAT,
 	TK_DOTS,
+	TK_LABEL,
 	TK_NUMBER,
 	TK_NAME,
 	TK_SINGLE_QUOTE_IN,
@@ -148,6 +149,11 @@ checkKw(char*s)
 		case 'b':
 			CHECK(break, BREAK);
 			break;
+		case 'B':
+			CHECK(Buf_Size.minBlockLength, NUMBER);
+			CHECK(Buf_Size.maxBlockLength, NUMBER);
+			CHECK(Buf_Size.sequenceSize, NUMBER);
+			break;
 		case 'c':
 			CHECK(coroutine.running, CALLER);
 			CHECK(coroutine.create, CALLER);
@@ -158,6 +164,9 @@ checkKw(char*s)
 			CHECK(coroutine.status, CALLER);
 
 			CHECK(collectgarbage, CALLER);
+			break;
+		case 'C':
+			CHECK(Core.sampleRate, NUMBER);
 			break;
 		case 'd':
 			CHECK(dofile, CALLER);
@@ -248,6 +257,8 @@ checkKw(char*s)
 			CHECK(OSC.messagePath, NUMBER);
 			CHECK(OSC.messageFormat, NUMBER);
 			CHECK(OSC.messageArguments, NUMBER);
+			
+			CHECK(Options, CALLER);
 			break;
 		case 'p':
 			CHECK(pairs, CALLER);
@@ -363,6 +374,7 @@ brace					 [\(\)\[\]\{\}]
 %%
 
 ^#!.*          {if(firstline) firstline=0;}
+"::"{name}"::" return TK_LABEL;
 {name}         return checkKw(yytext);
 {hexnumber}    return TK_NUMBER;
 {number}       return TK_NUMBER;
@@ -477,6 +489,10 @@ lua_to_markup(const char *utf8, FILE *f)
 			case TK_WHILE:
 			case TK_CONCAT:
 				_add_markup("keyword", txt);
+				break;
+			
+			case TK_LABEL:
+				_add_markup("type", txt);
 				break;
 
 			case TK_NUMBER:

@@ -33,6 +33,8 @@
 #include "lv2/lv2plug.in/ns/ext/worker/worker.h"
 #include "lv2/lv2plug.in/ns/ext/log/log.h"
 #include "lv2/lv2plug.in/ns/ext/state/state.h"
+#include "lv2/lv2plug.in/ns/ext/buf-size/buf-size.h"
+#include "lv2/lv2plug.in/ns/ext/options/options.h"
 #include "lv2/lv2plug.in/ns/lv2core/lv2.h"
 #include "lv2/lv2plug.in/ns/extensions/ui/ui.h"
 
@@ -170,7 +172,19 @@ struct _moony_t {
 		LV2_URID time_frame;
 		LV2_URID time_framesPerSecond;
 		LV2_URID time_speed;
+
+		LV2_URID bufsz_max_block_length;
+		LV2_URID bufsz_min_block_length;
+		LV2_URID bufsz_sequence_size;
+		LV2_URID core_sample_rate;
 	} uris;
+
+	struct {
+		uint32_t max_block_length;
+		uint32_t min_block_length;
+		uint32_t sequence_size;
+		uint32_t sample_rate;
+	} opts;
 
 	osc_forge_t oforge;
 	
@@ -207,7 +221,7 @@ struct _lforge_t {
 	LV2_Atom_Forge_Frame frame [2];
 };
 
-int moony_init(moony_t *moony, const LV2_Feature *const *features);
+int moony_init(moony_t *moony, double sample_rate, const LV2_Feature *const *features);
 void moony_deinit(moony_t *moony);
 void moony_open(moony_t *moony, lua_State *L);
 void moony_activate(moony_t *moony, const char *chunk);
