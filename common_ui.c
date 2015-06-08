@@ -48,8 +48,7 @@ struct _UI {
 	uint32_t notify_port;
 
 	int w, h;
-	Evas_Object *vbox;
-	Evas_Object *hbox;
+	Evas_Object *table;
 	Evas_Object *error;
 	Evas_Object *message;
 	Evas_Object *entry;
@@ -58,6 +57,9 @@ struct _UI {
 	Evas_Object *status;
 	Evas_Object *save;
 	Evas_Object *compile;
+	Evas_Object *popup;
+
+	char *logo_path;
 
 	char *chunk;
 	char *cache;
@@ -174,7 +176,7 @@ _encoder_append(const char *str, void *data)
 
 	ui->chunk = realloc(ui->chunk, size);
 
-	strncat(ui->chunk, str, size);
+	strcat(ui->chunk, str);
 }
 
 static void
@@ -247,6 +249,21 @@ _compile_clicked(void *data, Evas_Object *obj, void *event_info)
 }
 
 static void
+_info_clicked(void *data, Evas_Object *obj, void *event_info)
+{
+	UI *ui = data;
+
+	// toggle popup
+	if(ui->popup)
+	{
+		if(evas_object_visible_get(ui->popup))
+			evas_object_hide(ui->popup);
+		else
+			evas_object_show(ui->popup);
+	}
+}
+
+static void
 _changed(void *data, Evas_Object *obj, void *event_info)
 {
 	UI *ui = data;
@@ -300,99 +317,193 @@ _content_get(eo_ui_t *eoui)
 {
 	UI *ui = (void *)eoui - offsetof(UI, eoui);
 	
-	ui->vbox = elm_box_add(eoui->win);
-	elm_box_horizontal_set(ui->vbox, EINA_FALSE);
-	elm_box_homogeneous_set(ui->vbox, EINA_FALSE);
-	elm_box_padding_set(ui->vbox, 0, 0);
-	
-	ui->entry = elm_entry_add(ui->vbox);
-	elm_entry_autosave_set(ui->entry, EINA_FALSE);
-	elm_entry_entry_set(ui->entry, "");
-	elm_entry_single_line_set(ui->entry, EINA_FALSE);
-	elm_entry_scrollable_set(ui->entry, EINA_TRUE);
-	elm_entry_editable_set(ui->entry, EINA_TRUE);
-	elm_entry_markup_filter_append(ui->entry, _lua_markup, ui);
-	elm_entry_cnp_mode_set(ui->entry, ELM_CNP_MODE_PLAINTEXT);
-	elm_object_focus_set(ui->entry, EINA_TRUE);
-	evas_object_smart_callback_add(ui->entry, "changed,user", _changed, ui);
-	evas_object_smart_callback_add(ui->entry, "cursor,changed", _cursor, ui);
-	evas_object_smart_callback_add(ui->entry, "cursor,changed,manual", _cursor, ui);
-	evas_object_smart_callback_add(ui->entry, "unfocused", _unfocused, ui);
-	evas_object_size_hint_weight_set(ui->entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-	evas_object_size_hint_align_set(ui->entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
-	evas_object_show(ui->entry);
-	elm_box_pack_end(ui->vbox, ui->entry);
+	ui->table = elm_table_add(eoui->win);
+	if(ui->table)
+	{
+		elm_table_homogeneous_set(ui->table, EINA_FALSE);
+		elm_table_padding_set(ui->table, 0, 0);
+		
+		ui->entry = elm_entry_add(ui->table);
+		if(ui->entry)
+		{
+			elm_entry_autosave_set(ui->entry, EINA_FALSE);
+			elm_entry_entry_set(ui->entry, "");
+			elm_entry_single_line_set(ui->entry, EINA_FALSE);
+			elm_entry_scrollable_set(ui->entry, EINA_TRUE);
+			elm_entry_editable_set(ui->entry, EINA_TRUE);
+			elm_entry_markup_filter_append(ui->entry, _lua_markup, ui);
+			elm_entry_cnp_mode_set(ui->entry, ELM_CNP_MODE_PLAINTEXT);
+			elm_object_focus_set(ui->entry, EINA_TRUE);
+			evas_object_smart_callback_add(ui->entry, "changed,user", _changed, ui);
+			evas_object_smart_callback_add(ui->entry, "cursor,changed", _cursor, ui);
+			evas_object_smart_callback_add(ui->entry, "cursor,changed,manual", _cursor, ui);
+			evas_object_smart_callback_add(ui->entry, "unfocused", _unfocused, ui);
+			evas_object_size_hint_weight_set(ui->entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+			evas_object_size_hint_align_set(ui->entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
+			evas_object_show(ui->entry);
+			elm_table_pack(ui->table, ui->entry, 0, 0, 5, 1);
+		}
 
-	ui->error = elm_label_add(ui->vbox);
-	elm_object_text_set(ui->error, "");
-	evas_object_show(ui->error);
+		ui->error = elm_label_add(ui->table);
+		if(ui->error)
+		{
+			elm_object_text_set(ui->error, "");
+			evas_object_show(ui->error);
+		}
 
-	ui->message = elm_notify_add(ui->vbox);
-	elm_notify_timeout_set(ui->message, 0);
-	elm_notify_align_set(ui->message, 0.5, 0.0);
-	elm_notify_allow_events_set(ui->message, EINA_TRUE);
-	evas_object_size_hint_weight_set(ui->message, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-	elm_object_content_set(ui->message, ui->error);
+		ui->message = elm_notify_add(ui->table);
+		if(ui->message)
+		{
+			elm_notify_timeout_set(ui->message, 0);
+			elm_notify_align_set(ui->message, 0.5, 0.0);
+			elm_notify_allow_events_set(ui->message, EINA_TRUE);
+			evas_object_size_hint_weight_set(ui->message, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+			if(ui->error)
+				elm_object_content_set(ui->message, ui->error);
+		}
 
-	Evas_Object *label = elm_label_add(ui->vbox);
-	elm_object_text_set(label, "compiling ...");
-	evas_object_show(label);
+		Evas_Object *label = elm_label_add(ui->table);
+		if(label)
+		{
+			elm_object_text_set(label, "compiling ...");
+			evas_object_show(label);
+		}
 
-	ui->notify = elm_notify_add(ui->vbox);
-	elm_notify_timeout_set(ui->notify, 0.5);
-	elm_notify_align_set(ui->notify, 0.5, 0.5);
-	elm_notify_allow_events_set(ui->notify, EINA_TRUE);
-	evas_object_size_hint_weight_set(ui->notify, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-	elm_object_content_set(ui->notify, label);
-	
-	ui->hbox = elm_box_add(eoui->win);
-	elm_box_horizontal_set(ui->hbox, EINA_TRUE);
-	elm_box_homogeneous_set(ui->hbox, EINA_TRUE);
-	elm_box_padding_set(ui->hbox, 0, 0);
-	evas_object_size_hint_align_set(ui->hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
-	evas_object_show(ui->hbox);
-	elm_box_pack_end(ui->vbox, ui->hbox);
+		ui->notify = elm_notify_add(ui->table);
+		if(ui->notify)
+		{
+			elm_notify_timeout_set(ui->notify, 0.5);
+			elm_notify_align_set(ui->notify, 0.5, 0.5);
+			elm_notify_allow_events_set(ui->notify, EINA_TRUE);
+			evas_object_size_hint_weight_set(ui->notify, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+			if(label)
+				elm_object_content_set(ui->notify, label);
+		}
+		
+		ui->load = elm_fileselector_button_add(ui->table);
+		if(ui->load)
+		{
+			elm_fileselector_button_inwin_mode_set(ui->load, EINA_FALSE);
+			elm_fileselector_button_window_title_set(ui->load, "Load Lua script from file");
+			elm_fileselector_is_save_set(ui->save, EINA_FALSE);
+			elm_object_part_text_set(ui->load, "default", "Load");
+			evas_object_smart_callback_add(ui->load, "file,chosen", _load_chosen, ui);
+			evas_object_size_hint_weight_set(ui->load, 0.25, 0.f);
+			evas_object_size_hint_align_set(ui->load, EVAS_HINT_FILL, EVAS_HINT_FILL);
+			evas_object_show(ui->load);
+			elm_table_pack(ui->table, ui->load, 0, 1, 1, 1);
+		}
 
-	ui->load = elm_fileselector_button_add(ui->hbox);
-	elm_fileselector_button_inwin_mode_set(ui->load, EINA_FALSE);
-	elm_fileselector_button_window_title_set(ui->load, "Load Lua script from file");
-	elm_fileselector_is_save_set(ui->save, EINA_FALSE);
-	elm_object_part_text_set(ui->load, "default", "Load");
-	evas_object_smart_callback_add(ui->load, "file,chosen", _load_chosen, ui);
-	evas_object_size_hint_weight_set(ui->load, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-	evas_object_size_hint_align_set(ui->load, EVAS_HINT_FILL, EVAS_HINT_FILL);
-	evas_object_show(ui->load);
-	elm_box_pack_end(ui->hbox, ui->load);
+		ui->save = elm_fileselector_button_add(ui->table);
+		if(ui->save)
+		{
+			elm_fileselector_button_inwin_mode_set(ui->save, EINA_FALSE);
+			elm_fileselector_button_window_title_set(ui->save, "Save Lua script to file");
+			elm_fileselector_is_save_set(ui->save, EINA_TRUE);
+			elm_object_part_text_set(ui->save, "default", "Save");
+			evas_object_smart_callback_add(ui->save, "file,chosen", _save_chosen, ui);
+			evas_object_size_hint_weight_set(ui->save, 0.25, 0.f);
+			evas_object_size_hint_align_set(ui->save, EVAS_HINT_FILL, EVAS_HINT_FILL);
+			evas_object_show(ui->save);
+			elm_table_pack(ui->table, ui->save, 1, 1, 1, 1);
+		}
 
-	ui->save = elm_fileselector_button_add(ui->hbox);
-	elm_fileselector_button_inwin_mode_set(ui->save, EINA_FALSE);
-	elm_fileselector_button_window_title_set(ui->save, "Save Lua script to file");
-	elm_fileselector_is_save_set(ui->save, EINA_TRUE);
-	elm_object_part_text_set(ui->save, "default", "Save");
-	evas_object_smart_callback_add(ui->save, "file,chosen", _save_chosen, ui);
-	evas_object_size_hint_weight_set(ui->save, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-	evas_object_size_hint_align_set(ui->save, EVAS_HINT_FILL, EVAS_HINT_FILL);
-	evas_object_show(ui->save);
-	elm_box_pack_end(ui->hbox, ui->save);
-
-	ui->compile = elm_button_add(ui->hbox);
-	elm_object_part_text_set(ui->compile, "default", "Compile");
-	evas_object_smart_callback_add(ui->compile, "clicked", _compile_clicked, ui);
-	evas_object_size_hint_weight_set(ui->compile, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-	evas_object_size_hint_align_set(ui->compile, EVAS_HINT_FILL, EVAS_HINT_FILL);
-	evas_object_show(ui->compile);
-	elm_box_pack_end(ui->hbox, ui->compile);
-	elm_object_tooltip_text_set(ui->compile, "Shift + Enter");
+		ui->compile = elm_button_add(ui->table);
+		if(ui->compile)
+		{
+			elm_object_part_text_set(ui->compile, "default", "Compile");
+			evas_object_smart_callback_add(ui->compile, "clicked", _compile_clicked, ui);
+			evas_object_size_hint_weight_set(ui->compile, 0.25, 0.f);
+			evas_object_size_hint_align_set(ui->compile, EVAS_HINT_FILL, EVAS_HINT_FILL);
+			evas_object_show(ui->compile);
+			elm_table_pack(ui->table, ui->compile, 2, 1, 1, 1);
+			elm_object_tooltip_text_set(ui->compile, "Shift + Enter");
 #if defined(ELM_1_9)
-	elm_object_tooltip_orient_set(ui->compile, ELM_TOOLTIP_ORIENT_TOP);
+			elm_object_tooltip_orient_set(ui->compile, ELM_TOOLTIP_ORIENT_TOP);
 #endif
+		}
 
-	ui->status = elm_label_add(ui->vbox);
-	elm_object_text_set(ui->status, "");
-	evas_object_show(ui->status);
-	elm_box_pack_end(ui->hbox, ui->status);
+		ui->status = elm_label_add(ui->table);
+		if(ui->status)
+		{
+			elm_object_text_set(ui->status, "");
+			evas_object_size_hint_weight_set(ui->status, 0.25, 0.f);
+			evas_object_size_hint_align_set(ui->status, EVAS_HINT_FILL, EVAS_HINT_FILL);
+			evas_object_show(ui->status);
+			elm_table_pack(ui->table, ui->status, 3, 1, 1, 1);
+		}
+		
+		Evas_Object *info = elm_button_add(ui->table);
+		if(info)
+		{
+			evas_object_smart_callback_add(info, "clicked", _info_clicked, ui);
+			evas_object_size_hint_weight_set(info, 0.f, 0.f);
+			evas_object_size_hint_align_set(info, 1.f, EVAS_HINT_FILL);
+			evas_object_show(info);
+			elm_table_pack(ui->table, info, 4, 1, 1, 1);
+				
+			Evas_Object *icon = elm_icon_add(info);
+			if(icon)
+			{
+				elm_layout_file_set(icon, ui->logo_path, NULL);
+				evas_object_size_hint_min_set(icon, 20, 20);
+				evas_object_size_hint_max_set(icon, 32, 32);
+				evas_object_size_hint_aspect_set(icon, EVAS_ASPECT_CONTROL_BOTH, 1, 1);
+				evas_object_show(icon);
+				elm_object_part_content_set(info, "icon", icon);
+			}
+		}
 
-	return ui->vbox;
+		ui->popup = elm_popup_add(ui->table);
+		if(ui->popup)
+		{
+			elm_popup_allow_events_set(ui->popup, EINA_TRUE);
+
+			Evas_Object *hbox = elm_box_add(ui->popup);
+			if(hbox)
+			{
+				elm_box_horizontal_set(hbox, EINA_TRUE);
+				elm_box_homogeneous_set(hbox, EINA_FALSE);
+				elm_box_padding_set(hbox, 10, 0);
+				evas_object_show(hbox);
+				elm_object_content_set(ui->popup, hbox);
+
+				Evas_Object *icon = elm_icon_add(hbox);
+				if(icon)
+				{
+					elm_layout_file_set(icon, ui->logo_path, NULL);
+					evas_object_size_hint_min_set(icon, 128, 128);
+					evas_object_size_hint_max_set(icon, 256, 256);
+					evas_object_size_hint_aspect_set(icon, EVAS_ASPECT_CONTROL_BOTH, 1, 1);
+					evas_object_show(icon);
+					elm_box_pack_end(hbox, icon);
+				}
+
+				Evas_Object *label = elm_label_add(hbox);
+				if(label)
+				{
+					elm_object_text_set(label,
+						"<color=#b00 shadow_color=#fff font_size=20>"
+						"Moony - Logic Glue for LV2"
+						"</color></br><align=left>"
+						"Version "MOONY_VERSION"</br></br>"
+						"Copyright (c) 2015 Hanspeter Portner</br></br>"
+						"This is free and libre software</br>"
+						"Released under Artistic License 2.0</br>"
+						"By Open Music Kontrollers</br></br>"
+						"<color=#bbb>"
+						"http://open-music-kontrollers.ch/lv2/moony</br>"
+						"dev@open-music-kontrollers.ch"
+						"</color></align>");
+
+					evas_object_show(label);
+					elm_box_pack_end(hbox, label);
+				}
+			}
+		}
+	}
+
+	return ui->table;
 }
 
 static LV2UI_Handle
@@ -473,6 +584,8 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 
 	ui->write_function = write_function;
 	ui->controller = controller;
+	
+	asprintf(&ui->logo_path, "%s/omk_logo_256x256.png", bundle_path);
 
 	if(eoui_instantiate(eoui, descriptor, plugin_uri, bundle_path, write_function,
 		controller, widget, features))
@@ -500,6 +613,8 @@ cleanup(LV2UI_Handle handle)
 
 	eoui_cleanup(&ui->eoui);
 
+	if(ui->logo_path)
+		free(ui->logo_path);
 	if(ui->cache)
 		free(ui->cache);
 	free(ui);

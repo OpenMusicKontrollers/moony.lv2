@@ -10,6 +10,10 @@ include_directories(${PROJECT_SOURCE_DIR}/lua-5.3)
 include_directories(${PROJECT_BINARY_DIR})
 
 set(CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
+add_definitions("-D_GNU_SOURCE=1") # asprintf
+
+set(MOONY_VERSION "0.1.1_beta2")
+add_definitions("-DMOONY_VERSION=\"${MOONY_VERSION}\"")
 
 set(DEST lib/lv2/moony.lv2)
 if(WIN32)
@@ -126,6 +130,7 @@ configure_file(${PROJECT_SOURCE_DIR}/manifest.ttl.in ${PROJECT_BINARY_DIR}/manif
 install(FILES ${PROJECT_BINARY_DIR}/manifest.ttl DESTINATION ${DEST})
 install(FILES ${PROJECT_SOURCE_DIR}/moony.ttl DESTINATION ${DEST})
 install(FILES ${PROJECT_SOURCE_DIR}/presets.ttl DESTINATION ${DEST})
+install(FILES ${PROJECT_SOURCE_DIR}/omk_logo_256x256.png DESTINATION ${DEST})
 
 include(CTest)
 

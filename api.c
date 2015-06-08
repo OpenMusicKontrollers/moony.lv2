@@ -2177,7 +2177,7 @@ _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 		state,
 		moony->uris.moony_code,
 		moony->chunk,
-		strlen(moony->chunk),
+		strlen(moony->chunk) + 1,
 		moony->forge.String,
 		LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
 }
