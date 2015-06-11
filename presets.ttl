@@ -321,11 +321,11 @@ moony:template-osc_responder
 osc_responder = {
   ['/ping'] = function(self, frames, forge, ...)
     --forge:frame_time(frames)
-    --forge:osc_message('/pong')
+    --forge:message('/pong')
   end,
   ['/pong'] = function(self, frames, forge, ...)
     --forge:frame_time(frames)
-    --forge:osc_message('/tok')
+    --forge:message('/tok')
   end
 }
 setmetatable(osc_responder, osc_mt)
