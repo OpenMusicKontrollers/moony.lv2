@@ -28,6 +28,7 @@
 @prefix rdfs:	<http://www.w3.org/2000/01/rdf-schema#> .
 @prefix rsz:  <http://lv2plug.in/ns/ext/resize-port#> .
 @prefix bufsz: <http://lv2plug.in/ns/ext/buf-size#> .
+@prefix urid: <http://lv2plug.in/ns/ext/urid#> .
 @prefix kx:		<http://kxstudio.sf.net/ns/lv2ext/external-ui#> .
 
 @prefix osc:  <http://opensoundcontrol.org#> .
@@ -98,7 +99,7 @@ moony:common_eo
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] ;
-	lv2:requiredFeature ui:idleInterface, ui:portMap .
+	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map .
 moony:common_ui
 	a ui:UI ;
 	ui:portNotification [
@@ -147,7 +148,7 @@ moony:common_ui
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] ;
-	lv2:requiredFeature ui:idleInterface, ui:portMap ;
+	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map ;
   lv2:extensionData ui:idleInterface, ui:showInterface .
 moony:common_x11
 	a ui:X11UI ;
@@ -197,7 +198,7 @@ moony:common_x11
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] ;
-	lv2:requiredFeature ui:idleInterface, ui:portMap ;
+	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map ;
 	lv2:optionalFeature ui:resize ;
   lv2:extensionData ui:idleInterface .
 moony:common_kx
@@ -248,7 +249,7 @@ moony:common_kx
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] ;
-	lv2:requiredFeature kx:Host, ui:portMap .
+	lv2:requiredFeature kx:Host, ui:portMap, urid:map .
 
 # C1XC1 Plugin
 moony:c1xc1
@@ -259,7 +260,7 @@ moony:c1xc1
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
-	lv2:requiredFeature work:schedule ;
+	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 
 	lv2:port [
 	# input control ports
@@ -307,7 +308,7 @@ moony:c2xc2
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
-	lv2:requiredFeature work:schedule ;
+	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 
 	lv2:port [
 	# input control ports
@@ -368,7 +369,7 @@ moony:c4xc4
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
-	lv2:requiredFeature work:schedule ;
+	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 
 	lv2:port [
 	# input control ports
@@ -455,7 +456,7 @@ moony:a1xa1
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
-	lv2:requiredFeature work:schedule ;
+	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 
 	lv2:port [
 	# input event port
@@ -510,7 +511,7 @@ moony:a2xa2
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
-	lv2:requiredFeature work:schedule ;
+	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 
 	lv2:port [
 	# input event port
@@ -583,7 +584,7 @@ moony:a4xa4
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
-	lv2:requiredFeature work:schedule ;
+	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 
 	lv2:port [
 	# input event port
@@ -692,7 +693,7 @@ moony:c1a1xc1a1
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
-	lv2:requiredFeature work:schedule ;
+	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 
 	lv2:port [
 	# input event port
@@ -761,7 +762,7 @@ moony:c2a1xc2a1
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
-	lv2:requiredFeature work:schedule ;
+	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 
 	lv2:port [
 	# input event port
@@ -842,7 +843,7 @@ moony:c4a1xc4a1
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
-	lv2:requiredFeature work:schedule ;
+	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 
 	lv2:port [
 	# input event port
