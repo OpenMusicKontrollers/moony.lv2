@@ -6,13 +6,13 @@ include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/tlsf-3.0)
 include_directories(${PROJECT_SOURCE_DIR}/eo_ui.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/osc.lv2)
-include_directories(${PROJECT_SOURCE_DIR}/lua-5.3)
+include_directories(${PROJECT_SOURCE_DIR}/lua-5.3.1)
 include_directories(${PROJECT_BINARY_DIR})
 
 set(CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
 add_definitions("-D_GNU_SOURCE=1") # asprintf
 
-set(MOONY_VERSION "0.1.1_beta2")
+set(MOONY_VERSION "0.1.1")
 add_definitions("-DMOONY_VERSION=\"${MOONY_VERSION}\"")
 
 set(DEST lib/lv2/moony.lv2)
@@ -73,40 +73,40 @@ add_library(moony MODULE
 
 	tlsf-3.0/tlsf.c
 
-	lua-5.3/lapi.c
-	lua-5.3/lcode.c
-	lua-5.3/lctype.c
-	lua-5.3/ldebug.c
-	lua-5.3/ldo.c
-	lua-5.3/ldump.c
-	lua-5.3/lfunc.c
-	lua-5.3/lgc.c
-	lua-5.3/llex.c
-	lua-5.3/lmem.c
-	lua-5.3/lobject.c
-	lua-5.3/lopcodes.c
-	lua-5.3/lparser.c
-	lua-5.3/lstate.c
-	lua-5.3/lstring.c
-	lua-5.3/ltable.c
-	lua-5.3/ltm.c
-	lua-5.3/lundump.c
-	lua-5.3/lvm.c
-	lua-5.3/lzio.c
+	lua-5.3.1/lapi.c
+	lua-5.3.1/lcode.c
+	lua-5.3.1/lctype.c
+	lua-5.3.1/ldebug.c
+	lua-5.3.1/ldo.c
+	lua-5.3.1/ldump.c
+	lua-5.3.1/lfunc.c
+	lua-5.3.1/lgc.c
+	lua-5.3.1/llex.c
+	lua-5.3.1/lmem.c
+	lua-5.3.1/lobject.c
+	lua-5.3.1/lopcodes.c
+	lua-5.3.1/lparser.c
+	lua-5.3.1/lstate.c
+	lua-5.3.1/lstring.c
+	lua-5.3.1/ltable.c
+	lua-5.3.1/ltm.c
+	lua-5.3.1/lundump.c
+	lua-5.3.1/lvm.c
+	lua-5.3.1/lzio.c
 
-	lua-5.3/lbaselib.c
-	lua-5.3/lauxlib.c
-	lua-5.3/lcorolib.c
-	lua-5.3/lmathlib.c
-	lua-5.3/lstrlib.c
-	lua-5.3/ltablib.c
-	lua-5.3/lutf8lib.c)
-	#lua-5.3/lbitlib.c
-	#lua-5.3/ldblib.c
-	#lua-5.3/liolib.c
-	#lua-5.3/loslib.c
-	#lua-5.3/loadlib.c
-	#lua-5.3/linit.c
+	lua-5.3.1/lbaselib.c
+	lua-5.3.1/lauxlib.c
+	lua-5.3.1/lcorolib.c
+	lua-5.3.1/lmathlib.c
+	lua-5.3.1/lstrlib.c
+	lua-5.3.1/ltablib.c
+	lua-5.3.1/lutf8lib.c)
+	#lua-5.3.1/lbitlib.c
+	#lua-5.3.1/ldblib.c
+	#lua-5.3.1/liolib.c
+	#lua-5.3.1/loslib.c
+	#lua-5.3.1/loadlib.c
+	#lua-5.3.1/linit.c
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	target_compile_definitions(moony PUBLIC -DLUA_USE_LINUX)
 elseif(WIN32)
@@ -147,40 +147,40 @@ if(${BUILD_TESTING})
 
 		tlsf-3.0/tlsf.c
 
-		lua-5.3/lapi.c
-		lua-5.3/lcode.c
-		lua-5.3/lctype.c
-		lua-5.3/ldebug.c
-		lua-5.3/ldo.c
-		lua-5.3/ldump.c
-		lua-5.3/lfunc.c
-		lua-5.3/lgc.c
-		lua-5.3/llex.c
-		lua-5.3/lmem.c
-		lua-5.3/lobject.c
-		lua-5.3/lopcodes.c
-		lua-5.3/lparser.c
-		lua-5.3/lstate.c
-		lua-5.3/lstring.c
-		lua-5.3/ltable.c
-		lua-5.3/ltm.c
-		lua-5.3/lundump.c
-		lua-5.3/lvm.c
-		lua-5.3/lzio.c
+		lua-5.3.1/lapi.c
+		lua-5.3.1/lcode.c
+		lua-5.3.1/lctype.c
+		lua-5.3.1/ldebug.c
+		lua-5.3.1/ldo.c
+		lua-5.3.1/ldump.c
+		lua-5.3.1/lfunc.c
+		lua-5.3.1/lgc.c
+		lua-5.3.1/llex.c
+		lua-5.3.1/lmem.c
+		lua-5.3.1/lobject.c
+		lua-5.3.1/lopcodes.c
+		lua-5.3.1/lparser.c
+		lua-5.3.1/lstate.c
+		lua-5.3.1/lstring.c
+		lua-5.3.1/ltable.c
+		lua-5.3.1/ltm.c
+		lua-5.3.1/lundump.c
+		lua-5.3.1/lvm.c
+		lua-5.3.1/lzio.c
 
-		lua-5.3/lbaselib.c
-		lua-5.3/lauxlib.c
-		lua-5.3/lcorolib.c
-		lua-5.3/lmathlib.c
-		lua-5.3/lstrlib.c
-		lua-5.3/ltablib.c
-		lua-5.3/lutf8lib.c)
-		#lua-5.3/lbitlib.c
-		#lua-5.3/ldblib.c
-		#lua-5.3/liolib.c
-		#lua-5.3/loslib.c
-		#lua-5.3/loadlib.c
-		#lua-5.3/linit.c
+		lua-5.3.1/lbaselib.c
+		lua-5.3.1/lauxlib.c
+		lua-5.3.1/lcorolib.c
+		lua-5.3.1/lmathlib.c
+		lua-5.3.1/lstrlib.c
+		lua-5.3.1/ltablib.c
+		lua-5.3.1/lutf8lib.c)
+		#lua-5.3.1/lbitlib.c
+		#lua-5.3.1/ldblib.c
+		#lua-5.3.1/liolib.c
+		#lua-5.3.1/loslib.c
+		#lua-5.3.1/loadlib.c
+		#lua-5.3.1/linit.c
 	if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 		target_compile_definitions(test_moony PUBLIC -DLUA_USE_LINUX)
 	elseif(WIN32)
