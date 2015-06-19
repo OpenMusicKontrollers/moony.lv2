@@ -26,10 +26,10 @@
 #include <lv2/lv2plug.in/ns/ext/atom/forge.h>
 #include <lv2/lv2plug.in/ns/ext/midi/midi.h>
 
-#define OSC_URI								"http://opensoundcontrol.org"
+#define OSC_URI								"http://open-music-kontrollers.ch/lv2/osc"
 #define OSC_PREFIX						OSC_URI "#"	
 
-#define OSC__Event						OSC_PREFIX "Event"						// object id
+#define OSC__Event						OSC_PREFIX "Event"						// event
 #define OSC__Bundle						OSC_PREFIX "Bundle"						// object otype
 #define OSC__Message					OSC_PREFIX "Message"					// object otype
 #define OSC__bundleTimestamp	OSC_PREFIX "bundleTimestamp"	// property key
@@ -39,6 +39,9 @@
 #define OSC__messageArguments	OSC_PREFIX "messageArguments"	// property key
 
 typedef struct _osc_forge_t osc_forge_t;
+
+typedef void (*osc_message_cb_t)(uint64_t timestamp, const char *path,
+	const char *fmt, const LV2_Atom_Tuple *arguments, void *data);
 
 struct _osc_forge_t {
 	LV2_URID OSC_Event;
@@ -82,7 +85,6 @@ static inline int
 osc_atom_is_bundle(osc_forge_t *oforge, const LV2_Atom_Object *obj)
 {
 	return (obj->atom.type == oforge->ATOM_Object)
-		&& (obj->body.id == oforge->OSC_Event)
 		&& (obj->body.otype == oforge->OSC_Bundle);
 }
 
@@ -106,7 +108,6 @@ static inline int
 osc_atom_is_message(osc_forge_t *oforge, const LV2_Atom_Object *obj)
 {
 	return (obj->atom.type == oforge->ATOM_Object)
-		&& (obj->body.id == oforge->OSC_Event)
 		&& (obj->body.otype == oforge->OSC_Message);
 }
 
@@ -128,9 +129,6 @@ osc_atom_message_unpack(osc_forge_t *oforge, const LV2_Atom_Object *obj,
 
 	lv2_atom_object_query(obj, q);
 }
-
-typedef void (*osc_message_cb_t)(uint64_t timestamp, const char *path,
-	const char *fmt, const LV2_Atom_Tuple *arguments, void *data);
 
 static inline void osc_atom_event_unroll(osc_forge_t *oforge,
 	const LV2_Atom_Object *obj, osc_message_cb_t cb, void *data);
@@ -200,8 +198,7 @@ static inline LV2_Atom_Forge_Ref
 osc_forge_bundle_push(osc_forge_t *oforge, LV2_Atom_Forge *forge,
 	LV2_Atom_Forge_Frame frame [2], uint64_t timestamp)
 {
-	if(!lv2_atom_forge_object(forge, &frame[0], oforge->OSC_Event,
-			oforge->OSC_Bundle))
+	if(!lv2_atom_forge_object(forge, &frame[0], 0, oforge->OSC_Bundle))
 		return 0;
 
 	if(!lv2_atom_forge_key(forge, oforge->OSC_bundleTimestamp))
@@ -227,8 +224,7 @@ static inline LV2_Atom_Forge_Ref
 osc_forge_message_push(osc_forge_t *oforge, LV2_Atom_Forge *forge,
 	LV2_Atom_Forge_Frame frame [2], const char *path, const char *fmt)
 {
-	if(!lv2_atom_forge_object(forge, &frame[0], oforge->OSC_Event,
-			oforge->OSC_Message))
+	if(!lv2_atom_forge_object(forge, &frame[0], 0, oforge->OSC_Message))
 		return 0;
 
 	if(!lv2_atom_forge_key(forge, oforge->OSC_messagePath))
@@ -318,14 +314,16 @@ osc_forge_char(osc_forge_t *oforge, LV2_Atom_Forge *forge, char c)
 }
 
 static inline LV2_Atom_Forge_Ref
-osc_forge_midi(osc_forge_t *oforge, LV2_Atom_Forge *forge, const uint8_t *m)
+osc_forge_midi(osc_forge_t *oforge, LV2_Atom_Forge *forge, uint32_t size,
+	const uint8_t *m)
 {
+	// Note: this is not standard MIDI, e.g. first byte is a port number
 	LV2_Atom_Forge_Ref ref;
-	if(!(ref = lv2_atom_forge_atom(forge, 4, oforge->MIDI_MidiEvent)))
+	if(!(ref = lv2_atom_forge_atom(forge, size, oforge->MIDI_MidiEvent)))
 		return 0;
-	if(!(ref = lv2_atom_forge_raw(forge, m, 4)))
+	if(!(ref = lv2_atom_forge_raw(forge, m, size)))
 		return 0;
-	lv2_atom_forge_pad(forge, 4);
+	lv2_atom_forge_pad(forge, size);
 
 	return ref;
 }
@@ -411,9 +409,13 @@ osc_forge_message_varlist(osc_forge_t *oforge, LV2_Atom_Forge *forge,
 					return 0;
 				break;
 			case 'm':
-				if(!(ref = osc_forge_midi(oforge, forge, va_arg(args, const uint8_t *))))
+			{
+				int32_t size = va_arg(args, int32_t);
+				const uint8_t *m = va_arg(args, const uint8_t *);
+				if(!(ref = osc_forge_midi(oforge, forge, size, m)))
 					return 0;
 				break;
+			}
 			
 			case 'T':
 				if(!(ref = osc_forge_true(oforge, forge)))
