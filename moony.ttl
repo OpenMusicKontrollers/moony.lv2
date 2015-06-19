@@ -41,7 +41,7 @@
 omk:me
 	a foaf:Person ;
 	foaf:name "Hanspeter Portner" ;
-	foaf:mbox <dev@open-music-kontrollers.ch> ;
+	foaf:mbox <mailto:dev@open-music-kontrollers.ch> ;
 	foaf:homepage <http://open-music-kontrollers.ch> .
 
 # Project
