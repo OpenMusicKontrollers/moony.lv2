@@ -550,7 +550,6 @@ do
 
 		local atom = seq[1]
 		assert(atom.type == Atom.Object)
-		assert(atom.id == OSC.Event)
 		assert(atom.otype == OSC.Message)
 		local path = atom[OSC.messagePath]
 		assert(path.type == Atom.String)
@@ -572,7 +571,6 @@ do
 		
 		atom = seq[2]
 		assert(atom.type == Atom.Object)
-		assert(atom.id == OSC.Event)
 		assert(atom.otype == OSC.Message)
 		path = atom[OSC.messagePath]
 		assert(path.type == Atom.String)
@@ -596,7 +594,6 @@ do
 		
 		atom = seq[3]
 		assert(atom.type == Atom.Object)
-		assert(atom.id == OSC.Event)
 		assert(atom.otype == OSC.Message)
 		path = atom[OSC.messagePath]
 		assert(path.type == Atom.String)
@@ -614,7 +611,6 @@ do
 		
 		atom = seq[4]
 		assert(atom.type == Atom.Object)
-		assert(atom.id == OSC.Event)
 		assert(atom.otype == OSC.Message)
 		path = atom[OSC.messagePath]
 		assert(path.type == Atom.String)
@@ -637,7 +633,6 @@ do
 		
 		atom = seq[5]
 		assert(atom.type == Atom.Object)
-		assert(atom.id == OSC.Event)
 		assert(atom.otype == OSC.Message)
 		path = atom[OSC.messagePath]
 		assert(path.type == Atom.String)
@@ -664,7 +659,6 @@ do
 		
 		atom = seq[6]
 		assert(atom.type == Atom.Object)
-		assert(atom.id == OSC.Event)
 		assert(atom.otype == OSC.Bundle)
 		local timestamp = atom[OSC.bundleTimestamp]
 		assert(timestamp.type == Atom.Long)
