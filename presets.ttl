@@ -300,7 +300,7 @@ moony:template-osc_responder
 	state:state [
 		moony:code """osc_mt = {
   __call = function(self, frames, atom, data)
-    if atom.type == Atom.Object and atom.id == OSC.Event then
+    if atom.type == Atom.Object then
       if atom.otype == OSC.Bundle then
         --local timestamp = atom[OSC.bundleTimestamp]
         for i, itm  in atom[OSC.bundleItems]:foreach() do
@@ -320,12 +320,10 @@ moony:template-osc_responder
 
 osc_responder = {
   ['/ping'] = function(self, frames, forge, ...)
-    --forge:frame_time(frames)
-    --forge:message('/pong')
+    --forge:frame_time(frames):message('/pong')
   end,
   ['/pong'] = function(self, frames, forge, ...)
-    --forge:frame_time(frames)
-    --forge:message('/tok')
+    --forge:frame_time(frames):message('/ping')
   end
 }
 setmetatable(osc_responder, osc_mt)
