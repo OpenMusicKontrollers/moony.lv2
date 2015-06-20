@@ -246,6 +246,14 @@ moony_bypass(moony_t *moony)
 }
 
 static inline void
+moony_err(moony_t *moony, const char *err)
+{
+	strcpy(moony->error, err);
+
+	moony->error_out = 1;
+}
+
+static inline void
 moony_error(moony_t *moony)
 {
 	lua_State *L = moony->vm.L;

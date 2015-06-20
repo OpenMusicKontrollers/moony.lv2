@@ -198,6 +198,9 @@ run(LV2_Handle instance, uint32_t nsamples)
 		lua_gc(L, LUA_GCSTEP, 0);
 	}
 
+	if(&frame != handle->forge.stack) // intercept assert
+		moony_err(&handle->moony, "forge frame mismatch");
+
 	// clear output sequence buffer upon error
 	if(moony_bypass(&handle->moony))
 	{

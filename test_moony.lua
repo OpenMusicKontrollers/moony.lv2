@@ -56,6 +56,23 @@ do
 	test(producer, consumer)
 end
 
+-- frame mismatch
+print('[test] Frame mismatch')
+do
+	local function producer(forge)
+		forge:frame_time(0)
+		forge:tuple() -- would need a pop()
+	end
+
+	local function consumer(seq)
+		assert(#seq == 1)
+		local atom = seq[1]
+		assert(atom.type == Atom.Tuple)
+	end
+
+	test(producer, consumer)
+end
+
 -- Long
 print('[test] Long')
 do

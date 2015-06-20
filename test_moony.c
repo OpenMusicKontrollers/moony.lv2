@@ -63,7 +63,10 @@ _test(lua_State *L)
 
 		lua_call(L, 1, 0);
 	}
-	lv2_atom_forge_pop(forge, &frame);
+	if(&frame != forge->stack)
+		fprintf(stderr, "forge frame mismatch\n");
+	else
+		lv2_atom_forge_pop(forge, &frame);
 
 	// consume events
 	{

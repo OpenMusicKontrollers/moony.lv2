@@ -1567,6 +1567,8 @@ _lforge_vector(lua_State *L)
 	else
 		luaL_error(L, "vector supports only fixed sized atoms (e.g. Int, Long, Float, Double, URID, Bool)");
 
+	if(&frame != lforge->forge->stack) // intercept assert
+		luaL_error(L, "forge frame mismatch");
 	lv2_atom_forge_pop(lforge->forge, &frame);
 	lv2_atom_forge_pad(lforge->forge, n*child_size);
 
@@ -1597,7 +1599,11 @@ _lforge_pop(lua_State *L)
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 
 	for(int i=lforge->depth; i>0; i--)
+	{
+		if(&lforge->frame[i-1] != lforge->forge->stack) // intercept assert
+			luaL_error(L, "forge frame mismatch");
 		lv2_atom_forge_pop(lforge->forge, &lforge->frame[i-1]);
+	}
 	lforge->depth = 0; // reset depth
 
 	return 0;
