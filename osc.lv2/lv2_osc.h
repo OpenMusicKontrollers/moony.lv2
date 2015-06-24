@@ -317,7 +317,6 @@ static inline LV2_Atom_Forge_Ref
 osc_forge_midi(osc_forge_t *oforge, LV2_Atom_Forge *forge, uint32_t size,
 	const uint8_t *m)
 {
-	// Note: this is not standard MIDI, e.g. first byte is a port number
 	LV2_Atom_Forge_Ref ref;
 	if(!(ref = lv2_atom_forge_atom(forge, size, oforge->MIDI_MidiEvent)))
 		return 0;
@@ -326,30 +325,6 @@ osc_forge_midi(osc_forge_t *oforge, LV2_Atom_Forge *forge, uint32_t size,
 	lv2_atom_forge_pad(forge, size);
 
 	return ref;
-}
-
-static inline LV2_Atom_Forge_Ref
-osc_forge_true(osc_forge_t *oforge, LV2_Atom_Forge *forge)
-{
-	return lv2_atom_forge_bool(forge, 1);
-}
-
-static inline LV2_Atom_Forge_Ref
-osc_forge_false(osc_forge_t *oforge, LV2_Atom_Forge *forge)
-{
-	return lv2_atom_forge_bool(forge, 0);
-}
-
-static inline LV2_Atom_Forge_Ref
-osc_forge_nil(osc_forge_t *oforge, LV2_Atom_Forge *forge)
-{
-	return lv2_atom_forge_atom(forge, 0, 0);
-}
-
-static inline LV2_Atom_Forge_Ref
-osc_forge_bang(osc_forge_t *oforge, LV2_Atom_Forge *forge)
-{
-	return lv2_atom_forge_float(forge, INFINITY);
 }
 
 static inline LV2_Atom_Forge_Ref
@@ -367,21 +342,29 @@ osc_forge_message_varlist(osc_forge_t *oforge, LV2_Atom_Forge *forge,
 		switch(*type)
 		{
 			case 'i':
+			{
 				if(!(ref =osc_forge_int32(oforge, forge, va_arg(args, int32_t))))
 					return 0;
 				break;
+			}
 			case 'f':
+			{
 				if(!(ref = osc_forge_float(oforge, forge, (float)va_arg(args, double))))
 					return 0;
 				break;
+			}
 			case 's':
+			{
 				if(!(ref = osc_forge_string(oforge, forge, va_arg(args, const char *))))
 					return 0;
 				break;
+			}
 			case 'S':
+			{
 				if(!(ref = osc_forge_symbol(oforge, forge, va_arg(args, const char *))))
 					return 0;
 				break;
+			}
 			case 'b':
 			{
 				int32_t size = va_arg(args, int32_t);
@@ -392,22 +375,30 @@ osc_forge_message_varlist(osc_forge_t *oforge, LV2_Atom_Forge *forge,
 			}
 			
 			case 'h':
+			{
 				if(!(ref = osc_forge_int64(oforge, forge, va_arg(args, int64_t))))
 					return 0;
 				break;
+			}
 			case 'd':
+			{
 				if(!(ref = osc_forge_double(oforge, forge, va_arg(args, double))))
 					return 0;
 				break;
+			}
 			case 't':
+			{
 				if(!(ref = osc_forge_timestamp(oforge, forge, va_arg(args, uint64_t))))
 					return 0;
 				break;
+			}
 			
 			case 'c':
+			{
 				if(!(ref = osc_forge_char(oforge, forge, (char)va_arg(args, unsigned int))))
 					return 0;
 				break;
+			}
 			case 'm':
 			{
 				int32_t size = va_arg(args, int32_t);
@@ -418,24 +409,17 @@ osc_forge_message_varlist(osc_forge_t *oforge, LV2_Atom_Forge *forge,
 			}
 			
 			case 'T':
-				if(!(ref = osc_forge_true(oforge, forge)))
-					return 0;
-				break;
 			case 'F':
-				if(!(ref = osc_forge_false(oforge, forge)))
-					return 0;
-				break;
 			case 'N':
-				if(!(ref = osc_forge_nil(oforge, forge)))
-					return 0;
-				break;
 			case 'I':
-				if(!(ref = osc_forge_bang(oforge, forge)))
-					return 0;
+			{
 				break;
+			}
 
 			default: // unknown argument type
+			{
 				return 0;
+			}
 		}
 	}
 
