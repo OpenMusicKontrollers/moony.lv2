@@ -412,10 +412,12 @@ do
 		local tup = forge:tuple()
 		assert(tup ~= forge)
 		tup:int(1):float(2.0):long(3):double(4.0):pop()
+
+		forge:frame_time(1):tuple():pop()
 	end
 
 	local function consumer(seq)
-		assert(#seq == 1)
+		assert(#seq == 2)
 		local atom = seq[1]
 		assert(atom.type == Atom.Tuple)
 		assert(#atom == 4)
@@ -457,6 +459,12 @@ do
 		
 		assert(#{atom:unpack()} == #{atom:unpack(-100, 100)})
 		assert(#{atom:unpack(1, 2)} == #{atom:unpack(3, 4)})
+
+		atom = seq[2]
+		assert(atom.type == Atom.Tuple)
+		assert(#atom == 0)
+		assert(atom[0] == nil)
+		assert(atom[1] == nil)
 	end
 
 	test(producer, consumer)
@@ -637,15 +645,12 @@ do
 		assert(fmt.value == 'TFNI')
 		args = atom[OSC.messageArguments]
 		assert(args.type == Atom.Tuple)
-		assert(#args == 4)
+		assert(#args == 0)
 		assert(args[0] == nil)
-		assert(args[1].type == Atom.Bool)
-		assert(args[1].value == true)
-		assert(args[2].type == Atom.Bool)
-		assert(args[2].value == false)
-		assert(args[3].type == nil)
-		assert(args[4].type == Atom.Float)
-		assert(args[4].value == math.huge)
+		assert(args[1] == nil)
+		assert(args[2] == nil)
+		assert(args[3] == nil)
+		assert(args[4] == nil)
 		assert(args[5] == nil)
 		
 		atom = seq[5]
@@ -706,10 +711,12 @@ do
 		subseq:frame_time(2):int(2)
 
 		assert(subseq:pop() == nil)
+
+		forge:frame_time(1):sequence():pop()
 	end
 
 	local function consumer(seq)
-		assert(#seq == 1)
+		assert(#seq == 2)
 		local subseq = seq[1]
 		assert(subseq.type == Atom.Sequence)
 		assert(#subseq == 2)
@@ -718,6 +725,11 @@ do
 			assert(atom.type == Atom.Int)
 			assert(atom.value == frames)
 		end
+
+		subseq = seq[2]
+		assert(#subseq == 0)
+		assert(subseq[0] == nil)
+		assert(subseq[1] == nil)
 	end
 
 	test(producer, consumer)

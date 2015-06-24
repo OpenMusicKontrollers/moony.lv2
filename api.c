@@ -235,7 +235,7 @@ _lseq__index(lua_State *L)
 				break;
 			}
 		}
-		if(count != index) // index is out of bounds
+		if( (count != index) || (lseq->seq->atom.size == sizeof(LV2_Atom_Sequence_Body)) ) // index is out of bounds
 			lua_pushnil(L);
 	}
 	else if(lua_isstring(L, 2))
@@ -348,7 +348,7 @@ _ltuple__index(lua_State *L)
 				break;
 			}
 		}
-		if(count != index) // index is out of bounds
+		if( (count != index) || (ltuple->tuple->atom.size == 0) ) // index is out of bounds
 			lua_pushnil(L);
 	}
 	else if(lua_isstring(L, 2))
@@ -1313,27 +1313,10 @@ _lforge_osc_message(lua_State *L)
 			}
 
 			case 'T':
-			{
-				if(!osc_forge_true(oforge, forge))
-					luaL_error(L, forge_buffer_overflow);
-				break;
-			}
 			case 'F':
-			{
-				if(!osc_forge_false(oforge, forge))
-					luaL_error(L, forge_buffer_overflow);
-				break;
-			}
 			case 'N':
-			{
-				if(!osc_forge_nil(oforge, forge))
-					luaL_error(L, forge_buffer_overflow);
-				break;
-			}
 			case 'I':
 			{
-				if(!osc_forge_bang(oforge, forge))
-					luaL_error(L, forge_buffer_overflow);
 				break;
 			}
 
