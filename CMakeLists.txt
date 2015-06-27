@@ -12,7 +12,10 @@ include_directories(${PROJECT_BINARY_DIR})
 set(CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
 add_definitions("-D_GNU_SOURCE=1") # asprintf
 
-set(MOONY_VERSION "0.1.1")
+set(MOONY_MAJOR_VERSION 0)
+set(MOONY_MINOR_VERSION 1)
+set(MOONY_MICRO_VERSION 1)
+set(MOONY_VERSION "${MOONY_MAJOR_VERSION}.${MOONY_MINOR_VERSION}.${MOONY_MICRO_VERSION}")
 add_definitions("-DMOONY_VERSION=\"${MOONY_VERSION}\"")
 
 set(DEST lib/lv2/moony.lv2)
