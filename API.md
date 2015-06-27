@@ -1,6 +1,6 @@
 # Moony.lv2
 
-## Lua API (0.1.0 Beta1)
+## Lua API (0.1.1)
 
 ### General usage
 	
