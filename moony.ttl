@@ -257,6 +257,7 @@ moony:c1xc1
 		lv2:ConverterPlugin ;
 	doap:name "Moony C1 x C1" ;
 	doap:license lic:Artistic-2.0 ;
+	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
@@ -305,6 +306,7 @@ moony:c2xc2
 		lv2:ConverterPlugin ;
 	doap:name "Moony C2 x C2" ;
 	doap:license lic:Artistic-2.0 ;
+	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
@@ -366,6 +368,7 @@ moony:c4xc4
 		lv2:ConverterPlugin ;
 	doap:name "Moony C4 x C4" ;
 	doap:license lic:Artistic-2.0 ;
+	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
@@ -453,6 +456,7 @@ moony:a1xa1
 		lv2:ConverterPlugin ;
 	doap:name "Moony A1 x A1" ;
 	doap:license lic:Artistic-2.0 ;
+	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
@@ -508,6 +512,7 @@ moony:a2xa2
 		lv2:ConverterPlugin ;
 	doap:name "Moony A2 x A2" ;
 	doap:license lic:Artistic-2.0 ;
+	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
@@ -581,6 +586,7 @@ moony:a4xa4
 		lv2:ConverterPlugin ;
 	doap:name "Moony A4 x A4" ;
 	doap:license lic:Artistic-2.0 ;
+	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
@@ -690,6 +696,7 @@ moony:c1a1xc1a1
 		lv2:ConverterPlugin ;
 	doap:name "Moony C1+A1 x C1+A1" ;
 	doap:license lic:Artistic-2.0 ;
+	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
@@ -759,6 +766,7 @@ moony:c2a1xc2a1
 		lv2:ConverterPlugin ;
 	doap:name "Moony C2+A1 x C2+A1" ;
 	doap:license lic:Artistic-2.0 ;
+	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
@@ -840,6 +848,7 @@ moony:c4a1xc4a1
 		lv2:ConverterPlugin ;
 	doap:name "Moony C4+A1 x C4+A1" ;
 	doap:license lic:Artistic-2.0 ;
+	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength ;
 	lv2:extensionData work:interface, state:interface ;
