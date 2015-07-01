@@ -445,7 +445,7 @@ _content_get(eo_ui_t *eoui)
 			Evas_Object *icon = elm_icon_add(info);
 			if(icon)
 			{
-				elm_layout_file_set(icon, ui->logo_path, NULL);
+				elm_image_file_set(icon, ui->logo_path, NULL);
 				evas_object_size_hint_min_set(icon, 20, 20);
 				evas_object_size_hint_max_set(icon, 32, 32);
 				//evas_object_size_hint_aspect_set(icon, EVAS_ASPECT_CONTROL_BOTH, 1, 1);
@@ -471,7 +471,7 @@ _content_get(eo_ui_t *eoui)
 				Evas_Object *icon = elm_icon_add(hbox);
 				if(icon)
 				{
-					elm_layout_file_set(icon, ui->logo_path, NULL);
+					elm_image_file_set(icon, ui->logo_path, NULL);
 					evas_object_size_hint_min_set(icon, 128, 128);
 					evas_object_size_hint_max_set(icon, 256, 256);
 					evas_object_size_hint_aspect_set(icon, EVAS_ASPECT_CONTROL_BOTH, 1, 1);
