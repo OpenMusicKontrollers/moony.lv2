@@ -37,6 +37,23 @@ Get more information at: [http://open-music-kontrollers.ch/lv2/moony](http://ope
 * [Flex](http://flex.sourceforge.net) (Fast Lexical Analyzer)
 * [Elementary](http://enlightenment.org) (Lightweight GUI Toolkit)
 
+#### ArchLinux
+
+	# build/runtime dependencies
+	sudo pacman -S cmake lv2 flex elementary
+
+#### Debian (>= jessie) and derivatives (Ubuntu, Mint, ...)
+
+	# build dependencies
+	sudo apt-get install cmake lv2-dev flex libelementary-dev
+	# runtime dependencies
+	sudo apt-get install libevas1-engine-software-x11 libevas1-engine-gl-x11 libelementary2
+
+#### Ubuntu + X11UI embedding support
+
+	# for X11UI embedding to work, you'll need a more recent libelementary(>=1.13)
+	sudo add-apt-repository -y ppa:enlightenment-git/ppa
+
 ### Build / install
 
 	git clone https://github.com/OpenMusicKontrollers/moony.lv2.git
