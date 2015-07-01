@@ -40,8 +40,10 @@
 
 typedef struct _osc_forge_t osc_forge_t;
 
-typedef void (*osc_message_cb_t)(uint64_t timestamp, const char *path,
-	const char *fmt, const LV2_Atom_Tuple *arguments, void *data);
+typedef void (*osc_bundle_push_cb_t)(uint64_t timestamp, void *data);
+typedef void (*osc_bundle_pop_cb_t)(void *data);
+typedef void (*osc_message_cb_t)(const char *path, const char *fmt,
+	const LV2_Atom_Tuple *arguments, void *data);
 
 struct _osc_forge_t {
 	LV2_URID OSC_Event;
@@ -131,15 +133,13 @@ osc_atom_message_unpack(osc_forge_t *oforge, const LV2_Atom_Object *obj,
 }
 
 static inline void osc_atom_event_unroll(osc_forge_t *oforge,
-	const LV2_Atom_Object *obj, osc_message_cb_t cb, void *data);
+	const LV2_Atom_Object *obj, osc_bundle_push_cb_t bundle_push_cb,
+	osc_bundle_pop_cb_t bundle_pop_cb, osc_message_cb_t message_cb, void *data);
 
 static inline void
-osc_atom_message_unroll(osc_forge_t *oforge, uint64_t timestamp,
-	const LV2_Atom_Object *obj, osc_message_cb_t cb, void *data)
+osc_atom_message_unroll(osc_forge_t *oforge, const LV2_Atom_Object *obj,
+	osc_message_cb_t message_cb, void *data)
 {
-	if(!cb)
-		return;
-
 	const LV2_Atom_String* path;
 	const LV2_Atom_String* fmt;
 	const LV2_Atom_Tuple* args;
@@ -149,49 +149,55 @@ osc_atom_message_unroll(osc_forge_t *oforge, uint64_t timestamp,
 	const char *path_str = path ? LV2_ATOM_BODY_CONST(path) : NULL;
 	const char *fmt_str = fmt ? LV2_ATOM_BODY_CONST(fmt) : NULL;
 
-	if(path_str && fmt_str)
-		cb(timestamp, path_str, fmt_str, args, data);
+	if(message_cb)
+		message_cb(path_str, fmt_str, args, data);
 }
 
 static inline void
 osc_atom_bundle_unroll(osc_forge_t *oforge, const LV2_Atom_Object *obj,
-	osc_message_cb_t cb, void *data)
+	osc_bundle_push_cb_t bundle_push_cb, osc_bundle_pop_cb_t bundle_pop_cb,
+	osc_message_cb_t message_cb, void *data)
 {
-	if(!cb)
-		return;
-
 	const LV2_Atom_Long* timestamp;
 	const LV2_Atom_Tuple* items;
 
 	osc_atom_bundle_unpack(oforge, obj, &timestamp, &items);
 
-	if(!items)
-		return;
-
 	uint64_t timestamp_body = timestamp ? timestamp->body : 1ULL;
 
+	if(bundle_push_cb)
+		bundle_push_cb(timestamp_body, data);
+
 	// iterate over tuple body
-	for(const LV2_Atom *itr = lv2_atom_tuple_begin(items);
-		!lv2_atom_tuple_is_end(LV2_ATOM_BODY(items), items->atom.size, itr);
-		itr = lv2_atom_tuple_next(itr))
+	if(items)
 	{
-		osc_atom_event_unroll(oforge, (const LV2_Atom_Object *)itr, cb, data);
+		for(const LV2_Atom *itr = lv2_atom_tuple_begin(items);
+			!lv2_atom_tuple_is_end(LV2_ATOM_BODY(items), items->atom.size, itr);
+			itr = lv2_atom_tuple_next(itr))
+		{
+			osc_atom_event_unroll(oforge, (const LV2_Atom_Object *)itr,
+				bundle_push_cb, bundle_pop_cb, message_cb, data);
+		}
 	}
+
+	if(bundle_pop_cb)
+		bundle_pop_cb(data);
 }
 
 static inline void
 osc_atom_event_unroll(osc_forge_t *oforge, const LV2_Atom_Object *obj,
-	osc_message_cb_t cb, void *data)
+	osc_bundle_push_cb_t bundle_push_cb, osc_bundle_pop_cb_t bundle_pop_cb,
+	osc_message_cb_t message_cb, void *data)
 {
-	if(!cb)
-		return;
-
 	if(osc_atom_is_bundle(oforge, obj))
-		osc_atom_bundle_unroll(oforge, obj, cb, data);
+	{
+		osc_atom_bundle_unroll(oforge, obj, bundle_push_cb, bundle_pop_cb,
+			message_cb, data);
+	}
 	else if(osc_atom_is_message(oforge, obj))
-		osc_atom_message_unroll(oforge, 1ULL, obj, cb, data);
-	else
-		; // no OSC packet, obviously
+	{
+		osc_atom_message_unroll(oforge, obj, message_cb, data);
+	}
 }
 
 static inline LV2_Atom_Forge_Ref
