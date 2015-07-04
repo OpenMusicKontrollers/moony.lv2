@@ -266,6 +266,14 @@ checkKw(char*s)
 			CHECK(pcall, CALLER);
 			//TODO package
 			break;
+		case 'P':
+			CHECK(Patch.Get, NUMBER);
+			CHECK(Patch.Set, NUMBER);
+			CHECK(Patch.subject, NUMBER);
+			CHECK(Patch.property, NUMBER);
+			CHECK(Patch.wildcard, NUMBER);
+			CHECK(Patch.value, NUMBER);
+			break;
 		case 'r':
 			CHECK(repeat, REPEAT);
 			CHECK(return, RETURN);

@@ -52,7 +52,7 @@ urid = Map['http://foo.org#bar'] -- Map URI to URID
 uri = Unmap[urid] -- Unmap URID to URI
 ```
 
-#### Constants
+#### URIDs of Atom extension
 
 ``` lua
 urid = Atom.Bool -- URID of LV2 Bool
@@ -73,13 +73,13 @@ urid = Atom.URID -- URID of LV2 URID
 urid = Atom.Vector -- URID of LV2 Vector
 ```
 
-#### URID of LV2 MIDI Event
+#### URIDs of LV2 MIDI extension
 
 ``` lua
 urid = MIDI.Event
 ```
 
-#### URIDs of LV2 Time Position object
+#### URIDs of Time extension
 
 ``` lua
 urid = Time.Position
@@ -94,7 +94,7 @@ urid = Time.framesPerSecond
 urid = Time.speed
 ```
 
-#### URIDs of OSC objects
+#### URIDs of OSC extension
 
 ``` lua
 urid = OSC.Event
@@ -107,18 +107,28 @@ urid = OSC.messageFormat
 urid = OSC.messageArguments
 ```
 
-#### URIDs of Core
+#### URIDs of LV2 Core
 
 ``` lua
 urid = Core.sampleRate
 ```
 
-#### URIDs of Buf\_Size
+#### URIDs of Buf\_Size extension
 
 ``` lua
 urid = Buf_Size.minBlockLength -- only defined if exported by host
 urid = Buf_Size.maxBlockLength -- only defined if exported by host
 urid = Buf_Size.sequenceSize -- only defined if exported by host
+```
+
+#### URIDs of Patch extension
+
+``` lua
+urid = Patch.Get
+urid = Patch.Set
+urid = Patch.subject
+urid = Patch.property
+urid = Patch.value
 ```
 
 #### Options Table

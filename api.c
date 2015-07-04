@@ -1855,6 +1855,13 @@ moony_init(moony_t *moony, double sample_rate, const LV2_Feature *const *feature
 	moony->uris.bufsz_max_block_length = moony->map->map(moony->map->handle, LV2_BUF_SIZE__maxBlockLength);
 	moony->uris.bufsz_min_block_length = moony->map->map(moony->map->handle, LV2_BUF_SIZE__minBlockLength);
 	moony->uris.bufsz_sequence_size = moony->map->map(moony->map->handle, LV2_BUF_SIZE__sequenceSize);
+	moony->uris.patch_get = moony->map->map(moony->map->handle, LV2_PATCH__Get);
+	moony->uris.patch_set = moony->map->map(moony->map->handle, LV2_PATCH__Set);
+	moony->uris.patch_subject = moony->map->map(moony->map->handle, LV2_PATCH__subject);
+	moony->uris.patch_property = moony->map->map(moony->map->handle, LV2_PATCH__property);
+	moony->uris.patch_wildcard = moony->map->map(moony->map->handle, LV2_PATCH__wildcard);
+	moony->uris.patch_value = moony->map->map(moony->map->handle, LV2_PATCH__value);
+
 	moony->uris.core_sample_rate = moony->map->map(moony->map->handle, LV2_CORE__sampleRate);
 
 	osc_forge_init(&moony->oforge, moony->map);
@@ -1908,6 +1915,22 @@ moony_open(moony_t *moony, lua_State *L)
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -2, "__index");
 	lua_pop(L, 1);
+
+	// lv2.map
+	lua_newtable(L);
+	lua_newtable(L);
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	luaL_setfuncs(L, lmap_mt, 1);
+	lua_setmetatable(L, -2);
+	lua_setglobal(L, "Map");
+
+	// lv2.unmap
+	lua_newtable(L);
+	lua_newtable(L);
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	luaL_setfuncs(L, lunmap_mt, 1);
+	lua_setmetatable(L, -2);
+	lua_setglobal(L, "Unmap");
 
 #define SET_CONST(L, ID) \
 	lua_pushinteger(L, moony->forge.ID); \
@@ -2012,6 +2035,23 @@ moony_open(moony_t *moony, lua_State *L)
 
 	lua_newtable(L);
 	{
+		lua_pushinteger(L, moony->uris.patch_get);
+			lua_setfield(L, -2, "Get");
+		lua_pushinteger(L, moony->uris.patch_set);
+			lua_setfield(L, -2, "Set");
+		lua_pushinteger(L, moony->uris.patch_subject);
+			lua_setfield(L, -2, "subject");
+		lua_pushinteger(L, moony->uris.patch_property);
+			lua_setfield(L, -2, "property");
+		lua_pushinteger(L, moony->uris.patch_wildcard);
+			lua_setfield(L, -2, "wildcard");
+		lua_pushinteger(L, moony->uris.patch_value);
+			lua_setfield(L, -2, "value");
+	}
+	lua_setglobal(L, "Patch");
+
+	lua_newtable(L);
+	{
 		if(moony->opts.min_block_length)
 		{
 			lua_pushinteger(L, moony->uris.bufsz_min_block_length);
@@ -2041,22 +2081,6 @@ moony_open(moony_t *moony, lua_State *L)
 		}
 	}
 	lua_setglobal(L, "Options");
-
-	// lv2.map
-	lua_newtable(L);
-	lua_newtable(L);
-	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
-	luaL_setfuncs(L, lmap_mt, 1);
-	lua_setmetatable(L, -2);
-	lua_setglobal(L, "Map");
-
-	// lv2.unmap
-	lua_newtable(L);
-	lua_newtable(L);
-	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
-	luaL_setfuncs(L, lunmap_mt, 1);
-	lua_setmetatable(L, -2);
-	lua_setglobal(L, "Unmap");
 
 #define UDATA_OFFSET (LUA_RIDX_LAST + 1)
 	// create userdata caches

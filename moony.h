@@ -35,6 +35,7 @@
 #include "lv2/lv2plug.in/ns/ext/state/state.h"
 #include "lv2/lv2plug.in/ns/ext/buf-size/buf-size.h"
 #include "lv2/lv2plug.in/ns/ext/options/options.h"
+#include "lv2/lv2plug.in/ns/ext/patch/patch.h"
 #include "lv2/lv2plug.in/ns/lv2core/lv2.h"
 #include "lv2/lv2plug.in/ns/extensions/ui/ui.h"
 
@@ -176,6 +177,14 @@ struct _moony_t {
 		LV2_URID bufsz_max_block_length;
 		LV2_URID bufsz_min_block_length;
 		LV2_URID bufsz_sequence_size;
+
+		LV2_URID patch_get;
+		LV2_URID patch_set;
+		LV2_URID patch_subject;
+		LV2_URID patch_property;
+		LV2_URID patch_wildcard;
+		LV2_URID patch_value;
+
 		LV2_URID core_sample_rate;
 	} uris;
 
