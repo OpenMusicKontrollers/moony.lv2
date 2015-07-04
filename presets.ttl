@@ -178,7 +178,7 @@ moony:template-midi_responder
 	state:state [
 		moony:code """midi_mt = {
 	__call = function(self, frames, atom, data)
-		if atom.type == MIDI.Event then
+		if atom.type == MIDI.MidiEvent then
 			local status = atom[1]
 			local cmd = status & 0xf0
 			local meth = self[cmd]

@@ -1816,6 +1816,23 @@ moony_init(moony_t *moony, double sample_rate, const LV2_Feature *const *feature
 		fprintf(stderr, "Host does not support worker:schedule\n");
 		return -1;
 	}
+
+	moony->uris.moony_message = moony->map->map(moony->map->handle, MOONY_MESSAGE_URI);
+	moony->uris.moony_code = moony->map->map(moony->map->handle, MOONY_CODE_URI);
+	moony->uris.moony_error = moony->map->map(moony->map->handle, MOONY_ERROR_URI);
+
+	moony->uris.log_trace = moony->map->map(moony->map->handle, LV2_LOG__Trace);
+	moony->uris.midi_event = moony->map->map(moony->map->handle, LV2_MIDI__MidiEvent);
+	
+	moony->uris.bufsz_min_block_length = moony->map->map(moony->map->handle,
+		LV2_BUF_SIZE__minBlockLength);
+	moony->uris.bufsz_max_block_length = moony->map->map(moony->map->handle,
+		LV2_BUF_SIZE__maxBlockLength);
+	moony->uris.bufsz_sequence_size = moony->map->map(moony->map->handle,
+		LV2_BUF_SIZE__sequenceSize);
+
+	osc_forge_init(&moony->oforge, moony->map);
+	lv2_atom_forge_init(&moony->forge, moony->map);
 	
 	if(opts)
 	{
@@ -1832,40 +1849,6 @@ moony_init(moony_t *moony, double sample_rate, const LV2_Feature *const *feature
 		}
 	}
 	moony->opts.sample_rate = sample_rate;
-
-	moony->uris.moony_message = moony->map->map(moony->map->handle, MOONY_MESSAGE_URI);
-	moony->uris.moony_code = moony->map->map(moony->map->handle, MOONY_CODE_URI);
-	moony->uris.moony_error = moony->map->map(moony->map->handle, MOONY_ERROR_URI);
-
-	moony->uris.log_trace = moony->map->map(moony->map->handle, LV2_LOG__Trace);
-	
-	moony->uris.midi_event = moony->map->map(moony->map->handle, LV2_MIDI__MidiEvent);
-
-	moony->uris.time_position = moony->map->map(moony->map->handle, LV2_TIME__Position);
-	moony->uris.time_barBeat = moony->map->map(moony->map->handle, LV2_TIME__barBeat);
-	moony->uris.time_bar = moony->map->map(moony->map->handle, LV2_TIME__bar);
-	moony->uris.time_beat = moony->map->map(moony->map->handle, LV2_TIME__beat);
-	moony->uris.time_beatUnit = moony->map->map(moony->map->handle, LV2_TIME__beatUnit);
-	moony->uris.time_beatsPerBar = moony->map->map(moony->map->handle, LV2_TIME__beatsPerBar);
-	moony->uris.time_beatsPerMinute = moony->map->map(moony->map->handle, LV2_TIME__beatsPerMinute);
-	moony->uris.time_frame = moony->map->map(moony->map->handle, LV2_TIME__frame);
-	moony->uris.time_framesPerSecond = moony->map->map(moony->map->handle, LV2_TIME__framesPerSecond);
-	moony->uris.time_speed = moony->map->map(moony->map->handle, LV2_TIME__speed);
-	
-	moony->uris.bufsz_max_block_length = moony->map->map(moony->map->handle, LV2_BUF_SIZE__maxBlockLength);
-	moony->uris.bufsz_min_block_length = moony->map->map(moony->map->handle, LV2_BUF_SIZE__minBlockLength);
-	moony->uris.bufsz_sequence_size = moony->map->map(moony->map->handle, LV2_BUF_SIZE__sequenceSize);
-	moony->uris.patch_get = moony->map->map(moony->map->handle, LV2_PATCH__Get);
-	moony->uris.patch_set = moony->map->map(moony->map->handle, LV2_PATCH__Set);
-	moony->uris.patch_subject = moony->map->map(moony->map->handle, LV2_PATCH__subject);
-	moony->uris.patch_property = moony->map->map(moony->map->handle, LV2_PATCH__property);
-	moony->uris.patch_wildcard = moony->map->map(moony->map->handle, LV2_PATCH__wildcard);
-	moony->uris.patch_value = moony->map->map(moony->map->handle, LV2_PATCH__value);
-
-	moony->uris.core_sample_rate = moony->map->map(moony->map->handle, LV2_CORE__sampleRate);
-
-	osc_forge_init(&moony->oforge, moony->map);
-	lv2_atom_forge_init(&moony->forge, moony->map);
 
 	return 0;
 }
@@ -1932,121 +1915,103 @@ moony_open(moony_t *moony, lua_State *L)
 	lua_setmetatable(L, -2);
 	lua_setglobal(L, "Unmap");
 
-#define SET_CONST(L, ID) \
-	lua_pushinteger(L, moony->forge.ID); \
-	lua_setfield(L, -2, #ID);
+#define SET_MAP(L, PREFIX, PROPERTY) \
+({ \
+	lua_getglobal(L, "Map"); \
+	lua_getfield(L, -1, PREFIX ## PROPERTY); \
+	LV2_URID urid = luaL_checkinteger(L, -1); \
+	lua_remove(L, -2); /* Map */ \
+	lua_setfield(L, -2, #PROPERTY); \
+	urid; \
+})
+
+	LV2_URID core_sample_rate;
 
 	lua_newtable(L);
 	{
-		//SET_CONST(L, Blank); // is depracated
-		SET_CONST(L, Bool);
-		SET_CONST(L, Chunk);
-		SET_CONST(L, Double);
-		SET_CONST(L, Float);
-		SET_CONST(L, Int);
-		SET_CONST(L, Long);
-		SET_CONST(L, Literal);
-		SET_CONST(L, Object);
-		SET_CONST(L, Path);
-		SET_CONST(L, Property);
-		//SET_CONST(L, Resource); // is deprecated
-		SET_CONST(L, Sequence);
-		SET_CONST(L, String);
-		SET_CONST(L, Tuple);
-		SET_CONST(L, URI);
-		SET_CONST(L, URID);
-		SET_CONST(L, Vector);
+		SET_MAP(L, LV2_CORE__, ControlPort);
+	}
+	lua_setglobal(L, "State");
+
+	lua_newtable(L);
+	{
+		//SET_MAP(L, LV2_ATOM__, Blank); // is depracated
+		SET_MAP(L, LV2_ATOM__, Bool);
+		SET_MAP(L, LV2_ATOM__, Chunk);
+		SET_MAP(L, LV2_ATOM__, Double);
+		SET_MAP(L, LV2_ATOM__, Float);
+		SET_MAP(L, LV2_ATOM__, Int);
+		SET_MAP(L, LV2_ATOM__, Long);
+		SET_MAP(L, LV2_ATOM__, Literal);
+		SET_MAP(L, LV2_ATOM__, Object);
+		SET_MAP(L, LV2_ATOM__, Path);
+		SET_MAP(L, LV2_ATOM__, Property);
+		//SET_MAP(L, LV2_ATOM__, Resource); // is deprecated
+		SET_MAP(L, LV2_ATOM__, Sequence);
+		SET_MAP(L, LV2_ATOM__, String);
+		SET_MAP(L, LV2_ATOM__, Tuple);
+		SET_MAP(L, LV2_ATOM__, URI);
+		SET_MAP(L, LV2_ATOM__, URID);
+		SET_MAP(L, LV2_ATOM__, Vector);
 	}
 	lua_setglobal(L, "Atom");
 
 	lua_newtable(L);
 	{
-		lua_pushinteger(L, moony->uris.midi_event);
-			lua_setfield(L, -2, "Event");
+		SET_MAP(L, LV2_MIDI__, MidiEvent);
 	}
 	lua_setglobal(L, "MIDI");
 
 	lua_newtable(L);
 	{
-		lua_pushinteger(L, moony->uris.time_position);
-			lua_setfield(L, -2, "Position");
-		lua_pushinteger(L, moony->uris.time_barBeat);
-			lua_setfield(L, -2, "barBeat");
-		lua_pushinteger(L, moony->uris.time_bar);
-			lua_setfield(L, -2, "bar");
-		lua_pushinteger(L, moony->uris.time_beat);
-			lua_setfield(L, -2, "beat");
-		lua_pushinteger(L, moony->uris.time_beatUnit);
-			lua_setfield(L, -2, "beatUnit");
-		lua_pushinteger(L, moony->uris.time_beatsPerBar);
-			lua_setfield(L, -2, "beatsPerBar");
-		lua_pushinteger(L, moony->uris.time_beatsPerMinute);
-			lua_setfield(L, -2, "beatsPerMinute");
-		lua_pushinteger(L, moony->uris.time_frame);
-			lua_setfield(L, -2, "frame");
-		lua_pushinteger(L, moony->uris.time_framesPerSecond);
-			lua_setfield(L, -2, "framesPerSecond");
-		lua_pushinteger(L, moony->uris.time_speed);
-			lua_setfield(L, -2, "speed");
+		SET_MAP(L, LV2_TIME__, Position);
+		SET_MAP(L, LV2_TIME__, barBeat);
+		SET_MAP(L, LV2_TIME__, bar);
+		SET_MAP(L, LV2_TIME__, beat);
+		SET_MAP(L, LV2_TIME__, beatUnit);
+		SET_MAP(L, LV2_TIME__, beatsPerBar);
+		SET_MAP(L, LV2_TIME__, beatsPerMinute);
+		SET_MAP(L, LV2_TIME__, frame);
+		SET_MAP(L, LV2_TIME__, framesPerSecond);
+		SET_MAP(L, LV2_TIME__, speed);
 	}
 	lua_setglobal(L, "Time");
 
 	lua_newtable(L);
 	{
-		lua_pushinteger(L, moony->oforge.OSC_Event);
-			lua_setfield(L, -2, "Event");
-
-		lua_pushinteger(L, moony->oforge.OSC_Bundle);
-			lua_setfield(L, -2, "Bundle");
-		lua_pushinteger(L, moony->oforge.OSC_Message);
-			lua_setfield(L, -2, "Message");
-		
-		lua_pushinteger(L, moony->oforge.OSC_bundleTimestamp);
-			lua_setfield(L, -2, "bundleTimestamp");
-		lua_pushinteger(L, moony->oforge.OSC_bundleItems);
-			lua_setfield(L, -2, "bundleItems");
-		
-		lua_pushinteger(L, moony->oforge.OSC_messagePath);
-			lua_setfield(L, -2, "messagePath");
-		lua_pushinteger(L, moony->oforge.OSC_messageFormat);
-			lua_setfield(L, -2, "messageFormat");
-		lua_pushinteger(L, moony->oforge.OSC_messageArguments);
-			lua_setfield(L, -2, "messageArguments");
+		SET_MAP(L, OSC__, Event);
+		SET_MAP(L, OSC__, Bundle);
+		SET_MAP(L, OSC__, Message);
+		SET_MAP(L, OSC__, bundleTimestamp);
+		SET_MAP(L, OSC__, bundleItems);
+		SET_MAP(L, OSC__, messagePath);
+		SET_MAP(L, OSC__, messageFormat);
+		SET_MAP(L, OSC__, messageArguments);
 	}
 	lua_setglobal(L, "OSC");
 
 	lua_newtable(L);
 	{
-		lua_pushinteger(L, moony->uris.core_sample_rate);
-			lua_setfield(L, -2, "sampleRate");
+		core_sample_rate = SET_MAP(L, LV2_CORE__, sampleRate);
 	}
 	lua_setglobal(L, "Core");
 	
 	lua_newtable(L);
 	{
-		lua_pushinteger(L, moony->uris.bufsz_min_block_length);
-			lua_setfield(L, -2, "minBlockLength");
-		lua_pushinteger(L, moony->uris.bufsz_max_block_length);
-			lua_setfield(L, -2, "maxBlockLength");
-		lua_pushinteger(L, moony->uris.bufsz_sequence_size);
-			lua_setfield(L, -2, "sequenceSize");
+		SET_MAP(L, LV2_BUF_SIZE__, minBlockLength);
+		SET_MAP(L, LV2_BUF_SIZE__, maxBlockLength);
+		SET_MAP(L, LV2_BUF_SIZE__, sequenceSize);
 	}
 	lua_setglobal(L, "Buf_Size");
 
 	lua_newtable(L);
 	{
-		lua_pushinteger(L, moony->uris.patch_get);
-			lua_setfield(L, -2, "Get");
-		lua_pushinteger(L, moony->uris.patch_set);
-			lua_setfield(L, -2, "Set");
-		lua_pushinteger(L, moony->uris.patch_subject);
-			lua_setfield(L, -2, "subject");
-		lua_pushinteger(L, moony->uris.patch_property);
-			lua_setfield(L, -2, "property");
-		lua_pushinteger(L, moony->uris.patch_wildcard);
-			lua_setfield(L, -2, "wildcard");
-		lua_pushinteger(L, moony->uris.patch_value);
-			lua_setfield(L, -2, "value");
+		SET_MAP(L, LV2_PATCH__, Get);
+		SET_MAP(L, LV2_PATCH__, Set);
+		SET_MAP(L, LV2_PATCH__, subject);
+		SET_MAP(L, LV2_PATCH__, property);
+		SET_MAP(L, LV2_PATCH__, wildcard);
+		SET_MAP(L, LV2_PATCH__, value);
 	}
 	lua_setglobal(L, "Patch");
 
@@ -2075,7 +2040,7 @@ moony_open(moony_t *moony, lua_State *L)
 	
 		if(moony->opts.sample_rate)
 		{
-			lua_pushinteger(L, moony->uris.core_sample_rate);
+			lua_pushinteger(L, core_sample_rate);
 			lua_pushinteger(L, moony->opts.sample_rate);
 			lua_rawset(L, -3);
 		}
@@ -2104,7 +2069,7 @@ moony_open(moony_t *moony, lua_State *L)
 	lua_pushcclosure(L, _log, 1);
 	lua_setglobal(L, "print");
 
-#undef SET_CONST
+#undef SET_MAP
 }
 
 void *

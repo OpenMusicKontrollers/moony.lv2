@@ -160,32 +160,11 @@ struct _moony_t {
 		LV2_URID moony_error;
 
 		LV2_URID log_trace;
-		
 		LV2_URID midi_event;
-
-		LV2_URID time_position;
-		LV2_URID time_barBeat;
-		LV2_URID time_bar;
-		LV2_URID time_beat;
-		LV2_URID time_beatUnit;
-		LV2_URID time_beatsPerBar;
-		LV2_URID time_beatsPerMinute;
-		LV2_URID time_frame;
-		LV2_URID time_framesPerSecond;
-		LV2_URID time_speed;
 
 		LV2_URID bufsz_max_block_length;
 		LV2_URID bufsz_min_block_length;
 		LV2_URID bufsz_sequence_size;
-
-		LV2_URID patch_get;
-		LV2_URID patch_set;
-		LV2_URID patch_subject;
-		LV2_URID patch_property;
-		LV2_URID patch_wildcard;
-		LV2_URID patch_value;
-
-		LV2_URID core_sample_rate;
 	} uris;
 
 	struct {

@@ -288,7 +288,7 @@ do
 	local function consumer(seq)
 		assert(#seq == 2)
 		local atom = seq[1]
-		assert(atom.type == MIDI.Event)
+		assert(atom.type == MIDI.MidiEvent)
 		assert(type(atom.value) == 'table')
 		assert(#atom == #m)
 		assert(#atom.value == #m)
@@ -299,7 +299,7 @@ do
 		assert(atom.value[4] == nil)
 
 		atom = seq[2]
-		assert(atom.type == MIDI.Event)
+		assert(atom.type == MIDI.MidiEvent)
 		assert(#atom == #m)
 		assert(atom[0] == nil)
 		assert(atom[1] == 0x90)
@@ -666,7 +666,7 @@ do
 		assert(args.type == Atom.Tuple)
 		assert(#args == 2)
 		assert(args[0] == nil)
-		assert(args[1].type == MIDI.Event)
+		assert(args[1].type == MIDI.MidiEvent)
 		assert(#args[1] == 3)
 		assert(args[1][1] == 0x90)
 		assert(args[1][2] == 0x20)

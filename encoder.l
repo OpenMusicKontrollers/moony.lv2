@@ -237,7 +237,7 @@ checkKw(char*s)
 			break;
 		case 'M':
 			CHECK(Map, CALLER);
-			CHECK(MIDI.Event, NUMBER);
+			CHECK(MIDI.MidiEvent, NUMBER);
 			break;
 		case 'n':
 			CHECK(nil, NIL);

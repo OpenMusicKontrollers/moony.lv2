@@ -76,7 +76,7 @@ urid = Atom.Vector -- URID of LV2 Vector
 #### URIDs of LV2 MIDI extension
 
 ``` lua
-urid = MIDI.Event
+urid = MIDI.MidiEvent
 ```
 
 #### URIDs of Time extension
@@ -345,7 +345,7 @@ bytes = #midi -- number of MIDI bytes
 #### indexing by string key
 
 ``` lua
-t = midi.type -- type of atom, e.g. MIDI.Event
+t = midi.type -- type of atom, e.g. MIDI.MidiEvent
 m = midi.value -- Lua table with single raw MIDI bytes
 status = m[1] -- MIDI status byte as Lua integer
 ```
