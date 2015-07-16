@@ -30,6 +30,8 @@
 #define OSC_PREFIX						OSC_URI "#"	
 
 #define OSC__Event						OSC_PREFIX "Event"						// event
+#define OSC__schedule					OSC_PREFIX "schedule"					// feature
+
 #define OSC__Bundle						OSC_PREFIX "Bundle"						// object otype
 #define OSC__Message					OSC_PREFIX "Message"					// object otype
 #define OSC__bundleTimestamp	OSC_PREFIX "bundleTimestamp"	// property key
@@ -38,12 +40,25 @@
 #define OSC__messageFormat		OSC_PREFIX "messageFormat"		// property key
 #define OSC__messageArguments	OSC_PREFIX "messageArguments"	// property key
 
+typedef void *osc_schedule_handle_t;
+typedef struct _osc_schedule_t osc_schedule_t;
 typedef struct _osc_forge_t osc_forge_t;
 
 typedef void (*osc_bundle_push_cb_t)(uint64_t timestamp, void *data);
 typedef void (*osc_bundle_pop_cb_t)(void *data);
 typedef void (*osc_message_cb_t)(const char *path, const char *fmt,
 	const LV2_Atom_Tuple *arguments, void *data);
+
+typedef int64_t (*osc_schedule_osc2frames_t)(osc_schedule_handle_t handle,
+	uint64_t timestamp);
+typedef uint64_t (*osc_schedule_frames2osc_t)(osc_schedule_handle_t handle,
+	int64_t frames);
+
+struct _osc_schedule_t {
+	osc_schedule_osc2frames_t osc2frames;
+	osc_schedule_frames2osc_t frames2osc;
+	osc_schedule_handle_t handle;
+};
 
 struct _osc_forge_t {
 	LV2_URID OSC_Event;

@@ -33,6 +33,9 @@
 		the plugin specification.</p>
 	""" .
 
+osc:schedule
+	a lv2:Feature .
+
 osc:Event
 	a rdfs:Class ;
 	rdfs:subClassOf atom:Object ;
