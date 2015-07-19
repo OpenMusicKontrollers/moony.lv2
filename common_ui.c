@@ -385,7 +385,7 @@ _content_get(eo_ui_t *eoui)
 		{
 			elm_fileselector_button_inwin_mode_set(ui->load, EINA_FALSE);
 			elm_fileselector_button_window_title_set(ui->load, "Load Lua script from file");
-			elm_fileselector_is_save_set(ui->save, EINA_FALSE);
+			elm_fileselector_is_save_set(ui->load, EINA_FALSE);
 			elm_object_part_text_set(ui->load, "default", "Load");
 			evas_object_smart_callback_add(ui->load, "file,chosen", _load_chosen, ui);
 			evas_object_size_hint_weight_set(ui->load, 0.25, 0.f);
