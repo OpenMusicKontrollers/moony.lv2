@@ -21,6 +21,50 @@
 
 #include <moony.h>
 
+typedef enum _markup_type_t markup_type_t;
+typedef struct _markup_item_t markup_item_t;
+
+enum _markup_type_t {
+	MARKUP_CODE,
+	MARKUP_FUNCTION,
+	MARKUP_TYPE,
+	MARKUP_KEYWORD,
+	MARKUP_NUMBER,
+	MARKUP_STRING,
+	MARKUP_BRACE,
+	MARKUP_COMMENT
+};
+
+struct _markup_item_t {
+	const char *begin;
+	const char *end;
+};
+
+#if defined(ELM_1_9)
+static const markup_item_t markup_items [] = {
+	[MARKUP_CODE] = {"code", "code"},
+	[MARKUP_FUNCTION] = {"function", "function"},
+	[MARKUP_TYPE] = {"type", "type"},
+	[MARKUP_KEYWORD] = {"keyword", "keyword"},
+	[MARKUP_NUMBER] = {"number", "number"},
+	[MARKUP_STRING] = {"string", "string"},
+	[MARKUP_BRACE] = {"comment", "comment"},
+	[MARKUP_COMMENT] = {"brace", "brace"}
+};
+#else
+// elementary <1.9 does not define the needed markup styles, fall-back to these
+static const markup_item_t markup_items [] = {
+	[MARKUP_CODE] = {"font=Mono style=Plain color=#FFFFFF", "font"},
+  [MARKUP_FUNCTION] = {"color=#72AAD4 font_weight=Bold", "color"},
+	[MARKUP_TYPE] = {"color=#3399ff", "color"},
+	[MARKUP_KEYWORD] = {"color=#ff9900 font_weight=Bold", "color"},
+	[MARKUP_NUMBER] = {"color=#D4D42A font_weight=Bold", "color"},
+	[MARKUP_STRING] = {"color=#ff3a35", "color"},
+	[MARKUP_BRACE] = {"color=#00B000", "color"},
+	[MARKUP_COMMENT] = {"color=#656565", "color"}
+};
+#endif
+
 static void
 _add_plain(const char *content)
 {
@@ -36,29 +80,29 @@ _add_singleton(const char *key)
 }
 
 static void 
-_add_markup_begin(const char *key)
+_add_markup_begin(markup_type_t type)
 {
 	char buf [64];
-	sprintf(buf, "<%s>", key);
+	sprintf(buf, "<%s>", markup_items[type].begin);
 	encoder->append(buf, encoder->data);
 }
 
 static void 
-_add_markup_end(const char *key)
+_add_markup_end(markup_type_t type)
 {
 	char buf [64];
-	sprintf(buf, "</%s>", key);
+	sprintf(buf, "</%s>", markup_items[type].end);
 	encoder->append(buf, encoder->data);
 }
 
 static void 
-_add_markup(const char *key, const char *content)
+_add_markup(markup_type_t type, const char *content)
 {
 	char buf [64];
-	sprintf(buf, "<%s>", key);
+	sprintf(buf, "<%s>", markup_items[type].begin);
 	encoder->append(buf, encoder->data);
 	encoder->append(content, encoder->data);
-	sprintf(buf, "</%s>", key);
+	sprintf(buf, "</%s>", markup_items[type].end);
 	encoder->append(buf, encoder->data);
 }
 
@@ -113,7 +157,7 @@ enum {
 	TK_BADCHAR
 };
 
-int firstline=1;
+static int firstline=1;
 
 static int
 checkKw(char*s)
@@ -463,7 +507,7 @@ lua_to_markup(const char *utf8, FILE *f)
 	}
 				
 	encoder->begin(encoder->data);
-	_add_markup_begin("code");
+	_add_markup_begin(MARKUP_CODE);
 
 	for(int tok=enclex(scanner); tok; tok=enclex(scanner))
 	{
@@ -471,11 +515,11 @@ lua_to_markup(const char *utf8, FILE *f)
 		switch(tok)
 		{
 			case TK_CALLER:
-				_add_markup("function", txt);
+				_add_markup(MARKUP_FUNCTION, txt);
 				break;
 
 			case TK_LOCAL:
-				_add_markup("type", txt);
+				_add_markup(MARKUP_TYPE, txt);
 				break;
 
 			case TK_FUNCTION:
@@ -496,11 +540,11 @@ lua_to_markup(const char *utf8, FILE *f)
 			case TK_UNTIL:
 			case TK_WHILE:
 			case TK_CONCAT:
-				_add_markup("keyword", txt);
+				_add_markup(MARKUP_KEYWORD, txt);
 				break;
 			
 			case TK_LABEL:
-				_add_markup("type", txt);
+				_add_markup(MARKUP_TYPE, txt);
 				break;
 
 			case TK_NUMBER:
@@ -508,60 +552,60 @@ lua_to_markup(const char *utf8, FILE *f)
 			case TK_TRUE:
 			case TK_FALSE:
 			case TK_DOTS:
-				_add_markup("number", txt);
+				_add_markup(MARKUP_NUMBER, txt);
 				break;
 
 			case TK_SINGLE_QUOTE_IN:
-				_add_markup_begin("string");
+				_add_markup_begin(MARKUP_STRING);
 				_add_plain("'");
 				break;
 			case TK_SINGLE_QUOTE_OUT:
 				_add_plain("'");
-				_add_markup_end("string");
+				_add_markup_end(MARKUP_STRING);
 				break;
 			case TK_SINGLE_QUOTE_ERR:
-				_add_markup_end("string");
+				_add_markup_end(MARKUP_STRING);
 				_add_singleton("br");
 				break;
 			
 			case TK_DOUBLE_QUOTE_IN:
-				_add_markup_begin("string");
+				_add_markup_begin(MARKUP_STRING);
 				_add_plain("\"");
 				break;
 			case TK_DOUBLE_QUOTE_OUT:
 				_add_plain("\"");
-				_add_markup_end("string");
+				_add_markup_end(MARKUP_STRING);
 				break;
 			case TK_DOUBLE_QUOTE_ERR:
-				_add_markup_end("string");
+				_add_markup_end(MARKUP_STRING);
 				_add_singleton("br");
 				break;
 
 			case TK_LONG_STRING_IN:
-				_add_markup_begin("string");
+				_add_markup_begin(MARKUP_STRING);
 				_add_plain("[[");
 				break;
 			case TK_LONG_STRING_OUT:
 				_add_plain("]]");
-				_add_markup_end("string");
+				_add_markup_end(MARKUP_STRING);
 				break;
 
 			case TK_SHORT_COMMENT_IN:
-				_add_markup_begin("brace");
+				_add_markup_begin(MARKUP_COMMENT);
 				_add_plain("--");
 				break;
 			case TK_SHORT_COMMENT_OUT:
-				_add_markup_end("brace");
+				_add_markup_end(MARKUP_COMMENT);
 				_add_singleton("br");
 				break;
 			
 			case TK_LONG_COMMENT_IN:
-				_add_markup_begin("brace");
+				_add_markup_begin(MARKUP_COMMENT);
 				_add_plain("--[[");
 				break;
 			case TK_LONG_COMMENT_OUT:
 				_add_plain("--]]");
-				_add_markup_end("brace");
+				_add_markup_end(MARKUP_COMMENT);
 				break;
 
 			case TK_NEWLINE:
@@ -569,7 +613,7 @@ lua_to_markup(const char *utf8, FILE *f)
 				break;
 			
 			case TK_BRACE:
-				_add_markup("comment", txt);
+				_add_markup(MARKUP_BRACE, txt);
 				break;
 
 			case TK_BADCHAR:
@@ -598,7 +642,7 @@ lua_to_markup(const char *utf8, FILE *f)
 		}
 	}
 				
-	_add_markup_end("code");
+	_add_markup_end(MARKUP_CODE);
 	encoder->end(encoder->data);
 
 	enc_delete_buffer(buf, scanner);
