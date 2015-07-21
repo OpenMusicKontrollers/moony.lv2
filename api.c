@@ -2306,20 +2306,26 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *seq, uint32_t frames)
 	// prepare notify atom forge
 	LV2_Atom_Forge *forge = &moony->forge;
 	LV2_Atom_Forge_Frame notify_frame;
+	LV2_Atom_Forge_Ref ref;
 	
 	uint32_t capacity = seq->atom.size;
 	lv2_atom_forge_set_buffer(forge, (uint8_t *)seq, capacity);
-	lv2_atom_forge_sequence_head(forge, &notify_frame, 0);
+	ref = lv2_atom_forge_sequence_head(forge, &notify_frame, 0);
 
 	if(moony->dirty_out)
 	{
 		uint32_t len = strlen(moony->chunk);
 		LV2_Atom_Forge_Frame obj_frame;
-		lv2_atom_forge_frame_time(forge, frames);
-		lv2_atom_forge_object(forge, &obj_frame, 0, moony->uris.moony_message);
-		lv2_atom_forge_key(forge, moony->uris.moony_code);
-		lv2_atom_forge_string(forge, moony->chunk, len);
-		lv2_atom_forge_pop(forge, &obj_frame);
+		if(ref)
+			ref = lv2_atom_forge_frame_time(forge, frames);
+		if(ref)
+			ref = lv2_atom_forge_object(forge, &obj_frame, 0, moony->uris.moony_message);
+		if(ref)
+			ref = lv2_atom_forge_key(forge, moony->uris.moony_code);
+		if(ref)
+			ref = lv2_atom_forge_string(forge, moony->chunk, len);
+		if(ref)
+			lv2_atom_forge_pop(forge, &obj_frame);
 
 		moony->dirty_out = 0; // reset flag
 	}
@@ -2328,14 +2334,22 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *seq, uint32_t frames)
 	{
 		uint32_t len = strlen(moony->error);
 		LV2_Atom_Forge_Frame obj_frame;
-		lv2_atom_forge_frame_time(forge, frames);
-		lv2_atom_forge_object(forge, &obj_frame, 0, moony->uris.moony_message);
-		lv2_atom_forge_key(forge, moony->uris.moony_error);
-		lv2_atom_forge_string(forge, moony->error, len);
-		lv2_atom_forge_pop(forge, &obj_frame);
+		if(ref)
+			ref = lv2_atom_forge_frame_time(forge, frames);
+		if(ref)
+			ref = lv2_atom_forge_object(forge, &obj_frame, 0, moony->uris.moony_message);
+		if(ref)
+			ref = lv2_atom_forge_key(forge, moony->uris.moony_error);
+		if(ref)
+			ref = lv2_atom_forge_string(forge, moony->error, len);
+		if(ref)
+			lv2_atom_forge_pop(forge, &obj_frame);
 
 		moony->error_out = 0; // reset flag
 	}
-	
-	lv2_atom_forge_pop(forge, &notify_frame);
+
+	if(ref)
+		lv2_atom_forge_pop(forge, &notify_frame);
+	else
+		lv2_atom_sequence_clear(seq);
 }
