@@ -9,6 +9,15 @@ include_directories(${PROJECT_SOURCE_DIR}/osc.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/lua-5.3.1)
 include_directories(${PROJECT_BINARY_DIR})
 
+# check for visibility support in compiler on Unices
+include(CheckCCompilerFlag)
+if(NOT WIN32)
+	check_c_compiler_flag(-fvisibility=hidden GCC_SUPPORTS_VISIBILITY)
+	if(NOT ${GCC_SUPPORTS_VISIBILITY})
+		message(FATAL_ERROR "compiler does not support visibility attributes")
+	endif()
+endif()
+
 set(CMAKE_C_FLAGS "-std=gnu99 -fvisibility=hidden ${CMAKE_C_FLAGS}")
 add_definitions("-D_GNU_SOURCE=1") # asprintf
 
@@ -29,15 +38,6 @@ endif()
 
 find_package(PkgConfig) # ${PKG_CONFIG_FOUND}
 find_package(FLEX)
-include(CheckCCompilerFlag)
-
-# check for visibility support in compiler on Unices
-if(NOT WIN32)
-	check_c_compiler_flag(-fvisibility=hidden GCC_SUPPORTS_VISIBILITY)
-	if(NOT ${GCC_SUPPORTS_VISIBILITY})
-		message(FATAL_ERROR "compiler does not support visibility attributes")
-	endif()
-endif()
 
 pkg_search_module(LV2 REQUIRED lv2>=1.10)
 include_directories(${LV2_INCLUDE_DIRS})

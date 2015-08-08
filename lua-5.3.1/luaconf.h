@@ -239,26 +239,7 @@
 
 #else				/* }{ */
 
-/* XXX
- * synthpod e.g. is linked to libelementary, which is linked to luaJIT
- * we thus need to hide the embedded Lua5.3.1 API in the module,
- * if not, the plugin will pull in the first defined Lua API (eg. from the host)
- * and strange things will happen.
- */
-#if defined(_WIN32) || defined(__CYGWIN__)
-	#ifdef __GNUC__
-		#define LUA_API __attribute__ ((dllexport))
-	#else
-		#define LUA_API __declspec(dllexport) // Note: actually gcc seems to also supports this syntax.
-	#endif
-#else
-  #if __GNUC__ >= 4
-    #define LUA_API  __attribute__ ((visibility ("hidden")))
-  #else
-    #define LUA_API
-  #endif
-#endif
-//#define LUA_API		extern
+#define LUA_API		extern
 
 #endif				/* } */
 
