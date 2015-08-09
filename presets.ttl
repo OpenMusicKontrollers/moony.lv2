@@ -161,13 +161,13 @@ function run(n, seq1, seq2, seq3, seq4, forge1, forge2, forge3, forge4)
 	for frames, atom in multiplex(seq1, seq2, seq3, seq4) do
 		forge1:frame_time(frames)
 		forge1:atom(atom)
-		
+
 		forge2:frame_time(frames)
 		forge2:atom(atom)
-		
+
 		forge3:frame_time(frames)
 		forge3:atom(atom)
-		
+
 		forge4:frame_time(frames)
 		forge4:atom(atom)
 	end
@@ -210,88 +210,104 @@ end"""
 
 moony:template-midi_sequencer
 	state:state [
-		moony:code """ref = { -- reference time struct
+		moony:code """pos = { -- reference time struct
   [Time.frame] = 0,
   [Time.speed] = 0.0, -- halt
   [Time.barBeat] = 0.0, -- start of song
   [Time.bar] = 0, -- start of song
   [Time.beatUnit] = 4, -- quarters
   [Time.beatsPerBar] = 4.0, -- four quarters per bar
-  [Time.beatsPerMinute] = 120.0 -- four quarters per minute
+  [Time.beatsPerMinute] = 120.0, -- four quarters per minute
+  [Time.framesPerSecond] = Options[Core.sampleRate]
 }
 
--- clone pos from ref
-pos = {} -- current time struct
-for k, v in pairs(ref) do
-  pos[k] = v
-end
-
-rate = Options[Core.sampleRate]
-samplesPerMinute = rate * 60
-samplesPerBeats = samplesPerMinute / ref[Time.beatsPerMinute]
+-- initialize frame variables
+frames_per_beat = 240.0 / (pos[Time.beatsPerMinute] * pos[Time.beatUnit]) * pos[Time.framesPerSecond] -- frames per beat
+frames_per_bar = frames_per_beat * pos[Time.beatsPerBar] -- frames per bar
+elapsed_bar = 0.0 -- frames since last bar
+elspsed_beat = 0.0 -- frames since last beat
 
 chan = 0x2
 base_note = 35
 snare_note = 44
 vel = 0x7f
 
-function sequencer(forge, frames, bar, barBeat)
-  if barBeat % 2 == 0 then -- trigger base every even 2 beats
-    forge:frame_time(frames):midi(0x80 | chan, base_note, vel)
-    forge:frame_time(frames):midi(0x90 | chan, base_note, vel)
-  else -- trigger snare every odd 2 beats
-    forge:frame_time(frames):midi(0x80 | chan, snare_note, vel)
-    forge:frame_time(frames):midi(0x90 | chan, snare_note, vel)
+-- beat callback
+function beat_off(forge, frames)
+  forge:frame_time(frames):midi(0x80 | chan, snare_note, vel)
+end
+function beat_on(forge, frames)
+  forge:frame_time(frames):midi(0x90 | chan, snare_note, vel)
+end
+
+-- bar callback
+function bar_off(forge, frames)
+  forge:frame_time(frames):midi(0x80 | chan, base_note, vel)
+end
+function bar_on(forge, frames)
+  forge:frame_time(frames):midi(0x90 | chan, base_note, vel)
+end
+
+function play(forge, from, to)
+  for frames = from, to-1 do
+    -- call beat callback if beat is imminent
+    if elapsed_beat < 1 and elapsed_bar > 1 then
+      beat_off(forge, frames)
+      beat_on(forge, frames)
+    end
+
+    -- call bar callback if bar is imminent
+    if elapsed_bar < 1 then
+      bar_off(forge, frames)
+      bar_on(forge, frames)
+    end
+
+    -- advance beat elapsed time
+    elapsed_beat = elapsed_beat + 1
+    -- reset beat elapsed time if complete
+    if elapsed_beat >= frames_per_beat then
+      elapsed_beat = elapsed_beat - frames_per_beat
+    end
+
+    -- advance bar elapsed time
+    elapsed_bar = elapsed_bar + 1
+    -- reset bar elapsed time if complete
+    if elapsed_bar >= frames_per_bar then
+      elapsed_bar = elapsed_bar - frames_per_bar
+    end
   end
 end
 
 function run(n, seq, forge)
-  local frame = 0
+  local last_frame = 0 -- frame time of last processed event
 
   for frames, atom in seq:foreach() do
     if atom.type == Atom.Object and atom.otype == Time.Position then
-			-- update reference and current time structs
+      -- update reference time struct
       for k, _, v in atom:foreach() do
-        local val = v.value
-        ref[k] = val
-        pos[k] = val
+        pos[k] = v.value
       end
 
-      -- update samples per beats
-      samplesPerBeats = samplesPerMinute / ref[Time.beatsPerMinute]
-      frame = frames
+      -- update frame variables
+      frames_per_beat = 240.0 / (pos[Time.beatsPerMinute] * pos[Time.beatUnit]) * pos[Time.framesPerSecond]
+      frames_per_bar = frames_per_beat * pos[Time.beatsPerBar]
+      elapsed_bar = pos[Time.barBeat] * frames_per_beat
+      local _, frac = math.modf(pos[Time.barBeat])
+      elapsed_beat = frac * frames_per_beat;
     end
+
+    if pos[Time.speed] > 0.0 then
+      play(forge, last_frame, frames)
+    end
+
+    last_frame = frames
   end
 
-  if ref[Time.speed] > 0 then -- song is rolling  
-    local samples = pos[Time.frame] - ref[Time.frame]
-
-    if samples > 0 then -- current time struct more advanced that reference
-      local beats = samples / (samplesPerBeats * ref[Time.speed]) -- beat difference
-      local bars = beats / ref[Time.beatsPerBar] -- bar difference
-
-      -- calculate new song position
-      local bar = math.floor(ref[Time.bar] + bars)
-      local barBeat = math.floor((ref[Time.barBeat] + beats) % ref[Time.beatsPerBar])
-
-			-- check for bar or barBeat change and call callback
-      if bar ~= pos[Time.bar] or barBeat ~= pos[Time.barBeat] then
-        sequencer(forge, frame, bar, barBeat)
-      end
-     
-		 	-- update new song position
-      pos[Time.bar] = bar
-      pos[Time.barBeat] = barBeat
-    else -- current == reference time struct
-      if pos[Time.barBeat] == math.floor(pos[Time.barBeat]) then
-        sequencer(forge, frame, pos[Time.bar], pos[Time.barBeat])
-      end
-    end
-
-    -- expected frame time at start of next period
-    pos[Time.frame] = pos[Time.frame] + n 
-  else -- song is not rolling
-    forge:frame_time(frame):midi(0xb | chan, 0x7b) -- all notes off
+  if pos[Time.speed] > 0.0 then
+    play(forge, last_frame, n)
+  else
+    beat_off(forge, last_frame)
+    bar_off(forge, last_frame)
   end
 end"""
 	] .
