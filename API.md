@@ -195,9 +195,14 @@ forge:chunk(0x01, 0x02, 0x03, 0x04) -- push individual Lua integers as atom chun
 forge:vector(URID, {a, b, c, d}) -- push a vector of fixed-sized type URID
 forge:vector(URID, a, b, c, d) -- push a vector of fixed-sized type URID
 
-bndl = forge:bundle(1) -- start a new OSC bundle with timestamp (returns a derived forge container)
+bndl = forge:bundle() -- start a new OSC bundle (returns a derived forge container)
 bndl:message('/hello', 'si', 'world', 2015) -- push a complete OSC message
 bndl:pop() -- finalize derived forge container
+
+forge:bundle() -- start bundle with immediate timestamp (nil)
+forge:bundle(1) -- start bundle with immediate timestamp (Lua integer = 1)
+forge:bundle(0xd97332a2998a7199) -- start bundle with absolute timestamp (Lua integer = ?)
+forge:bundle(0.1) -- start bundle with relative timestamp offset (Lua number = +0.1s)
 
 tup = forge:tuple() -- start a new tuple (returns a derived forge container)
 tup:pop() -- finalize derived forge container

@@ -566,7 +566,7 @@ do
 		bndl:message('/one', 'i', 1)
 		bndl:message('/two', 'i', 2)
 		bndl:message('/three', 'i', 3)
-		bndl:bundle(1):pop() -- nested
+		bndl:bundle(0.1):pop() -- nested
 		assert(bndl:pop() == nil)
 	end
 

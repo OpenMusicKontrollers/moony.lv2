@@ -1232,7 +1232,43 @@ _lforge_osc_bundle(lua_State *L)
 	osc_forge_t *oforge = &moony->oforge;
 	LV2_Atom_Forge *forge = lforge->forge;
 
-	uint64_t timestamp = luaL_checkinteger(L, 2);
+	uint64_t timestamp = 1ULL; // immediate timestamp
+	if(lua_isinteger(L, 2))
+	{
+		// absolute timestamp
+		timestamp = lua_tointeger(L, 2);
+	}
+	else if(lua_isnumber(L, 2) && moony->osc_sched)
+	{
+		// timestamp of current frame
+		timestamp = moony->osc_sched->frames2osc(moony->osc_sched->handle,
+			lforge->last.frames);
+		volatile uint64_t sec = timestamp >> 32;
+		volatile uint64_t frac = timestamp & 0xffffffff;
+		
+		// relative offset from current frame (in seconds)
+		double offset_d = lua_tonumber(L, 2);
+		double secs_d;
+		double frac_d = modf(offset_d, &secs_d);
+
+		// add relative offset to timestamp
+		sec += secs_d;
+		frac += frac_d * 0x1p32;
+		if(frac >= 0x100000000ULL) // overflow
+		{
+			sec += 1;
+			frac -= 0x100000000ULL;
+		}
+		timestamp = (sec << 32) | frac;
+
+		/*
+		// debug
+		uint64_t t0 = moony->osc_sched->frames2osc(moony->osc_sched->handle, lforge->last.frames);
+		uint64_t dt = timestamp - t0;
+		double dd = dt * 0x1p-32;
+		printf("%lu %lf\n", dt, dd);
+		*/
+	}
 
 	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
 	lframe->depth = 2;
@@ -1800,6 +1836,8 @@ moony_init(moony_t *moony, double sample_rate, const LV2_Feature *const *feature
 			moony->log = (LV2_Log_Log *)features[i]->data;
 		else if(!strcmp(features[i]->URI, LV2_OPTIONS__options))
 			opts = (LV2_Options_Option *)features[i]->data;
+		else if(!strcmp(features[i]->URI, OSC__schedule))
+			moony->osc_sched = (osc_schedule_t *)features[i]->data;
 
 	if(!moony->map)
 	{
