@@ -65,6 +65,7 @@ struct _eo_ui_t {
 		// X11 iface
 		struct {
 			Ecore_X_Window parent;
+			Ecore_X_Window child;
 			LV2UI_Resize *resize;
 
 			Ecore_Evas *ee;
@@ -125,17 +126,23 @@ _show_cb(LV2UI_Handle instance)
 	evas_object_show(eoui->win);
 
 	eoui->bg = elm_bg_add(eoui->win);
-	elm_bg_color_set(eoui->bg, 64, 64, 64);
-	evas_object_size_hint_weight_set(eoui->bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-	evas_object_size_hint_align_set(eoui->bg, EVAS_HINT_FILL, EVAS_HINT_FILL);
-	evas_object_show(eoui->bg);
-	elm_win_resize_object_add(eoui->win, eoui->bg);
+	if(eoui->bg)
+	{
+		elm_bg_color_set(eoui->bg, 64, 64, 64);
+		evas_object_size_hint_weight_set(eoui->bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+		evas_object_size_hint_align_set(eoui->bg, EVAS_HINT_FILL, EVAS_HINT_FILL);
+		evas_object_show(eoui->bg);
+		elm_win_resize_object_add(eoui->win, eoui->bg);
+	}
 
 	eoui->content = eoui->content_get(eoui);
-	evas_object_size_hint_weight_set(eoui->content, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-	evas_object_size_hint_align_set(eoui->content, EVAS_HINT_FILL, EVAS_HINT_FILL);
-	evas_object_show(eoui->content);
-	elm_win_resize_object_add(eoui->win, eoui->content);
+	if(eoui->content)
+	{
+		evas_object_size_hint_weight_set(eoui->content, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+		evas_object_size_hint_align_set(eoui->content, EVAS_HINT_FILL, EVAS_HINT_FILL);
+		evas_object_show(eoui->content);
+		elm_win_resize_object_add(eoui->win, eoui->content);
+	}
 
 	return 0;
 }
@@ -148,15 +155,23 @@ _hide_cb(LV2UI_Handle instance)
 		return -1;
 
 	// hide & delete bg&main window
-	elm_win_resize_object_del(eoui->win, eoui->bg);
-	elm_win_resize_object_del(eoui->win, eoui->content);
-	evas_object_del(eoui->content);
-	evas_object_del(eoui->bg);
-	evas_object_del(eoui->win);
-
-	eoui->content = NULL;
-	eoui->bg = NULL;
-	eoui->win = NULL;
+	if(eoui->win)
+	{
+		if(eoui->content)
+		{
+			elm_win_resize_object_del(eoui->win, eoui->content);
+			evas_object_del(eoui->content);
+			eoui->content = NULL;
+		}
+		if(eoui->bg)
+		{
+			elm_win_resize_object_del(eoui->win, eoui->bg);
+			evas_object_del(eoui->bg);
+			eoui->bg = NULL;
+		}
+		evas_object_del(eoui->win);
+		eoui->win = NULL;
+	}
 
 	// reset done flag
 	eoui->ui.done = 0;
@@ -192,11 +207,23 @@ _kx_hide(LV2_External_UI_Widget *widget)
 		return;
 
 	// hide & delete bg & main window
-	elm_win_resize_object_del(eoui->win, eoui->bg);
-	elm_win_resize_object_del(eoui->win, eoui->content);
-	evas_object_del(eoui->content);
-	evas_object_del(eoui->bg);
-	evas_object_del(eoui->win); // will call _kx_free
+	if(eoui->win)
+	{
+		if(eoui->content)
+		{
+			elm_win_resize_object_del(eoui->win, eoui->content);
+			evas_object_del(eoui->content);
+			eoui->content = NULL;
+		}
+		if(eoui->bg)
+		{
+			elm_win_resize_object_del(eoui->win, eoui->bg);
+			evas_object_del(eoui->bg);
+			eoui->bg = NULL;
+		}
+		evas_object_del(eoui->win); // will call _kx_free
+		eoui->win = NULL;
+	}
 }
 
 static inline void
@@ -209,6 +236,7 @@ _kx_free(void *data, Evas *e, Evas_Object *obj, void *event_info)
 	eoui->content = NULL;
 	eoui->bg = NULL;
 	eoui->win = NULL;
+
 	if(eoui->kx.host->ui_closed && eoui->controller)
 		eoui->kx.host->ui_closed(eoui->controller);
 }
@@ -235,17 +263,23 @@ _kx_show(LV2_External_UI_Widget *widget)
 	evas_object_show(eoui->win);
 
 	eoui->bg = elm_bg_add(eoui->win);
-	elm_bg_color_set(eoui->bg, 64, 64, 64);
-	evas_object_size_hint_weight_set(eoui->bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-	evas_object_size_hint_align_set(eoui->bg, EVAS_HINT_FILL, EVAS_HINT_FILL);
-	evas_object_show(eoui->bg);
-	elm_win_resize_object_add(eoui->win, eoui->bg);
+	if(eoui->bg)
+	{
+		elm_bg_color_set(eoui->bg, 64, 64, 64);
+		evas_object_size_hint_weight_set(eoui->bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+		evas_object_size_hint_align_set(eoui->bg, EVAS_HINT_FILL, EVAS_HINT_FILL);
+		evas_object_show(eoui->bg);
+		elm_win_resize_object_add(eoui->win, eoui->bg);
+	}
 
 	eoui->content = eoui->content_get(eoui);
-	evas_object_size_hint_weight_set(eoui->content, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-	evas_object_size_hint_align_set(eoui->content, EVAS_HINT_FILL, EVAS_HINT_FILL);
-	evas_object_show(eoui->content);
-	elm_win_resize_object_add(eoui->win, eoui->content);
+	if(eoui->content)
+	{
+		evas_object_size_hint_weight_set(eoui->content, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+		evas_object_size_hint_align_set(eoui->content, EVAS_HINT_FILL, EVAS_HINT_FILL);
+		evas_object_show(eoui->content);
+		elm_win_resize_object_add(eoui->win, eoui->content);
+	}
 }
 
 // Resize Interface
@@ -266,11 +300,15 @@ _ui_resize_cb(LV2UI_Feature_Handle instance, int w, int h)
 
 	// resize main window
 #if defined(X11_UI_WRAP)
-	ecore_evas_resize(eoui->x11.ee, eoui->w, eoui->h);
+	if(eoui->x11.ee)
+		ecore_evas_resize(eoui->x11.ee, eoui->w, eoui->h);
 #endif
-	evas_object_resize(eoui->win, eoui->w, eoui->h);
-	evas_object_resize(eoui->bg, eoui->w, eoui->h);
-	evas_object_resize(eoui->content, eoui->w, eoui->h);
+	if(eoui->win)
+		evas_object_resize(eoui->win, eoui->w, eoui->h);
+	if(eoui->bg)
+		evas_object_resize(eoui->bg, eoui->w, eoui->h);
+	if(eoui->content)
+		evas_object_resize(eoui->content, eoui->w, eoui->h);
   
   return 0;
 }
@@ -285,8 +323,11 @@ static void
 _x11_ui_wrap_mouse_in(Ecore_Evas *ee)
 {
 	eo_ui_t *eoui = ecore_evas_data_get(ee, "eoui");
+	if(!eoui)
+		return;
 
-	ecore_x_window_focus(eoui->x11.parent);
+	if(eoui->x11.parent)
+		ecore_x_window_focus(eoui->x11.parent);
 }
 #endif
 
@@ -300,6 +341,8 @@ eoui_instantiate(eo_ui_t *eoui, const LV2UI_Descriptor *descriptor,
 	eoui->controller = controller;
 	eoui->w = eoui->w > 0 ? eoui->w : 400; // fall-back if w == 0
 	eoui->h = eoui->h > 0 ? eoui->h : 400; // fall-back if h == 0
+
+	*widget = NULL;
 
 	switch(eoui->driver)
 	{
@@ -380,24 +423,36 @@ eoui_instantiate(eo_ui_t *eoui, const LV2UI_Descriptor *descriptor,
 			ecore_evas_show(eoui->x11.ee);
 	
 			eoui->win = elm_win_fake_add(eoui->x11.ee);
-			evas_object_resize(eoui->win, eoui->w, eoui->h);
-			evas_object_show(eoui->win);
+			if(eoui->win)
+			{
+				evas_object_resize(eoui->win, eoui->w, eoui->h);
+				evas_object_show(eoui->win);
 
-			eoui->bg = elm_bg_add(eoui->win);
-			elm_bg_color_set(eoui->bg, 64, 64, 64);
-			evas_object_size_hint_weight_set(eoui->bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-			evas_object_size_hint_align_set(eoui->bg, EVAS_HINT_FILL, EVAS_HINT_FILL);
-			evas_object_resize(eoui->bg, eoui->w, eoui->h);
-			evas_object_show(eoui->bg);
+				eoui->bg = elm_bg_add(eoui->win);
+				if(eoui->bg)
+				{
+					elm_bg_color_set(eoui->bg, 64, 64, 64);
+					evas_object_size_hint_weight_set(eoui->bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+					evas_object_size_hint_align_set(eoui->bg, EVAS_HINT_FILL, EVAS_HINT_FILL);
+					evas_object_resize(eoui->bg, eoui->w, eoui->h);
+					evas_object_show(eoui->bg);
+				}
 
-			eoui->content = eoui->content_get(eoui);
-			evas_object_size_hint_weight_set(eoui->content, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-			evas_object_size_hint_align_set(eoui->content, EVAS_HINT_FILL, EVAS_HINT_FILL);
-			evas_object_resize(eoui->content, eoui->w, eoui->h);
-			evas_object_show(eoui->content);
+				eoui->content = eoui->content_get(eoui);
+				if(eoui->content)
+				{
+					evas_object_size_hint_weight_set(eoui->content, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+					evas_object_size_hint_align_set(eoui->content, EVAS_HINT_FILL, EVAS_HINT_FILL);
+					evas_object_resize(eoui->content, eoui->w, eoui->h);
+					evas_object_show(eoui->content);
+				}
+			}
 
 			if(eoui->x11.resize)
 				eoui->x11.resize->ui_resize(eoui->x11.resize->handle, eoui->w, eoui->h);
+
+			eoui->x11.child = elm_win_xwindow_get(eoui->win);
+			*(uintptr_t *)widget = eoui->x11.child;
 
 			break;
 		}
@@ -449,29 +504,34 @@ eoui_cleanup(eo_ui_t *eoui)
 		case EO_UI_DRIVER_UI:
 		{
 			//elm_shutdown();
+
 			break;
 		}
 
 #if defined(X11_UI_WRAP)
 		case EO_UI_DRIVER_X11:
 		{
-			if(eoui->content)
-			{
-				elm_win_resize_object_del(eoui->win, eoui->content);
-				evas_object_del(eoui->content);
-			}
-			if(eoui->bg)
-			{
-				elm_win_resize_object_del(eoui->win, eoui->bg);
-				evas_object_del(eoui->bg);
-			}
 			if(eoui->win)
+			{
+				if(eoui->content)
+				{
+					elm_win_resize_object_del(eoui->win, eoui->content);
+					evas_object_del(eoui->content);
+				}
+				if(eoui->bg)
+				{
+					elm_win_resize_object_del(eoui->win, eoui->bg);
+					evas_object_del(eoui->bg);
+				}
 				evas_object_del(eoui->win);
-			eoui->content = NULL;
-			eoui->bg = NULL;
-			eoui->win = NULL;
-			eoui->x11.ee = NULL;
+			}
+			if(eoui->x11.ee)
+			{
+				//ecore_evas_free(eoui->x11.ee);
+			}
+
 			//elm_shutdown();
+
 			break;
 		}
 #endif
@@ -479,6 +539,7 @@ eoui_cleanup(eo_ui_t *eoui)
 		case EO_UI_DRIVER_KX:
 		{
 			//elm_shutdown();
+
 			break;
 		}
 
