@@ -24,7 +24,7 @@ typedef struct _Handle Handle;
 struct _Handle {
 	moony_t moony;
 
-	int max_val;
+	unsigned max_val;
 
 	uint32_t sample_count;
 	const LV2_Atom_Sequence *event_in;
@@ -118,14 +118,6 @@ connect_port(LV2_Handle instance, uint32_t port, void *data)
 		handle->notify = (LV2_Atom_Sequence *)data;
 }
 
-static void
-activate(LV2_Handle instance)
-{
-	Handle *handle = (Handle *)instance;
-
-	// nothing
-}
-
 static int
 _run(lua_State *L)
 {
@@ -149,16 +141,16 @@ _run(lua_State *L)
 		lforge->forge = &handle->forge;
 
 		// push values
-		for(int i=0; i<handle->max_val; i++)
+		for(unsigned i=0; i<handle->max_val; i++)
 			lua_pushnumber(L, *handle->val_in[i]);
 
 		lua_call(L, 3 + handle->max_val, LUA_MULTRET);
 
-		int ret = lua_gettop(L) - top;
-		int max = ret > handle->max_val ? handle->max_val : ret; // discard superfluous returns
-		for(int i=0; i<max; i++)
+		unsigned ret = lua_gettop(L) - top;
+		unsigned max = ret > handle->max_val ? handle->max_val : ret; // discard superfluous returns
+		for(unsigned i=0; i<max; i++)
 			*handle->val_out[i] = luaL_optnumber(L, i+1, 0.f);
-		for(int i=ret; i<handle->max_val; i++) // fill in missing returns with 0.f
+		for(unsigned i=ret; i<handle->max_val; i++) // fill in missing returns with 0.f
 			*handle->val_out[i] = 0.f;
 
 		lua_pop(L, ret);
@@ -212,14 +204,6 @@ run(LV2_Handle instance, uint32_t nsamples)
 }
 
 static void
-deactivate(LV2_Handle instance)
-{
-	Handle *handle = (Handle *)instance;
-
-	// nothing
-}
-
-static void
 cleanup(LV2_Handle instance)
 {
 	Handle *handle = (Handle *)instance;
@@ -232,9 +216,9 @@ const LV2_Descriptor c1a1xc1a1 = {
 	.URI						= MOONY_C1A1XC1A1_URI,
 	.instantiate		= instantiate,
 	.connect_port		= connect_port,
-	.activate				= activate,
+	.activate				= NULL,
 	.run						= run,
-	.deactivate			= deactivate,
+	.deactivate			= NULL,
 	.cleanup				= cleanup,
 	.extension_data	= extension_data
 };
@@ -243,9 +227,9 @@ const LV2_Descriptor c2a1xc2a1 = {
 	.URI						= MOONY_C2A1XC2A1_URI,
 	.instantiate		= instantiate,
 	.connect_port		= connect_port,
-	.activate				= activate,
+	.activate				= NULL,
 	.run						= run,
-	.deactivate			= deactivate,
+	.deactivate			= NULL,
 	.cleanup				= cleanup,
 	.extension_data	= extension_data
 };
@@ -254,9 +238,9 @@ const LV2_Descriptor c4a1xc4a1 = {
 	.URI						= MOONY_C4A1XC4A1_URI,
 	.instantiate		= instantiate,
 	.connect_port		= connect_port,
-	.activate				= activate,
+	.activate				= NULL,
 	.run						= run,
-	.deactivate			= deactivate,
+	.deactivate			= NULL,
 	.cleanup				= cleanup,
 	.extension_data	= extension_data
 };

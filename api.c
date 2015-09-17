@@ -47,15 +47,15 @@ struct _lobj_t {
 
 struct _ltuple_t {
 	const LV2_Atom_Tuple *tuple;
-	uint32_t pos;
+	int pos;
 	const LV2_Atom *itr;
 	LV2_Atom body [0];
 };
 
 struct _lvec_t {
 	const LV2_Atom_Vector *vec;
-	uint32_t count;
-	uint32_t pos;
+	int count;
+	int pos;
 	LV2_Atom body [0];
 };
 
@@ -264,7 +264,7 @@ _lseq__len(lua_State *L)
 {
 	lseq_t *lseq = luaL_checkudata(L, 1, "lseq");
 
-	uint32_t count = 0;
+	int count = 0;
 	LV2_ATOM_SEQUENCE_FOREACH(lseq->seq, ev)
 		count++;
 	lua_pushinteger(L, count);
@@ -275,8 +275,6 @@ _lseq__len(lua_State *L)
 static int
 _lseq__tostring(lua_State *L)
 {
-	lseq_t *lseq = luaL_checkudata(L, 1, "lseq");
-
 	lua_pushstring(L, "Atom_Sequence");
 
 	return 1;
@@ -377,7 +375,7 @@ _ltuple__len(lua_State *L)
 {
 	ltuple_t *ltuple = luaL_checkudata(L, 1, "ltuple");
 
-	uint32_t count = 0;
+	int count = 0;
 	LV2_ATOM_TUPLE_FOREACH(ltuple->tuple, atom)
 		count++;
 	lua_pushinteger(L, count);
@@ -388,8 +386,6 @@ _ltuple__len(lua_State *L)
 static int
 _ltuple__tostring(lua_State *L)
 {
-	ltuple_t *ltuple = luaL_checkudata(L, 1, "ltuple");
-
 	lua_pushstring(L, "Atom_Tuple");
 
 	return 1;
@@ -415,7 +411,6 @@ _ltuple_foreach(lua_State *L)
 static int
 _ltuple_unpack(lua_State *L)
 {
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	ltuple_t *ltuple = luaL_checkudata(L, 1, "ltuple");
 
 	int n = lua_gettop(L);
@@ -539,8 +534,6 @@ _lvec__len(lua_State *L)
 static int
 _lvec__tostring(lua_State *L)
 {
-	lvec_t *lvec = luaL_checkudata(L, 1, "lvec");
-
 	lua_pushstring(L, "Atom_Vector");
 
 	return 1;
@@ -565,7 +558,6 @@ _lvec_foreach(lua_State *L)
 static int
 _lvec_unpack(lua_State *L)
 {
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lvec_t *lvec = luaL_checkudata(L, 1, "lvec");
 
 	int n = lua_gettop(L);
@@ -619,7 +611,7 @@ _lchunk__index(lua_State *L)
 	if(lua_isnumber(L, 2))
 	{
 		int index = lua_tointeger(L, 2); // indexing start from 1
-		if( (index > 0) && (index <= lchunk->atom->size) )
+		if( (index > 0) && (index <= (int)lchunk->atom->size) )
 			lua_pushinteger(L, payload[index-1]);
 		else // index is out of bounds
 			lua_pushnil(L);
@@ -635,7 +627,7 @@ _lchunk__index(lua_State *L)
 		else if(!strcmp(key, "value"))
 		{
 			lua_createtable(L, lchunk->atom->size, 0);
-			for(int i=0; i<lchunk->atom->size; i++)
+			for(unsigned i=0; i<lchunk->atom->size; i++)
 			{
 				lua_pushinteger(L, payload[i]);
 				lua_rawseti(L, -2, i+1);
@@ -667,8 +659,6 @@ _lchunk__len(lua_State *L)
 static int
 _lchunk__tostring(lua_State *L)
 {
-	latom_t *lchunk = luaL_checkudata(L, 1, "lchunk");
-
 	lua_pushstring(L, "Atom_Chunk");
 
 	return 1;
@@ -677,7 +667,6 @@ _lchunk__tostring(lua_State *L)
 static int
 _lchunk_unpack(lua_State *L)
 {
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	latom_t *lchunk = luaL_checkudata(L, 1, "lchunk");
 	const uint8_t *payload = LV2_ATOM_BODY_CONST(lchunk->atom);
 
@@ -690,8 +679,8 @@ _lchunk_unpack(lua_State *L)
 		min = luaL_checkinteger(L, 2);
 		min = min < 1
 			? 1
-			: (min > lchunk->atom->size
-				? lchunk->atom->size
+			: (min > (int)lchunk->atom->size
+				? (int)lchunk->atom->size
 				: min);
 
 		if(n > 2)
@@ -699,8 +688,8 @@ _lchunk_unpack(lua_State *L)
 			max = luaL_checkinteger(L, 3);
 			max = max < 1
 				? 1
-				: (max > lchunk->atom->size
-					? lchunk->atom->size
+				: (max > (int)lchunk->atom->size
+					? (int)lchunk->atom->size
 					: max);
 		}
 	}
@@ -798,7 +787,7 @@ _lobj__len(lua_State *L)
 {
 	lobj_t *lobj = luaL_checkudata(L, 1, "lobj");
 
-	uint32_t count = 0;
+	int count = 0;
 	LV2_ATOM_OBJECT_FOREACH(lobj->obj, prop)
 		count++;
 	lua_pushinteger(L, count);
@@ -808,8 +797,6 @@ _lobj__len(lua_State *L)
 static int
 _lobj__tostring(lua_State *L)
 {
-	lobj_t *lobj = luaL_checkudata(L, 1, "lobj");
-
 	lua_pushstring(L, "Atom_Object");
 
 	return 1;
@@ -1165,7 +1152,7 @@ _lforge_bytes(lua_State *L, moony_t *moony, LV2_URID type)
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	if(lua_istable(L, 2))
 	{
-		uint32_t size = lua_rawlen(L, 2);
+		int size = lua_rawlen(L, 2);
 		if(!lv2_atom_forge_atom(lforge->forge, size, type))
 			luaL_error(L, forge_buffer_overflow);
 		for(int i=1; i<=size; i++)
@@ -1190,7 +1177,7 @@ _lforge_bytes(lua_State *L, moony_t *moony, LV2_URID type)
 	}
 	else // bytes as individual function arguments
 	{
-		uint32_t size = lua_gettop(L) - 1;
+		int size = lua_gettop(L) - 1;
 
 		if(!lv2_atom_forge_atom(lforge->forge, size, type))
 			luaL_error(L, forge_buffer_overflow);
@@ -1480,16 +1467,15 @@ _lforge_property(lua_State *L)
 static int
 _lforge_vector(lua_State *L)
 {
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	LV2_URID child_type = luaL_checkinteger(L, 2);
-	uint32_t child_size;
+	uint32_t child_size = 0;
 	LV2_Atom_Forge_Frame frame;
 
 	int is_table = lua_istable(L, 3);
 
 	int n = is_table
-		? lua_rawlen(L, 3)
+		? (int)lua_rawlen(L, 3)
 		: lua_gettop(L) - 2;
 
 	if(  (child_type == lforge->forge->Int)
@@ -1761,7 +1747,6 @@ _log(lua_State *L)
 
 	for(int i=1; i<=n; i++)
 	{
-		size_t len;
 		const char *str = NULL;
 		switch(lua_type(L, i))
 		{
@@ -1825,7 +1810,7 @@ moony_init(moony_t *moony, double sample_rate, const LV2_Feature *const *feature
 	
 	LV2_Options_Option *opts = NULL;
 
-	for(int i=0; features[i]; i++)
+	for(unsigned i=0; features[i]; i++)
 		if(!strcmp(features[i]->URI, LV2_URID__map))
 			moony->map = (LV2_URID_Map *)features[i]->data;
 		else if(!strcmp(features[i]->URI, LV2_URID__unmap))
@@ -2287,8 +2272,8 @@ _work_response(LV2_Handle instance, uint32_t size, const void *body)
 		// schedule freeing of memory to _work
 		LV2_Worker_Status status = moony->sched->schedule_work(
 			moony->sched->handle, sizeof(moony_mem_t), &req);
-
-		//TODO check status
+		if(status != LV2_WORKER_SUCCESS)
+			fprintf(stderr, "moony: schedule_work failed\n");
 
 		return LV2_WORKER_ERR_UNKNOWN;
 	}
@@ -2331,8 +2316,6 @@ extension_data(const char* uri)
 void
 moony_activate(moony_t *moony, const char *chunk)
 {
-	lua_State *L = moony->vm.L;
-
 	strcpy(moony->chunk, chunk);
 	moony->dirty_in = 1; // trigger update
 	moony->dirty_out = 1; // trigger update of UI

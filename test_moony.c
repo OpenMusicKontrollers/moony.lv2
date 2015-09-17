@@ -101,8 +101,6 @@ _unmap(LV2_URID_Unmap_Handle instance, LV2_URID urid)
 static LV2_Worker_Status
 _sched(LV2_Worker_Schedule_Handle instance, uint32_t size, const void *data)
 {
-	handle_t *handle = instance;
-
 	//TODO
 
 	return LV2_WORKER_SUCCESS;

@@ -23,7 +23,7 @@
 typedef struct _ext_urid_t ext_urid_t;
 
 ext_urid_t *
-ext_urid_new();
+ext_urid_new(void);
 
 void
 ext_urid_free(ext_urid_t *ext_urid);

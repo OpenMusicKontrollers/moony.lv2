@@ -24,7 +24,7 @@ typedef struct _Handle Handle;
 struct _Handle {
 	moony_t moony;
 
-	int max_val;
+	unsigned max_val;
 
 	uint32_t sample_count;
 	const LV2_Atom_Sequence *event_in [4];
@@ -106,7 +106,7 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 		handle->max_val = 1;
 	moony_activate(&handle->moony, default_code[handle->max_val >> 1]);
 
-	for(int i=0; i<handle->max_val; i++)
+	for(unsigned i=0; i<handle->max_val; i++)
 		lv2_atom_forge_init(&handle->forge[i], handle->moony.map);
 
 	return handle;
@@ -127,14 +127,6 @@ connect_port(LV2_Handle instance, uint32_t port, void *data)
 		handle->notify = (LV2_Atom_Sequence *)data;
 }
 
-static void
-activate(LV2_Handle instance)
-{
-	Handle *handle = (Handle *)instance;
-
-	// nothing
-}
-
 static int
 _run(lua_State *L)
 {
@@ -146,7 +138,7 @@ _run(lua_State *L)
 		lua_pushinteger(L, handle->sample_count);
 
 		// push sequence
-		for(int i=0; i<handle->max_val; i++)
+		for(unsigned i=0; i<handle->max_val; i++)
 		{
 			lseq_t *lseq = moony_newuserdata(L, &handle->moony, MOONY_UDATA_SEQ);
 			lseq->seq = handle->event_in[i];
@@ -154,7 +146,7 @@ _run(lua_State *L)
 		}
 
 		// push forge
-		for(int i=0; i<handle->max_val; i++)
+		for(unsigned i=0; i<handle->max_val; i++)
 		{
 			lforge_t *lforge = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE);
 			lforge->depth = 0;
@@ -184,7 +176,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 	// prepare event_out sequence
 	LV2_Atom_Forge_Frame frame [4];
 
-	for(int i=0; i<handle->max_val; i++)
+	for(unsigned i=0; i<handle->max_val; i++)
 	{
 		uint32_t capacity = handle->event_out[i]->atom.size;
 		lv2_atom_forge_set_buffer(&handle->forge[i], (uint8_t *)handle->event_out[i], capacity);
@@ -203,32 +195,24 @@ run(LV2_Handle instance, uint32_t nsamples)
 		lua_gc(L, LUA_GCSTEP, 0);
 	}
 
-	for(int i=0; i<handle->max_val; i++)
+	for(unsigned i=0; i<handle->max_val; i++)
 		if(&frame[i] != handle->forge[i].stack) // intercept assert
 			moony_err(&handle->moony, "forge frame mismatch");
 
 	// clear output sequence buffers upon error
 	if(moony_bypass(&handle->moony))
 	{
-		for(int i=0; i<handle->max_val; i++)
+		for(unsigned i=0; i<handle->max_val; i++)
 			lv2_atom_sequence_clear(handle->event_out[i]);
 	}
 	else
 	{
-		for(int i=0; i<handle->max_val; i++)
+		for(unsigned i=0; i<handle->max_val; i++)
 			lv2_atom_forge_pop(&handle->forge[i], &frame[i]);
 	}
 
 	// handle UI comm
 	moony_out(&handle->moony, handle->notify, nsamples - 1);
-}
-
-static void
-deactivate(LV2_Handle instance)
-{
-	Handle *handle = (Handle *)instance;
-
-	// nothing
 }
 
 static void
@@ -244,9 +228,9 @@ const LV2_Descriptor a1xa1 = {
 	.URI						= MOONY_A1XA1_URI,
 	.instantiate		= instantiate,
 	.connect_port		= connect_port,
-	.activate				= activate,
+	.activate				= NULL,
 	.run						= run,
-	.deactivate			= deactivate,
+	.deactivate			= NULL,
 	.cleanup				= cleanup,
 	.extension_data	= extension_data
 };
@@ -255,9 +239,9 @@ const LV2_Descriptor a2xa2 = {
 	.URI						= MOONY_A2XA2_URI,
 	.instantiate		= instantiate,
 	.connect_port		= connect_port,
-	.activate				= activate,
+	.activate				= NULL,
 	.run						= run,
-	.deactivate			= deactivate,
+	.deactivate			= NULL,
 	.cleanup				= cleanup,
 	.extension_data	= extension_data
 };
@@ -266,9 +250,9 @@ const LV2_Descriptor a4xa4 = {
 	.URI						= MOONY_A4XA4_URI,
 	.instantiate		= instantiate,
 	.connect_port		= connect_port,
-	.activate				= activate,
+	.activate				= NULL,
 	.run						= run,
-	.deactivate			= deactivate,
+	.deactivate			= NULL,
 	.cleanup				= cleanup,
 	.extension_data	= extension_data
 };

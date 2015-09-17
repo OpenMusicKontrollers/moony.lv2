@@ -174,9 +174,11 @@ _encoder_append(const char *str, void *data)
 	size += ui->chunk ? strlen(ui->chunk) : 0;
 	size += str ? strlen(str) + 1 : 0;
 
-	ui->chunk = realloc(ui->chunk, size);
+	if(size)
+		ui->chunk = realloc(ui->chunk, size);
 
-	strcat(ui->chunk, str);
+	if(ui->chunk && str)
+		strcat(ui->chunk, str);
 }
 
 static void
@@ -479,10 +481,10 @@ _content_get(eo_ui_t *eoui)
 					elm_box_pack_end(hbox, icon);
 				}
 
-				Evas_Object *label = elm_label_add(hbox);
-				if(label)
+				Evas_Object *label2 = elm_label_add(hbox);
+				if(label2)
 				{
-					elm_object_text_set(label,
+					elm_object_text_set(label2,
 						"<color=#b00 shadow_color=#fff font_size=20>"
 						"Moony - Logic Glue for LV2"
 						"</color></br><align=left>"
@@ -496,8 +498,8 @@ _content_get(eo_ui_t *eoui)
 						"dev@open-music-kontrollers.ch"
 						"</color></align>");
 
-					evas_object_show(label);
-					elm_box_pack_end(hbox, label);
+					evas_object_show(label2);
+					elm_box_pack_end(hbox, label2);
 				}
 			}
 		}

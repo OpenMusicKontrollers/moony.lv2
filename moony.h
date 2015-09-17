@@ -225,7 +225,7 @@ moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type);
 static inline void
 moony_freeuserdata(moony_t *moony)
 {
-	for(int i=0; i<MOONY_UDATA_COUNT; i++)
+	for(unsigned i=0; i<MOONY_UDATA_COUNT; i++)
 		moony->itr[i] = 0; // reset iterator
 }
 
