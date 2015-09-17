@@ -178,7 +178,7 @@ osc_atom_bundle_unroll(osc_forge_t *oforge, const LV2_Atom_Object *obj,
 
 	osc_atom_bundle_unpack(oforge, obj, &timestamp, &items);
 
-	uint64_t timestamp_body = timestamp ? timestamp->body : 1ULL;
+	uint64_t timestamp_body = timestamp ? (uint64_t)timestamp->body : 1ULL;
 
 	if(bundle_push_cb)
 		bundle_push_cb(timestamp_body, data);
