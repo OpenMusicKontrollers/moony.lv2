@@ -59,6 +59,7 @@ struct _UI {
 	Evas_Object *compile;
 	Evas_Object *external;
 	Evas_Object *popup;
+	Evas_Object *overlay;
 
 	Ecore_Exe *exe;
 	Ecore_Event_Handler *handler;
@@ -296,7 +297,7 @@ _exe_del(void *data, int type, void *event)
 {
 	UI *ui = data;
 	Ecore_Exe_Event_Del *ev = event;
-
+		
 	// is this event of our concern?
 	if(ui->exe && (ev->exe == ui->exe) )
 	{
@@ -339,6 +340,7 @@ _exe_del(void *data, int type, void *event)
 			ui->monitor = NULL;
 		}
 
+		evas_object_hide(ui->overlay);
 		elm_entry_editable_set(ui->entry, EINA_TRUE);
 
 		return EINA_TRUE;
@@ -380,10 +382,11 @@ _external_clicked(void *data, Evas_Object *obj, void *event_info)
 
 		if(ui->exe)
 		{
-			// add file and exe monitoring callbackd
+			// add file and exe monitoring callback
 			ui->handler = ecore_event_handler_add(ECORE_EXE_EVENT_DEL, _exe_del, ui);
 			ui->monitor = ecore_file_monitor_add(path, _monitor, ui);
 
+			evas_object_show(ui->overlay);
 			elm_entry_editable_set(ui->entry, EINA_FALSE);
 		}
 		else
@@ -520,6 +523,24 @@ _content_get(eo_ui_t *eoui)
 			evas_object_size_hint_weight_set(ui->notify, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
 			if(label)
 				elm_object_content_set(ui->notify, label);
+		}
+		
+		Evas_Object *overlay_label = elm_label_add(ui->entry);
+		if(overlay_label)
+		{
+			elm_object_text_set(overlay_label, "external editor in use");
+			evas_object_show(overlay_label);
+		}
+		
+		ui->overlay = elm_notify_add(ui->entry);
+		if(ui->overlay)
+		{
+			elm_notify_timeout_set(ui->overlay, 0);
+			elm_notify_align_set(ui->overlay, 0.5, 1.0);
+			elm_notify_allow_events_set(ui->overlay, EINA_FALSE);
+			evas_object_size_hint_weight_set(ui->overlay, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+			if(overlay_label)
+				elm_object_content_set(ui->overlay, overlay_label);
 		}
 
 		ui->load = elm_fileselector_button_add(ui->table);
@@ -697,7 +718,6 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	LV2UI_Controller controller, LV2UI_Widget *widget,
 	const LV2_Feature *const *features)
 {
-
 	if(		strcmp(plugin_uri, MOONY_C1XC1_URI)
 		&&	strcmp(plugin_uri, MOONY_C2XC2_URI)
 		&&	strcmp(plugin_uri, MOONY_C4XC4_URI)
@@ -832,7 +852,6 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 				enc.data = ui;
 				lua_to_markup(chunk, NULL);
 				elm_entry_cursor_pos_set(ui->entry, 0);
-				_compile(ui);
 			}
 			else if(msg->prop.key == ui->uris.moony_error)
 			{
