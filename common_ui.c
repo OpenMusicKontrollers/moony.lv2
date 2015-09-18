@@ -302,6 +302,29 @@ _exe_del(void *data, int type, void *event)
 	{
 		printf("external editor has been closed\n");
 
+		switch(ev->exit_code)
+		{
+			case 0: // success
+				break;
+#if !defined(_WIN32) && !defined(__APPLE__)
+			case 1:
+				fprintf(stderr, "xdg-open: Error in command line syntax.\n");
+				break;
+			case 2:
+				fprintf(stderr, "xdg-open: One of the files passed on the command line did not exist.\n");
+				break;
+			case 3:
+				fprintf(stderr, "xdg-open: A required tool could not be found.\n");
+				break;
+			case 4:
+				fprintf(stderr, "xdg-open: The action failed.\n");
+				break;
+#endif
+			default:
+				fprintf(stderr, "opening the file in an external editor failed.\n");
+				break;
+		}
+
 		ui->exe = NULL;
 
 		if(ui->handler)
@@ -345,7 +368,7 @@ _external_clicked(void *data, Evas_Object *obj, void *event_info)
 	char *command;
 #if defined(_WIN32)
 	asprintf(&command, "START %s", path);
-#elif defined(_APPLE)
+#elif defined(__APPLE__)
 	asprintf(&command, "open %s", path);
 #else // Linux/BSD
 	asprintf(&command, "xdg-open %s", path);
