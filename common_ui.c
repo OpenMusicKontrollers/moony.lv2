@@ -259,9 +259,7 @@ _changed(void *data, Evas_Object *obj, void *event_info)
 
 	enc.data = ui;
 	lua_to_markup(utf8, NULL);
-	printf("setting to: %i\n", pos);
 	elm_entry_cursor_pos_set(ui->entry, pos);
-	printf("set to: %i\n", elm_entry_cursor_pos_get(ui->entry));
 }
 
 static void
