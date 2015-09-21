@@ -60,6 +60,8 @@ struct _UI {
 	Evas_Object *external;
 	Evas_Object *popup;
 	Evas_Object *overlay;
+	
+	Eina_List *desks;
 
 	Ecore_Exe *exe;
 	Ecore_Event_Handler *handler;
@@ -282,12 +284,33 @@ _monitor(void *data, Ecore_File_Monitor *em, Ecore_File_Event event, const char 
 		}
 		case ECORE_FILE_EVENT_MODIFIED:          /**< Modified file or directory event. */
 		{
-			printf("external editor has modified file\n");
+			//printf("external editor has modified file\n");
 			_load_chosen(ui, ui->entry, (void *)path);
 
 			break;
 		}
 	}
+}
+
+static void
+_exe_cleanup(UI *ui)
+{
+	ui->exe = NULL;
+
+	if(ui->handler)
+	{
+		ecore_event_handler_del(ui->handler);
+		ui->handler = NULL;
+	}
+
+	if(ui->monitor)
+	{
+		ecore_file_monitor_del(ui->monitor);
+		ui->monitor = NULL;
+	}
+
+	evas_object_hide(ui->overlay);
+	elm_entry_editable_set(ui->entry, EINA_TRUE);
 }
 
 static Eina_Bool
@@ -299,7 +322,7 @@ _exe_del(void *data, int type, void *event)
 	// is this event of our concern?
 	if(ui->exe && (ev->exe == ui->exe) )
 	{
-		printf("external editor has been closed\n");
+		//printf("external editor has been closed\n");
 
 		switch(ev->exit_code)
 		{
@@ -324,22 +347,7 @@ _exe_del(void *data, int type, void *event)
 				break;
 		}
 
-		ui->exe = NULL;
-
-		if(ui->handler)
-		{
-			ecore_event_handler_del(ui->handler);
-			ui->handler = NULL;
-		}
-
-		if(ui->monitor)
-		{
-			ecore_file_monitor_del(ui->monitor);
-			ui->monitor = NULL;
-		}
-
-		evas_object_hide(ui->overlay);
-		elm_entry_editable_set(ui->entry, EINA_TRUE);
+		_exe_cleanup(ui);
 
 		return EINA_TRUE;
 	}
@@ -348,9 +356,13 @@ _exe_del(void *data, int type, void *event)
 }
 
 static void
-_external_clicked(void *data, Evas_Object *obj, void *event_info)
+_editor_chosen(void *data, Evas_Object *obj, void *event_info)
 {
-	UI *ui = data;
+	Efreet_Desktop *desk = data;
+	UI *ui = evas_object_data_get(obj, "ui");
+	
+	if(!ui)
+		return;
 
 	Eina_Tmpstr *path;
 	int fd = eina_file_mkstemp("moony_XXXXXX.lua", &path);
@@ -365,14 +377,34 @@ _external_clicked(void *data, Evas_Object *obj, void *event_info)
 	_save_chosen(ui, ui->entry, (void *)path);
 
 	// open file in external editor
-	char *command;
+	char *command = NULL;
+	if(desk)
+	{
+		char *exec = strdup(desk->exec);
+		char *repl = NULL;
+
+		if(exec)
+		{
+			// replace %F with %s
+			if((repl=strstr(exec, "%F")))
+				repl[1] = 's';
+			
+			asprintf(&command, exec, path);
+
+			free(exec);
+		}
+	}
+	else // !desk
+	{
 #if defined(_WIN32)
-	asprintf(&command, "START %s", path);
+		asprintf(&command, "START %s", path);
 #elif defined(__APPLE__)
-	asprintf(&command, "open %s", path);
+		asprintf(&command, "open %s", path);
 #else // Linux/BSD
-	asprintf(&command, "xdg-open %s", path);
+		asprintf(&command, "xdg-open %s", path);
 #endif
+	}
+
 	if(command)
 	{
 		ui->exe = ecore_exe_run(command, ui);
@@ -394,6 +426,45 @@ _external_clicked(void *data, Evas_Object *obj, void *event_info)
 		fprintf(stderr, "memory allocation for external editor command failed\n");
 
 	eina_tmpstr_del(path);
+	
+	elm_object_text_set(ui->overlay, "external editor in use");
+}
+
+static void
+_external_clicked(void *data, Evas_Object *obj, void *event_info)
+{
+	UI *ui = data;
+
+	if(evas_object_visible_get(ui->overlay))
+	{
+		if(ui->exe)
+			ecore_exe_quit(ui->exe);
+
+		if(ui->exe)
+			_exe_cleanup(ui);
+	}
+	else // !visible
+	{
+		Eina_List *l;
+		Efreet_Desktop *desk;
+		EINA_LIST_FOREACH(ui->desks, l, desk)
+		{
+			if(desk->exec)
+			{
+				Evas_Object *icon = NULL;
+				if(desk->icon && (icon = elm_icon_add(ui->overlay)) )
+				{
+					elm_icon_standard_set(icon, desk->icon);
+					evas_object_show(icon);
+				}
+
+				elm_popup_item_append(ui->overlay, desk->name, icon, _editor_chosen, desk);
+			}
+		}
+		elm_popup_item_append(ui->overlay, "Use system default", NULL, _editor_chosen, NULL);
+
+		evas_object_show(ui->overlay);
+	}
 }
 
 static void
@@ -516,29 +587,18 @@ _content_get(eo_ui_t *eoui)
 		if(ui->notify)
 		{
 			elm_notify_timeout_set(ui->notify, 0.5);
-			elm_notify_align_set(ui->notify, 0.5, 0.5);
+			elm_notify_align_set(ui->notify, 0.5, 0.75);
 			elm_notify_allow_events_set(ui->notify, EINA_TRUE);
 			evas_object_size_hint_weight_set(ui->notify, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
 			if(label)
 				elm_object_content_set(ui->notify, label);
 		}
 		
-		Evas_Object *overlay_label = elm_label_add(ui->entry);
-		if(overlay_label)
-		{
-			elm_object_text_set(overlay_label, "external editor in use");
-			evas_object_show(overlay_label);
-		}
-		
-		ui->overlay = elm_notify_add(ui->entry);
+		ui->overlay = elm_popup_add(ui->entry);
 		if(ui->overlay)
 		{
-			elm_notify_timeout_set(ui->overlay, 0);
-			elm_notify_align_set(ui->overlay, 0.5, 1.0);
-			elm_notify_allow_events_set(ui->overlay, EINA_FALSE);
 			evas_object_size_hint_weight_set(ui->overlay, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-			if(overlay_label)
-				elm_object_content_set(ui->overlay, overlay_label);
+			evas_object_data_set(ui->overlay, "ui", ui);
 		}
 
 		ui->load = elm_fileselector_button_add(ui->table);
@@ -805,6 +865,9 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	// trigger update
 	ui->write_function(ui->controller, ui->control_port, msg_size,
 		ui->uris.event_transfer, &msg);
+	
+	efreet_init();
+	ui->desks = efreet_util_desktop_mime_list("text/plain");
 
 	return ui;
 }
@@ -813,6 +876,11 @@ static void
 cleanup(LV2UI_Handle handle)
 {
 	UI *ui = handle;
+
+	Efreet_Desktop *desk;
+	EINA_LIST_FREE(ui->desks, desk)
+		efreet_desktop_free(desk);
+	efreet_shutdown();
 
 	if(ui->exe)
 		ecore_exe_quit(ui->exe); //TODO does not seem to work with xdg-open
