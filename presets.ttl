@@ -159,51 +159,28 @@ end
 
 function run(n, seq1, seq2, seq3, seq4, forge1, forge2, forge3, forge4)
 	for frames, atom in multiplex(seq1, seq2, seq3, seq4) do
-		forge1:frame_time(frames)
-		forge1:atom(atom)
-
-		forge2:frame_time(frames)
-		forge2:atom(atom)
-
-		forge3:frame_time(frames)
-		forge3:atom(atom)
-
-		forge4:frame_time(frames)
-		forge4:atom(atom)
+		forge1:frame_time(frames):atom(atom)
+		forge2:frame_time(frames):atom(atom)
+		forge3:frame_time(frames):atom(atom)
+		forge4:frame_time(frames):atom(atom)
 	end
 end"""
 	] .
 
 moony:template-midi_responder
 	state:state [
-		moony:code """midi_mt = {
-	__call = function(self, frames, atom, data)
-		if atom.type == MIDI.MidiEvent then
-			local status = atom[1]
-			local cmd = status & 0xf0
-			local meth = self[cmd]
-			if meth then
-				meth(self, frames, data, status & 0x0f, atom:unpack(2))
-			end
-		end
-	end
-}
-
-midi_responder = {
-	[0x90] = function(self, frames, forge, chan, note, vel)
-		--forge:frame_time(frames)
-		--forge:midi(0x90 | chan, note, vel)
+		moony:code """midi_responder = MIDIResponder:new({
+	[MIDI.NoteOn] = function(self, frames, forge, chan, note, vel)
+		--forge:frame_time(frames):midi(MIDI.NoteOn | chan, note, vel)
 	end,
-	[0x80] = function(self, frames, forge, chan, note, vel)
-		--forge:frame_time(frames)
-		--forge:int(0x80 | chan, note, vel)
+	[MIDI.NoteOff] = function(self, frames, forge, chan, note, vel)
+		--forge:frame_time(frames):midi(MIDI.NoteOff | chan, note, vel)
 	end
-}
-setmetatable(midi_responder, midi_mt)
+})
 
 function run(n, seq, forge)
 	for frames, atom in seq:foreach() do
-		midi_responder(frames, atom, forge)
+		midi_responder(frames, forge, atom)
 	end
 end"""
 	] .

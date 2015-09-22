@@ -336,6 +336,52 @@ do
 	test(producer, consumer)
 end
 
+-- MidiResponder
+print('[test] MidiResponder')
+do
+	local _chan = 0x01
+	local _note = 0x2a
+	local _vel = 0x7f
+	local note_on = {MIDI.NoteOn | _chan, _note, _vel}
+	local note_off = {MIDI.NoteOff | _chan, _note, _vel}
+
+	local function producer(forge)
+		forge:frame_time(0):midi(note_on)
+		forge:frame_time(1):midi(note_off)
+	end
+
+	local note_on_responder = false
+	local note_off_responder = false
+
+	local midi_responder = MIDIResponder:new({
+		[MIDI.NoteOn] = function(self, frames, forge, chan, note, vel)
+			assert(frames == 0)
+			assert(chan == _chan)
+			assert(note == _note)
+			assert(vel == _vel)
+			note_on_responded = true
+		end,
+		[MIDI.NoteOff] = function(self, frames, forge, chan, note, vel)
+			assert(frames == 1)
+			assert(chan == _chan)
+			assert(note == _note)
+			assert(vel == _vel)
+			note_off_responded = true
+		end
+	})
+
+	local function consumer(seq)
+		for frames, atom in seq:foreach() do
+			midi_responder(frames, nil, atom)
+		end
+
+		assert(note_on_responded)
+		assert(note_off_responded)
+	end
+
+	test(producer, consumer)
+end
+
 -- Chunk
 print('[test] Chunk')
 do

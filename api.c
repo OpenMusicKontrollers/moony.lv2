@@ -1924,6 +1924,78 @@ _log(lua_State *L)
 	return 0;
 }
 
+static int
+_lmidiresponder__call(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	lua_settop(L, 4); // discard superfluous arguments
+	// 1: self
+	// 2: frames
+	// 3: data
+	// 4: atom
+	
+	latom_t *lchunk = luaL_checkudata(L, 4, "lchunk");
+	lua_pop(L, 1); // atom
+
+	if(lchunk->atom->type == moony->uris.midi_event)
+	{
+		const uint8_t *midi = LV2_ATOM_BODY_CONST(lchunk->atom);
+		const uint8_t status = midi[0];
+
+		lua_pushinteger(L, status & 0xf0);
+		lua_gettable(L, 1);
+		if(!lua_isnil(L, -1))
+		{
+			lua_insert(L, 1);
+			lua_pushinteger(L, status & 0x0f); // 4: channel
+
+			for(unsigned i=1; i<lchunk->atom->size; i++)
+				lua_pushinteger(L, midi[i]);
+
+			lua_call(L, 4 + lchunk->atom->size - 1, 0);
+		}
+	}
+
+	return 0;
+}
+
+static int
+_lmidiresponder_new(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	
+	lua_settop(L, 2); // discard superfluous arguments
+
+	// o = o or {}
+	if(!lua_istable(L, 2))
+	{
+		lua_pop(L, 1);
+		lua_newtable(L);
+	}
+
+	// self.__index = self
+	lua_pushvalue(L, 1);
+	lua_setfield(L, 1, "__index");
+
+	// self.__call = _lmidiresponder__call
+	lua_pushlightuserdata(L, moony);
+	lua_pushcclosure(L, _lmidiresponder__call, 1);
+	lua_setfield(L, 1, "__call");
+
+	// setmetatable(self, o)
+	lua_pushvalue(L, 1);
+	lua_setmetatable(L, -2);
+
+	// return o
+	return 1;
+}
+
+static const luaL_Reg lmidiresponder_mt [] = {
+	{"new", _lmidiresponder_new},
+	{NULL, NULL}
+};
+
 int
 moony_init(moony_t *moony, double sample_rate, const LV2_Feature *const *features)
 {
@@ -2227,6 +2299,12 @@ moony_open(moony_t *moony, lua_State *L)
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	lua_pushcclosure(L, _log, 1);
 	lua_setglobal(L, "print");
+
+	// MIDIResponder
+	lua_newtable(L);
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	luaL_setfuncs(L, lmidiresponder_mt, 1);
+	lua_setglobal(L, "MIDIResponder");
 
 #undef SET_MAP
 }

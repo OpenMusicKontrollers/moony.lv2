@@ -580,3 +580,21 @@ uri = atom.value -- Lua string
 ``` lua
 path = atom.value -- Lua string
 ```
+
+### Responders
+
+#### MIDIResponder
+
+``` lua
+midi_responder = MIDIResponder:new({
+	[MIDI.NoteOn] = function(self, frames, forge, chan, note, vel)
+		--
+	end
+})
+
+function run(n, seq, forge)
+	for frames, atom in seq:foreach() do
+		midi_responder(frames, forge, atom)
+	end
+end
+```

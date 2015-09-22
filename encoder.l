@@ -282,6 +282,8 @@ checkKw(char*s)
 		case 'M':
 			CHECK(Map, CALLER);
 
+			CHECK(MIDIResponder, CALLER);
+
 			CHECK(MIDI.MidiEvent, NUMBER);
 
 			CHECK(MIDI.NoteOff, NUMBER);
