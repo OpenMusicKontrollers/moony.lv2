@@ -309,8 +309,12 @@ _exe_cleanup(UI *ui)
 		ui->monitor = NULL;
 	}
 
+	elm_object_text_set(ui->overlay, "closing");
 	evas_object_hide(ui->overlay);
 	elm_entry_editable_set(ui->entry, EINA_TRUE);
+	elm_object_disabled_set(ui->load, EINA_FALSE);
+	elm_object_disabled_set(ui->save, EINA_FALSE);
+	elm_object_disabled_set(ui->compile, EINA_FALSE);
 }
 
 static Eina_Bool
@@ -415,9 +419,6 @@ _editor_chosen(void *data, Evas_Object *obj, void *event_info)
 			// add file and exe monitoring callback
 			ui->handler = ecore_event_handler_add(ECORE_EXE_EVENT_DEL, _exe_del, ui);
 			ui->monitor = ecore_file_monitor_add(path, _monitor, ui);
-
-			evas_object_show(ui->overlay);
-			elm_entry_editable_set(ui->entry, EINA_FALSE);
 		}
 		else
 			fprintf(stderr, "spawning of external editor failed\n");
@@ -440,7 +441,7 @@ _external_clicked(void *data, Evas_Object *obj, void *event_info)
 		if(ui->exe)
 			ecore_exe_quit(ui->exe);
 
-		if(ui->exe)
+		//if(ui->exe)
 			_exe_cleanup(ui);
 	}
 	else // !visible
@@ -464,6 +465,10 @@ _external_clicked(void *data, Evas_Object *obj, void *event_info)
 		elm_popup_item_append(ui->overlay, "Use system default", NULL, _editor_chosen, NULL);
 
 		evas_object_show(ui->overlay);
+		elm_entry_editable_set(ui->entry, EINA_FALSE);
+		elm_object_disabled_set(ui->load, EINA_TRUE);
+		elm_object_disabled_set(ui->save, EINA_TRUE);
+		elm_object_disabled_set(ui->compile, EINA_TRUE);
 	}
 }
 
