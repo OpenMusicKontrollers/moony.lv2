@@ -281,7 +281,120 @@ checkKw(char*s)
 			break;
 		case 'M':
 			CHECK(Map, CALLER);
+
 			CHECK(MIDI.MidiEvent, NUMBER);
+
+			CHECK(MIDI.NoteOff, NUMBER);
+			CHECK(MIDI.NoteOn, NUMBER);
+			CHECK(MIDI.NotePressure, NUMBER);
+			CHECK(MIDI.Controller, NUMBER);
+			CHECK(MIDI.ProgramChange, NUMBER);
+			CHECK(MIDI.ChannelPressure, NUMBER);
+			CHECK(MIDI.Bender, NUMBER);
+			CHECK(MIDI.SystemExclusive, NUMBER);
+			CHECK(MIDI.QuarterFrame, NUMBER);
+			CHECK(MIDI.SongPosition, NUMBER);
+			CHECK(MIDI.SongSelect, NUMBER);
+			CHECK(MIDI.TuneRequest, NUMBER);
+			CHECK(MIDI.Clock, NUMBER);
+			CHECK(MIDI.Start, NUMBER);
+			CHECK(MIDI.Continue, NUMBER);
+			CHECK(MIDI.Stop, NUMBER);
+			CHECK(MIDI.ActiveSense, NUMBER);
+			CHECK(MIDI.Reset, NUMBER);
+	
+			CHECK(MIDI.BankSelection_MSB, NUMBER);
+			CHECK(MIDI.Modulation_MSB, NUMBER);
+			CHECK(MIDI.Breath_MSB, NUMBER);
+			CHECK(MIDI.Foot_MSB, NUMBER);
+			CHECK(MIDI.PortamentoTime_MSB, NUMBER);
+			CHECK(MIDI.DataEntry_MSB, NUMBER);
+			CHECK(MIDI.MainVolume_MSB, NUMBER);
+			CHECK(MIDI.Balance_MSB, NUMBER);
+			CHECK(MIDI.Panpot_MSB, NUMBER);
+			CHECK(MIDI.Expression_MSB, NUMBER);
+			CHECK(MIDI.Effect1_MSB, NUMBER);
+			CHECK(MIDI.Effect2_MSB, NUMBER);
+			CHECK(MIDI.GeneralPurpose1_MSB, NUMBER);
+			CHECK(MIDI.GeneralPurpose2_MSB, NUMBER);
+			CHECK(MIDI.GeneralPurpose3_MSB, NUMBER);
+			CHECK(MIDI.GeneralPurpose4_MSB, NUMBER);
+
+			CHECK(MIDI.BankSelection_LSB, NUMBER);
+			CHECK(MIDI.Modulation_LSB, NUMBER);
+			CHECK(MIDI.Breath_LSB, NUMBER);
+			CHECK(MIDI.Foot_LSB, NUMBER);
+			CHECK(MIDI.PortamentoTime_LSB, NUMBER);
+			CHECK(MIDI.DataEntry_LSB, NUMBER);
+			CHECK(MIDI.MainVolume_LSB, NUMBER);
+			CHECK(MIDI.Balance_LSB, NUMBER);
+			CHECK(MIDI.Panpot_LSB, NUMBER);
+			CHECK(MIDI.Expression_LSB, NUMBER);
+			CHECK(MIDI.Effect1_LSB, NUMBER);
+			CHECK(MIDI.Effect2_LSB, NUMBER);
+			CHECK(MIDI.GeneralPurpose1_LSB, NUMBER);
+			CHECK(MIDI.GeneralPurpose2_LSB, NUMBER);
+			CHECK(MIDI.GeneralPurpose3_LSB, NUMBER);
+			CHECK(MIDI.GeneralPurpose4_LSB, NUMBER);
+
+			CHECK(MIDI.SustainPedal, NUMBER);
+			CHECK(MIDI.Portamento, NUMBER);
+			CHECK(MIDI.Sostenuto, NUMBER);
+			CHECK(MIDI.SoftPedal, NUMBER);
+			CHECK(MIDI.LegatoFootSwitch, NUMBER);
+			CHECK(MIDI.Hold2, NUMBER);
+
+			CHECK(MIDI.SoundVariation, NUMBER);
+			CHECK(MIDI.ReleaseTime, NUMBER);
+			CHECK(MIDI.Timbre, NUMBER);
+			CHECK(MIDI.AttackTime, NUMBER);
+			CHECK(MIDI.Brightness, NUMBER);
+			CHECK(MIDI.SC1, NUMBER);
+			CHECK(MIDI.SC2, NUMBER);
+			CHECK(MIDI.SC3, NUMBER);
+			CHECK(MIDI.SC4, NUMBER);
+			CHECK(MIDI.SC5, NUMBER);
+			CHECK(MIDI.SC6, NUMBER);
+			CHECK(MIDI.SC7, NUMBER);
+			CHECK(MIDI.SC8, NUMBER);
+			CHECK(MIDI.SC9, NUMBER);
+			CHECK(MIDI.SC10, NUMBER);
+
+			CHECK(MIDI.GeneralPurpose5, NUMBER);
+			CHECK(MIDI.GeneralPurpose6, NUMBER);
+			CHECK(MIDI.GeneralPurpose7, NUMBER);
+			CHECK(MIDI.GeneralPurpose8, NUMBER);
+			CHECK(MIDI.PortamentoControl, NUMBER);
+
+			CHECK(MIDI.ReverbDepth, NUMBER);
+			CHECK(MIDI.TremoloDepth, NUMBER);
+			CHECK(MIDI.ChorusDepth, NUMBER);
+			CHECK(MIDI.DetuneDepth, NUMBER);
+			CHECK(MIDI.PhaserDepth, NUMBER);
+			CHECK(MIDI.E1, NUMBER);
+			CHECK(MIDI.E2, NUMBER);
+			CHECK(MIDI.E3, NUMBER);
+			CHECK(MIDI.E4, NUMBER);
+			CHECK(MIDI.E5, NUMBER);
+
+			CHECK(MIDI.DataIncrement, NUMBER);
+			CHECK(MIDI.DataDecrement, NUMBER);
+
+			CHECK(MIDI.NRPN_LSB, NUMBER);
+			CHECK(MIDI.NRPN_MSB, NUMBER);
+
+			CHECK(MIDI.RPN_LSB, NUMBER);
+			CHECK(MIDI.RPN_MSB, NUMBER);
+
+			CHECK(MIDI.AllSoundsOff, NUMBER);
+			CHECK(MIDI.ResetControllers, NUMBER);
+			CHECK(MIDI.LocalControlSwitch, NUMBER);
+			CHECK(MIDI.AllNotesOff, NUMBER);
+			CHECK(MIDI.OmniOff, NUMBER);
+			CHECK(MIDI.OmniOn, NUMBER);
+			CHECK(MIDI.Mono1, NUMBER);
+			CHECK(MIDI.Mono2, NUMBER);
+
 			break;
 		case 'n':
 			CHECK(nil, NIL);
