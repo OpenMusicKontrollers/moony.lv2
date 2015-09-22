@@ -38,8 +38,7 @@ moony:template-atom_through
 	state:state [
 		moony:code """function run(n, seq, forge, ...)
 	for frames, atom in seq:foreach() do
-		forge:frame_time(frames)
-		forge:atom(atom)
+		forge:frame_time(frames):atom(atom)
 	end
 
 	return ...
@@ -50,13 +49,11 @@ moony:template-atom_through2
 	state:state [
 		moony:code """function run(n, seq1, seq2, forge1, forge2)
 	for frames, atom in seq1:foreach() do
-		forge1:frame_time(frames)
-		forge1:atom(atom)
+		forge1:frame_time(frames):atom(atom)
 	end
 
 	for frames, atom in seq2:foreach() do
-		forge2:frame_time(frames)
-		forge2:atom(atom)
+		forge2:frame_time(frames):atom(atom)
 	end
 end"""
 	] .
@@ -65,23 +62,19 @@ moony:template-atom_through4
 	state:state [
 		moony:code """function run(n, seq1, seq2, seq3, seq4, forge1, forge2, forge3, forge4)
 	for frames, atom in seq1:foreach() do
-		forge1:frame_time(frames)
-		forge1:atom(atom)
+		forge1:frame_time(frames):atom(atom)
 	end
 
 	for frames, atom in seq2:foreach() do
-		forge2:frame_time(frames)
-		forge2:atom(atom)
+		forge2:frame_time(frames):atom(atom)
 	end
 
 	for frames, atom in seq3:foreach() do
-		forge3:frame_time(frames)
-		forge3:atom(atom)
+		forge3:frame_time(frames):atom(atom)
 	end
 
 	for frames, atom in seq4:foreach() do
-		forge4:frame_time(frames)
-		forge4:atom(atom)
+		forge4:frame_time(frames):atom(atom)
 	end
 end"""
 	] .
@@ -110,11 +103,8 @@ end
 
 function run(n, seq1, seq2, forge1, forge2)
 	for frames, atom in multiplex(seq1, seq2) do
-		forge1:frame_time(frames)
-		forge1:atom(atom)
-
-		forge2:frame_time(frames)
-		forge2:atom(atom)
+		forge1:frame_time(frames):atom(atom)
+		forge2:frame_time(frames):atom(atom)
 	end
 end"""
 	] .
@@ -172,15 +162,17 @@ moony:template-midi_responder
 		moony:code """midi_responder = MIDIResponder:new({
 	[MIDI.NoteOn] = function(self, frames, forge, chan, note, vel)
 		--forge:frame_time(frames):midi(MIDI.NoteOn | chan, note, vel)
+		return true -- handled
 	end,
 	[MIDI.NoteOff] = function(self, frames, forge, chan, note, vel)
 		--forge:frame_time(frames):midi(MIDI.NoteOff | chan, note, vel)
+		return true -- handled
 	end
 })
 
 function run(n, seq, forge)
 	for frames, atom in seq:foreach() do
-		midi_responder(frames, forge, atom)
+		local handled = midi_responder(frames, forge, atom)
 	end
 end"""
 	] .
@@ -291,39 +283,20 @@ end"""
 
 moony:template-osc_responder
 	state:state [
-		moony:code """osc_mt = {
-  __call = function(self, frames, atom, data)
-    if atom.type == Atom.Object then
-      if atom.otype == OSC.Bundle then
-        --local timestamp = atom[OSC.bundleTimestamp]
-        for i, itm  in atom[OSC.bundleItems]:foreach() do
-          self(frames, itm, data)
-        end
-      elseif atom.otype == OSC.Message then
-        local path = atom[OSC.messagePath]
-        --local fmt = atom[OSC.messageFormat]
-        local meth = path and self[path.value]
-        if meth then
-          meth(self, frames, data, atom[OSC.messageArguments]:unpack())
-        end
-      end
-    end
-  end
-}
-
-osc_responder = {
-  ['/ping'] = function(self, frames, forge, ...)
-    --forge:frame_time(frames):message('/pong')
+		moony:code """osc_responder = OSCResponder:new({
+  ['/ping'] = function(self, frames, forge, fmt, ...)
+    --forge:frame_time(frames):message('/pong', fmt, ...)
+		return true -- handled
   end,
-  ['/pong'] = function(self, frames, forge, ...)
-    --forge:frame_time(frames):message('/ping')
+  ['/pong'] = function(self, frames, forge, fmt, ...)
+    --forge:frame_time(frames):message('/ping', fmt, ...)
+		return true -- handled
   end
-}
-setmetatable(osc_responder, osc_mt)
+})
 
 function run(n, seq, forge)
   for frames, atom in seq:foreach() do
-    osc_responder(frames, atom, forge)
+    local handled = osc_responder(frames, forge, atom)
   end
 end"""
 	] .

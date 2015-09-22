@@ -408,6 +408,8 @@ checkKw(char*s)
 			//TODO os
 			break;
 		case 'O':
+			CHECK(OSCResponder, CALLER);
+
 			CHECK(OSC.Event, NUMBER);
 			CHECK(OSC.Bundle, NUMBER);
 			CHECK(OSC.Message, NUMBER);

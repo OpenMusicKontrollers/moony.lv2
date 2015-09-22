@@ -22,13 +22,14 @@
 
 #include <lauxlib.h>
 
-#define BUF_SIZE 8191
+#define BUF_SIZE 8192
 
 typedef struct _handle_t handle_t;
 
 struct _handle_t {
 	moony_t moony;
 
+	const LV2_Worker_Interface *iface;
 	ext_urid_t *ext_urid;
 
 	LV2_Atom_Forge forge;
@@ -99,11 +100,23 @@ _unmap(LV2_URID_Unmap_Handle instance, LV2_URID urid)
 }
 
 static LV2_Worker_Status
+_respond(LV2_Worker_Respond_Handle instance, uint32_t size, const void *data)
+{
+	handle_t *handle = instance;
+
+	return handle->iface->work_response(&handle->moony, size, data);
+}
+
+static LV2_Worker_Status
 _sched(LV2_Worker_Schedule_Handle instance, uint32_t size, const void *data)
 {
-	//TODO
+	handle_t *handle = instance;
 
-	return LV2_WORKER_SUCCESS;
+	LV2_Worker_Status status = LV2_WORKER_SUCCESS;
+	status |= handle->iface->work(&handle->moony, _respond, handle, size, data);
+	status |= handle->iface->end_run(&handle->moony);
+
+	return status;
 }
 
 static int
@@ -184,6 +197,8 @@ main(int argc, char **argv)
 	
 	if(moony_init(&handle.moony, 48000, features))
 		return -1;
+
+	handle.iface = extension_data(LV2_WORKER__interface);
 
 	lua_State *L = handle.moony.vm.L;
 	moony_open(&handle.moony, L);

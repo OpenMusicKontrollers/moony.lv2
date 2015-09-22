@@ -1953,11 +1953,15 @@ _lmidiresponder__call(lua_State *L)
 			for(unsigned i=1; i<lchunk->atom->size; i++)
 				lua_pushinteger(L, midi[i]);
 
-			lua_call(L, 4 + lchunk->atom->size - 1, 0);
+			lua_call(L, 4 + lchunk->atom->size - 1, 1);
 		}
+		else
+			lua_pushboolean(L, 0); // event not handled
 	}
+	else
+		lua_pushboolean(L, 0); // wrong type 
 
-	return 0;
+	return 1;
 }
 
 static int
@@ -1993,6 +1997,204 @@ _lmidiresponder_new(lua_State *L)
 
 static const luaL_Reg lmidiresponder_mt [] = {
 	{"new", _lmidiresponder_new},
+	{NULL, NULL}
+};
+
+static void
+_loscresponder_msg(const char *path, const char *fmt, const LV2_Atom_Tuple *args,
+	void *data)
+{
+	moony_t *moony = data;
+	lua_State *L = moony->vm.L;
+	LV2_Atom_Forge *forge = &moony->forge;
+	osc_forge_t *oforge = &moony->oforge;
+
+	// 1: self
+	// 2: frames
+	// 3: data
+
+	lua_pushstring(L, path);
+	lua_gettable(L, 1);
+	if(!lua_isnil(L, -1))
+	{
+		lua_pushvalue(L, 1); // self
+		lua_pushvalue(L, 2); // frames
+		lua_pushvalue(L, 3); // data
+		lua_pushstring(L, fmt);
+
+		int oldtop = lua_gettop(L);
+		const LV2_Atom *atom = lv2_atom_tuple_begin(args);
+
+		for(const char *type = fmt; *type && atom; type++)
+		{
+			switch(*type)
+			{
+				case 'i':
+				{
+					int32_t i = 0;
+					atom = osc_deforge_int32(oforge, forge, atom, &i);
+					lua_pushinteger(L, i);
+					break;
+				}
+				case 'f':
+				{
+					float f = 0.f;
+					atom = osc_deforge_float(oforge, forge, atom, &f);
+					lua_pushnumber(L, f);
+					break;
+				}
+				case 's':
+				{
+					const char *s = NULL;
+					atom = osc_deforge_string(oforge, forge, atom, &s);
+					lua_pushstring(L, s);
+					break;
+				}
+				case 'S':
+				{
+					const char *s = NULL;
+					atom = osc_deforge_symbol(oforge, forge, atom, &s);
+					lua_pushstring(L, s);
+					break;
+				}
+				case 'b':
+				{
+					uint32_t size = 0;
+					const uint8_t *b = NULL;
+					atom = osc_deforge_blob(oforge, forge, atom, &size, &b);
+					//TODO or return a AtomChunk?
+					lua_createtable(L, size, 0);
+					for(unsigned i=0; i<size; i++)
+					{
+						lua_pushinteger(L, b[i]);
+						lua_rawseti(L, -2, i+1);
+					}
+					break;
+				}
+				
+				case 'h':
+				{
+					int64_t h = 0;
+					atom = osc_deforge_int64(oforge, forge, atom, &h);
+					lua_pushinteger(L, h);
+					break;
+				}
+				case 'd':
+				{
+					double d = 0.f;
+					atom = osc_deforge_double(oforge, forge, atom, &d);
+					lua_pushnumber(L, d);
+					break;
+				}
+				case 't':
+				{
+					uint64_t t = 0;
+					atom = osc_deforge_timestamp(oforge, forge, atom, &t);
+					lua_pushinteger(L, t);
+					break;
+				}
+				
+				case 'c':
+				{
+					char c = '\0';
+					atom = osc_deforge_char(oforge, forge, atom, &c);
+					lua_pushinteger(L, c);
+					break;
+				}
+				case 'm':
+				{
+					uint32_t size = 0;
+					const uint8_t *m = NULL;
+					atom = osc_deforge_midi(oforge, forge, atom, &size, &m);
+					//TODO or return a MIDIEvent?
+					lua_createtable(L, size, 0);
+					for(unsigned i=0; i<size; i++)
+					{
+						lua_pushinteger(L, m[i]);
+						lua_rawseti(L, -2, i+1);
+					}
+					break;
+				}
+				
+				case 'T':
+				case 'F':
+				case 'N':
+				case 'I':
+				{
+					break;
+				}
+
+				default: // unknown argument type
+				{
+					break;
+				}
+			}
+		}
+
+		lua_call(L, 4 + lua_gettop(L) - oldtop, 1);
+		moony->osc_responder_handled |= lua_toboolean(L, -1);
+		lua_pop(L, 1); // bool
+	}
+	else
+	{
+		lua_pop(L, 1); // nil
+	}
+}
+
+static int
+_loscresponder__call(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	lua_settop(L, 4); // discard superfluous arguments
+	// 1: self
+	// 2: frames
+	// 3: data
+	// 4: atom
+	
+	lobj_t *lobj = luaL_checkudata(L, 4, "lobj");
+	lua_pop(L, 1); // atom
+
+	moony->osc_responder_handled = 0;
+	osc_atom_event_unroll(&moony->oforge, lobj->obj, NULL, NULL, _loscresponder_msg, moony);
+	lua_pushboolean(L, moony->osc_responder_handled);
+
+	return 1;
+}
+
+static int
+_loscresponder_new(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	
+	lua_settop(L, 2); // discard superfluous arguments
+
+	// o = o or {}
+	if(!lua_istable(L, 2))
+	{
+		lua_pop(L, 1);
+		lua_newtable(L);
+	}
+
+	// self.__index = self
+	lua_pushvalue(L, 1);
+	lua_setfield(L, 1, "__index");
+
+	// self.__call = _loscresponder__call
+	lua_pushlightuserdata(L, moony);
+	lua_pushcclosure(L, _loscresponder__call, 1);
+	lua_setfield(L, 1, "__call");
+
+	// setmetatable(self, o)
+	lua_pushvalue(L, 1);
+	lua_setmetatable(L, -2);
+
+	// return o
+	return 1;
+}
+
+static const luaL_Reg loscresponder_mt [] = {
+	{"new", _loscresponder_new},
 	{NULL, NULL}
 };
 
@@ -2305,6 +2507,12 @@ moony_open(moony_t *moony, lua_State *L)
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs(L, lmidiresponder_mt, 1);
 	lua_setglobal(L, "MIDIResponder");
+
+	// OSCResponder
+	lua_newtable(L);
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	luaL_setfuncs(L, loscresponder_mt, 1);
+	lua_setglobal(L, "OSCResponder");
 
 #undef SET_MAP
 }

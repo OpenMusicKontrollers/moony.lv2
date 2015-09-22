@@ -336,8 +336,8 @@ do
 	test(producer, consumer)
 end
 
--- MidiResponder
-print('[test] MidiResponder')
+-- MIDIResponder
+print('[test] MIDIResponder')
 do
 	local _chan = 0x01
 	local _note = 0x2a
@@ -360,6 +360,7 @@ do
 			assert(note == _note)
 			assert(vel == _vel)
 			note_on_responded = true
+			return true
 		end,
 		[MIDI.NoteOff] = function(self, frames, forge, chan, note, vel)
 			assert(frames == 1)
@@ -367,12 +368,13 @@ do
 			assert(note == _note)
 			assert(vel == _vel)
 			note_off_responded = true
+			return true
 		end
 	})
 
 	local function consumer(seq)
 		for frames, atom in seq:foreach() do
-			midi_responder(frames, nil, atom)
+			assert(midi_responder(frames, nil, atom) == true)
 		end
 
 		assert(note_on_responded)
@@ -739,6 +741,48 @@ do
 		assert(itms[3].otype == OSC.Message)
 		assert(itms[4].otype == OSC.Bundle)
 		assert(#itms[4][OSC.bundleItems] == 0)
+	end
+
+	test(producer, consumer)
+end
+
+collectgarbage('collect')
+
+-- OSCResponder
+print('[test] OSCResponder')
+do
+	local function producer(forge)
+		forge:frame_time(0):message('/ping', 'i', 13)
+		forge:frame_time(1):bundle(0):message('/pong', 's', 'world'):pop()
+	end
+
+	local ping_responded = false
+	local pong_responded = false
+
+	local osc_responder = OSCResponder:new({
+		['/ping'] = function(self, frames, forge, fmt, i)
+			assert(frames == 0)
+			assert(fmt == 'i')
+			assert(i == 13)
+			ping_responded = true
+			return true
+		end,
+		['/pong'] = function(self, frames, forge, fmt, s)
+			assert(frames == 1)
+			assert(fmt == 's')
+			assert(s == 'world')
+			pong_responded = true
+			return true
+		end
+	})
+
+	local function consumer(seq)
+		for frames, atom in seq:foreach() do
+			assert(osc_responder(frames, nil, atom) == true)
+		end
+
+		assert(ping_responded)
+		assert(pong_responded)
 	end
 
 	test(producer, consumer)

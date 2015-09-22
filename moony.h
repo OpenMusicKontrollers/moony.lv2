@@ -193,6 +193,9 @@ struct _moony_t {
 
 	// udata cache
 	int itr [MOONY_UDATA_COUNT];
+
+	// OSCResponder
+	int osc_responder_handled;
 };
 
 struct _lseq_t {

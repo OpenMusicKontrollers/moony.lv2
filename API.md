@@ -589,12 +589,30 @@ path = atom.value -- Lua string
 midi_responder = MIDIResponder:new({
 	[MIDI.NoteOn] = function(self, frames, forge, chan, note, vel)
 		--
+		return true -- handled
 	end
 })
 
 function run(n, seq, forge)
 	for frames, atom in seq:foreach() do
-		midi_responder(frames, forge, atom)
+		local handled = midi_responder(frames, forge, atom)
+	end
+end
+```
+
+#### OSCResponder
+
+``` lua
+osc_responder = OSCResponder:new({
+	['/ping'] = function(self, frames, forge, fmt, ...)
+		--
+		return true -- handled
+	end
+})
+
+function run(n, seq, forge)
+	for frames, atom in seq:foreach() do
+		local handled = osc_responder(frames, forge, atom)
 	end
 end
 ```
