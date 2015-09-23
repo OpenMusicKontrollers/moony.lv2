@@ -179,105 +179,35 @@ end"""
 
 moony:template-midi_sequencer
 	state:state [
-		moony:code """pos = { -- reference time struct
-  [Time.frame] = 0,
-  [Time.speed] = 0.0, -- halt
-  [Time.barBeat] = 0.0, -- start of song
-  [Time.bar] = 0, -- start of song
-  [Time.beatUnit] = 4, -- quarters
-  [Time.beatsPerBar] = 4.0, -- four quarters per bar
-  [Time.beatsPerMinute] = 120.0, -- four quarters per minute
-  [Time.framesPerSecond] = Options[Core.sampleRate]
-}
-
--- initialize frame variables
-frames_per_beat = 240.0 / (pos[Time.beatsPerMinute] * pos[Time.beatUnit]) * pos[Time.framesPerSecond] -- frames per beat
-frames_per_bar = frames_per_beat * pos[Time.beatsPerBar] -- frames per bar
-elapsed_bar = 0.0 -- frames since last bar
-elspsed_beat = 0.0 -- frames since last beat
-
-chan = 0x2
-base_note = 35
-snare_note = 44
-vel = 0x7f
-
--- beat callback
-function beat_off(forge, frames)
-  forge:frame_time(frames):midi(0x80 | chan, snare_note, vel)
-end
-function beat_on(forge, frames)
-  forge:frame_time(frames):midi(0x90 | chan, snare_note, vel)
-end
-
--- bar callback
-function bar_off(forge, frames)
-  forge:frame_time(frames):midi(0x80 | chan, base_note, vel)
-end
-function bar_on(forge, frames)
-  forge:frame_time(frames):midi(0x90 | chan, base_note, vel)
-end
-
-function play(forge, from, to)
-  for frames = from, to-1 do
-    -- call beat callback if beat is imminent
-    if elapsed_beat < 1 and elapsed_bar > 1 then
-      beat_off(forge, frames)
-      beat_on(forge, frames)
-    end
-
-    -- call bar callback if bar is imminent
-    if elapsed_bar < 1 then
-      bar_off(forge, frames)
-      bar_on(forge, frames)
-    end
-
-    -- advance beat elapsed time
-    elapsed_beat = elapsed_beat + 1
-    -- reset beat elapsed time if complete
-    if elapsed_beat >= frames_per_beat then
-      elapsed_beat = elapsed_beat - frames_per_beat
-    end
-
-    -- advance bar elapsed time
-    elapsed_bar = elapsed_bar + 1
-    -- reset bar elapsed time if complete
-    if elapsed_bar >= frames_per_bar then
-      elapsed_bar = elapsed_bar - frames_per_bar
-    end
-  end
-end
+		moony:code """rolling = false
+		
+time_responder = TimeResponder:new({
+	[Time.speed] = function(self, frames, forge, speed)
+		rolling = speed > 0 and true or false
+	end,
+	[Time.barBeat] = function(self, frames, forge, bar_beat)
+		if rolling then
+			forge:frame_time(frames):midi(0x80, 24, 0x7f)
+			forge:frame_time(frames):midi(0x90, 24, 0x7f)
+		end
+	end,
+	[Time.bar] = function(self, frames, forge, bar)
+		if rolling then
+			forge:frame_time(frames):midi(0x80, 48, 0x7f)
+			forge:frame_time(frames):midi(0x90, 48, 0x7f)
+		end
+	end
+})
 
 function run(n, seq, forge)
-  local last_frame = 0 -- frame time of last processed event
+  local from = 0
 
   for frames, atom in seq:foreach() do
-    if atom.type == Atom.Object and atom.otype == Time.Position then
-      -- update reference time struct
-      for k, _, v in atom:foreach() do
-        pos[k] = v.value
-      end
-
-      -- update frame variables
-      frames_per_beat = 240.0 / (pos[Time.beatsPerMinute] * pos[Time.beatUnit]) * pos[Time.framesPerSecond]
-      frames_per_bar = frames_per_beat * pos[Time.beatsPerBar]
-      elapsed_bar = pos[Time.barBeat] * frames_per_beat
-      local _, frac = math.modf(pos[Time.barBeat])
-      elapsed_beat = frac * frames_per_beat;
-    end
-
-    if pos[Time.speed] > 0.0 then
-      play(forge, last_frame, frames)
-    end
-
-    last_frame = frames
+		time_responder(from, frames, forge, atom)
+		from = frames
   end
 
-  if pos[Time.speed] > 0.0 then
-    play(forge, last_frame, n)
-  else
-    beat_off(forge, last_frame)
-    bar_off(forge, last_frame)
-  end
+	time_responder(from, n, forge)
 end"""
 	] .
 
