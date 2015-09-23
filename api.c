@@ -19,6 +19,7 @@
 #include <math.h> // INFINITY
 
 #include <moony.h>
+#include <timely.h>
 
 #include <lauxlib.h>
 
@@ -1987,7 +1988,7 @@ _lmidiresponder_new(lua_State *L)
 	lua_pushcclosure(L, _lmidiresponder__call, 1);
 	lua_setfield(L, 1, "__call");
 
-	// setmetatable(self, o)
+	// setmetatable(o, self)
 	lua_pushvalue(L, 1);
 	lua_setmetatable(L, -2);
 
@@ -2185,7 +2186,7 @@ _loscresponder_new(lua_State *L)
 	lua_pushcclosure(L, _loscresponder__call, 1);
 	lua_setfield(L, 1, "__call");
 
-	// setmetatable(self, o)
+	// setmetatable(o, self)
 	lua_pushvalue(L, 1);
 	lua_setmetatable(L, -2);
 
@@ -2195,6 +2196,142 @@ _loscresponder_new(lua_State *L)
 
 static const luaL_Reg loscresponder_mt [] = {
 	{"new", _loscresponder_new},
+	{NULL, NULL}
+};
+
+static void
+_ltimeresponder_cb(timely_t *timely, int64_t frames, LV2_URID type,
+	const LV2_Atom *atom, void *data)
+{
+	lua_State *L = data;
+
+	lua_pushinteger(L, type);
+	lua_gettable(L, 5); // uservalue
+	if(!lua_isnil(L, -1))
+	{
+		lua_pushvalue(L, 1); // self TODO or uservalue?
+		lua_pushinteger(L, frames); // frames
+		lua_pushvalue(L, 4); // data
+
+		if(type == timely->urid.time_barBeat)
+		{
+			lua_pushnumber(L, ((const LV2_Atom_Float *)atom)->body);
+		}
+		else if(type == timely->urid.time_bar)
+		{
+			lua_pushinteger(L, ((const LV2_Atom_Long *)atom)->body);
+		}
+		else if(type == timely->urid.time_beatUnit)
+		{
+			lua_pushinteger(L, ((const LV2_Atom_Int *)atom)->body);
+		}
+		else if(type == timely->urid.time_beatsPerBar)
+		{
+			lua_pushnumber(L, ((const LV2_Atom_Float *)atom)->body);
+		}
+		else if(type == timely->urid.time_beatsPerMinute)
+		{
+			lua_pushnumber(L, ((const LV2_Atom_Float *)atom)->body);
+		}
+		else if(type == timely->urid.time_frame)
+		{
+			lua_pushinteger(L, ((const LV2_Atom_Long *)atom)->body);
+		}
+		else if(type == timely->urid.time_framesPerSecond)
+		{
+			lua_pushnumber(L, ((const LV2_Atom_Float *)atom)->body);
+		}
+		else if(type == timely->urid.time_speed)
+		{
+			lua_pushnumber(L, ((const LV2_Atom_Float *)atom)->body);
+		}
+		else
+		{
+			lua_pushnil(L);
+		}
+
+		lua_call(L, 4, 0);
+	}
+	else
+		lua_pop(L, 1); // nil
+}
+
+static int
+_ltimeresponder__call(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	lua_settop(L, 5); // discard superfluous arguments
+	// 1: self
+	// 2: from
+	// 3: to
+	// 4: data
+	// 5: atom || nil
+	
+	timely_t *timely = lua_touserdata(L, 1);
+	int64_t from = luaL_checkinteger(L, 2);
+	int64_t to = luaL_checkinteger(L, 3);
+	lobj_t *lobj = NULL;
+	if(luaL_testudata(L, 5, "lobj"))
+		lobj = lua_touserdata(L, 5);
+	lua_pop(L, 1); // atom
+
+	lua_getuservalue(L, 1); // 5: uservalue
+	timely_advance(timely, lobj ? lobj->obj : NULL, from, to);
+
+	return 0;
+}
+
+static int
+_ltimeresponder_new(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	
+	lua_settop(L, 2); // discard superfluous arguments
+
+	timely_mask_t mask = TIMELY_MASK_BAR_BEAT
+		| TIMELY_MASK_BAR
+		| TIMELY_MASK_BEAT_UNIT
+		| TIMELY_MASK_BEATS_PER_BAR
+		| TIMELY_MASK_BEATS_PER_MINUTE
+		| TIMELY_MASK_FRAMES_PER_SECOND
+		| TIMELY_MASK_SPEED;
+
+	// o = o or {}
+	if(!lua_istable(L, 2))
+	{
+		lua_pop(L, 1);
+		lua_newtable(L);
+	}
+
+	// TODO do we want to cache/reuse this, too?
+	timely_t *timely = lua_newuserdata(L, sizeof(timely_t)); // userdata
+	timely_init(timely, moony->map, moony->opts.sample_rate, mask,
+		_ltimeresponder_cb, L);
+
+	// userdata.uservalue = o
+	lua_insert(L, -2);
+	lua_setuservalue(L, -2);
+
+	// self.__index = self
+	lua_pushvalue(L, 1);
+	lua_setfield(L, 1, "__index");
+
+	// self.__call = _ltimeresponder__call
+	lua_pushlightuserdata(L, moony);
+	lua_pushcclosure(L, _ltimeresponder__call, 1);
+	lua_setfield(L, 1, "__call");
+
+	// setmetatable(o, self)
+	lua_pushvalue(L, 1);
+	lua_setmetatable(L, -2);
+
+	// return o
+	return 1;
+}
+
+static const luaL_Reg ltimeresponder_mt [] = {
+	{"new", _ltimeresponder_new},
 	{NULL, NULL}
 };
 
@@ -2513,6 +2650,12 @@ moony_open(moony_t *moony, lua_State *L)
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs(L, loscresponder_mt, 1);
 	lua_setglobal(L, "OSCResponder");
+
+	// TimeResponder
+	lua_newtable(L);
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	luaL_setfuncs(L, ltimeresponder_mt, 1);
+	lua_setglobal(L, "TimeResponder");
 
 #undef SET_MAP
 }

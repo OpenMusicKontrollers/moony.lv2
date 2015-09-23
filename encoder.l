@@ -484,6 +484,8 @@ checkKw(char*s)
 			CHECK(table.pack, CALLER);
 			break;
 		case 'T':
+			CHECK(TimeResponder, CALLER);
+
 			CHECK(Time.Position, NUMBER);
 			CHECK(Time.barBeat, NUMBER);
 			CHECK(Time.bar, NUMBER);

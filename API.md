@@ -616,3 +616,28 @@ function run(n, seq, forge)
 	end
 end
 ```
+
+#### TimeResponder
+
+``` lua
+time_responder = OSCResponder:new({
+	[Time.barBeat] = function(self, frames, forge, bar_beat)
+		--
+	end,
+	[Time.bar] = function(self, frames, forge, bar)
+		--
+	end,
+	[Time.speed] = function(self, frames, forge, speed)
+		--
+	end
+})
+
+function run(n, seq, forge)
+	local from = 0
+	for frames, atom in seq:foreach() do
+		time_responder(from, frames, forge, atom)
+		from = frames
+	end
+	time_responder(from, n, forge)
+end
+```

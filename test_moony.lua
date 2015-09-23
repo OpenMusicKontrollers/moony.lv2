@@ -746,8 +746,6 @@ do
 	test(producer, consumer)
 end
 
-collectgarbage('collect')
-
 -- OSCResponder
 print('[test] OSCResponder')
 do
@@ -783,6 +781,139 @@ do
 
 		assert(ping_responded)
 		assert(pong_responded)
+	end
+
+	test(producer, consumer)
+end
+
+-- TimeResponder
+print('[test] TimeResponder')
+do
+	local function producer(forge)
+		local obj = forge:frame_time(0):object(0, Time.Position)
+		obj:key(Time.barBeat):float(0.5)
+		obj:key(Time.bar):long(34)
+		obj:key(Time.beatUnit):int(8)
+		obj:key(Time.beatsPerBar):float(6.0)
+		obj:key(Time.beatsPerMinute):float(200.0)
+		obj:key(Time.frame):long(23000)
+		obj:key(Time.framesPerSecond):float(44100.0)
+		obj:key(Time.speed):float(1.0)
+		obj:pop()
+	end
+
+	local rolling = 0
+	local bar_beat_responded = 0
+	local bar_responded = 0
+	local beat_unit_responded = 0
+	local beats_per_bar_responded = 0
+	local beats_per_minute_responded = 0
+	local frame_responded = 0
+	local frames_per_second_responded = 0
+	local speed_responded = 0
+
+	local time_responder = TimeResponder:new({
+		[Time.barBeat] = function(self, frames, forge, bar_beat)
+			if bar_beat_responded == 0 then
+				assert(bar_beat == 0.0)
+				bar_beat_responded = 1
+			else
+				assert(frames == 0)
+				assert(bar_beat == 0.5)
+				bar_beat_responded = 2
+			end
+		end,
+		[Time.bar] = function(self, frames, forge, bar)
+			if bar_responded == 0 then
+				assert(bar == 0)
+				bar_responded = 1
+			else
+				assert(frames == 0)
+				assert(bar == 34)
+				bar_responded = 2
+			end
+		end,
+		[Time.beatUnit] = function(self, frames, forge, beat_unit)
+			if beat_unit_responded == 0 then
+				assert(beat_unit == 4)
+				beat_unit_responded = 1
+			else
+				assert(frames == 0)
+				assert(beat_unit == 8)
+				beat_unit_responded = 2
+			end
+		end,
+		[Time.beatsPerBar] = function(self, frames, forge, beats_per_bar)
+			if beats_per_bar_responded == 0 then
+				assert(beats_per_bar == 4.0)
+				beats_per_bar_responded = 1
+			else
+				assert(frames == 0)
+				assert(beats_per_bar == 6.0)
+				beats_per_bar_responded = 2
+			end
+		end,
+		[Time.beatsPerMinute] = function(self, frames, forge, beats_per_minute)
+			if beats_per_minute_responded == 0 then
+				assert(beats_per_minute == 120.0)
+				beats_per_minute_responded = 1
+			else
+				assert(frames == 0)
+				assert(beats_per_minute == 200.0)
+				beats_per_minute_responded = 2
+			end
+		end,
+		[Time.frame] = function(self, frames, forge, frame)
+			if frame_responded == 0 then
+				frame_responded = 1
+			else
+				frame_responded = 2
+			end
+		end,
+		[Time.framesPerSecond] = function(self, frames, forge, frames_per_second)
+			if frames_per_second_responded == 0 then
+				assert(frames_per_second == 48000.0)
+				frames_per_second_responded = 1
+			else
+				assert(frames == 0)
+				assert(frames_per_second == 44100.0)
+				frames_per_second_responded = 2
+			end
+		end,
+		[Time.speed] = function(self, frames, forge, speed)
+			rolling = speed > 0.0 and true or false
+			if speed_responded == 0 then
+				assert(speed == 0.0)
+				speed_responded = 1
+			else
+				assert(frames == 0)
+				assert(speed == 1.0)
+				speed_responded = 2
+			end
+		end,
+	})
+
+	local function consumer(seq)
+		assert(#seq == 1)
+
+		local from = 0
+		for frames, atom in seq:foreach() do
+			assert(atom.type == Atom.Object)
+			assert(atom.otype == Time.Position)
+
+			time_responder(from, frames, nil, atom)
+			from = frames
+		end
+		time_responder(from, 256, nil, nil)
+
+		assert(bar_beat_responded == 2)
+		assert(bar_responded == 2)
+		assert(beat_unit_responded == 2)
+		assert(beats_per_bar_responded == 2)
+		assert(beats_per_minute_responded == 2)
+		assert(frame_responded == 0)
+		assert(frames_per_second_responded == 2)
+		assert(speed_responded == 2)
 	end
 
 	test(producer, consumer)
