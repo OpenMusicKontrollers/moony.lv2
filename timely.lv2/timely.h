@@ -27,7 +27,7 @@
 typedef enum _timely_mask_t timely_mask_t;
 typedef struct _timely_t timely_t;
 typedef void (*timely_cb_t)(timely_t *timely, int64_t frames, LV2_URID type,
-	const LV2_Atom *atom, void *data);
+	void *data);
 
 enum _timely_mask_t {
 	TIMELY_MASK_BAR_BEAT					= (1 << 0),
@@ -81,17 +81,32 @@ struct _timely_t {
 		double bar;
 	} window;
 
-	struct {
-		LV2_Atom_Int i;
-		LV2_Atom_Long h;
-		LV2_Atom_Float f;
-	} atom;
-
 	bool first;
 	timely_mask_t mask;
 	timely_cb_t cb;
 	void *data;
 };
+
+#define TIMELY_URI_BAR_BEAT(timely)						((timely)->urid.time_barBeat)
+#define TIMELY_URI_BAR(timely)								((timely)->urid.time_bar)
+#define TIMELY_URI_BEAT_UNIT(timely)					((timely)->urid.time_beatUnit)
+#define TIMELY_URI_BEATS_PER_BAR(timely)			((timely)->urid.time_beatsPerBar)
+#define TIMELY_URI_BEATS_PER_MINUTE(timely)		((timely)->urid.time_beatsPerMinute)
+#define TIMELY_URI_FRAME(timely)							((timely)->urid.time_frame)
+#define TIMELY_URI_FRAMES_PER_SECOND(timely)	((timely)->urid.time_framesPerSecond)
+#define TIMELY_URI_SPEED(timely)							((timely)->urid.time_speed)
+
+#define TIMELY_BAR_BEAT(timely)								((timely)->pos.bar_beat)
+#define TIMELY_BAR(timely)										((timely)->pos.bar)
+#define TIMELY_BEAT_UNIT(timely)							((timely)->pos.beat_unit)
+#define TIMELY_BEATS_PER_BAR(timely)					((timely)->pos.beats_per_bar)
+#define TIMELY_BEATS_PER_MINUTE(timely)				((timely)->pos.beats_per_minute)
+#define TIMELY_FRAME(timely)									((timely)->pos.frame)
+#define TIMELY_FRAMES_PER_SECOND(timely)			((timely)->pos.frames_per_second)
+#define TIMELY_SPEED(timely)									((timely)->pos.speed)
+
+#define TIMELY_FRAMES_PER_BEAT(timely)				((timely)->frames_per_beat)
+#define TIMELY_FRAMES_PER_BAR(timely)					((timely)->frames_per_bar)
 
 static inline void
 _timely_deatomize(timely_t *timely, int64_t frames, const LV2_Atom_Object *obj)
@@ -124,56 +139,56 @@ _timely_deatomize(timely_t *timely, int64_t frames, const LV2_Atom_Object *obj)
 	{
 		timely->pos.speed = speed->body;
 		if(timely->cb && (timely->mask & TIMELY_MASK_SPEED) )
-			timely->cb(timely, frames, timely->urid.time_speed, (const LV2_Atom *)speed, timely->data);
+			timely->cb(timely, frames, timely->urid.time_speed, timely->data);
 	}
 
 	if(beat_unit && (beat_unit->body != timely->pos.beat_unit) )
 	{
 		timely->pos.beat_unit = beat_unit->body;
 		if(timely->cb && (timely->mask & TIMELY_MASK_BEAT_UNIT) )
-			timely->cb(timely, frames, timely->urid.time_beatUnit, (const LV2_Atom *)beat_unit, timely->data);
+			timely->cb(timely, frames, timely->urid.time_beatUnit, timely->data);
 	}
 
 	if(beats_per_bar && (beats_per_bar->body != timely->pos.beats_per_bar) )
 	{
 		timely->pos.beats_per_bar = beats_per_bar->body;
 		if(timely->cb && (timely->mask & TIMELY_MASK_BEATS_PER_BAR) )
-			timely->cb(timely, frames, timely->urid.time_beatsPerBar, (const LV2_Atom *)beats_per_bar, timely->data);
+			timely->cb(timely, frames, timely->urid.time_beatsPerBar, timely->data);
 	}
 
 	if(beats_per_minute && (beats_per_minute->body != timely->pos.beats_per_minute) )
 	{
 		timely->pos.beats_per_minute = beats_per_minute->body;
 		if(timely->cb && (timely->mask & TIMELY_MASK_BEATS_PER_MINUTE) )
-			timely->cb(timely, frames, timely->urid.time_beatsPerMinute, (const LV2_Atom *)beats_per_minute, timely->data);
+			timely->cb(timely, frames, timely->urid.time_beatsPerMinute, timely->data);
 	}
 
 	if(frame && (frame->body != timely->pos.frame) )
 	{
 		timely->pos.frame = frame->body;
 		if(timely->cb && (timely->mask & TIMELY_MASK_FRAME) )
-			timely->cb(timely, frames, timely->urid.time_frame, (const LV2_Atom *)frame, timely->data);
+			timely->cb(timely, frames, timely->urid.time_frame, timely->data);
 	}
 
 	if(frames_per_second && (frames_per_second->body != timely->pos.frames_per_second) )
 	{
 		timely->pos.frames_per_second = frames_per_second->body;
 		if(timely->cb && (timely->mask & TIMELY_MASK_FRAMES_PER_SECOND) )
-			timely->cb(timely, frames, timely->urid.time_framesPerSecond, (const LV2_Atom *)frames_per_second, timely->data);
-	}
-
-	if(bar_beat && (bar_beat->body != timely->pos.bar_beat) )
-	{
-		timely->pos.bar_beat = bar_beat->body;
-		if(timely->cb && (timely->mask & TIMELY_MASK_BAR_BEAT) )
-			timely->cb(timely, frames, timely->urid.time_barBeat, (const LV2_Atom *)bar_beat, timely->data);
+			timely->cb(timely, frames, timely->urid.time_framesPerSecond, timely->data);
 	}
 
 	if(bar && (bar->body != timely->pos.bar) )
 	{
 		timely->pos.bar = bar->body;
 		if(timely->cb && (timely->mask & TIMELY_MASK_BAR) )
-			timely->cb(timely, frames, timely->urid.time_bar, (const LV2_Atom *)bar, timely->data);
+			timely->cb(timely, frames, timely->urid.time_bar, timely->data);
+	}
+
+	if(bar_beat && (bar_beat->body != timely->pos.bar_beat) )
+	{
+		timely->pos.bar_beat = bar_beat->body;
+		if(timely->cb && (timely->mask & TIMELY_MASK_BAR_BEAT) )
+			timely->cb(timely, frames, timely->urid.time_barBeat, timely->data);
 	}
 
 	// send speed last upon transport start
@@ -181,7 +196,7 @@ _timely_deatomize(timely_t *timely, int64_t frames, const LV2_Atom_Object *obj)
 	{
 		timely->pos.speed = speed->body;
 		if(timely->cb && (timely->mask & TIMELY_MASK_SPEED) )
-			timely->cb(timely, frames, timely->urid.time_speed, (const LV2_Atom *)speed, timely->data);
+			timely->cb(timely, frames, timely->urid.time_speed, timely->data);
 	}
 }
 
@@ -223,15 +238,6 @@ timely_init(timely_t *timely, LV2_URID_Map *map, double rate,
 	timely->urid.time_framesPerSecond = map->map(map->handle, LV2_TIME__framesPerSecond);
 	timely->urid.time_speed = map->map(map->handle, LV2_TIME__speed);
 
-	timely->atom.i.atom.size = sizeof(int32_t);
-	timely->atom.i.atom.type = map->map(map->handle, LV2_ATOM__Int);
-
-	timely->atom.h.atom.size = sizeof(int64_t);
-	timely->atom.h.atom.type = map->map(map->handle, LV2_ATOM__Long);
-	
-	timely->atom.f.atom.size = sizeof(float);
-	timely->atom.f.atom.type = map->map(map->handle, LV2_ATOM__Float);
-
 	timely->pos.speed = 0.f;
 	timely->pos.bar_beat = 0.f;
 	timely->pos.bar = 0;
@@ -246,7 +252,7 @@ timely_init(timely_t *timely, LV2_URID_Map *map, double rate,
 	timely->first = true;
 }
 
-static void
+static int
 timely_advance(timely_t *timely, const LV2_Atom_Object *obj,
 	uint32_t from, uint32_t to)
 {
@@ -258,74 +264,57 @@ timely_advance(timely_t *timely, const LV2_Atom_Object *obj,
 		if(timely->cb)
 		{
 			if(timely->mask & TIMELY_MASK_SPEED)
-			{
-				timely->atom.f.body = timely->pos.speed;
-				timely->cb(timely, 0, timely->urid.time_speed, (const LV2_Atom *)&timely->atom.f, timely->data);
-			}
+				timely->cb(timely, 0, timely->urid.time_speed, timely->data);
 
 			if(timely->mask & TIMELY_MASK_BEAT_UNIT)
-			{
-				timely->atom.i.body = timely->pos.beat_unit;
-				timely->cb(timely, 0, timely->urid.time_beatUnit, (const LV2_Atom *)&timely->atom.i, timely->data);
-			}
+				timely->cb(timely, 0, timely->urid.time_beatUnit, timely->data);
 
 			if(timely->mask & TIMELY_MASK_BEATS_PER_BAR)
-			{
-				timely->atom.f.body = timely->pos.beats_per_bar;
-				timely->cb(timely, 0, timely->urid.time_beatsPerBar, (const LV2_Atom *)&timely->atom.f, timely->data);
-			}
+				timely->cb(timely, 0, timely->urid.time_beatsPerBar, timely->data);
 			
 			if(timely->mask & TIMELY_MASK_BEATS_PER_MINUTE)
-			{
-				timely->atom.f.body = timely->pos.beats_per_minute;
-				timely->cb(timely, 0, timely->urid.time_beatsPerMinute, (const LV2_Atom *)&timely->atom.f, timely->data);
-			}
+				timely->cb(timely, 0, timely->urid.time_beatsPerMinute, timely->data);
 
 			if(timely->mask & TIMELY_MASK_FRAME)
-			{
-				timely->atom.h.body = timely->pos.frame;
-				timely->cb(timely, 0, timely->urid.time_frame, (const LV2_Atom *)&timely->atom.h, timely->data);
-			}
+				timely->cb(timely, 0, timely->urid.time_frame, timely->data);
 			
 			if(timely->mask & TIMELY_MASK_FRAMES_PER_SECOND)
-			{
-				timely->atom.f.body = timely->pos.frames_per_second;
-				timely->cb(timely, 0, timely->urid.time_framesPerSecond, (const LV2_Atom *)&timely->atom.f, timely->data);
-			}
-			
-			if(timely->mask & TIMELY_MASK_BAR_BEAT)
-			{
-				timely->atom.f.body = timely->pos.bar_beat;
-				timely->cb(timely, 0, timely->urid.time_barBeat, (const LV2_Atom *)&timely->atom.f, timely->data);
-			}
+				timely->cb(timely, 0, timely->urid.time_framesPerSecond, timely->data);
 			
 			if(timely->mask & TIMELY_MASK_BAR)
-			{
-				timely->atom.h.body = timely->pos.bar;
-				timely->cb(timely, 0, timely->urid.time_bar, (const LV2_Atom *)&timely->atom.h, timely->data);
-			}
+				timely->cb(timely, 0, timely->urid.time_bar, timely->data);
+			
+			if(timely->mask & TIMELY_MASK_BAR_BEAT)
+				timely->cb(timely, 0, timely->urid.time_barBeat, timely->data);
 		}
 	}
 
 	// are we rolling?
 	if(timely->pos.speed > 0.f)
 	{
-		if( (timely->offset.beat == 0) && (timely->pos.bar_beat == 0) )
-		{
-			timely->atom.f.body = timely->pos.bar_beat;
-			if(timely->cb && (timely->mask & TIMELY_MASK_BAR_BEAT) )
-				timely->cb(timely, from, timely->urid.time_barBeat, (const LV2_Atom *)&timely->atom.f, timely->data); 
-		}
-		
 		if( (timely->offset.bar == 0) && (timely->pos.bar == 0) )
 		{
-			timely->atom.h.body = timely->pos.bar;
 			if(timely->cb && (timely->mask & TIMELY_MASK_BAR) )
-				timely->cb(timely, from, timely->urid.time_bar, (const LV2_Atom *)&timely->atom.h, timely->data);
+				timely->cb(timely, from, timely->urid.time_bar, timely->data);
+		}
+
+		if( (timely->offset.beat == 0) && (timely->pos.bar_beat == 0) )
+		{
+			if(timely->cb && (timely->mask & TIMELY_MASK_BAR_BEAT) )
+				timely->cb(timely, from, timely->urid.time_barBeat, timely->data); 
 		}
 
 		for(unsigned i=from; i<to; i++)
 		{
+			if(timely->offset.bar >= timely->window.bar)
+			{
+				timely->pos.bar += 1;
+				timely->offset.bar -= timely->window.bar;
+
+				if(timely->cb && (timely->mask & TIMELY_MASK_BAR) )
+					timely->cb(timely, i, timely->urid.time_bar, timely->data);
+			}
+
 			if( (timely->offset.beat >= timely->window.beat) )
 			{
 				timely->pos.bar_beat = floor(timely->pos.bar_beat) + 1;
@@ -334,19 +323,8 @@ timely_advance(timely_t *timely, const LV2_Atom_Object *obj,
 				if(timely->pos.bar_beat >= timely->pos.beats_per_bar)
 					timely->pos.bar_beat = 0;
 
-				timely->atom.f.body = timely->pos.bar_beat;
 				if(timely->cb && (timely->mask & TIMELY_MASK_BAR_BEAT) )
-					timely->cb(timely, i, timely->urid.time_barBeat, (const LV2_Atom *)&timely->atom.f, timely->data); 
-			}
-
-			if(timely->offset.bar >= timely->window.bar)
-			{
-				timely->pos.bar += 1;
-				timely->offset.bar -= timely->window.bar;
-
-				timely->atom.h.body = timely->pos.bar;
-				if(timely->cb && (timely->mask & TIMELY_MASK_BAR) )
-					timely->cb(timely, i, timely->urid.time_bar, (const LV2_Atom *)&timely->atom.h, timely->data);
+					timely->cb(timely, i, timely->urid.time_barBeat, timely->data); 
 			}
 
 			timely->offset.bar += 1;
@@ -363,7 +341,11 @@ timely_advance(timely_t *timely, const LV2_Atom_Object *obj,
 	{
 		_timely_deatomize(timely, to, obj);
 		_timely_refresh(timely);
+
+		return 1; // handled a time position event
 	}
+
+	return 0; // did not handle a time position event
 }
 
 #endif // _LV2_TIMELY_H_
