@@ -2201,7 +2201,7 @@ static const luaL_Reg loscresponder_mt [] = {
 
 static void
 _ltimeresponder_cb(timely_t *timely, int64_t frames, LV2_URID type,
-	const LV2_Atom *atom, void *data)
+	void *data)
 {
 	lua_State *L = data;
 
@@ -2213,37 +2213,37 @@ _ltimeresponder_cb(timely_t *timely, int64_t frames, LV2_URID type,
 		lua_pushinteger(L, frames); // frames
 		lua_pushvalue(L, 4); // data
 
-		if(type == timely->urid.time_barBeat)
+		if(type == TIMELY_URI_BAR_BEAT(timely))
 		{
-			lua_pushnumber(L, ((const LV2_Atom_Float *)atom)->body);
+			lua_pushnumber(L, TIMELY_BAR_BEAT(timely));
 		}
-		else if(type == timely->urid.time_bar)
+		else if(type == TIMELY_URI_BAR(timely))
 		{
-			lua_pushinteger(L, ((const LV2_Atom_Long *)atom)->body);
+			lua_pushinteger(L, TIMELY_BAR(timely));
 		}
-		else if(type == timely->urid.time_beatUnit)
+		else if(type == TIMELY_URI_BEAT_UNIT(timely))
 		{
-			lua_pushinteger(L, ((const LV2_Atom_Int *)atom)->body);
+			lua_pushinteger(L, TIMELY_BEAT_UNIT(timely));
 		}
-		else if(type == timely->urid.time_beatsPerBar)
+		else if(type == TIMELY_URI_BEATS_PER_BAR(timely))
 		{
-			lua_pushnumber(L, ((const LV2_Atom_Float *)atom)->body);
+			lua_pushnumber(L, TIMELY_BEATS_PER_BAR(timely));
 		}
-		else if(type == timely->urid.time_beatsPerMinute)
+		else if(type == TIMELY_URI_BEATS_PER_MINUTE(timely))
 		{
-			lua_pushnumber(L, ((const LV2_Atom_Float *)atom)->body);
+			lua_pushnumber(L, TIMELY_BEATS_PER_MINUTE(timely));
 		}
-		else if(type == timely->urid.time_frame)
+		else if(type == TIMELY_URI_FRAME(timely))
 		{
-			lua_pushinteger(L, ((const LV2_Atom_Long *)atom)->body);
+			lua_pushinteger(L, TIMELY_FRAME(timely));
 		}
-		else if(type == timely->urid.time_framesPerSecond)
+		else if(type == TIMELY_URI_FRAMES_PER_SECOND(timely))
 		{
-			lua_pushnumber(L, ((const LV2_Atom_Float *)atom)->body);
+			lua_pushnumber(L, TIMELY_FRAMES_PER_SECOND(timely));
 		}
-		else if(type == timely->urid.time_speed)
+		else if(type == TIMELY_URI_SPEED(timely))
 		{
-			lua_pushnumber(L, ((const LV2_Atom_Float *)atom)->body);
+			lua_pushnumber(L, TIMELY_SPEED(timely));
 		}
 		else
 		{
