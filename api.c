@@ -2576,12 +2576,31 @@ moony_open(moony_t *moony, lua_State *L)
 
 	lua_newtable(L);
 	{
+		SET_MAP(L, LV2_PATCH__, Ack);
+		SET_MAP(L, LV2_PATCH__, Delete);
+		SET_MAP(L, LV2_PATCH__, Copy);
+		SET_MAP(L, LV2_PATCH__, Error);
 		SET_MAP(L, LV2_PATCH__, Get);
+		SET_MAP(L, LV2_PATCH__, Message);
+		SET_MAP(L, LV2_PATCH__, Move);
+		SET_MAP(L, LV2_PATCH__, Patch);
+		SET_MAP(L, LV2_PATCH__, Post);
+		SET_MAP(L, LV2_PATCH__, Put);
+		SET_MAP(L, LV2_PATCH__, Request);
+		SET_MAP(L, LV2_PATCH__, Response);
 		SET_MAP(L, LV2_PATCH__, Set);
-		SET_MAP(L, LV2_PATCH__, subject);
+		SET_MAP(L, LV2_PATCH__, add);
+		SET_MAP(L, LV2_PATCH__, body);
+		SET_MAP(L, LV2_PATCH__, destination);
 		SET_MAP(L, LV2_PATCH__, property);
-		SET_MAP(L, LV2_PATCH__, wildcard);
+		SET_MAP(L, LV2_PATCH__, readable);
+		SET_MAP(L, LV2_PATCH__, remove);
+		SET_MAP(L, LV2_PATCH__, request);
+		SET_MAP(L, LV2_PATCH__, subject);
+		SET_MAP(L, LV2_PATCH__, sequenceNumber);
 		SET_MAP(L, LV2_PATCH__, value);
+		SET_MAP(L, LV2_PATCH__, wildcard);
+		SET_MAP(L, LV2_PATCH__, writable);
 	}
 	lua_setglobal(L, "Patch");
 

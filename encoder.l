@@ -421,12 +421,31 @@ checkKw(char*s)
 			//TODO package
 			break;
 		case 'P':
+			CHECK(Patch.Ack, NUMBER);
+			CHECK(Patch.Delete, NUMBER);
+			CHECK(Patch.Copy, NUMBER);
+			CHECK(Patch.Error, NUMBER);
 			CHECK(Patch.Get, NUMBER);
+			CHECK(Patch.Message, NUMBER);
+			CHECK(Patch.Move, NUMBER);
+			CHECK(Patch.Patch, NUMBER);
+			CHECK(Patch.Post, NUMBER);
+			CHECK(Patch.Put, NUMBER);
+			CHECK(Patch.Request, NUMBER);
+			CHECK(Patch.Response, NUMBER);
 			CHECK(Patch.Set, NUMBER);
-			CHECK(Patch.subject, NUMBER);
+			CHECK(Patch.add, NUMBER);
+			CHECK(Patch.body, NUMBER);
+			CHECK(Patch.destination, NUMBER);
 			CHECK(Patch.property, NUMBER);
-			CHECK(Patch.wildcard, NUMBER);
+			CHECK(Patch.readable, NUMBER);
+			CHECK(Patch.remove, NUMBER);
+			CHECK(Patch.request, NUMBER);
+			CHECK(Patch.subject, NUMBER);
+			CHECK(Patch.sequenceNumber, NUMBER);
 			CHECK(Patch.value, NUMBER);
+			CHECK(Patch.wildcard, NUMBER);
+			CHECK(Patch.writable, NUMBER);
 			break;
 		case 'r':
 			CHECK(repeat, REPEAT);
