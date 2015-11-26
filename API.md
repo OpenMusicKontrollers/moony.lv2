@@ -1,6 +1,6 @@
 # Moony.lv2
 
-## Lua API (0.2.0)
+## Lua API (0.2.1)
 
 ### General usage
 	
@@ -26,7 +26,7 @@ return native Lua numbers, missing return values will be set to 0.0.
 -- code example for plugin 'C4+A1xC4+A1' in a clone configuration
 function run(nsamples, seq, forge, a, b, c, d)
 	for frames, atom in seq:foreach() do
-		forge:frame_time(frames)
+		forge:time(frames)
 		forge:atom(atom)
 	end
 
@@ -173,6 +173,7 @@ end
 ``` lua
 forge:frame_time(frames) -- start a new event at frames (Lua integer)
 forge:beat_time(beats) -- start a new event at beats (Lua number)
+forge:time(frames or beats) -- start a new event at frames or beats (Lua integer or number)
 
 forge:atom(atom) -- push a whole atom (atom, object, tuple, vector, ...)
 forge:int(1) -- push a Lua integer as 32bit integer
@@ -223,8 +224,8 @@ All forge functions but forge:pop return a forge; either itself or a
 derived one, depending on context. One can thus fill values in sequence, e.g:
 
 ``` lua
-forge:frame_time(0):midi(0x90, 0x20, 0x7f):frame_time(1):midi(0x80, 0x20, 0x00)
-forge:frame_time(2):object(id, otype):key(key):int(1):pop()
+forge:time(0):midi(0x90, 0x20, 0x7f):time(1):midi(0x80, 0x20, 0x00)
+forge:time(2):object(id, otype):key(key):int(1):pop()
 ```
 
 ### Atom Object

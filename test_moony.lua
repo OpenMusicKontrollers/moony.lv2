@@ -135,8 +135,8 @@ end
 print('[test] Bool')
 do
 	local function producer(forge)
-		forge:frame_time(0):bool(true)
-		forge:frame_time(0):bool(false)
+		forge:beat_time(0.1):bool(true)
+		forge:beat_time(0.2):bool(false)
 	end
 
 	local function consumer(seq)
@@ -279,9 +279,9 @@ do
 	local m = {0x90, 0x2a, 0x7f}
 
 	local function producer(forge)
-		forge:frame_time(0):midi(m)
+		forge:time(0.1):midi(m)
 
-		forge:frame_time(0)
+		forge:time(0.2)
 		forge:midi(table.unpack(m))
 	end
 
@@ -961,22 +961,22 @@ print('[test] Vector')
 do
 
 	local function producer(forge)
-		forge:frame_time(0)
+		forge:time(0)
 		forge:vector(Atom.Int, {1, 2, 3, 4})
 
-		forge:frame_time(1)
+		forge:time(1)
 		forge:vector(Atom.Long, 5, 6, 7, 8)
 		
-		forge:frame_time(2)
+		forge:time(2)
 		forge:vector(Atom.Bool, {true, false})
 		
-		forge:frame_time(3)
+		forge:time(3)
 		forge:vector(Atom.Float, 1.0, 2.0)
 		
-		forge:frame_time(4)
+		forge:time(4)
 		forge:vector(Atom.Double, {3.3, 4.4})
 		
-		forge:frame_time(5)
+		forge:time(5)
 		forge:vector(Atom.URID, Atom.Int, Atom.Long)
 	end
 

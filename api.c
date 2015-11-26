@@ -1073,17 +1073,14 @@ static const luaL_Reg latom_mt [] = {
 	{NULL, NULL}
 };
 
-static int
-_lforge_frame_time(lua_State *L)
+static inline int
+_lforge_frame_time_inlined(lua_State *L, lforge_t *lforge, int64_t frames)
 {
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
-	int64_t val = luaL_checkinteger(L, 2);
-
-	if(val >= lforge->last.frames)
+	if(frames >= lforge->last.frames)
 	{
-		if(!lv2_atom_forge_frame_time(lforge->forge, val))
+		if(!lv2_atom_forge_frame_time(lforge->forge, frames))
 			luaL_error(L, forge_buffer_overflow);
-		lforge->last.frames = val;
+		lforge->last.frames = frames;
 
 		lua_settop(L, 1);
 		return 1;
@@ -1093,22 +1090,58 @@ _lforge_frame_time(lua_State *L)
 }
 
 static int
-_lforge_beat_time(lua_State *L)
+_lforge_frame_time(lua_State *L)
 {
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
-	double val = luaL_checknumber(L, 2);
+	int64_t frames = luaL_checkinteger(L, 2);
 
-	if(val >= lforge->last.beats)
+	return _lforge_frame_time_inlined(L, lforge, frames);
+}
+
+static inline int
+_lforge_beat_time_inlined(lua_State *L, lforge_t *lforge, double beats)
+{
+	if(beats >= lforge->last.beats)
 	{
-		if(!lv2_atom_forge_beat_time(lforge->forge, val))
+		if(!lv2_atom_forge_beat_time(lforge->forge, beats))
 			luaL_error(L, forge_buffer_overflow);
-		lforge->last.beats = val;
+		lforge->last.beats = beats;
 
 		lua_settop(L, 1);
 		return 1;
 	}
 
 	return luaL_error(L, "invalid beat time, must not decrease");
+}
+
+static int
+_lforge_beat_time(lua_State *L)
+{
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	double beats = luaL_checknumber(L, 2);
+
+	return _lforge_beat_time_inlined(L, lforge, beats);
+}
+
+static int
+_lforge_time(lua_State *L)
+{
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+
+	if(lua_isinteger(L, 2))
+	{
+		int64_t frames = lua_tointeger(L, 2);
+
+		return _lforge_frame_time_inlined(L, lforge, frames);
+	}
+	else if(lua_isnumber(L, 2))
+	{
+		double beats = lua_tointeger(L, 2);
+
+		return _lforge_beat_time_inlined(L, lforge, beats);
+	}
+
+	return luaL_error(L, "integer or number expected");
 }
 
 static int
@@ -1743,6 +1776,7 @@ _lforge_pop(lua_State *L)
 static const luaL_Reg lforge_mt [] = {
 	{"frame_time", _lforge_frame_time},
 	{"beat_time", _lforge_beat_time},
+	{"time", _lforge_time},
 
 	{"atom", _lforge_atom},
 	{"int", _lforge_int},
