@@ -1758,6 +1758,72 @@ _lforge_sequence(lua_State *L)
 }
 
 static int
+_lforge_get(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	LV2_URID subject = luaL_optinteger(L, 2, 0);
+	LV2_URID property = luaL_checkinteger(L, 3);
+
+	LV2_Atom_Forge_Frame frame;
+
+	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.patch_get))
+		luaL_error(L, forge_buffer_overflow);
+
+	if(subject) // is optional
+	{
+		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch_subject))
+			luaL_error(L, forge_buffer_overflow);
+		if(!lv2_atom_forge_urid(lforge->forge, subject))
+			luaL_error(L, forge_buffer_overflow);
+	}
+
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch_property))
+		luaL_error(L, forge_buffer_overflow);
+	if(!lv2_atom_forge_urid(lforge->forge, property))
+		luaL_error(L, forge_buffer_overflow);
+
+	lv2_atom_forge_pop(lforge->forge, &frame);
+
+	lua_settop(L, 1);
+	return 1;
+}
+
+static int
+_lforge_set(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	LV2_URID subject = luaL_optinteger(L, 2, 0);
+	LV2_URID property = luaL_checkinteger(L, 3);
+	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
+	lframe->depth = 1;
+	lframe->last.frames = lforge->last.frames;
+	lframe->forge = lforge->forge;
+
+	if(!lv2_atom_forge_object(lforge->forge, lframe->frame, 0, moony->uris.patch_set))
+		luaL_error(L, forge_buffer_overflow);
+
+	if(subject) // is optional
+	{
+		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch_subject))
+			luaL_error(L, forge_buffer_overflow);
+		if(!lv2_atom_forge_urid(lforge->forge, subject))
+			luaL_error(L, forge_buffer_overflow);
+	}
+
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch_property))
+		luaL_error(L, forge_buffer_overflow);
+	if(!lv2_atom_forge_urid(lforge->forge, property))
+		luaL_error(L, forge_buffer_overflow);
+
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch_value))
+		luaL_error(L, forge_buffer_overflow);
+
+	return 1; // derived forge
+}
+
+static int
 _lforge_pop(lua_State *L)
 {
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
@@ -1800,6 +1866,9 @@ static const luaL_Reg lforge_mt [] = {
 	{"property", _lforge_property},
 	{"vector", _lforge_vector},
 	{"sequence", _lforge_sequence},
+
+	{"get", _lforge_get},
+	{"set", _lforge_set},
 
 	{"pop", _lforge_pop},
 
@@ -2423,6 +2492,12 @@ moony_init(moony_t *moony, double sample_rate, const LV2_Feature *const *feature
 		LV2_BUF_SIZE__maxBlockLength);
 	moony->uris.bufsz_sequence_size = moony->map->map(moony->map->handle,
 		LV2_BUF_SIZE__sequenceSize);
+
+	moony->uris.patch_get = moony->map->map(moony->map->handle, LV2_PATCH__Get);
+	moony->uris.patch_set = moony->map->map(moony->map->handle, LV2_PATCH__Set);
+	moony->uris.patch_subject = moony->map->map(moony->map->handle, LV2_PATCH__subject);
+	moony->uris.patch_property = moony->map->map(moony->map->handle, LV2_PATCH__property);
+	moony->uris.patch_value = moony->map->map(moony->map->handle, LV2_PATCH__value);
 
 	osc_forge_init(&moony->oforge, moony->map);
 	lv2_atom_forge_init(&moony->forge, moony->map);

@@ -214,7 +214,13 @@ obj:property(key, context) -- push a new object property with key, context (Lua 
 obj:pop() -- finalize derived forge container
 
 seq = forge:sequence(unit) -- start a nested sequence (returns a derived forge container)
-seq:pop()
+seq:pop() -- finalize derived forge container
+
+forge:get(subject, property) -- create a patch:Get object
+
+set = forge:set(subject, property) -- start a patch:Set object (returns a derived forge container)
+set:int(12) -- append value
+set:pop() -- finalize derived forge container
 ```
 
 Vector forge only supports fixed-sized Atom types: e.g. Int, Long, Float, Double,

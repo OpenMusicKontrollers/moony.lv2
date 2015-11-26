@@ -1059,3 +1059,54 @@ do
 	assert(Options[Buf_Size.maxBlockLength] == nil)
 	assert(Options[Buf_Size.sequenceSize] == nil)
 end
+
+-- Patch
+print('[test] Patch')
+do
+	local subject = Map['http://open-music-kontrollers.ch/lv2/moony#subject']
+	local property = Map['http://open-music-kontrollers.ch/lv2/moony#property']
+
+	local function producer(forge)
+		forge:time(0):get(subject, property)
+
+		forge:time(1):get(nil, property)
+
+		local set = forge:time(2):set(subject, property)
+		set:string('hello world'):pop()
+		
+		local set = forge:time(3):set(nil, property)
+		set:string('hello world'):pop()
+	end
+
+	local function consumer(seq)
+		assert(#seq == 4)
+
+		local get = seq[1]
+		assert(get.type == Atom.Object)
+		assert(#get == 2)
+		assert(get[Patch.subject].value == subject)
+		assert(get[Patch.property].value == property)
+
+		get = seq[2]
+		assert(get.type == Atom.Object)
+		assert(#get == 1)
+		assert(get[Patch.subject] == nil)
+		assert(get[Patch.property].value == property)
+
+		local set = seq[3]
+		assert(set.type == Atom.Object)
+		assert(#set == 3)
+		assert(set[Patch.subject].value == subject)
+		assert(set[Patch.property].value == property)
+		assert(set[Patch.value].value == 'hello world')
+
+		set = seq[4]
+		assert(set.type == Atom.Object)
+		assert(#set == 2)
+		assert(set[Patch.subject] == nil)
+		assert(set[Patch.property].value == property)
+		assert(set[Patch.value].value == 'hello world')
+	end
+
+	test(producer, consumer)
+end

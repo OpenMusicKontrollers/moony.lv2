@@ -165,6 +165,12 @@ struct _moony_t {
 		LV2_URID bufsz_max_block_length;
 		LV2_URID bufsz_min_block_length;
 		LV2_URID bufsz_sequence_size;
+
+		LV2_URID patch_get;
+		LV2_URID patch_set;
+		LV2_URID patch_subject;
+		LV2_URID patch_property;
+		LV2_URID patch_value;
 	} uris;
 
 	struct {
