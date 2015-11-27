@@ -211,6 +211,9 @@ checkKw(char*s)
 			break;
 		case 'C':
 			CHECK(Core.sampleRate, NUMBER);
+			CHECK(Core.minimum, NUMBER);
+			CHECK(Core.maximum, NUMBER);
+			CHECK(Core.scalePoint, NUMBER);
 			break;
 		case 'd':
 			CHECK(dofile, CALLER);
@@ -457,6 +460,11 @@ checkKw(char*s)
 			CHECK(require, CALLER);
 			
 			CHECK(run, CALLER); // lua.lv2 specific
+			break;
+		case 'R':
+			CHECK(RDF.value, NUMBER);
+			CHECK(RDFS.label, NUMBER);
+			CHECK(RDFS.range, NUMBER);
 			break;
 		case 's':
 			CHECK(string.char, CALLER);

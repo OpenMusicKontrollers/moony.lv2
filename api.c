@@ -1824,6 +1824,67 @@ _lforge_set(lua_State *L)
 }
 
 static int
+_lforge_patch(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	LV2_URID subject = luaL_optinteger(L, 2, 0);
+	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
+	lframe->depth = 1;
+	lframe->last.frames = lforge->last.frames;
+	lframe->forge = lforge->forge;
+
+	if(!lv2_atom_forge_object(lforge->forge, lframe->frame, 0, moony->uris.patch_patch))
+		luaL_error(L, forge_buffer_overflow);
+
+	if(subject) // is optional
+	{
+		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch_subject))
+			luaL_error(L, forge_buffer_overflow);
+		if(!lv2_atom_forge_urid(lforge->forge, subject))
+			luaL_error(L, forge_buffer_overflow);
+	}
+
+	return 1; // derived forge
+}
+
+static int
+_lforge_remove(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
+	lframe->depth = 1;
+	lframe->last.frames = lforge->last.frames;
+	lframe->forge = lforge->forge;
+
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch_remove))
+		luaL_error(L, forge_buffer_overflow);
+	if(!lv2_atom_forge_object(lforge->forge, lframe->frame, 0, 0))
+		luaL_error(L, forge_buffer_overflow);
+
+	return 1; // derived forge
+}
+
+static int
+_lforge_add(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
+	lframe->depth = 1;
+	lframe->last.frames = lforge->last.frames;
+	lframe->forge = lforge->forge;
+
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch_add))
+		luaL_error(L, forge_buffer_overflow);
+	if(!lv2_atom_forge_object(lforge->forge, lframe->frame, 0, 0))
+		luaL_error(L, forge_buffer_overflow);
+
+	return 1; // derived forge
+}
+
+static int
 _lforge_pop(lua_State *L)
 {
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
@@ -1869,6 +1930,9 @@ static const luaL_Reg lforge_mt [] = {
 
 	{"get", _lforge_get},
 	{"set", _lforge_set},
+	{"patch", _lforge_patch},
+	{"remove", _lforge_remove},
+	{"add", _lforge_add},
 
 	{"pop", _lforge_pop},
 
@@ -2495,9 +2559,12 @@ moony_init(moony_t *moony, double sample_rate, const LV2_Feature *const *feature
 
 	moony->uris.patch_get = moony->map->map(moony->map->handle, LV2_PATCH__Get);
 	moony->uris.patch_set = moony->map->map(moony->map->handle, LV2_PATCH__Set);
+	moony->uris.patch_patch = moony->map->map(moony->map->handle, LV2_PATCH__Patch);
 	moony->uris.patch_subject = moony->map->map(moony->map->handle, LV2_PATCH__subject);
 	moony->uris.patch_property = moony->map->map(moony->map->handle, LV2_PATCH__property);
 	moony->uris.patch_value = moony->map->map(moony->map->handle, LV2_PATCH__value);
+	moony->uris.patch_add = moony->map->map(moony->map->handle, LV2_PATCH__add);
+	moony->uris.patch_remove = moony->map->map(moony->map->handle, LV2_PATCH__remove);
 
 	osc_forge_init(&moony->oforge, moony->map);
 	lv2_atom_forge_init(&moony->forge, moony->map);
@@ -2672,6 +2739,9 @@ moony_open(moony_t *moony, lua_State *L)
 	lua_newtable(L);
 	{
 		core_sample_rate = SET_MAP(L, LV2_CORE__, sampleRate);
+		SET_MAP(L, LV2_CORE__, minimum);
+		SET_MAP(L, LV2_CORE__, maximum);
+		SET_MAP(L, LV2_CORE__, scalePoint);
 	}
 	lua_setglobal(L, "Core");
 	
@@ -2712,6 +2782,29 @@ moony_open(moony_t *moony, lua_State *L)
 		SET_MAP(L, LV2_PATCH__, writable);
 	}
 	lua_setglobal(L, "Patch");
+
+	lua_newtable(L);
+	{
+#define RDF_PREFIX "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+#define RDF__value RDF_PREFIX"value"
+		SET_MAP(L, RDF__, value);
+#undef RDF__value
+#undef RDF_PREFIX
+	}
+	lua_setglobal(L, "RDF");
+
+	lua_newtable(L);
+	{
+#define RDFS_PREFIX "http://www.w3.org/2000/01/rdf-schema#"
+#define RDFS__label RDFS_PREFIX"label"
+#define RDFS__range RDFS_PREFIX"range"
+		SET_MAP(L, RDFS__, label);
+		SET_MAP(L, RDFS__, range);
+#undef RDFS__range
+#undef RDFS__label
+#undef RDFS_PREFIX
+	}
+	lua_setglobal(L, "RDFS");
 
 	lua_newtable(L);
 	{

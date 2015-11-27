@@ -1065,6 +1065,7 @@ print('[test] Patch')
 do
 	local subject = Map['http://open-music-kontrollers.ch/lv2/moony#subject']
 	local property = Map['http://open-music-kontrollers.ch/lv2/moony#property']
+	local access = Patch.writable
 
 	local function producer(forge)
 		forge:time(0):get(subject, property)
@@ -1076,25 +1077,48 @@ do
 		
 		local set = forge:time(3):set(nil, property)
 		set:string('hello world'):pop()
+
+		local patch = forge:time(4):patch(subject)
+		patch:remove():key(access):urid(Patch.wildcard):pop()
+		patch:add():key(access):urid(property):pop()
+		patch:pop()
+
+		patch = forge:time(5):patch(property)
+		local remove = patch:remove()
+		remove:key(RDFS.label):urid(Patch.wildcard)
+		remove:key(RDFS.range):urid(Patch.wildcard)
+		remove:key(Core.minimum):urid(Patch.wildcard)
+		remove:key(Core.maximum):urid(Patch.wildcard)
+		remove:pop()
+		local add = patch:add()
+		add:key(RDFS.label):string('A dummy label')
+		add:key(RDFS.range):urid(Atom.Int)
+		add:key(Core.minimum):int(0)
+		add:key(Core.maximum):int(10)
+		add:pop()
+		patch:pop()
 	end
 
 	local function consumer(seq)
-		assert(#seq == 4)
+		assert(#seq == 6)
 
 		local get = seq[1]
 		assert(get.type == Atom.Object)
+		assert(get.otype == Patch.Get)
 		assert(#get == 2)
 		assert(get[Patch.subject].value == subject)
 		assert(get[Patch.property].value == property)
 
 		get = seq[2]
 		assert(get.type == Atom.Object)
+		assert(get.otype == Patch.Get)
 		assert(#get == 1)
 		assert(get[Patch.subject] == nil)
 		assert(get[Patch.property].value == property)
 
 		local set = seq[3]
 		assert(set.type == Atom.Object)
+		assert(set.otype == Patch.Set)
 		assert(#set == 3)
 		assert(set[Patch.subject].value == subject)
 		assert(set[Patch.property].value == property)
@@ -1102,10 +1126,33 @@ do
 
 		set = seq[4]
 		assert(set.type == Atom.Object)
+		assert(set.otype == Patch.Set)
 		assert(#set == 2)
 		assert(set[Patch.subject] == nil)
 		assert(set[Patch.property].value == property)
 		assert(set[Patch.value].value == 'hello world')
+
+		local patch = seq[5]
+		assert(patch.type == Atom.Object)
+		assert(patch.otype == Patch.Patch)
+		assert(#patch == 3)
+		assert(patch[Patch.subject].value == subject)
+		assert(patch[Patch.remove][access].value == Patch.wildcard) 
+		assert(patch[Patch.add][access].value == property) 
+
+		patch = seq[6]
+		assert(patch.type == Atom.Object)
+		assert(patch.otype == Patch.Patch)
+		assert(#patch == 3)
+		assert(patch[Patch.subject].value == property)
+		assert(patch[Patch.remove][RDFS.label].value == Patch.wildcard)
+		assert(patch[Patch.remove][RDFS.range].value == Patch.wildcard) 
+		assert(patch[Patch.remove][Core.minimum].value == Patch.wildcard) 
+		assert(patch[Patch.remove][Core.maximum].value == Patch.wildcard) 
+		assert(patch[Patch.add][RDFS.label].value == 'A dummy label') 
+		assert(patch[Patch.add][RDFS.range].value == Atom.Int) 
+		assert(patch[Patch.add][Core.minimum].value == 0) 
+		assert(patch[Patch.add][Core.maximum].value == 10) 
 	end
 
 	test(producer, consumer)

@@ -111,6 +111,9 @@ urid = OSC.messageArguments
 
 ``` lua
 urid = Core.sampleRate
+urid = Core.minimum
+urid = Core.maximum
+urid = Core.scalePoint
 ```
 
 #### URIDs of Buf\_Size extension
@@ -124,11 +127,42 @@ urid = Buf_Size.sequenceSize -- only defined if exported by host
 #### URIDs of Patch extension
 
 ``` lua
+urid = Patch.Ack
+urid = Patch.Delete
+urid = Patch.Copy
+urid = Patch.Error
 urid = Patch.Get
+urid = Patch.Message
+urid = Patch.Move
+urid = Patch.Patch
+urid = Patch.Request
+urid = Patch.Response
 urid = Patch.Set
-urid = Patch.subject
+urid = Patch.add
+urid = Patch.body
+urid = Patch.destination
 urid = Patch.property
+urid = Patch.readable
+urid = Patch.remove
+urid = Patch.request
+urid = Patch.subject
+urid = Patch.sequenceNumber
 urid = Patch.value
+urid = Patch.wildcard
+urid = Patch.writable
+```
+
+#### URIDs of RDF
+
+``` lua
+urid = RDF.value
+```
+
+#### URIDs of RDFS
+
+``` lua
+urid = RDFS.label
+urid = RDFS.range
 ```
 
 #### Options Table
@@ -221,6 +255,13 @@ forge:get(subject, property) -- create a patch:Get object
 set = forge:set(subject, property) -- start a patch:Set object (returns a derived forge container)
 set:int(12) -- append value
 set:pop() -- finalize derived forge container
+
+patch = forge:patch(subject) -- start a patch:Patch object (returns a derived forge container)
+remove = patch:remove() -- start a patch:remove object (returns a derived forge container)
+remove:pop() == finalize derived forge container
+add = patch:add() -- start a patch:add object (returns a derived forge container)
+add:pop() -- finalize derived forge container
+patch:pop() -- finalize derived forge container
 ```
 
 Vector forge only supports fixed-sized Atom types: e.g. Int, Long, Float, Double,
