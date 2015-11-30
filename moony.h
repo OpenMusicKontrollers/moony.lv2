@@ -155,6 +155,8 @@ struct _moony_t {
 	LV2_Atom_Forge forge;
 
 	struct {
+		LV2_URID subject;
+
 		LV2_URID moony_message;
 		LV2_URID moony_code;
 		LV2_URID moony_error;
@@ -174,6 +176,7 @@ struct _moony_t {
 		LV2_URID patch_value;
 		LV2_URID patch_add;
 		LV2_URID patch_remove;
+		LV2_URID patch_wildcard;
 	} uris;
 
 	struct {
@@ -223,7 +226,8 @@ struct _lforge_t {
 	LV2_Atom_Forge_Frame frame [2];
 };
 
-int moony_init(moony_t *moony, double sample_rate, const LV2_Feature *const *features);
+int moony_init(moony_t *moony, const char *subject, double sample_rate,
+	const LV2_Feature *const *features);
 void moony_deinit(moony_t *moony);
 void moony_open(moony_t *moony, lua_State *L);
 void moony_activate(moony_t *moony, const char *chunk);

@@ -449,6 +449,8 @@ checkKw(char*s)
 			CHECK(Patch.value, NUMBER);
 			CHECK(Patch.wildcard, NUMBER);
 			CHECK(Patch.writable, NUMBER);
+
+			CHECK(PatchResponder, CALLER);
 			break;
 		case 'r':
 			CHECK(repeat, REPEAT);

@@ -1757,6 +1757,74 @@ _lforge_sequence(lua_State *L)
 	return 1; // derived forge
 }
 
+static inline int
+_lforge_typed_inlined(lua_State *L, moony_t *moony, LV2_Atom_Forge *forge, LV2_URID urid)
+{
+	lua_CFunction hook = NULL;
+
+	/*
+	 * 1: lforge
+	 */
+
+	//TODO keep this list updated
+	//TODO use binary tree sorted by URID
+	if(urid == forge->Int)
+		hook = _lforge_int;
+	else if(urid == forge->Long)
+		hook = _lforge_long;
+	else if(urid == forge->Float)
+		hook = _lforge_float;
+	else if(urid == forge->Double)
+		hook = _lforge_double;
+	else if(urid == forge->Bool)
+		hook = _lforge_bool;
+	else if(urid == forge->URID)
+		hook = _lforge_urid;
+	else if(urid == forge->String)
+		hook = _lforge_string;
+	else if(urid == forge->Literal)
+		hook = _lforge_literal;
+	else if(urid == forge->URI)
+		hook = _lforge_uri;
+	else if(urid == forge->Path)
+		hook = _lforge_path;
+
+	else if(urid == forge->Chunk)
+		hook = _lforge_chunk;
+	else if(urid == moony->uris.midi_event)
+		hook = _lforge_midi;
+	else if(urid == moony->oforge.OSC_Bundle)
+		hook = _lforge_osc_bundle;
+	else if(urid == moony->oforge.OSC_Message)
+		hook = _lforge_osc_message;
+	else if(urid == forge->Tuple)
+		hook = _lforge_tuple;
+	else if(urid == forge->Object)
+		hook = _lforge_object;
+	else if(urid == forge->Property)
+		hook = _lforge_property;
+	else if(urid == forge->Vector)
+		hook = _lforge_vector;
+	else if(urid == forge->Sequence)
+		hook = _lforge_sequence;
+
+	if(!hook)
+		luaL_error(L, "unknown atom type");
+
+	return hook(L);
+}
+
+static int
+_lforge_typed(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	LV2_URID urid = luaL_checkinteger(L, 2);
+	lua_remove(L, 2); // urid
+
+	return _lforge_typed_inlined(L, moony, lforge->forge, urid);
+}
+
 static int
 _lforge_get(lua_State *L)
 {
@@ -1906,6 +1974,7 @@ static const luaL_Reg lforge_mt [] = {
 	{"time", _lforge_time},
 
 	{"atom", _lforge_atom},
+
 	{"int", _lforge_int},
 	{"long", _lforge_long},
 	{"float", _lforge_float},
@@ -1927,6 +1996,8 @@ static const luaL_Reg lforge_mt [] = {
 	{"property", _lforge_property},
 	{"vector", _lforge_vector},
 	{"sequence", _lforge_sequence},
+
+	{"typed", _lforge_typed},
 
 	{"get", _lforge_get},
 	{"set", _lforge_set},
@@ -2502,8 +2573,129 @@ static const luaL_Reg ltimeresponder_mt [] = {
 	{NULL, NULL}
 };
 
+static int
+_lpatchresponder__call(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	lua_settop(L, 4); // discard superfluous arguments
+	// 1: self
+	// 2: frames
+	// 3: data
+	// 4: atom
+
+	int64_t frames = luaL_checkinteger(L, 2);
+	lobj_t *lobj = luaL_checkudata(L, 4, "lobj");
+	lua_pop(L, 1); // atom
+
+	if(lobj->obj->body.otype == moony->uris.patch_get)
+	{
+		const LV2_Atom_URID *subject = NULL;
+		const LV2_Atom_URID *property = NULL;
+
+		LV2_Atom_Object_Query q [] = {
+			{ moony->uris.patch_subject, (const LV2_Atom **)&subject },
+			{ moony->uris.patch_property, (const LV2_Atom **)&property },
+			LV2_ATOM_OBJECT_QUERY_END
+		};
+		lv2_atom_object_query(lobj->obj, q);
+
+		if(!property)
+			return 0;
+
+		if(subject && (subject->body != moony->uris.subject) )
+			return 0;
+
+		lua_pushinteger(L, property->body);
+		lua_gettable(L, 1); // self[property]
+		if(!lua_isnil(L, -1))
+		{
+			lua_insert(L, 1);
+			lua_pushinteger(L, moony->uris.patch_get);
+
+			lua_call(L, 3 + 1, 1);
+		}
+		else
+			lua_pushboolean(L, 0); // property not gotten
+	}
+	else if(lobj->obj->body.otype == moony->uris.patch_set)
+	{
+		const LV2_Atom_URID *subject = NULL;
+		const LV2_Atom_URID *property = NULL;
+		const LV2_Atom *value = NULL;
+
+		LV2_Atom_Object_Query q [] = {
+			{ moony->uris.patch_subject, (const LV2_Atom **)&subject },
+			{ moony->uris.patch_property, (const LV2_Atom **)&property },
+			{ moony->uris.patch_value, &value },
+			LV2_ATOM_OBJECT_QUERY_END
+		};
+		lv2_atom_object_query(lobj->obj, q);
+
+		if(!property || !value)
+			return 0;
+
+		if(subject && (subject->body != moony->uris.subject) )
+			return 0;
+
+		lua_pushinteger(L, property->body);
+		lua_gettable(L, 1); // self[property]
+		if(!lua_isnil(L, -1))
+		{
+			lua_insert(L, 1);
+			lua_pushinteger(L, moony->uris.patch_set);
+			_latom_value(L, value); //TODO or push an latom_t?
+
+			lua_call(L, 3 + 2, 1);
+		}
+		else
+			lua_pushboolean(L, 0); // property not set
+	}
+	else
+		lua_pushboolean(L, 0); // wrong type 
+
+	return 1;
+}
+
+static int
+_lpatchresponder_new(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	
+	lua_settop(L, 2); // discard superfluous arguments
+
+	// o = o or {}
+	if(!lua_istable(L, 2))
+	{
+		lua_pop(L, 1);
+		lua_newtable(L);
+	}
+
+	// self.__index = self
+	lua_pushvalue(L, 1);
+	lua_setfield(L, 1, "__index");
+
+	// self.__call = _lpatchresponder__call
+	lua_pushlightuserdata(L, moony);
+	lua_pushcclosure(L, _lpatchresponder__call, 1);
+	lua_setfield(L, 1, "__call");
+
+	// setmetatable(o, self)
+	lua_pushvalue(L, 1);
+	lua_setmetatable(L, -2);
+
+	// return o
+	return 1;
+}
+
+static const luaL_Reg lpatchresponder_mt [] = {
+	{"new", _lpatchresponder_new},
+	{NULL, NULL}
+};
+
 int
-moony_init(moony_t *moony, double sample_rate, const LV2_Feature *const *features)
+moony_init(moony_t *moony, const char *subject, double sample_rate,
+	const LV2_Feature *const *features)
 {
 	if(moony_vm_init(&moony->vm))
 	{
@@ -2514,6 +2706,7 @@ moony_init(moony_t *moony, double sample_rate, const LV2_Feature *const *feature
 	LV2_Options_Option *opts = NULL;
 
 	for(unsigned i=0; features[i]; i++)
+	{
 		if(!strcmp(features[i]->URI, LV2_URID__map))
 			moony->map = (LV2_URID_Map *)features[i]->data;
 		else if(!strcmp(features[i]->URI, LV2_URID__unmap))
@@ -2526,6 +2719,7 @@ moony_init(moony_t *moony, double sample_rate, const LV2_Feature *const *feature
 			opts = (LV2_Options_Option *)features[i]->data;
 		else if(!strcmp(features[i]->URI, OSC__schedule))
 			moony->osc_sched = (osc_schedule_t *)features[i]->data;
+	}
 
 	if(!moony->map)
 	{
@@ -2542,6 +2736,8 @@ moony_init(moony_t *moony, double sample_rate, const LV2_Feature *const *feature
 		fprintf(stderr, "Host does not support worker:schedule\n");
 		return -1;
 	}
+
+	moony->uris.subject = moony->map->map(moony->map->handle, subject);
 
 	moony->uris.moony_message = moony->map->map(moony->map->handle, MOONY_MESSAGE_URI);
 	moony->uris.moony_code = moony->map->map(moony->map->handle, MOONY_CODE_URI);
@@ -2565,6 +2761,7 @@ moony_init(moony_t *moony, double sample_rate, const LV2_Feature *const *feature
 	moony->uris.patch_value = moony->map->map(moony->map->handle, LV2_PATCH__value);
 	moony->uris.patch_add = moony->map->map(moony->map->handle, LV2_PATCH__add);
 	moony->uris.patch_remove = moony->map->map(moony->map->handle, LV2_PATCH__remove);
+	moony->uris.patch_wildcard = moony->map->map(moony->map->handle, LV2_PATCH__wildcard);
 
 	osc_forge_init(&moony->oforge, moony->map);
 	lv2_atom_forge_init(&moony->forge, moony->map);
@@ -2877,6 +3074,12 @@ moony_open(moony_t *moony, lua_State *L)
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs(L, ltimeresponder_mt, 1);
 	lua_setglobal(L, "TimeResponder");
+
+	// PatchResponder
+	lua_newtable(L);
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	luaL_setfuncs(L, lpatchresponder_mt, 1);
+	lua_setglobal(L, "PatchResponder");
 
 #undef SET_MAP
 }
