@@ -37,7 +37,9 @@ enum _timely_mask_t {
 	TIMELY_MASK_BEATS_PER_MINUTE	= (1 << 4),
 	TIMELY_MASK_FRAME							= (1 << 5),
 	TIMELY_MASK_FRAMES_PER_SECOND	= (1 << 6),
-	TIMELY_MASK_SPEED							= (1 << 7)
+	TIMELY_MASK_SPEED							= (1 << 7),
+	TIMELY_MASK_BAR_BEAT_WHOLE		= (1 << 8),
+	TIMELY_MASK_BAR_WHOLE					= (1 << 9)
 };
 
 struct _timely_t {
@@ -138,56 +140,56 @@ _timely_deatomize(timely_t *timely, int64_t frames, const LV2_Atom_Object *obj)
 	if(speed && (speed->body != timely->pos.speed) && (speed->body == 0.f) )
 	{
 		timely->pos.speed = speed->body;
-		if(timely->cb && (timely->mask & TIMELY_MASK_SPEED) )
+		if(timely->mask & TIMELY_MASK_SPEED)
 			timely->cb(timely, frames, timely->urid.time_speed, timely->data);
 	}
 
 	if(beat_unit && (beat_unit->body != timely->pos.beat_unit) )
 	{
 		timely->pos.beat_unit = beat_unit->body;
-		if(timely->cb && (timely->mask & TIMELY_MASK_BEAT_UNIT) )
+		if(timely->mask & TIMELY_MASK_BEAT_UNIT)
 			timely->cb(timely, frames, timely->urid.time_beatUnit, timely->data);
 	}
 
 	if(beats_per_bar && (beats_per_bar->body != timely->pos.beats_per_bar) )
 	{
 		timely->pos.beats_per_bar = beats_per_bar->body;
-		if(timely->cb && (timely->mask & TIMELY_MASK_BEATS_PER_BAR) )
+		if(timely->mask & TIMELY_MASK_BEATS_PER_BAR)
 			timely->cb(timely, frames, timely->urid.time_beatsPerBar, timely->data);
 	}
 
 	if(beats_per_minute && (beats_per_minute->body != timely->pos.beats_per_minute) )
 	{
 		timely->pos.beats_per_minute = beats_per_minute->body;
-		if(timely->cb && (timely->mask & TIMELY_MASK_BEATS_PER_MINUTE) )
+		if(timely->mask & TIMELY_MASK_BEATS_PER_MINUTE)
 			timely->cb(timely, frames, timely->urid.time_beatsPerMinute, timely->data);
 	}
 
 	if(frame && (frame->body != timely->pos.frame) )
 	{
 		timely->pos.frame = frame->body;
-		if(timely->cb && (timely->mask & TIMELY_MASK_FRAME) )
+		if(timely->mask & TIMELY_MASK_FRAME)
 			timely->cb(timely, frames, timely->urid.time_frame, timely->data);
 	}
 
 	if(frames_per_second && (frames_per_second->body != timely->pos.frames_per_second) )
 	{
 		timely->pos.frames_per_second = frames_per_second->body;
-		if(timely->cb && (timely->mask & TIMELY_MASK_FRAMES_PER_SECOND) )
+		if(timely->mask & TIMELY_MASK_FRAMES_PER_SECOND)
 			timely->cb(timely, frames, timely->urid.time_framesPerSecond, timely->data);
 	}
 
 	if(bar && (bar->body != timely->pos.bar) )
 	{
 		timely->pos.bar = bar->body;
-		if(timely->cb && (timely->mask & TIMELY_MASK_BAR) )
+		if(timely->mask & TIMELY_MASK_BAR)
 			timely->cb(timely, frames, timely->urid.time_bar, timely->data);
 	}
 
 	if(bar_beat && (bar_beat->body != timely->pos.bar_beat) )
 	{
 		timely->pos.bar_beat = bar_beat->body;
-		if(timely->cb && (timely->mask & TIMELY_MASK_BAR_BEAT) )
+		if(timely->mask & TIMELY_MASK_BAR_BEAT)
 			timely->cb(timely, frames, timely->urid.time_barBeat, timely->data);
 	}
 
@@ -195,7 +197,7 @@ _timely_deatomize(timely_t *timely, int64_t frames, const LV2_Atom_Object *obj)
 	if(speed && (speed->body != timely->pos.speed) && (speed->body != 0.f) )
 	{
 		timely->pos.speed = speed->body;
-		if(timely->cb && (timely->mask & TIMELY_MASK_SPEED) )
+		if(timely->mask & TIMELY_MASK_SPEED)
 			timely->cb(timely, frames, timely->urid.time_speed, timely->data);
 	}
 }
@@ -223,6 +225,8 @@ static void
 timely_init(timely_t *timely, LV2_URID_Map *map, double rate,
 	timely_mask_t mask, timely_cb_t cb, void *data)
 {
+	assert(cb != NULL);
+
 	timely->mask = mask;
 	timely->cb = cb;
 	timely->data = data;
@@ -261,32 +265,29 @@ timely_advance(timely_t *timely, const LV2_Atom_Object *obj,
 		timely->first = false;
 
 		// send initial values
-		if(timely->cb)
-		{
-			if(timely->mask & TIMELY_MASK_SPEED)
-				timely->cb(timely, 0, timely->urid.time_speed, timely->data);
+		if(timely->mask & TIMELY_MASK_SPEED)
+			timely->cb(timely, 0, timely->urid.time_speed, timely->data);
 
-			if(timely->mask & TIMELY_MASK_BEAT_UNIT)
-				timely->cb(timely, 0, timely->urid.time_beatUnit, timely->data);
+		if(timely->mask & TIMELY_MASK_BEAT_UNIT)
+			timely->cb(timely, 0, timely->urid.time_beatUnit, timely->data);
 
-			if(timely->mask & TIMELY_MASK_BEATS_PER_BAR)
-				timely->cb(timely, 0, timely->urid.time_beatsPerBar, timely->data);
-			
-			if(timely->mask & TIMELY_MASK_BEATS_PER_MINUTE)
-				timely->cb(timely, 0, timely->urid.time_beatsPerMinute, timely->data);
+		if(timely->mask & TIMELY_MASK_BEATS_PER_BAR)
+			timely->cb(timely, 0, timely->urid.time_beatsPerBar, timely->data);
+		
+		if(timely->mask & TIMELY_MASK_BEATS_PER_MINUTE)
+			timely->cb(timely, 0, timely->urid.time_beatsPerMinute, timely->data);
 
-			if(timely->mask & TIMELY_MASK_FRAME)
-				timely->cb(timely, 0, timely->urid.time_frame, timely->data);
-			
-			if(timely->mask & TIMELY_MASK_FRAMES_PER_SECOND)
-				timely->cb(timely, 0, timely->urid.time_framesPerSecond, timely->data);
-			
-			if(timely->mask & TIMELY_MASK_BAR)
-				timely->cb(timely, 0, timely->urid.time_bar, timely->data);
-			
-			if(timely->mask & TIMELY_MASK_BAR_BEAT)
-				timely->cb(timely, 0, timely->urid.time_barBeat, timely->data);
-		}
+		if(timely->mask & TIMELY_MASK_FRAME)
+			timely->cb(timely, 0, timely->urid.time_frame, timely->data);
+		
+		if(timely->mask & TIMELY_MASK_FRAMES_PER_SECOND)
+			timely->cb(timely, 0, timely->urid.time_framesPerSecond, timely->data);
+		
+		if(timely->mask & TIMELY_MASK_BAR)
+			timely->cb(timely, 0, timely->urid.time_bar, timely->data);
+		
+		if(timely->mask & TIMELY_MASK_BAR_BEAT)
+			timely->cb(timely, 0, timely->urid.time_barBeat, timely->data);
 	}
 
 	// are we rolling?
@@ -294,13 +295,13 @@ timely_advance(timely_t *timely, const LV2_Atom_Object *obj,
 	{
 		if( (timely->offset.bar == 0) && (timely->pos.bar == 0) )
 		{
-			if(timely->cb && (timely->mask & TIMELY_MASK_BAR) )
+			if(timely->mask & TIMELY_MASK_BAR_WHOLE)
 				timely->cb(timely, from, timely->urid.time_bar, timely->data);
 		}
 
 		if( (timely->offset.beat == 0) && (timely->pos.bar_beat == 0) )
 		{
-			if(timely->cb && (timely->mask & TIMELY_MASK_BAR_BEAT) )
+			if(timely->mask & TIMELY_MASK_BAR_BEAT_WHOLE)
 				timely->cb(timely, from, timely->urid.time_barBeat, timely->data); 
 		}
 
@@ -311,7 +312,7 @@ timely_advance(timely_t *timely, const LV2_Atom_Object *obj,
 				timely->pos.bar += 1;
 				timely->offset.bar -= timely->window.bar;
 
-				if(timely->cb && (timely->mask & TIMELY_MASK_BAR) )
+				if(timely->mask & TIMELY_MASK_BAR_WHOLE)
 					timely->cb(timely, i, timely->urid.time_bar, timely->data);
 			}
 
@@ -323,7 +324,7 @@ timely_advance(timely_t *timely, const LV2_Atom_Object *obj,
 				if(timely->pos.bar_beat >= timely->pos.beats_per_bar)
 					timely->pos.bar_beat = 0;
 
-				if(timely->cb && (timely->mask & TIMELY_MASK_BAR_BEAT) )
+				if(timely->mask & TIMELY_MASK_BAR_BEAT_WHOLE)
 					timely->cb(timely, i, timely->urid.time_barBeat, timely->data); 
 			}
 
