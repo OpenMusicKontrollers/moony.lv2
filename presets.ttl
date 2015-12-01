@@ -25,7 +25,8 @@
 
 # to please sord_validate
 moony:code
-	a rdf:Property .
+	a rdf:Property ;
+	rdfs:label "Lua code chunk" .
 
 moony:template-control_through
 	state:state [
