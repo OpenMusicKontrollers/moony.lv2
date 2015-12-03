@@ -295,13 +295,13 @@ timely_advance(timely_t *timely, const LV2_Atom_Object *obj,
 	{
 		if( (timely->offset.bar == 0) && (timely->pos.bar == 0) )
 		{
-			if(timely->mask & TIMELY_MASK_BAR)
+			if(timely->mask & (TIMELY_MASK_BAR | TIMELY_MASK_BAR_WHOLE) )
 				timely->cb(timely, from, timely->urid.time_bar, timely->data);
 		}
 
 		if( (timely->offset.beat == 0) && (timely->pos.bar_beat == 0) )
 		{
-			if(timely->mask & TIMELY_MASK_BAR_BEAT)
+			if(timely->mask & (TIMELY_MASK_BAR_BEAT | TIMELY_MASK_BAR_BEAT_WHOLE) )
 				timely->cb(timely, from, timely->urid.time_barBeat, timely->data); 
 		}
 
