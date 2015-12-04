@@ -1369,22 +1369,16 @@ _lforge_midi(lua_State *L)
 	return _lforge_bytes(L, moony, moony->uris.midi_event);
 }
 
-static int
-_lforge_osc_bundle(lua_State *L)
+static inline uint64_t
+_lforge_to_timestamp(lua_State *L, moony_t *moony, lforge_t *lforge, int pos)
 {
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
-
-	osc_forge_t *oforge = &moony->oforge;
-	LV2_Atom_Forge *forge = lforge->forge;
-
 	uint64_t timestamp = 1ULL; // immediate timestamp
-	if(lua_isinteger(L, 2))
+	if(lua_isinteger(L, pos))
 	{
 		// absolute timestamp
-		timestamp = lua_tointeger(L, 2);
+		timestamp = lua_tointeger(L, pos);
 	}
-	else if(lua_isnumber(L, 2) && moony->osc_sched)
+	else if(lua_isnumber(L, pos) && moony->osc_sched)
 	{
 		// timestamp of current frame
 		timestamp = moony->osc_sched->frames2osc(moony->osc_sched->handle,
@@ -1393,7 +1387,7 @@ _lforge_osc_bundle(lua_State *L)
 		volatile uint64_t frac = timestamp & 0xffffffff;
 		
 		// relative offset from current frame (in seconds)
-		double offset_d = lua_tonumber(L, 2);
+		double offset_d = lua_tonumber(L, pos);
 		double secs_d;
 		double frac_d = modf(offset_d, &secs_d);
 
@@ -1415,6 +1409,20 @@ _lforge_osc_bundle(lua_State *L)
 		printf("%lu %lf\n", dt, dd);
 		*/
 	}
+
+	return timestamp;
+}
+
+static int
+_lforge_osc_bundle(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+
+	osc_forge_t *oforge = &moony->oforge;
+	LV2_Atom_Forge *forge = lforge->forge;
+
+	uint64_t timestamp = _lforge_to_timestamp(L, moony, lforge, 2);
 
 	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
 	lframe->depth = 2;
@@ -1518,7 +1526,7 @@ _lforge_osc_message(lua_State *L)
 			}
 			case 't':
 			{
-				uint64_t t = luaL_checkinteger(L, pos++);
+				uint64_t t = _lforge_to_timestamp(L, moony, lforge, pos++);
 				if(!osc_forge_timestamp(oforge, forge, t))
 					luaL_error(L, forge_buffer_overflow);
 				break;
