@@ -32,7 +32,7 @@
 @prefix urid: <http://lv2plug.in/ns/ext/urid#> .
 @prefix kx:		<http://kxstudio.sf.net/ns/lv2ext/external-ui#> .
 
-@prefix osc:  <http://opensoundcontrol.org#> .
+@prefix osc:  <http://open-music-kontrollers.ch/lv2/osc#> .
 @prefix lic:	<http://opensource.org/licenses/> .
 @prefix omk:	<http://open-music-kontrollers.ch/ventosus#> .
 @prefix proj:	<http://open-music-kontrollers.ch/lv2/> .
@@ -40,6 +40,11 @@
 
 osc:schedule
 	a lv2:Feature .
+
+osc:Event
+	a rdfs:Class ;
+	rdfs:subClassOf atom:Object ;
+	rdfs:label "OSC Event (Bundle or Message)" .
 
 # Maintainer
 omk:me
@@ -472,6 +477,7 @@ moony:a1xa1
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports midi:MidiEvent ;
+		atom:supports osc:Event ;
 		atom:supports time:Position ;
 		atom:supports patch:Message ;
 		lv2:index 0 ;
@@ -484,6 +490,7 @@ moony:a1xa1
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports midi:MidiEvent ;
+		atom:supports osc:Event ;
 		atom:supports time:Position ;
 		atom:supports patch:Message ;
 		lv2:index 1 ;
@@ -530,6 +537,7 @@ moony:a2xa2
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports midi:MidiEvent ;
+		atom:supports osc:Event ;
 		atom:supports time:Position ;
 		atom:supports patch:Message ;
 		lv2:index 0 ;
@@ -541,6 +549,7 @@ moony:a2xa2
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports midi:MidiEvent ;
+		atom:supports osc:Event ;
 		atom:supports time:Position ;
 		atom:supports patch:Message ;
 		lv2:index 1 ;
@@ -552,6 +561,7 @@ moony:a2xa2
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports midi:MidiEvent ;
+		atom:supports osc:Event ;
 		atom:supports time:Position ;
 		atom:supports patch:Message ;
 		lv2:index 2 ;
@@ -563,6 +573,7 @@ moony:a2xa2
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports midi:MidiEvent ;
+		atom:supports osc:Event ;
 		atom:supports time:Position ;
 		atom:supports patch:Message ;
 		lv2:index 3 ;
@@ -608,6 +619,7 @@ moony:a4xa4
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports midi:MidiEvent ;
+		atom:supports osc:Event ;
 		atom:supports time:Position ;
 		atom:supports patch:Message ;
 		lv2:index 0 ;
@@ -619,6 +631,7 @@ moony:a4xa4
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports midi:MidiEvent ;
+		atom:supports osc:Event ;
 		atom:supports time:Position ;
 		atom:supports patch:Message ;
 		lv2:index 1 ;
@@ -629,6 +642,7 @@ moony:a4xa4
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports midi:MidiEvent ;
+		atom:supports osc:Event ;
 		atom:supports time:Position ;
 		atom:supports patch:Message ;
 		lv2:index 2 ;
@@ -639,6 +653,7 @@ moony:a4xa4
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports midi:MidiEvent ;
+		atom:supports osc:Event ;
 		atom:supports time:Position ;
 		atom:supports patch:Message ;
 		lv2:index 3 ;
@@ -650,6 +665,7 @@ moony:a4xa4
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports midi:MidiEvent ;
+		atom:supports osc:Event ;
 		atom:supports time:Position ;
 		atom:supports patch:Message ;
 		lv2:index 4 ;
@@ -661,6 +677,7 @@ moony:a4xa4
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports midi:MidiEvent ;
+		atom:supports osc:Event ;
 		atom:supports time:Position ;
 		atom:supports patch:Message ;
 		lv2:index 5 ;
@@ -671,6 +688,7 @@ moony:a4xa4
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports midi:MidiEvent ;
+		atom:supports osc:Event ;
 		atom:supports time:Position ;
 		atom:supports patch:Message ;
 		lv2:index 6 ;
@@ -681,6 +699,7 @@ moony:a4xa4
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports midi:MidiEvent ;
+		atom:supports osc:Event ;
 		atom:supports time:Position ;
 		atom:supports patch:Message ;
 		lv2:index 7 ;
@@ -726,6 +745,7 @@ moony:c1a1xc1a1
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports midi:MidiEvent ;
+		atom:supports osc:Event ;
 		atom:supports time:Position ;
 		atom:supports patch:Message ;
 		lv2:index 0 ;
@@ -738,6 +758,7 @@ moony:c1a1xc1a1
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports midi:MidiEvent ;
+		atom:supports osc:Event ;
 		atom:supports time:Position ;
 		atom:supports patch:Message ;
 		lv2:index 1 ;
@@ -798,6 +819,7 @@ moony:c2a1xc2a1
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports midi:MidiEvent ;
+		atom:supports osc:Event ;
 		atom:supports time:Position ;
 		atom:supports patch:Message ;
 		lv2:index 0 ;
@@ -810,6 +832,7 @@ moony:c2a1xc2a1
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports midi:MidiEvent ;
+		atom:supports osc:Event ;
 		atom:supports time:Position ;
 		atom:supports patch:Message ;
 		lv2:index 1 ;
@@ -882,6 +905,7 @@ moony:c4a1xc4a1
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports midi:MidiEvent ;
+		atom:supports osc:Event ;
 		atom:supports time:Position ;
 		atom:supports patch:Message ;
 		lv2:index 0 ;
@@ -894,6 +918,7 @@ moony:c4a1xc4a1
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports midi:MidiEvent ;
+		atom:supports osc:Event ;
 		atom:supports time:Position ;
 		atom:supports patch:Message ;
 		lv2:index 1 ;
