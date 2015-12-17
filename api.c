@@ -1817,7 +1817,7 @@ _lforge_typed_inlined(lua_State *L, moony_t *moony, LV2_Atom_Forge *forge, LV2_U
 		hook = _lforge_sequence;
 
 	if(!hook)
-		luaL_error(L, "unknown atom type");
+		return luaL_error(L, "unknown atom type");
 
 	return hook(L);
 }
@@ -2505,7 +2505,7 @@ _ltimeresponder_cb(timely_t *timely, int64_t frames, LV2_URID type,
 static int
 _ltimeresponder__call(lua_State *L)
 {
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 
 	lua_settop(L, 5); // discard superfluous arguments
 	// 1: self
@@ -2594,7 +2594,7 @@ _lpatchresponder__call(lua_State *L)
 	// 3: data
 	// 4: atom
 
-	int64_t frames = luaL_checkinteger(L, 2);
+	//int64_t frames = luaL_checkinteger(L, 2);
 	lobj_t *lobj = luaL_checkudata(L, 4, "lobj");
 	lua_pop(L, 1); // atom
 
