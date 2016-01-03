@@ -108,6 +108,8 @@ moony:common_eo
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] ;
+	lv2:extensionData ui:resize ;
+	lv2:optionalFeature ui:resize ;
 	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map .
 moony:common_ui
 	a ui:UI ;
@@ -209,7 +211,7 @@ moony:common_x11
 	] ;
 	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map ;
 	lv2:optionalFeature ui:resize ;
-  lv2:extensionData ui:idleInterface .
+  lv2:extensionData ui:idleInterface, ui:resize .
 moony:common_kx
 	a kx:Widget ;
 	ui:portNotification [
