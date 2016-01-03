@@ -54,6 +54,7 @@ struct _eo_ui_t {
 		// eo iface
 		struct {
 			Evas_Object *parent;
+			LV2UI_Resize *resize;
 		} eo;
 
 		// show iface
@@ -349,10 +350,13 @@ eoui_instantiate(eo_ui_t *eoui, const LV2UI_Descriptor *descriptor,
 		case EO_UI_DRIVER_EO:
 		{
 			eoui->eo.parent = NULL; // mandatory
+			eoui->eo.resize = NULL; // optional
 			for(int i=0; features[i]; i++)
 			{
 				if(!strcmp(features[i]->URI, LV2_UI__parent))
 					eoui->eo.parent = features[i]->data;
+				else if(!strcmp(features[i]->URI, LV2_UI__resize))
+					eoui->eo.resize = (LV2UI_Resize *)features[i]->data;
 			}
 			if(!eoui->eo.parent)
 				return -1;
@@ -362,6 +366,9 @@ eoui_instantiate(eo_ui_t *eoui, const LV2UI_Descriptor *descriptor,
 			eoui->content = eoui->content_get(eoui);
 
 			*(Evas_Object **)widget = eoui->content;
+
+			if(eoui->eo.resize)
+				eoui->eo.resize->ui_resize(eoui->eo.resize->handle, eoui->w, eoui->h);
 
 			break;
 		}
@@ -448,11 +455,11 @@ eoui_instantiate(eo_ui_t *eoui, const LV2UI_Descriptor *descriptor,
 				}
 			}
 
-			if(eoui->x11.resize)
-				eoui->x11.resize->ui_resize(eoui->x11.resize->handle, eoui->w, eoui->h);
-
 			eoui->x11.child = elm_win_xwindow_get(eoui->win);
 			*(uintptr_t *)widget = eoui->x11.child;
+
+			if(eoui->x11.resize)
+				eoui->x11.resize->ui_resize(eoui->x11.resize->handle, eoui->w, eoui->h);
 
 			break;
 		}
