@@ -37,6 +37,9 @@ struct _UI {
 		LV2_URID event_transfer;
 	} uris;
 
+	LV2_Log_Log *log;
+	LV2_Log_Logger logger;
+
 	LV2_Atom_Forge forge;
 	LV2_URID_Map *map;
 
@@ -328,28 +331,29 @@ _exe_del(void *data, int type, void *event)
 	{
 		//printf("external editor has been closed\n");
 
-		switch(ev->exit_code)
-		{
-			case 0: // success
-				break;
+		if(ui->log)
+			switch(ev->exit_code)
+			{
+				case 0: // success
+					break;
 #if !defined(_WIN32) && !defined(__APPLE__)
-			case 1:
-				fprintf(stderr, "xdg-open: Error in command line syntax.\n");
-				break;
-			case 2:
-				fprintf(stderr, "xdg-open: One of the files passed on the command line did not exist.\n");
-				break;
-			case 3:
-				fprintf(stderr, "xdg-open: A required tool could not be found.\n");
-				break;
-			case 4:
-				fprintf(stderr, "xdg-open: The action failed.\n");
-				break;
+				case 1:
+					lv2_log_error(&ui->logger, "xdg-open: Error in command line syntax.");
+					break;
+				case 2:
+					lv2_log_error(&ui->logger, "xdg-open: One of the files passed on the command line did not exist.");
+					break;
+				case 3:
+					lv2_log_error(&ui->logger, "xdg-open: A required tool could not be found.");
+					break;
+				case 4:
+					lv2_log_error(&ui->logger, "xdg-open: The action failed.");
+					break;
 #endif
-			default:
-				fprintf(stderr, "opening the file in an external editor failed.\n");
-				break;
-		}
+				default:
+					lv2_log_error(&ui->logger, "opening the file in an external editor failed.");
+					break;
+			}
 
 		_exe_cleanup(ui);
 
@@ -372,7 +376,8 @@ _editor_chosen(void *data, Evas_Object *obj, void *event_info)
 	int fd = eina_file_mkstemp("moony_XXXXXX.lua", &path);
 	if(fd == -1)
 	{
-		fprintf(stderr, "creation of temporary file failed\n");
+		if(ui->log)
+			lv2_log_error(&ui->logger, "creation of temporary file failed");
 		return;
 	}
 
@@ -420,11 +425,11 @@ _editor_chosen(void *data, Evas_Object *obj, void *event_info)
 			ui->handler = ecore_event_handler_add(ECORE_EXE_EVENT_DEL, _exe_del, ui);
 			ui->monitor = ecore_file_monitor_add(path, _monitor, ui);
 		}
-		else
-			fprintf(stderr, "spawning of external editor failed\n");
+		else if(ui->log)
+			lv2_log_error(&ui->logger, "spawning of external editor failed");
 	}
-	else
-		fprintf(stderr, "memory allocation for external editor command failed\n");
+	else if(ui->log)
+		lv2_log_error(&ui->logger, "memory allocation for external editor command failed");
 
 	eina_tmpstr_del(path);
 	
@@ -818,6 +823,8 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 			ui->map = (LV2_URID_Map *)features[i]->data;
 		else if(!strcmp(features[i]->URI, LV2_UI__portMap))
 			ui->port_map = (LV2UI_Port_Map *)features[i]->data;
+		else if(!strcmp(features[i]->URI, LV2_LOG__log))
+			ui->log = (LV2_Log_Log *)features[i]->data;
 	}
 
 	if(!ui->map)
@@ -843,6 +850,8 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	ui->uris.event_transfer = ui->map->map(ui->map->handle, LV2_ATOM__eventTransfer);
 
 	lv2_atom_forge_init(&ui->forge, ui->map);
+	if(ui->log)
+		lv2_log_logger_init(&ui->logger, ui->map, ui->log);
 
 	eo_ui_t *eoui = &ui->eoui;
 	eoui->driver = driver;

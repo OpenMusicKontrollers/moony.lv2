@@ -2165,8 +2165,11 @@ _log(lua_State *L)
 
 	luaL_pushresult(&buf);
 
-	const char *res = lua_tostring(L, -1);
-	moony->log->printf(moony->log->handle, moony->uris.log_trace, "%s", res);
+	if(moony->log)
+	{
+		const char *res = lua_tostring(L, -1);
+		lv2_log_trace(&moony->logger, "%s", res);
+	}
 
 	return 0;
 }
@@ -2753,7 +2756,6 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->uris.moony_code = moony->map->map(moony->map->handle, MOONY_CODE_URI);
 	moony->uris.moony_error = moony->map->map(moony->map->handle, MOONY_ERROR_URI);
 
-	moony->uris.log_trace = moony->map->map(moony->map->handle, LV2_LOG__Trace);
 	moony->uris.midi_event = moony->map->map(moony->map->handle, LV2_MIDI__MidiEvent);
 	
 	moony->uris.bufsz_min_block_length = moony->map->map(moony->map->handle,
@@ -2775,6 +2777,8 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 
 	osc_forge_init(&moony->oforge, moony->map);
 	lv2_atom_forge_init(&moony->forge, moony->map);
+	if(moony->log)
+		lv2_log_logger_init(&moony->logger, moony->map, moony->log);
 	
 	if(opts)
 	{
@@ -3271,8 +3275,8 @@ _work_response(LV2_Handle instance, uint32_t size, const void *body)
 		// schedule freeing of memory to _work
 		LV2_Worker_Status status = moony->sched->schedule_work(
 			moony->sched->handle, sizeof(moony_mem_t), &req);
-		if(status != LV2_WORKER_SUCCESS)
-			fprintf(stderr, "moony: schedule_work failed\n");
+		if( (status != LV2_WORKER_SUCCESS) && moony->log)
+			lv2_log_warning(&moony->logger, "moony: schedule_work failed");
 
 		return LV2_WORKER_ERR_UNKNOWN;
 	}

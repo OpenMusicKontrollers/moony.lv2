@@ -24,20 +24,21 @@
 
 #include <tlsf.h>
 
-#include "lv2/lv2plug.in/ns/ext/atom/atom.h"
-#include "lv2/lv2plug.in/ns/ext/atom/util.h"
-#include "lv2/lv2plug.in/ns/ext/atom/forge.h"
-#include "lv2/lv2plug.in/ns/ext/midi/midi.h"
-#include "lv2/lv2plug.in/ns/ext/time/time.h"
-#include "lv2/lv2plug.in/ns/ext/urid/urid.h"
-#include "lv2/lv2plug.in/ns/ext/worker/worker.h"
-#include "lv2/lv2plug.in/ns/ext/log/log.h"
-#include "lv2/lv2plug.in/ns/ext/state/state.h"
-#include "lv2/lv2plug.in/ns/ext/buf-size/buf-size.h"
-#include "lv2/lv2plug.in/ns/ext/options/options.h"
-#include "lv2/lv2plug.in/ns/ext/patch/patch.h"
-#include "lv2/lv2plug.in/ns/lv2core/lv2.h"
-#include "lv2/lv2plug.in/ns/extensions/ui/ui.h"
+#include <lv2/lv2plug.in/ns/ext/atom/atom.h>
+#include <lv2/lv2plug.in/ns/ext/atom/util.h>
+#include <lv2/lv2plug.in/ns/ext/atom/forge.h>
+#include <lv2/lv2plug.in/ns/ext/midi/midi.h>
+#include <lv2/lv2plug.in/ns/ext/time/time.h>
+#include <lv2/lv2plug.in/ns/ext/urid/urid.h>
+#include <lv2/lv2plug.in/ns/ext/worker/worker.h>
+#include <lv2/lv2plug.in/ns/ext/log/log.h>
+#include <lv2/lv2plug.in/ns/ext/log/logger.h>
+#include <lv2/lv2plug.in/ns/ext/state/state.h>
+#include <lv2/lv2plug.in/ns/ext/buf-size/buf-size.h>
+#include <lv2/lv2plug.in/ns/ext/options/options.h>
+#include <lv2/lv2plug.in/ns/ext/patch/patch.h>
+#include <lv2/lv2plug.in/ns/lv2core/lv2.h>
+#include <lv2/lv2plug.in/ns/extensions/ui/ui.h>
 
 #include <lv2_osc.h>
 
@@ -110,6 +111,12 @@ struct _moony_mem_t {
 	void *mem;
 };
 
+int moony_vm_init(moony_vm_t *vm);
+int moony_vm_deinit(moony_vm_t *vm);
+void *moony_vm_mem_alloc(size_t size);
+void moony_vm_mem_free(void *area, size_t size);
+int moony_vm_mem_extend(moony_vm_t *vm);
+
 typedef enum _moony_udata_t {
 	MOONY_UDATA_SEQ		= 0,
 	MOONY_UDATA_OBJ,
@@ -121,12 +128,6 @@ typedef enum _moony_udata_t {
 
 	MOONY_UDATA_COUNT
 } moony_udata_t;
-
-int moony_vm_init(moony_vm_t *vm);
-int moony_vm_deinit(moony_vm_t *vm);
-void *moony_vm_mem_alloc(size_t size);
-void moony_vm_mem_free(void *area, size_t size);
-int moony_vm_mem_extend(moony_vm_t *vm);
 
 // from encoder.l
 typedef void (*encoder_begin_t)(void *data);
@@ -161,7 +162,6 @@ struct _moony_t {
 		LV2_URID moony_code;
 		LV2_URID moony_error;
 
-		LV2_URID log_trace;
 		LV2_URID midi_event;
 
 		LV2_URID bufsz_max_block_length;
@@ -195,8 +195,10 @@ struct _moony_t {
 	osc_schedule_t *osc_sched;
 	
 	LV2_Log_Log *log;
+	LV2_Log_Logger logger;
 
 	moony_vm_t vm;
+
 	char chunk [MOONY_MAX_CHUNK_LEN];
 	volatile int dirty_in;
 	volatile int dirty_out;
