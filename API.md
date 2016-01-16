@@ -256,6 +256,10 @@ set = forge:set(subject, property) -- start a patch:Set object (returns a derive
 set:int(12) -- append value
 set:pop() -- finalize derived forge container
 
+put = forge:put(subject) -- start a patch:Put object (returns a derived forge container)
+put:key(key):int(12) -- append key, value pair
+put:pop() -- finalize derived forge container
+
 patch = forge:patch(subject) -- start a patch:Patch object (returns a derived forge container)
 remove = patch:remove() -- start a patch:remove object (returns a derived forge container)
 remove:pop() == finalize derived forge container

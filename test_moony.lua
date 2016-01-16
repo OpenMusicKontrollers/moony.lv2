@@ -1097,10 +1097,14 @@ do
 		add:key(Core.maximum):int(10)
 		add:pop()
 		patch:pop()
+
+		local put = forge:time(6):put(subject)
+		put:key(property):string('hello world')
+		put:pop()
 	end
 
 	local function consumer(seq)
-		assert(#seq == 6)
+		assert(#seq == 7)
 
 		local get = seq[1]
 		assert(get.type == Atom.Object)
@@ -1153,6 +1157,16 @@ do
 		assert(patch[Patch.add][RDFS.range].value == Atom.Int) 
 		assert(patch[Patch.add][Core.minimum].value == 0) 
 		assert(patch[Patch.add][Core.maximum].value == 10) 
+
+		local put = seq[7]
+		assert(put.type == Atom.Object)
+		assert(put.otype == Patch.Put)
+		assert(#put == 2)
+		assert(put[Patch.subject].value == subject)
+		local body = put[Patch.body]
+		assert(body)
+		assert(#body == 1)
+		assert(body[property].value == 'hello world')
 	end
 
 	test(producer, consumer)

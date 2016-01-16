@@ -1900,6 +1900,36 @@ _lforge_set(lua_State *L)
 }
 
 static int
+_lforge_put(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	LV2_URID subject = luaL_optinteger(L, 2, 0);
+	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
+	lframe->depth = 2;
+	lframe->last.frames = lforge->last.frames;
+	lframe->forge = lforge->forge;
+
+	if(!lv2_atom_forge_object(lforge->forge, &lframe->frame[0], 0, moony->uris.patch_put))
+		luaL_error(L, forge_buffer_overflow);
+
+	if(subject) // is optional
+	{
+		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch_subject))
+			luaL_error(L, forge_buffer_overflow);
+		if(!lv2_atom_forge_urid(lforge->forge, subject))
+			luaL_error(L, forge_buffer_overflow);
+	}
+
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch_body))
+		luaL_error(L, forge_buffer_overflow);
+	if(!lv2_atom_forge_object(lforge->forge, &lframe->frame[1], 0, 0))
+		luaL_error(L, forge_buffer_overflow);
+
+	return 1; // derived forge
+}
+
+static int
 _lforge_patch(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -2009,6 +2039,7 @@ static const luaL_Reg lforge_mt [] = {
 
 	{"get", _lforge_get},
 	{"set", _lforge_set},
+	{"put", _lforge_put},
 	{"patch", _lforge_patch},
 	{"remove", _lforge_remove},
 	{"add", _lforge_add},
@@ -2767,7 +2798,9 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 
 	moony->uris.patch_get = moony->map->map(moony->map->handle, LV2_PATCH__Get);
 	moony->uris.patch_set = moony->map->map(moony->map->handle, LV2_PATCH__Set);
+	moony->uris.patch_put = moony->map->map(moony->map->handle, LV2_PATCH__Put);
 	moony->uris.patch_patch = moony->map->map(moony->map->handle, LV2_PATCH__Patch);
+	moony->uris.patch_body = moony->map->map(moony->map->handle, LV2_PATCH__body);
 	moony->uris.patch_subject = moony->map->map(moony->map->handle, LV2_PATCH__subject);
 	moony->uris.patch_property = moony->map->map(moony->map->handle, LV2_PATCH__property);
 	moony->uris.patch_value = moony->map->map(moony->map->handle, LV2_PATCH__value);

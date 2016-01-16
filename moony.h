@@ -170,7 +170,9 @@ struct _moony_t {
 
 		LV2_URID patch_get;
 		LV2_URID patch_set;
+		LV2_URID patch_put;
 		LV2_URID patch_patch;
+		LV2_URID patch_body;
 		LV2_URID patch_subject;
 		LV2_URID patch_property;
 		LV2_URID patch_value;
