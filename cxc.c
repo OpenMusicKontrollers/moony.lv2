@@ -34,23 +34,6 @@ struct _Handle {
 	LV2_Atom_Sequence *notify;
 };
 
-static const char *default_code [3] = {
-	"function run(n, a)\n"
-	"  -- your code here\n"
-	"  return a\n"
-	"end",
-
-	"function run(n, a, b)\n"
-	"  -- your code here\n"
-	"  return a, b\n"
-	"end",
-
-	"function run(n, a, b, c, d)\n"
-	"  -- your code here\n"
-	"  return a, b, c, d\n"
-	"end"
-};
-
 static LV2_Handle
 instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_path, const LV2_Feature *const *features)
 {
@@ -73,7 +56,6 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 		handle->max_val = 4;
 	else
 		handle->max_val = 1;
-	moony_activate(&handle->moony, default_code[handle->max_val >> 1]);
 
 	return handle;
 }

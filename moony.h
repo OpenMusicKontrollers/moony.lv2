@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdatomic.h>
 
 #include <tlsf.h>
 
@@ -202,7 +203,6 @@ struct _moony_t {
 	moony_vm_t vm;
 
 	char chunk [MOONY_MAX_CHUNK_LEN];
-	volatile int dirty_in;
 	volatile int dirty_out;
 	volatile int error_out;
 	char error [MOONY_MAX_ERROR_LEN];
@@ -212,6 +212,8 @@ struct _moony_t {
 
 	// OSCResponder
 	int osc_responder_handled;
+
+	atomic_flag lock;
 };
 
 struct _lseq_t {
@@ -234,7 +236,6 @@ int moony_init(moony_t *moony, const char *subject, double sample_rate,
 	const LV2_Feature *const *features);
 void moony_deinit(moony_t *moony);
 void moony_open(moony_t *moony, lua_State *L);
-void moony_activate(moony_t *moony, const char *chunk);
 void moony_in(moony_t *moony, const LV2_Atom_Sequence *seq);
 void moony_out(moony_t *moony, LV2_Atom_Sequence *seq, uint32_t frames);
 const void* extension_data(const char* uri);

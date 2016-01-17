@@ -36,45 +36,6 @@ struct _Handle {
 	LV2_Atom_Forge forge [4];
 };
 
-static const char *default_code [3] = {
-	"function run(n, seq, forge)\n"
-	"  for frames, atom in seq:foreach() do\n"
-	"    -- your code here\n"
-	"    forge:time(frames):atom(atom)\n"
-	"  end\n"
-	"end",
-
-	"function run(n, seq1, seq2, forge1, forge2)\n"
-	"  for frames, atom in seq1:foreach() do\n"
-	"    -- your code here\n"
-	"    forge1:time(frames):atom(atom)\n"
-	"  end\n"
-	"  for frames, atom in seq2:foreach() do\n"
-	"    -- your code here\n"
-	"    forge2:time(frames):atom(atom)\n"
-	"  end\n"
-	"end",
-
-	"function run(n, seq1, seq2, seq3, seq4, forge1, forge2, forge3, forge4)\n"
-	"  for frames, atom in seq1:foreach() do\n"
-	"    -- your code here\n"
-	"    forge1:time(frames):atom(atom)\n"
-	"  end\n"
-	"  for frames, atom in seq2:foreach() do\n"
-	"    -- your code here\n"
-	"    forge2:time(frames):atom(atom)\n"
-	"  end\n"
-	"  for frames, atom in seq3:foreach() do\n"
-	"    -- your code here\n"
-	"    forge3:time(frames):atom(atom)\n"
-	"  end\n"
-	"  for frames, atom in seq4:foreach() do\n"
-	"    -- your code here\n"
-	"    forge4:time(frames):atom(atom)\n"
-	"  end\n"
-	"end"
-};
-
 static LV2_Handle
 instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_path, const LV2_Feature *const *features)
 {
@@ -97,7 +58,6 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 		handle->max_val = 4;
 	else
 		handle->max_val = 1;
-	moony_activate(&handle->moony, default_code[handle->max_val >> 1]);
 
 	for(unsigned i=0; i<handle->max_val; i++)
 		lv2_atom_forge_init(&handle->forge[i], handle->moony.map);
