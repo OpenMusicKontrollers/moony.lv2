@@ -53,6 +53,7 @@
 #define MOONY_MESSAGE_URI			MOONY_URI"#message"
 #define MOONY_CODE_URI				MOONY_URI"#code"
 #define MOONY_ERROR_URI				MOONY_URI"#error"
+#define MOONY_STATE_URI				MOONY_URI"#state"
 
 #define MOONY_COMMON_EO_URI		MOONY_URI"#common_eo"
 #define MOONY_COMMON_UI_URI		MOONY_URI"#common_ui"
@@ -155,6 +156,7 @@ struct _moony_t {
 	LV2_URID_Map *map;
 	LV2_URID_Unmap *unmap;
 	LV2_Atom_Forge forge;
+	LV2_Atom_Forge state_forge;
 
 	struct {
 		LV2_URID subject;
@@ -162,6 +164,7 @@ struct _moony_t {
 		LV2_URID moony_message;
 		LV2_URID moony_code;
 		LV2_URID moony_error;
+		LV2_URID moony_state;
 
 		LV2_URID midi_event;
 
@@ -214,6 +217,7 @@ struct _moony_t {
 	int osc_responder_handled;
 
 	atomic_flag lock;
+	atomic_flag state;
 };
 
 struct _lseq_t {
@@ -302,5 +306,9 @@ struct _moony_message_t {
 	LV2_Atom_Property_Body prop _ATOM_ALIGNED;
 	char body [0] _ATOM_ALIGNED;
 } _ATOM_ALIGNED;
+
+#define _spin_lock(FLAG) while(atomic_flag_test_and_set_explicit((FLAG), memory_order_acquire)) {}
+#define _try_lock(FLAG) !atomic_flag_test_and_set_explicit((FLAG), memory_order_acquire)
+#define _unlock(FLAG) atomic_flag_clear_explicit((FLAG), memory_order_release)
 	
 #endif // _MOONY_H

@@ -212,21 +212,6 @@ static const size_t moony_sz [MOONY_UDATA_COUNT] = {
 
 static const char *forge_buffer_overflow = "forge buffer overflow";
 
-static inline void
-_spin_lock(moony_t *moony)
-{
-	while(atomic_flag_test_and_set_explicit(&moony->lock, memory_order_acquire))
-	{
-		// spin
-	}
-}
-
-static inline void
-_spin_unlock(moony_t *moony)
-{
-	atomic_flag_clear_explicit(&moony->lock, memory_order_release);
-}
-
 static void
 _latom_new(lua_State *L, const LV2_Atom *atom)
 {
@@ -2801,6 +2786,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->uris.moony_message = moony->map->map(moony->map->handle, MOONY_MESSAGE_URI);
 	moony->uris.moony_code = moony->map->map(moony->map->handle, MOONY_CODE_URI);
 	moony->uris.moony_error = moony->map->map(moony->map->handle, MOONY_ERROR_URI);
+	moony->uris.moony_state = moony->map->map(moony->map->handle, MOONY_STATE_URI);
 
 	moony->uris.midi_event = moony->map->map(moony->map->handle, LV2_MIDI__MidiEvent);
 	
@@ -2825,6 +2811,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 
 	osc_forge_init(&moony->oforge, moony->map);
 	lv2_atom_forge_init(&moony->forge, moony->map);
+	lv2_atom_forge_init(&moony->state_forge, moony->map);
 	if(moony->log)
 		lv2_log_logger_init(&moony->logger, moony->map, moony->log);
 	
@@ -2847,6 +2834,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->dirty_out = 1; // trigger update of UI
 
 	atomic_flag_clear_explicit(&moony->lock, memory_order_relaxed);
+	atomic_flag_clear_explicit(&moony->state, memory_order_relaxed);
 
 	return 0;
 }
@@ -3207,9 +3195,9 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *seq)
 				}
 				else // succeeded loading chunk
 				{
-					_spin_lock(moony);
+					_spin_lock(&moony->lock);
 					strncpy(moony->chunk, msg->body, msg->prop.value.size);
-					_spin_unlock(moony);
+					_unlock(&moony->lock);
 
 					moony->error[0] = 0x0; // reset error flag
 				}
@@ -3223,59 +3211,69 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *seq)
 static int
 _store(lua_State *L)
 {
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	LV2_State_Store_Function store = lua_touserdata(L, lua_upvalueindex(2));
-	LV2_State_Handle state = lua_touserdata(L, lua_upvalueindex(3));
+	LV2_Atom_Forge *forge = lua_touserdata(L, lua_upvalueindex(1));
 
 	const uint32_t flags = LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE;
 	const LV2_URID property = luaL_checkinteger(L, 1);
 	const LV2_URID type = luaL_checkinteger(L, 2);
 
-	if(type == moony->forge.Int)
+	if(type == forge->Int)
 	{
 		const int32_t value = luaL_checkinteger(L, 3);
-		store(state, property, &value, 4, type, flags);
+		lv2_atom_forge_key(forge, property);
+		lv2_atom_forge_int(forge, value);
 	}
-	else if(type == moony->forge.Long)
+	else if(type == forge->Long)
 	{
 		const int64_t value = luaL_checkinteger(L, 3);
-		store(state, property, &value, 8, type, flags);
+		lv2_atom_forge_key(forge, property);
+		lv2_atom_forge_long(forge, value);
 	}
-	else if(type == moony->forge.Bool)
+	else if(type == forge->Bool)
 	{
 		const int32_t value = lua_toboolean(L, 3);
-		store(state, property, &value, 4, type, flags);
+		lv2_atom_forge_key(forge, property);
+		lv2_atom_forge_bool(forge, value);
 	}
-	else if(type == moony->forge.URID)
+	else if(type == forge->URID)
 	{
 		const uint32_t value = luaL_checkinteger(L, 3);
-		store(state, property, &value, 4, type, flags);
+		lv2_atom_forge_key(forge, property);
+		lv2_atom_forge_urid(forge, value);
 	}
-	else if(type == moony->forge.Float)
+	else if(type == forge->Float)
 	{
 		const float value = luaL_checknumber(L, 3);
-		store(state, property, &value, 4, type, flags);
+		lv2_atom_forge_key(forge, property);
+		lv2_atom_forge_float(forge, value);
 	}
-	else if(type == moony->forge.Double)
+	else if(type == forge->Double)
 	{
 		const double value = luaL_checknumber(L, 3);
-		store(state, property, &value, 8, type, flags);
+		lv2_atom_forge_key(forge, property);
+		lv2_atom_forge_double(forge, value);
 	}
-	else if(type == moony->forge.String)
+	else if(type == forge->String)
 	{
 		size_t size;
 		const char *value = luaL_checklstring(L, 3, &size);
 		if(value)
-			store(state, property, value, size + 1, type, flags);
+		{
+			lv2_atom_forge_key(forge, property);
+			lv2_atom_forge_string(forge, value, strlen(value));
+		}
 	}
-	else if(type == moony->forge.URI)
+	else if(type == forge->URI)
 	{
 		size_t size;
 		const char *value = luaL_checklstring(L, 3, &size);
 		if(value)
-			store(state, property, value, size + 1, type, flags);
+		{
+			lv2_atom_forge_key(forge, property);
+			lv2_atom_forge_uri(forge, value, strlen(value));
+		}
 	}
-	else if(type == moony->forge.Path)
+	else if(type == forge->Path)
 	{
 		//FIXME
 	}
@@ -3288,23 +3286,59 @@ _store(lua_State *L)
 static int
 _save(lua_State *L)
 {
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	LV2_State_Store_Function store = lua_touserdata(L, lua_upvalueindex(2));
-	LV2_State_Handle state = lua_touserdata(L, lua_upvalueindex(3));
+	LV2_Atom_Forge *forge = lua_touserdata(L, lua_upvalueindex(1));
 
 	lua_getglobal(L, "save");
 	if(lua_isfunction(L, -1))
 	{
-		lua_pushlightuserdata(L, moony);
-		lua_pushlightuserdata(L, store);
-		lua_pushlightuserdata(L, state);
-		lua_pushcclosure(L, _store, 3);
+		lua_pushlightuserdata(L, forge);
+		lua_pushcclosure(L, _store, 1);
 		lua_call(L, 1, 0);
 	}
 	else
 		lua_pop(L, 1);
 
 	return 0;
+}
+
+typedef struct _atom_ser_t atom_ser_t;
+
+struct _atom_ser_t {
+	uint32_t size;
+	uint8_t *buf;
+	uint32_t offset;
+};
+
+static inline LV2_Atom_Forge_Ref
+_sink(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
+{
+	atom_ser_t *ser = handle;
+
+	const LV2_Atom_Forge_Ref ref = ser->offset + 1;
+
+	if(ser->offset + size > ser->size)
+	{
+		const uint32_t new_size = ser->size * 2;
+		if(!(ser->buf = realloc(ser->buf, new_size)))
+			return 0; // realloc failed
+
+		ser->size = new_size;
+	}
+
+	memcpy(ser->buf + ser->offset, buf, size);
+	ser->offset += size;
+
+	return ref;
+}
+
+static inline LV2_Atom *
+_deref(LV2_Atom_Forge_Sink_Handle handle, LV2_Atom_Forge_Ref ref)
+{
+	atom_ser_t *ser = handle;
+
+	const uint32_t offset = ref - 1;
+
+	return (LV2_Atom *)(ser->buf + offset);
 }
 
 static LV2_State_Status
@@ -3316,9 +3350,9 @@ _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 	LV2_State_Status status = LV2_STATE_SUCCESS;
 	char *chunk = NULL;
 
-	_spin_lock(moony);
+	_spin_lock(&moony->lock);
 	chunk = strdup(moony->chunk);
-	_spin_unlock(moony);
+	_unlock(&moony->lock);
 
 	if(chunk)
 	{
@@ -3333,16 +3367,45 @@ _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 		free(chunk);
 	}
 
-	// restore Lua defined properties
-	//FIXME spinlock
-	lua_State *L = moony->vm.L;
-	lua_pushlightuserdata(L, moony);
-	lua_pushlightuserdata(L, store);
-	lua_pushlightuserdata(L, state);
-	lua_pushcclosure(L, _save, 3);
-	if(lua_pcall(L, 0, 0, 0))
-		moony_error(moony);
-	lua_gc(L, LUA_GCSTEP, 0);
+	atom_ser_t ser = {
+		.size = 256,
+		.buf = malloc(256)
+	};
+
+	if(ser.buf)
+	{
+		LV2_Atom_Forge *forge = &moony->state_forge;
+		LV2_Atom_Forge_Frame frame;
+		lv2_atom_forge_set_sink(forge, _sink, _deref, &ser);
+
+		lv2_atom_forge_object(forge, &frame, 0, 0);
+
+		// lock Lua state, so it cannot be accessed by realtime thread
+		_spin_lock(&moony->state);
+
+		// restore Lua defined properties
+		lua_State *L = moony->vm.L;
+		lua_pushlightuserdata(L, forge);
+		lua_pushcclosure(L, _save, 1);
+		if(lua_pcall(L, 0, 0, 0))
+			moony_error(moony);
+		//lua_gc(L, LUA_GCSTEP, 0);
+
+		_unlock(&moony->state);
+
+		lv2_atom_forge_pop(forge, &frame);
+
+		LV2_Atom_Object *obj = (LV2_Atom_Object *)ser.buf;
+		status = store(
+				state,
+				moony->uris.moony_state,
+				&obj->body,
+				obj->atom.size,
+				forge->Object,
+				LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
+
+		free(ser.buf);
+	}
 
 	return status;
 }
@@ -3351,43 +3414,31 @@ static int
 _retrieve(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	LV2_State_Retrieve_Function retrieve = lua_touserdata(L, lua_upvalueindex(2));
-	LV2_State_Handle state = lua_touserdata(L, lua_upvalueindex(3));
+	const uint32_t size = lua_tointeger(L, lua_upvalueindex(2));
+	const LV2_Atom_Object_Body *body = lua_touserdata(L, lua_upvalueindex(3));
 
-	size_t size;
-	uint32_t type;
-	uint32_t flags;
 	const LV2_URID property = luaL_checkinteger(L, 1);
+	const LV2_Atom *value = NULL;
 
-	const void *value = retrieve(state, property, &size, &type, &flags);
-	if(value)
+	if(lv2_atom_object_body_get(size, body, property, &value, 0) == 1)
 	{
-		if(size == 4)
-		{
-			if(type == moony->forge.Int)
-				lua_pushinteger(L, *(const int32_t *)value);
-			else if(type == moony->forge.Float)
-				lua_pushnumber(L, *(const float *)value);
-			else if(type == moony->forge.Bool)
-				lua_pushboolean(L, *(const int32_t *)value);
-			else if(type == moony->forge.URID)
-				lua_pushinteger(L, *(const uint32_t *)value);
-		}
-		else if(size == 8)
-		{
-			if(type == moony->forge.Long)
-				lua_pushinteger(L, *(const int64_t *)value);
-			else if(type == moony->forge.Double)
-				lua_pushnumber(L, *(const double *)value);
-		}
-		else
-		{
-			if(type == moony->forge.String)
-				lua_pushlstring(L, value, size);
-			else if(type == moony->forge.URI)
-				lua_pushlstring(L, value, size);
-			//FIXME path
-		}
+		if(value->type == moony->forge.Int)
+			lua_pushinteger(L, ((const LV2_Atom_Int *)value)->body);
+		else if(value->type == moony->forge.Float)
+			lua_pushnumber(L, ((const LV2_Atom_Float *)value)->body);
+		else if(value->type == moony->forge.Bool)
+			lua_pushboolean(L, ((const LV2_Atom_Bool *)value)->body);
+		else if(value->type == moony->forge.URID)
+			lua_pushinteger(L, ((const LV2_Atom_URID *)value)->body);
+		else if(value->type == moony->forge.Long)
+			lua_pushinteger(L, ((const LV2_Atom_Long *)value)->body);
+		else if(value->type == moony->forge.Double)
+			lua_pushnumber(L, ((const LV2_Atom_Double *)value)->body);
+		else if(value->type == moony->forge.String)
+			lua_pushlstring(L, LV2_ATOM_BODY_CONST(value), value->size);
+		else if(value->type == moony->forge.URI)
+			lua_pushlstring(L, LV2_ATOM_BODY_CONST(value), value->size);
+		//FIXME path
 	}
 	else
 		lua_pushnil(L);
@@ -3399,15 +3450,15 @@ static int
 _restore(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	LV2_State_Retrieve_Function retrieve = lua_touserdata(L, lua_upvalueindex(2));
-	LV2_State_Handle state = lua_touserdata(L, lua_upvalueindex(3));
+	const uint32_t size = lua_tointeger(L, lua_upvalueindex(2));
+	const LV2_Atom_Object_Body *body = lua_touserdata(L, lua_upvalueindex(3));
 
 	lua_getglobal(L, "restore");
 	if(lua_isfunction(L, -1))
 	{
 		lua_pushlightuserdata(L, moony);
-		lua_pushlightuserdata(L, retrieve);
-		lua_pushlightuserdata(L, state);
+		lua_pushinteger(L, size);
+		lua_pushlightuserdata(L, (void *)body);
 		lua_pushcclosure(L, _retrieve, 3);
 		lua_call(L, 1, 0);
 	}
@@ -3426,6 +3477,7 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 	size_t size;
 	uint32_t type;
 	uint32_t flags2;
+
 	const char *chunk = retrieve(
 		state,
 		moony->uris.moony_code,
@@ -3438,9 +3490,9 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 
 	if(chunk && size && type)
 	{
-		//_spin_lock(moony);
+		//_spin_lock(&moony->lock);
 		strncpy(moony->chunk, chunk, size);
-		//_spin_unlock(moony);
+		//_unlock(&moony->lock);
 
 		if(luaL_dostring(L, moony->chunk))
 		{
@@ -3455,14 +3507,25 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 		moony->dirty_out = 1;
 	}
 
-	// restore Lua defined properties
-	lua_pushlightuserdata(L, moony);
-	lua_pushlightuserdata(L, retrieve);
-	lua_pushlightuserdata(L, state);
-	lua_pushcclosure(L, _restore, 3);
-	if(lua_pcall(L, 0, 0, 0))
-		moony_error(moony);
-	lua_gc(L, LUA_GCSTEP, 0);
+	const LV2_Atom_Object_Body *body = retrieve(
+		state,
+		moony->uris.moony_state,
+		&size,
+		&type,
+		&flags2
+	);
+
+	if(body && (type == moony->forge.Object) )
+	{
+		// restore Lua defined properties
+		lua_pushlightuserdata(L, moony);
+		lua_pushinteger(L, size);
+		lua_pushlightuserdata(L, (void *)body);
+		lua_pushcclosure(L, _restore, 3);
+		if(lua_pcall(L, 0, 0, 0))
+			moony_error(moony);
+		lua_gc(L, LUA_GCSTEP, 0);
+	}
 
 	return LV2_STATE_SUCCESS;
 }
@@ -3583,7 +3646,7 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *seq, uint32_t frames)
 
 	if(moony->dirty_out)
 	{
-		_spin_lock(moony);
+		_spin_lock(&moony->lock);
 
 		uint32_t len = strlen(moony->chunk);
 		LV2_Atom_Forge_Frame obj_frame;
@@ -3598,7 +3661,7 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *seq, uint32_t frames)
 		if(ref)
 			lv2_atom_forge_pop(forge, &obj_frame);
 
-		_spin_unlock(moony);
+		_unlock(&moony->lock);
 
 		moony->dirty_out = 0; // reset flag
 	}
