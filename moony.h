@@ -183,6 +183,14 @@ struct _moony_t {
 		LV2_URID patch_add;
 		LV2_URID patch_remove;
 		LV2_URID patch_wildcard;
+		LV2_URID patch_writable;
+		LV2_URID patch_readable;
+
+		LV2_URID rdfs_label;
+		LV2_URID rdfs_range;
+
+		LV2_URID core_minimum;
+		LV2_URID core_maximum;
 	} uris;
 
 	struct {

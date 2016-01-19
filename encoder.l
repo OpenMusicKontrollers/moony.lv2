@@ -449,8 +449,6 @@ checkKw(char*s)
 			CHECK(Patch.value, NUMBER);
 			CHECK(Patch.wildcard, NUMBER);
 			CHECK(Patch.writable, NUMBER);
-
-			CHECK(PatchResponder, CALLER);
 			break;
 		case 'r':
 			CHECK(repeat, REPEAT);
@@ -462,6 +460,7 @@ checkKw(char*s)
 			CHECK(require, CALLER);
 			
 			CHECK(run, CALLER); // lua.lv2 specific
+			CHECK(restore, CALLER); // lua.lv2 specific
 			break;
 		case 'R':
 			CHECK(RDF.value, NUMBER);
@@ -489,6 +488,10 @@ checkKw(char*s)
 
 			CHECK(select, CALLER);
 			CHECK(setmetatable, CALLER);
+			CHECK(save, CALLER); // lua.lv2 specific
+			break;
+		case 'S':
+			CHECK(StateResponder, CALLER);
 			break;
 		case 't':
 			CHECK(then, THEN);

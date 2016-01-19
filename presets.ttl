@@ -231,3 +231,55 @@ function run(n, seq, forge)
   end
 end"""
 	] .
+
+moony:template-state_responder
+	state:state [
+		<http://open-music-kontrollers.ch/lv2/moony#code> """prefix = 'http://open-music-kontrollers.ch/lv2/moony#a1xa1'
+urid = {
+  alpha = Map[prefix .. '#alpha'],
+  beta = Map[prefix .. '#beta']
+}
+
+alpha = {
+  label = 'Alpha',
+  access = Patch.writable,
+  range = Atom.Int,
+  minimum = 0,
+  maximum = 10,
+  value = 5
+}
+
+beta = {
+  label = 'Beta',
+  access = Patch.readable,
+  range = Atom.String,
+  value = 'Moony rocks!'
+}
+
+state = StateResponder:new({
+  [urid.alpha] = alpha,
+  [urid.beta] = beta
+})
+
+function save(store)
+  for k, v in pairs(state) do
+		if v.access == Patch.writable then
+			store(k, v.range, v.value)
+		end
+  end
+end
+
+function restore(retrieve)
+  for k, v in pairs(state) do
+		if v.access == Patch.writable then
+	    v.value = retrieve(k)
+		end
+  end
+end
+
+function run(n, seq, forge)
+  for frames, atom in seq:foreach() do
+    state(frames, forge, atom)
+  end
+end""" 
+	] .

@@ -1150,3 +1150,9 @@ moony:template-atom_multiplex4
 	lv2:appliesTo moony:a4xa4 ;
 	rdfs:label "Multiplex" ;
 	rdfs:seeAlso <presets.ttl> .
+
+moony:template-state_responder
+	a pset:Preset ;
+	lv2:appliesTo moony:a1xa1 ;
+	rdfs:label "State responder" ;
+	rdfs:seeAlso <presets.ttl> .
