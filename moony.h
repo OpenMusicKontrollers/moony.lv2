@@ -224,8 +224,11 @@ struct _moony_t {
 	// OSCResponder
 	int osc_responder_handled;
 
-	atomic_flag lock;
-	atomic_flag state;
+	struct {
+		atomic_flag chunk;
+		atomic_flag error;
+		atomic_flag state;
+	} lock;
 };
 
 struct _lseq_t {
@@ -269,8 +272,17 @@ moony_bypass(moony_t *moony)
 }
 
 static inline void
-moony_err(moony_t *moony, const char *err)
+moony_err(moony_t *moony, const char *msg)
 {
+	const char *error = msg;
+	const char *err = strstr(error, "\"]:"); // search end mark of header [string ""]:
+	err = err
+		? err + 3 // skip header end mark
+		: error; // use whole error string alternatively
+
+	if(moony->log)
+		lv2_log_trace(&moony->logger, "%s", err);
+
 	strcpy(moony->error, err);
 
 	moony->error_out = 1;
@@ -281,10 +293,10 @@ moony_error(moony_t *moony)
 {
 	lua_State *L = moony->vm.L;
 
-	strcpy(moony->error, lua_tostring(L, -1));
+	const char *msg = lua_tostring(L, -1);
+	if(msg)
+		moony_err(moony, msg);
 	lua_pop(L, 1);
-
-	moony->error_out = 1;
 }
 
 // strdup fallback for windows

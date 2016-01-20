@@ -146,7 +146,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 	lv2_atom_forge_sequence_head(&handle->forge, &frame, 0);
 
 	// run
-	if(!moony_bypass(&handle->moony) && _try_lock(&handle->moony.state))
+	if(!moony_bypass(&handle->moony) && _try_lock(&handle->moony.lock.state))
 	{
 		lua_pushlightuserdata(L, handle);
 		lua_pushcclosure(L, _run, 1);
@@ -156,7 +156,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 		moony_freeuserdata(&handle->moony);
 		lua_gc(L, LUA_GCSTEP, 0);
 
-		_unlock(&handle->moony.state);
+		_unlock(&handle->moony.lock.state);
 	}
 
 	if(&frame != handle->forge.stack) // intercept assert

@@ -935,12 +935,7 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 			}
 			else if(msg->prop.key == ui->uris.moony_error)
 			{
-				const char *error = msg->body;
-				const char *err = strstr(error, "\"]:"); // search end mark of header [string ""]:
-				err = err
-					? err + 3 // skip header end mark
-					: error; // use whole error string alternatively
-				elm_object_text_set(ui->error, err);
+				elm_object_text_set(ui->error, msg->body);
 				evas_object_show(ui->message);
 			}
 		}

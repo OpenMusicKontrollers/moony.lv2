@@ -3096,8 +3096,9 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 
 	moony->dirty_out = 1; // trigger update of UI
 
-	atomic_flag_clear_explicit(&moony->lock, memory_order_relaxed);
-	atomic_flag_clear_explicit(&moony->state, memory_order_relaxed);
+	atomic_flag_clear_explicit(&moony->lock.chunk, memory_order_relaxed);
+	atomic_flag_clear_explicit(&moony->lock.error, memory_order_relaxed);
+	atomic_flag_clear_explicit(&moony->lock.state, memory_order_relaxed);
 
 	return 0;
 }
@@ -3441,16 +3442,13 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *seq)
 			{
 				if(luaL_dostring(L, msg->body)) // failed loading chunk
 				{
-					strcpy(moony->error, lua_tostring(L, -1));
-					lua_pop(L, 1);
-
-					moony->error_out = 1;
+					moony_error(moony);
 				}
 				else // succeeded loading chunk
 				{
-					_spin_lock(&moony->lock);
+					_spin_lock(&moony->lock.chunk);
 					strncpy(moony->chunk, msg->body, msg->prop.value.size);
-					_unlock(&moony->lock);
+					_unlock(&moony->lock.chunk);
 
 					moony->error[0] = 0x0; // reset error flag
 				}
@@ -3603,9 +3601,9 @@ _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 	LV2_State_Status status = LV2_STATE_SUCCESS;
 	char *chunk = NULL;
 
-	_spin_lock(&moony->lock);
+	_spin_lock(&moony->lock.chunk);
 	chunk = strdup(moony->chunk);
-	_unlock(&moony->lock);
+	_unlock(&moony->lock.chunk);
 
 	if(chunk)
 	{
@@ -3634,17 +3632,20 @@ _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 		lv2_atom_forge_object(forge, &frame, 0, 0);
 
 		// lock Lua state, so it cannot be accessed by realtime thread
-		_spin_lock(&moony->state);
+		_spin_lock(&moony->lock.state);
 
 		// restore Lua defined properties
 		lua_State *L = moony->vm.L;
 		lua_pushlightuserdata(L, forge);
 		lua_pushcclosure(L, _save, 1);
 		if(lua_pcall(L, 0, 0, 0))
-			moony_error(moony);
-		//lua_gc(L, LUA_GCSTEP, 0);
+		{
+			if(moony->log) //TODO send to UI, too
+				lv2_log_error(&moony->logger, "%s", lua_tostring(L, -1));
+			lua_pop(L, 1);
+		}
 
-		_unlock(&moony->state);
+		_unlock(&moony->lock.state);
 
 		lv2_atom_forge_pop(forge, &frame);
 
@@ -3743,17 +3744,12 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 
 	if(chunk && size && type)
 	{
-		//_spin_lock(&moony->lock);
+		//_spin_lock(&moony->lock.chunk);
 		strncpy(moony->chunk, chunk, size);
-		//_unlock(&moony->lock);
+		//_unlock(&moony->lock.chunk);
 
 		if(luaL_dostring(L, moony->chunk))
-		{
-			strcpy(moony->error, lua_tostring(L, -1));
-			lua_pop(L, 1);
-
-			moony->error_out = 1;
-		}
+			moony_error(moony);
 		else
 			moony->error[0] = 0x0; // reset error flag
 
@@ -3777,10 +3773,10 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 		lua_pushcclosure(L, _restore, 3);
 		if(lua_pcall(L, 0, 0, 0))
 		{
-			fprintf(stderr, "err: %s\n", lua_tostring(L, -1));
+			if(moony->log) //TODO send to UI, too
+				lv2_log_error(&moony->logger, "%s", lua_tostring(L, -1));
 			lua_pop(L, 1);
-		} //FIXME aldo state save, of course
-			//moony_error(moony);
+		}
 		lua_gc(L, LUA_GCSTEP, 0);
 	}
 
@@ -3903,7 +3899,7 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *seq, uint32_t frames)
 
 	if(moony->dirty_out)
 	{
-		_spin_lock(&moony->lock);
+		_spin_lock(&moony->lock.chunk);
 
 		uint32_t len = strlen(moony->chunk);
 		LV2_Atom_Forge_Frame obj_frame;
@@ -3918,7 +3914,7 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *seq, uint32_t frames)
 		if(ref)
 			lv2_atom_forge_pop(forge, &obj_frame);
 
-		_unlock(&moony->lock);
+		_unlock(&moony->lock.chunk);
 
 		moony->dirty_out = 0; // reset flag
 	}
