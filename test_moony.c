@@ -35,6 +35,7 @@ struct _handle_t {
 	LV2_Atom_Forge forge;
 
 	uint8_t buf [8192] __attribute__((aligned(8)));
+	uint8_t buf2 [8192] __attribute__((aligned(8)));
 };
 
 static int
@@ -70,15 +71,26 @@ _test(lua_State *L)
 		lv2_atom_forge_pop(forge, &frame);
 
 	// consume events
+	lv2_atom_forge_set_buffer(forge, handle->buf2, BUF_SIZE);
+	lv2_atom_forge_sequence_head(forge, &frame, 0);
 	{
 		lua_pushvalue(L, 2); // consumer
 
 		lseq_t *lseq = moony_newuserdata(L, &handle->moony, MOONY_UDATA_SEQ);
 		lseq->seq = (const LV2_Atom_Sequence *)handle->buf;
 		lseq->itr = NULL;
+		
+		lforge_t *lframe = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE);
+		lframe->depth = 0;
+		lframe->last.frames = 0;
+		lframe->forge = forge;
 			
-		lua_call(L, 1, 0);
+		lua_call(L, 2, 0);
 	}
+	if(&frame != forge->stack)
+		fprintf(stderr, "forge frame mismatch\n");
+	else
+		lv2_atom_forge_pop(forge, &frame);
 
 	return 0;
 }

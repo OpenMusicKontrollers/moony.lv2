@@ -1209,3 +1209,70 @@ do
 
 	test(producer, consumer)
 end
+
+-- StateResponder
+print('[test] StateResponder')
+do
+	prefix = 'http://open-music-kontrollers.ch/lv2/moony#test'
+	local urid = {
+		subject = Map[prefix],
+		int = Map[prefix .. '#int'],
+		flt = Map[prefix .. '#flt']
+	}
+
+	local function producer(forge)
+		forge:frame_time(0):get(urid.subject, urid.int)
+		forge:frame_time(1):set(urid.subject, urid.int):typed(Atom.Int, 2):pop()
+
+		forge:frame_time(2):get(urid.subject, urid.flt)
+		forge:frame_time(3):set(urid.subject, urid.flt):typed(Atom.Float, 2.0):pop()
+	end
+
+	local flt_get_responded = false
+	local flt_set_responded = false
+
+	local state_int = {
+		label = 'Int',
+		access = Patch.writable,
+		range = Atom.Int,
+		minimum = 0,
+		maximum = 10,
+		value = 1
+	}
+
+	local state_flt = {
+		label = 'Flt',
+		access = Patch.writable,
+		range = Atom.Float,
+		minimum = -0.5,
+		maximum = 10.0,
+		_value = 1.0,
+		[Patch.Get] = function(self, frames, forge)
+			flt_get_responded = true
+			return self._value
+		end,
+		[Patch.Set] = function(self, frames, forge, value)
+			flt_set_responded = true
+			self._value = value
+		end
+	}
+
+	local state = StateResponder:new({
+		[urid.int] = state_int,
+		[urid.flt] = state_flt
+	})
+
+	local function consumer(seq, forge)
+		for frames, atom in seq:foreach() do
+			assert(state(frames, forge, atom) == true)
+		end
+
+		assert(state[urid.int].value == 2)
+		assert(state[urid.flt].value == nil)
+		assert(state[urid.flt]._value == 2.0)
+		assert(flt_get_responded)
+		assert(flt_set_responded)
+	end
+
+	test(producer, consumer)
+end

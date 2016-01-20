@@ -2721,7 +2721,7 @@ _lstateresponder__call(lua_State *L)
 	int64_t frames = luaL_checkinteger(L, 2);
 	lforge_t *lforge = luaL_checkudata(L, 3, "lforge");
 	lobj_t *lobj = luaL_checkudata(L, 4, "lobj");
-	lua_pop(L, 3); // frames, forge, atom
+	lua_pop(L, 1); // atom
 
 	if(lobj->obj->body.otype == moony->uris.patch_get)
 	{
@@ -2881,12 +2881,24 @@ _lstateresponder__call(lua_State *L)
 						lv2_atom_forge_key(lforge->forge, moony->uris.patch_property);
 						lv2_atom_forge_urid(lforge->forge, property->body);
 
-						if(lua_getfield(L, -1, "value") != LUA_TNIL)
+						if(lua_geti(L, -1, moony->uris.patch_get) != LUA_TNIL)
+						{
+							lua_pushvalue(L, -2); // self[property]
+							lua_pushvalue(L, 2); // frames
+							lua_pushvalue(L, 3); // forge
+							lua_call(L, 3, 1);
+						}
+						else
+						{
+							lua_pop(L, 1); // nil
+							lua_getfield(L, -1, "value");
+						}
+
+						if(!lua_isnil(L, -1))
 						{
 							lv2_atom_forge_key(lforge->forge, moony->uris.patch_value);
 							_lforge_explicit(L, -1, lforge->forge, range);
 						}
-						lua_pop(L, 1); // value
 					}
 					lv2_atom_forge_pop(lforge->forge, &obj_frame);
 
@@ -2918,8 +2930,20 @@ _lstateresponder__call(lua_State *L)
 				lua_gettable(L, 1); // self[property]
 				if(!lua_isnil(L, -1))
 				{
-					_latom_value(L, value);
-					lua_setfield(L, -2, "value"); // self[property].value = value
+					if(lua_geti(L, -1, moony->uris.patch_set) != LUA_TNIL)
+					{
+						lua_pushvalue(L, -2); // self[property]
+						lua_pushvalue(L, 2); // frames
+						lua_pushvalue(L, 3); // forge
+						_latom_value(L, value);
+						lua_call(L, 4, 0);
+					}
+					else
+					{
+						lua_pop(L, 1); // nil
+						_latom_value(L, value);
+						lua_setfield(L, -2, "value"); // self[property].value = value
+					}
 
 					lua_pushboolean(L, 1); // success
 					return 1;
