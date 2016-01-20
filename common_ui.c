@@ -856,8 +856,8 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	eo_ui_t *eoui = &ui->eoui;
 	eoui->driver = driver;
 	eoui->content_get = _content_get;
-	eoui->w = 720,
-	eoui->h = 480;
+	eoui->w = 640,
+	eoui->h = 720;
 
 	ui->write_function = write_function;
 	ui->controller = controller;
