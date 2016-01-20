@@ -344,14 +344,20 @@ do
 	local _vel = 0x7f
 	local note_on = {MIDI.NoteOn | _chan, _note, _vel}
 	local note_off = {MIDI.NoteOff | _chan, _note, _vel}
+	local start = {MIDI.Start, 0x1}
+	local stop = {MIDI.Stop, 0x2}
 
 	local function producer(forge)
 		forge:frame_time(0):midi(note_on)
 		forge:frame_time(1):midi(note_off)
+		forge:frame_time(2):midi(start)
+		forge:frame_time(3):midi(stop)
 	end
 
 	local note_on_responder = false
 	local note_off_responder = false
+	local note_start_responder = false
+	local note_stop_responder = false
 
 	local midi_responder = MIDIResponder:new({
 		[MIDI.NoteOn] = function(self, frames, forge, chan, note, vel)
@@ -369,6 +375,20 @@ do
 			assert(vel == _vel)
 			note_off_responded = true
 			return true
+		end,
+		[MIDI.Start] = function(self, frames, forge, chan, dat1)
+			assert(frames == 2)
+			assert(chan == nil)
+			assert(dat1 == 0x1)
+			note_start_responded = true
+			return true
+		end,
+		[MIDI.Stop] = function(self, frames, forge, chan, dat1)
+			assert(frames == 3)
+			assert(chan == nil)
+			assert(dat1 == 0x2)
+			note_stop_responded = true
+			return true
 		end
 	})
 
@@ -379,6 +399,8 @@ do
 
 		assert(note_on_responded)
 		assert(note_off_responded)
+		assert(note_start_responded)
+		assert(note_stop_responded)
 	end
 
 	test(producer, consumer)

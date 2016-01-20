@@ -2230,13 +2230,18 @@ _lmidiresponder__call(lua_State *L)
 	{
 		const uint8_t *midi = LV2_ATOM_BODY_CONST(lchunk->atom);
 		const uint8_t status = midi[0];
+		const uint8_t command = status & 0xf0;
+		const bool is_system = command == 0xf0;
 
-		lua_pushinteger(L, status & 0xf0);
+		lua_pushinteger(L, is_system ? status : command);
 		lua_gettable(L, 1);
 		if(!lua_isnil(L, -1))
 		{
 			lua_insert(L, 1);
-			lua_pushinteger(L, status & 0x0f); // 4: channel
+			if(is_system)
+				lua_pushnil(L); // system messages have no channel
+			else
+				lua_pushinteger(L, status & 0x0f); // 4: channel
 
 			for(unsigned i=1; i<lchunk->atom->size; i++)
 				lua_pushinteger(L, midi[i]);
