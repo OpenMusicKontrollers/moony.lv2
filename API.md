@@ -656,10 +656,12 @@ end
 
 ``` lua
 osc_responder = OSCResponder:new({
-	['/ping'] = function(self, frames, forge, fmt, ...)
-		--
-		return true -- handled
-	end
+	root = {
+		ping = function(self, frames, forge, fmt, ...)
+			--
+			return true -- handled
+		end
+	}
 })
 
 function run(n, seq, forge)
@@ -672,7 +674,7 @@ end
 #### TimeResponder
 
 ``` lua
-time_responder = OSCResponder:new({
+time_responder = TimeResponder:new({
 	[Time.barBeat] = function(self, frames, forge, bar_beat)
 		--
 	end,

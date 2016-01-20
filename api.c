@@ -2294,6 +2294,27 @@ static const luaL_Reg lmidiresponder_mt [] = {
 };
 
 static void
+_walk(lua_State *L, const char *path, int indent)
+{
+	//TODO handle wildcard '*', e.g. iterate over elements
+	const char *stop = strchr(path, '/');
+	if(stop)
+	{
+		lua_pushlstring(L, path, stop-path);
+		const int type = lua_gettable(L, -2);
+		lua_remove(L, -2); // remove parent
+
+		if(type != LUA_TNIL)
+			_walk(L, stop+1, indent+1);
+	}
+	else
+	{
+		lua_getfield(L, -1, path);
+		lua_remove(L, -2); // remove parent
+	}
+}
+
+static void
 _loscresponder_msg(const char *path, const char *fmt, const LV2_Atom_Tuple *args,
 	void *data)
 {
@@ -2306,8 +2327,15 @@ _loscresponder_msg(const char *path, const char *fmt, const LV2_Atom_Tuple *args
 	// 2: frames
 	// 3: data
 
-	lua_pushstring(L, path);
-	lua_gettable(L, 1);
+	const char *stop = strchr(path, '/');
+	if(stop)
+	{
+		if(lua_getfield(L, 1, "root") != LUA_TNIL)
+			_walk(L, stop+1, 0);
+	}
+	else
+		lua_pushnil(L); // invalid path
+
 	if(!lua_isnil(L, -1))
 	{
 		lua_pushvalue(L, 1); // self

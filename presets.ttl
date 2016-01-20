@@ -215,14 +215,16 @@ end"""
 moony:template-osc_responder
 	state:state [
 		moony:code """osc_responder = OSCResponder:new({
-  ['/ping'] = function(self, frames, forge, fmt, ...)
-    forge:time(frames):message('/pong', fmt, ...)
-		return true -- handled
-  end,
-  ['/pong'] = function(self, frames, forge, fmt, ...)
-    forge:time(frames):message('/ping', fmt, ...)
-		return true -- handled
-  end
+  root = {
+    ping = function(self, frames, forge, fmt, ...)
+      forge:time(frames):message('/pong', fmt, ...)
+      return true -- handled
+    end,
+    pong = function(self, frames, forge, fmt, ...)
+      forge:time(frames):message('/ping', fmt, ...)
+      return true -- handled
+    end
+  }
 })
 
 function run(n, seq, forge)

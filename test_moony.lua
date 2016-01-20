@@ -774,26 +774,41 @@ do
 	local function producer(forge)
 		forge:frame_time(0):message('/ping', 'i', 13)
 		forge:frame_time(1):bundle(0):message('/pong', 's', 'world'):pop()
+		forge:frame_time(2):message('/one/two/three', 'd', 12.3)
 	end
 
 	local ping_responded = false
 	local pong_responded = false
+	local complex_responded = false
 
 	local osc_responder = OSCResponder:new({
-		['/ping'] = function(self, frames, forge, fmt, i)
-			assert(frames == 0)
-			assert(fmt == 'i')
-			assert(i == 13)
-			ping_responded = true
-			return true
-		end,
-		['/pong'] = function(self, frames, forge, fmt, s)
-			assert(frames == 1)
-			assert(fmt == 's')
-			assert(s == 'world')
-			pong_responded = true
-			return true
-		end
+		root = {
+			ping = function(self, frames, forge, fmt, i)
+				assert(frames == 0)
+				assert(fmt == 'i')
+				assert(i == 13)
+				ping_responded = true
+				return true
+			end,
+			pong = function(self, frames, forge, fmt, s)
+				assert(frames == 1)
+				assert(fmt == 's')
+				assert(s == 'world')
+				pong_responded = true
+				return true
+			end,
+			one = {
+				two = {
+					three = function(self, frames, forge, fmt, d)
+						assert(frames == 2)
+						assert(fmt == 'd')
+						assert(d == 12.3)
+						complex_responded = true
+						return true
+					end
+				}
+			}
+		}
 	})
 
 	local function consumer(seq)
@@ -803,6 +818,7 @@ do
 
 		assert(ping_responded)
 		assert(pong_responded)
+		assert(complex_responded)
 	end
 
 	test(producer, consumer)
