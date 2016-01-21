@@ -2814,7 +2814,11 @@ _lstateresponder__call(lua_State *L)
 							lv2_atom_forge_key(lforge->forge, moony->uris.core_maximum);
 							lv2_atom_forge_urid(lforge->forge, moony->uris.patch_wildcard);
 
-							//TODO units, scale points
+							lv2_atom_forge_key(lforge->forge, moony->uris.units_unit);
+							lv2_atom_forge_urid(lforge->forge, moony->uris.patch_wildcard);
+
+							lv2_atom_forge_key(lforge->forge, moony->uris.core_scale_point);
+							lv2_atom_forge_urid(lforge->forge, moony->uris.patch_wildcard);
 						}
 						lv2_atom_forge_pop(lforge->forge, &rem_frame);
 
@@ -2841,7 +2845,41 @@ _lstateresponder__call(lua_State *L)
 							}
 							lua_pop(L, 1); // maximum
 
-							//TODO units, scale points
+							if(lua_getfield(L, -1, "unit") == LUA_TNUMBER)
+							{
+								const LV2_URID unit = lua_tointeger(L, -1);
+								lv2_atom_forge_key(lforge->forge, moony->uris.units_unit);
+								lv2_atom_forge_urid(lforge->forge, unit);
+							}
+							lua_pop(L, 1); // unit
+
+							if(lua_getfield(L, -1, "scale_points") != LUA_TNIL)
+							{
+								// iterate over properties
+								lua_pushnil(L);  // first key 
+								while(lua_next(L, -2))
+								{
+									// uses 'key' (at index -2) and 'value' (at index -1)
+									size_t point_size;
+									const char *point = luaL_checklstring(L, -2, &point_size);
+									LV2_Atom_Forge_Frame scale_point_frame;
+
+									lv2_atom_forge_key(lforge->forge, moony->uris.core_scale_point);
+									lv2_atom_forge_object(lforge->forge, &scale_point_frame, 0, 0);
+
+									lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_label);
+									lv2_atom_forge_string(lforge->forge, point, point_size);
+
+									lv2_atom_forge_key(lforge->forge, moony->uris.rdf_value);
+									_lforge_explicit(L, -1, lforge->forge, range);
+									
+									lv2_atom_forge_pop(lforge->forge, &scale_point_frame);
+
+									// removes 'value'; keeps 'key' for next iteration
+									lua_pop(L, 1);
+								}
+							}
+							lua_pop(L, 1); // scale_points
 						}
 						lv2_atom_forge_pop(lforge->forge, &add_frame);
 					}
@@ -3069,8 +3107,13 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->uris.rdfs_label = moony->map->map(moony->map->handle, RDFS__label);
 	moony->uris.rdfs_range = moony->map->map(moony->map->handle, RDFS__range);
 
+	moony->uris.rdf_value = moony->map->map(moony->map->handle, RDF__value);
+
 	moony->uris.core_minimum = moony->map->map(moony->map->handle, LV2_CORE__minimum);
 	moony->uris.core_maximum = moony->map->map(moony->map->handle, LV2_CORE__maximum);
+	moony->uris.core_scale_point = moony->map->map(moony->map->handle, LV2_CORE__scalePoint);
+
+	moony->uris.units_unit = moony->map->map(moony->map->handle, LV2_UNITS__unit);
 
 	osc_forge_init(&moony->oforge, moony->map);
 	lv2_atom_forge_init(&moony->forge, moony->map);
@@ -3310,6 +3353,43 @@ moony_open(moony_t *moony, lua_State *L)
 		SET_MAP(L, RDFS__, range);
 	}
 	lua_setglobal(L, "RDFS");
+
+	lua_newtable(L);
+	{
+		SET_MAP(L, LV2_UNITS__, Conversion);
+		SET_MAP(L, LV2_UNITS__, Unit);
+		SET_MAP(L, LV2_UNITS__, bar);
+		SET_MAP(L, LV2_UNITS__, beat);
+		SET_MAP(L, LV2_UNITS__, bpm);
+		SET_MAP(L, LV2_UNITS__, cent);
+		SET_MAP(L, LV2_UNITS__, cm);
+		SET_MAP(L, LV2_UNITS__, coef);
+		SET_MAP(L, LV2_UNITS__, conversion);
+		SET_MAP(L, LV2_UNITS__, db);
+		SET_MAP(L, LV2_UNITS__, degree);
+		SET_MAP(L, LV2_UNITS__, frame);
+		SET_MAP(L, LV2_UNITS__, hz);
+		SET_MAP(L, LV2_UNITS__, inch);
+		SET_MAP(L, LV2_UNITS__, khz);
+		SET_MAP(L, LV2_UNITS__, km);
+		SET_MAP(L, LV2_UNITS__, m);
+		SET_MAP(L, LV2_UNITS__, mhz);
+		SET_MAP(L, LV2_UNITS__, midiNote);
+		SET_MAP(L, LV2_UNITS__, mile);
+		SET_MAP(L, LV2_UNITS__, min);
+		SET_MAP(L, LV2_UNITS__, mm);
+		SET_MAP(L, LV2_UNITS__, ms);
+		SET_MAP(L, LV2_UNITS__, name);
+		SET_MAP(L, LV2_UNITS__, oct);
+		SET_MAP(L, LV2_UNITS__, pc);
+		SET_MAP(L, LV2_UNITS__, prefixConversion);
+		SET_MAP(L, LV2_UNITS__, render);
+		SET_MAP(L, LV2_UNITS__, s);
+		SET_MAP(L, LV2_UNITS__, semitone12TET);
+		SET_MAP(L, LV2_UNITS__, symbol);
+		SET_MAP(L, LV2_UNITS__, unit);
+	}
+	lua_setglobal(L, "Units");
 
 	lua_newtable(L);
 	{

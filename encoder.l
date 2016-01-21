@@ -534,6 +534,39 @@ checkKw(char*s)
 			break;
 		case 'U':	
 			CHECK(Unmap, CALLER);
+
+			CHECK(Units.Conversion, NUMBER);
+			CHECK(Units.Unit, NUMBER);
+			CHECK(Units.bar, NUMBER);
+			CHECK(Units.beat, NUMBER);
+			CHECK(Units.bpm, NUMBER);
+			CHECK(Units.cent, NUMBER);
+			CHECK(Units.cm, NUMBER);
+			CHECK(Units.coef, NUMBER);
+			CHECK(Units.conversion, NUMBER);
+			CHECK(Units.db, NUMBER);
+			CHECK(Units.degree, NUMBER);
+			CHECK(Units.frame, NUMBER);
+			CHECK(Units.hz, NUMBER);
+			CHECK(Units.inch, NUMBER);
+			CHECK(Units.khz, NUMBER);
+			CHECK(Units.km, NUMBER);
+			CHECK(Units.m, NUMBER);
+			CHECK(Units.mhz, NUMBER);
+			CHECK(Units.midiNote, NUMBER);
+			CHECK(Units.mile, NUMBER);
+			CHECK(Units.min, NUMBER);
+			CHECK(Units.mm, NUMBER);
+			CHECK(Units.ms, NUMBER);
+			CHECK(Units.name, NUMBER);
+			CHECK(Units.oct, NUMBER);
+			CHECK(Units.pc, NUMBER);
+			CHECK(Units.prefixConversion, NUMBER);
+			CHECK(Units.render, NUMBER);
+			CHECK(Units.s, NUMBER);
+			CHECK(Units.semitone12TET, NUMBER);
+			CHECK(Units.symbol, NUMBER);
+			CHECK(Units.unit, NUMBER);
 			break;
 		case 'w':
 			CHECK(while, WHILE);

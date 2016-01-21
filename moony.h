@@ -40,6 +40,7 @@
 #include <lv2/lv2plug.in/ns/ext/patch/patch.h>
 #include <lv2/lv2plug.in/ns/lv2core/lv2.h>
 #include <lv2/lv2plug.in/ns/extensions/ui/ui.h>
+#include <lv2/lv2plug.in/ns/extensions/units/units.h>
 
 #include <lv2_osc.h>
 
@@ -189,8 +190,13 @@ struct _moony_t {
 		LV2_URID rdfs_label;
 		LV2_URID rdfs_range;
 
+		LV2_URID rdf_value;
+
 		LV2_URID core_minimum;
 		LV2_URID core_maximum;
+		LV2_URID core_scale_point;
+
+		LV2_URID units_unit;
 	} uris;
 
 	struct {

@@ -239,7 +239,8 @@ moony:template-state_responder
 		<http://open-music-kontrollers.ch/lv2/moony#code> """prefix = 'http://open-music-kontrollers.ch/lv2/moony#a1xa1'
 urid = {
   alpha = Map[prefix .. '#alpha'],
-  beta = Map[prefix .. '#beta']
+  beta = Map[prefix .. '#beta'],
+  gamma = Map[prefix .. '#gamm']
 }
 
 alpha = {
@@ -248,6 +249,7 @@ alpha = {
   range = Atom.Int,
   minimum = 0,
   maximum = 10,
+	unit = Units.hz,
   value = 5
 }
 
@@ -258,9 +260,25 @@ beta = {
   value = 'Moony rocks!'
 }
 
+gamma = {
+  label = 'Gamma',
+  access = Patch.writable,
+  range = Atom.Double,
+  minimum = 0.0,
+  maximum = 2.0,
+  unit = Units.mm,
+  scale_points = {
+    zero = 0.0,
+		one = 1.0,
+		two = 2.0
+  },
+	value = 1.0
+}
+
 state = StateResponder:new({
   [urid.alpha] = alpha,
-  [urid.beta] = beta
+  [urid.beta] = beta,
+  [urid.gamma] = gamma
 })
 
 function save(store)
