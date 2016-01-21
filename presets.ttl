@@ -245,6 +245,7 @@ urid = {
 
 alpha = {
   label = 'Alpha',
+  comment = 'This is Alpha',
   access = Patch.writable,
   range = Atom.Int,
   minimum = 0,
@@ -255,6 +256,7 @@ alpha = {
 
 beta = {
   label = 'Beta',
+  comment = 'This is Beta',
   access = Patch.readable,
   range = Atom.String,
   value = 'Moony rocks!'
@@ -262,6 +264,7 @@ beta = {
 
 gamma = {
   label = 'Gamma',
+  comment = 'This is Gamma',
   access = Patch.writable,
   range = Atom.Double,
   minimum = 0.0,

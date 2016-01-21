@@ -189,6 +189,7 @@ struct _moony_t {
 
 		LV2_URID rdfs_label;
 		LV2_URID rdfs_range;
+		LV2_URID rdfs_comment;
 
 		LV2_URID rdf_value;
 

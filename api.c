@@ -41,6 +41,7 @@
 #define RDF__value RDF_PREFIX"value"
 #define RDFS__label RDFS_PREFIX"label"
 #define RDFS__range RDFS_PREFIX"range"
+#define RDFS__comment RDFS_PREFIX"comment"
 
 typedef struct _midi_msg_t midi_msg_t;
 typedef struct _lobj_t lobj_t;
@@ -2805,6 +2806,9 @@ _lstateresponder__call(lua_State *L)
 							lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_label);
 							lv2_atom_forge_urid(lforge->forge, moony->uris.patch_wildcard);
 
+							lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_comment);
+							lv2_atom_forge_urid(lforge->forge, moony->uris.patch_wildcard);
+
 							lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_range);
 							lv2_atom_forge_urid(lforge->forge, moony->uris.patch_wildcard);
 
@@ -2827,6 +2831,15 @@ _lstateresponder__call(lua_State *L)
 						{
 							lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_label);
 							lv2_atom_forge_string(lforge->forge, label, strlen(label));
+
+							if(lua_getfield(L, -1, "comment") == LUA_TSTRING)
+							{
+								size_t comment_size;
+								const char *comment = lua_tolstring(L, -1, &comment_size);
+								lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_comment);
+								lv2_atom_forge_string(lforge->forge, comment, comment_size);
+							}
+							lua_pop(L, 1); // comment
 
 							lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_range);
 							lv2_atom_forge_urid(lforge->forge, range);
@@ -3106,6 +3119,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 
 	moony->uris.rdfs_label = moony->map->map(moony->map->handle, RDFS__label);
 	moony->uris.rdfs_range = moony->map->map(moony->map->handle, RDFS__range);
+	moony->uris.rdfs_comment = moony->map->map(moony->map->handle, RDFS__comment);
 
 	moony->uris.rdf_value = moony->map->map(moony->map->handle, RDF__value);
 
