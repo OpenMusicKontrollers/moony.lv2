@@ -2474,8 +2474,16 @@ _loscresponder__call(lua_State *L)
 	// 3: data
 	// 4: atom
 	
-	lobj_t *lobj = luaL_checkudata(L, 4, "lobj");
+	lobj_t *lobj = NULL;
+	if(luaL_testudata(L, 4, "lobj"))
+		lobj = lua_touserdata(L, 4);
 	lua_pop(L, 1); // atom
+
+	if(!lobj) // not a valid atom, abort
+	{
+		lua_pushboolean(L, 0);
+		return 1;
+	}
 
 	moony->osc_responder_handled = 0;
 	osc_atom_event_unroll(&moony->oforge, lobj->obj, NULL, NULL, _loscresponder_msg, moony);
