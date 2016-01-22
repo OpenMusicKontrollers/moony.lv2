@@ -2598,9 +2598,10 @@ _ltimeresponder__call(lua_State *L)
 	lua_pop(L, 1); // atom
 
 	lua_getuservalue(L, 1); // 5: uservalue
-	timely_advance(timely, lobj ? lobj->obj : NULL, from, to);
+	const int handled = timely_advance(timely, lobj ? lobj->obj : NULL, from, to);
 
-	return 0;
+	lua_pushboolean(L, handled); // handled vs not handled
+	return 1;
 }
 
 static int
