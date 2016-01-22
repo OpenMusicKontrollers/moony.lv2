@@ -285,19 +285,11 @@ state = StateResponder:new({
 })
 
 function save(store)
-  for k, v in pairs(state) do
-		if v.access == Patch.writable then
-			store(k, v.range, v.value)
-		end
-  end
+	state:save(store)
 end
 
 function restore(retrieve)
-  for k, v in pairs(state) do
-		if v.access == Patch.writable then
-	    v.value = retrieve(k)
-		end
-  end
+	state:restore(retrieve)
 end
 
 function default(n, seq, forge)
@@ -308,8 +300,8 @@ end
 
 function once(n, seq, forge)
   state:register(0, forge)
-	default(n, seq, forge)
 	run = default
+	run(n, seq, forge)
 end
 
 run = once"""

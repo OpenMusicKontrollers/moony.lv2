@@ -3091,9 +3091,90 @@ _lstateresponder_reg(lua_State *L)
 	return 0;
 }
 
+static int
+_lstateresponder_save(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	lua_settop(L, 2); // discard superfluous arguments
+	// 1: self
+	// 2: store
+
+	// iterate over properties
+	lua_pushnil(L);  // first key 
+	while(lua_next(L, 1))
+	{
+		// uses 'key' (at index -2) and 'value' (at index -1)
+		const LV2_URID key = luaL_checkinteger(L, -2);
+
+		lua_getfield(L, -1, "access"); // prop.access
+		const LV2_URID access = luaL_checkinteger(L, -1);
+		lua_pop(L, 1); // access
+
+		if(access == moony->uris.patch_writable)
+		{
+			lua_getfield(L, -1, "range"); // prop.range
+			const LV2_URID range = luaL_checkinteger(L, -1);
+			lua_pop(L, 1); // range
+
+			lua_pushvalue(L, 2); // store
+			lua_pushinteger(L, key); // key
+			lua_pushinteger(L, range); // prop.range
+
+			//TODO check for "get"?
+			lua_getfield(L, -4, "value"); // prop.value
+			lua_call(L, 3, 0); // restore(key, prop.range, prop.value)
+		}
+
+		// removes 'value'; keeps 'key' for next iteration
+		lua_pop(L, 1);
+	}
+
+	return 0;
+}
+
+static int
+_lstateresponder_restore(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	lua_settop(L, 2); // discard superfluous arguments
+	// 1: self
+	// 2: retrieve
+
+	// iterate over properties
+	lua_pushnil(L);  // first key 
+	while(lua_next(L, 1))
+	{
+		// uses 'key' (at index -2) and 'value' (at index -1)
+		const LV2_URID key = luaL_checkinteger(L, -2);
+
+		lua_getfield(L, -1, "access"); // prop.access
+		const LV2_URID access = luaL_checkinteger(L, -1);
+		lua_pop(L, 1); // access
+
+		if(access == moony->uris.patch_writable)
+		{
+			lua_pushvalue(L, 2); // retrieve
+			lua_pushinteger(L, key); // key
+			lua_call(L, 1, 1); // retrieve(key)
+
+			//TODO check for "set"?
+			lua_setfield(L, -2, "value"); // prop.value = retrieve(key)
+		}
+
+		// removes 'value'; keeps 'key' for next iteration
+		lua_pop(L, 1);
+	}
+
+	return 0;
+}
+
 static const luaL_Reg lstateresponder_mt [] = {
 	{"new", _lstateresponder_new},
 	{"register", _lstateresponder_reg},
+	{"save", _lstateresponder_save},
+	{"restore", _lstateresponder_restore},
 	{NULL, NULL}
 };
 
