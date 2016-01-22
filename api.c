@@ -2708,6 +2708,173 @@ _lforge_explicit(lua_State *L, int idx, LV2_Atom_Forge *forge, LV2_URID range)
 	return lv2_atom_forge_atom(forge, 0, 0); // nil
 }
 
+static inline void
+_lstateresponder_register(lua_State *L, moony_t *moony, int64_t frames,
+	lforge_t *lforge, const LV2_Atom_URID *subject)
+{
+	// iterate over properties
+	lua_pushnil(L);  // first key 
+	while(lua_next(L, 1))
+	{
+		// uses 'key' (at index -2) and 'value' (at index -1)
+		const LV2_URID key = luaL_checkinteger(L, -2);
+
+		const char *label = "undefined"; // fallback
+		LV2_URID access = moony->uris.patch_writable; // fallback
+		LV2_URID range = moony->forge.Int; // fallback
+
+		if(lua_getfield(L, -1, "label") == LUA_TSTRING)
+			label = lua_tostring(L, -1);
+		lua_pop(L, 1); // label
+
+		if(lua_getfield(L, -1, "access") == LUA_TNUMBER)
+			access = lua_tointeger(L, -1);
+		lua_pop(L, 1); // access
+
+		if(lua_getfield(L, -1, "range") == LUA_TNUMBER)
+			range = lua_tointeger(L, -1);
+		lua_pop(L, 1); // range
+
+		LV2_Atom_Forge_Frame obj_frame;
+		LV2_Atom_Forge_Frame add_frame;
+		LV2_Atom_Forge_Frame rem_frame;
+
+		lv2_atom_forge_frame_time(lforge->forge, frames);
+		lv2_atom_forge_object(lforge->forge, &obj_frame, 0, moony->uris.patch_patch);
+		{
+			if(subject)
+			{
+				lv2_atom_forge_key(lforge->forge, moony->uris.patch_subject);
+				lv2_atom_forge_urid(lforge->forge, subject->body);
+			}
+
+			lv2_atom_forge_key(lforge->forge, moony->uris.patch_remove);
+			lv2_atom_forge_object(lforge->forge, &rem_frame, 0, 0);
+			{
+				lv2_atom_forge_key(lforge->forge, access);
+				lv2_atom_forge_urid(lforge->forge, key);
+			}
+			lv2_atom_forge_pop(lforge->forge, &rem_frame);
+
+			lv2_atom_forge_key(lforge->forge, moony->uris.patch_add);
+			lv2_atom_forge_object(lforge->forge, &add_frame, 0, 0);
+			{
+				lv2_atom_forge_key(lforge->forge, access);
+				lv2_atom_forge_urid(lforge->forge, key);
+			}
+			lv2_atom_forge_pop(lforge->forge, &add_frame);
+		}
+		lv2_atom_forge_pop(lforge->forge, &obj_frame);
+
+		lv2_atom_forge_frame_time(lforge->forge, frames);
+		lv2_atom_forge_object(lforge->forge, &obj_frame, 0, moony->uris.patch_patch);
+		{
+			lv2_atom_forge_key(lforge->forge, moony->uris.patch_subject);
+			lv2_atom_forge_urid(lforge->forge, key);
+
+			lv2_atom_forge_key(lforge->forge, moony->uris.patch_remove);
+			lv2_atom_forge_object(lforge->forge, &rem_frame, 0, 0);
+			{
+				lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_label);
+				lv2_atom_forge_urid(lforge->forge, moony->uris.patch_wildcard);
+
+				lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_comment);
+				lv2_atom_forge_urid(lforge->forge, moony->uris.patch_wildcard);
+
+				lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_range);
+				lv2_atom_forge_urid(lforge->forge, moony->uris.patch_wildcard);
+
+				lv2_atom_forge_key(lforge->forge, moony->uris.core_minimum);
+				lv2_atom_forge_urid(lforge->forge, moony->uris.patch_wildcard);
+
+				lv2_atom_forge_key(lforge->forge, moony->uris.core_maximum);
+				lv2_atom_forge_urid(lforge->forge, moony->uris.patch_wildcard);
+
+				lv2_atom_forge_key(lforge->forge, moony->uris.units_unit);
+				lv2_atom_forge_urid(lforge->forge, moony->uris.patch_wildcard);
+
+				lv2_atom_forge_key(lforge->forge, moony->uris.core_scale_point);
+				lv2_atom_forge_urid(lforge->forge, moony->uris.patch_wildcard);
+			}
+			lv2_atom_forge_pop(lforge->forge, &rem_frame);
+
+			lv2_atom_forge_key(lforge->forge, moony->uris.patch_add);
+			lv2_atom_forge_object(lforge->forge, &add_frame, 0, 0);
+			{
+				lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_label);
+				lv2_atom_forge_string(lforge->forge, label, strlen(label));
+
+				if(lua_getfield(L, -1, "comment") == LUA_TSTRING)
+				{
+					size_t comment_size;
+					const char *comment = lua_tolstring(L, -1, &comment_size);
+					lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_comment);
+					lv2_atom_forge_string(lforge->forge, comment, comment_size);
+				}
+				lua_pop(L, 1); // comment
+
+				lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_range);
+				lv2_atom_forge_urid(lforge->forge, range);
+
+				if(lua_getfield(L, -1, "minimum") != LUA_TNIL)
+				{
+					lv2_atom_forge_key(lforge->forge, moony->uris.core_minimum);
+					_lforge_explicit(L, -1, lforge->forge, range);
+				}
+				lua_pop(L, 1); // minimum
+
+				if(lua_getfield(L, -1, "maximum") != LUA_TNIL)
+				{
+					lv2_atom_forge_key(lforge->forge, moony->uris.core_maximum);
+					_lforge_explicit(L, -1, lforge->forge, range);
+				}
+				lua_pop(L, 1); // maximum
+
+				if(lua_getfield(L, -1, "unit") == LUA_TNUMBER)
+				{
+					const LV2_URID unit = lua_tointeger(L, -1);
+					lv2_atom_forge_key(lforge->forge, moony->uris.units_unit);
+					lv2_atom_forge_urid(lforge->forge, unit);
+				}
+				lua_pop(L, 1); // unit
+
+				if(lua_getfield(L, -1, "scale_points") != LUA_TNIL)
+				{
+					// iterate over properties
+					lua_pushnil(L);  // first key 
+					while(lua_next(L, -2))
+					{
+						// uses 'key' (at index -2) and 'value' (at index -1)
+						size_t point_size;
+						const char *point = luaL_checklstring(L, -2, &point_size);
+						LV2_Atom_Forge_Frame scale_point_frame;
+
+						lv2_atom_forge_key(lforge->forge, moony->uris.core_scale_point);
+						lv2_atom_forge_object(lforge->forge, &scale_point_frame, 0, 0);
+
+						lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_label);
+						lv2_atom_forge_string(lforge->forge, point, point_size);
+
+						lv2_atom_forge_key(lforge->forge, moony->uris.rdf_value);
+						_lforge_explicit(L, -1, lforge->forge, range);
+						
+						lv2_atom_forge_pop(lforge->forge, &scale_point_frame);
+
+						// removes 'value'; keeps 'key' for next iteration
+						lua_pop(L, 1);
+					}
+				}
+				lua_pop(L, 1); // scale_points
+			}
+			lv2_atom_forge_pop(lforge->forge, &add_frame);
+		}
+		lv2_atom_forge_pop(lforge->forge, &obj_frame);
+
+		// removes 'value'; keeps 'key' for next iteration
+		lua_pop(L, 1);
+	}
+}
+
 static int
 _lstateresponder__call(lua_State *L)
 {
@@ -2721,8 +2888,16 @@ _lstateresponder__call(lua_State *L)
 
 	int64_t frames = luaL_checkinteger(L, 2);
 	lforge_t *lforge = luaL_checkudata(L, 3, "lforge");
-	lobj_t *lobj = luaL_checkudata(L, 4, "lobj");
+	lobj_t *lobj = NULL;
+	if(luaL_testudata(L, 4, "lobj"))
+		lobj = lua_touserdata(L, 4);
 	lua_pop(L, 1); // atom
+
+	if(!lobj) // not a valid atom, abort
+	{
+		lua_pushboolean(L, 0);
+		return 1;
+	}
 
 	if(lobj->obj->body.otype == moony->uris.patch_get)
 	{
@@ -2740,167 +2915,8 @@ _lstateresponder__call(lua_State *L)
 		{
 			if(!property)
 			{
-				// iterate over properties
-				lua_pushnil(L);  // first key 
-				while(lua_next(L, 1))
-				{
-					// uses 'key' (at index -2) and 'value' (at index -1)
-					const LV2_URID key = luaL_checkinteger(L, -2);
-
-					const char *label = "undefined"; // fallback
-					LV2_URID access = moony->uris.patch_writable; // fallback
-					LV2_URID range = moony->forge.Int; // fallback
-
-					if(lua_getfield(L, -1, "label") == LUA_TSTRING)
-						label = lua_tostring(L, -1);
-					lua_pop(L, 1); // label
-
-					if(lua_getfield(L, -1, "access") == LUA_TNUMBER)
-						access = lua_tointeger(L, -1);
-					lua_pop(L, 1); // access
-
-					if(lua_getfield(L, -1, "range") == LUA_TNUMBER)
-						range = lua_tointeger(L, -1);
-					lua_pop(L, 1); // range
-
-					LV2_Atom_Forge_Frame obj_frame;
-					LV2_Atom_Forge_Frame add_frame;
-					LV2_Atom_Forge_Frame rem_frame;
-
-					lv2_atom_forge_frame_time(lforge->forge, frames);
-					lv2_atom_forge_object(lforge->forge, &obj_frame, 0, moony->uris.patch_patch);
-					{
-						if(subject)
-						{
-							lv2_atom_forge_key(lforge->forge, moony->uris.patch_subject);
-							lv2_atom_forge_urid(lforge->forge, subject->body);
-						}
-
-						lv2_atom_forge_key(lforge->forge, moony->uris.patch_remove);
-						lv2_atom_forge_object(lforge->forge, &rem_frame, 0, 0);
-						{
-							lv2_atom_forge_key(lforge->forge, access);
-							lv2_atom_forge_urid(lforge->forge, key);
-						}
-						lv2_atom_forge_pop(lforge->forge, &rem_frame);
-
-						lv2_atom_forge_key(lforge->forge, moony->uris.patch_add);
-						lv2_atom_forge_object(lforge->forge, &add_frame, 0, 0);
-						{
-							lv2_atom_forge_key(lforge->forge, access);
-							lv2_atom_forge_urid(lforge->forge, key);
-						}
-						lv2_atom_forge_pop(lforge->forge, &add_frame);
-					}
-					lv2_atom_forge_pop(lforge->forge, &obj_frame);
-
-					lv2_atom_forge_frame_time(lforge->forge, frames);
-					lv2_atom_forge_object(lforge->forge, &obj_frame, 0, moony->uris.patch_patch);
-					{
-						lv2_atom_forge_key(lforge->forge, moony->uris.patch_subject);
-						lv2_atom_forge_urid(lforge->forge, key);
-
-						lv2_atom_forge_key(lforge->forge, moony->uris.patch_remove);
-						lv2_atom_forge_object(lforge->forge, &rem_frame, 0, 0);
-						{
-							lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_label);
-							lv2_atom_forge_urid(lforge->forge, moony->uris.patch_wildcard);
-
-							lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_comment);
-							lv2_atom_forge_urid(lforge->forge, moony->uris.patch_wildcard);
-
-							lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_range);
-							lv2_atom_forge_urid(lforge->forge, moony->uris.patch_wildcard);
-
-							lv2_atom_forge_key(lforge->forge, moony->uris.core_minimum);
-							lv2_atom_forge_urid(lforge->forge, moony->uris.patch_wildcard);
-
-							lv2_atom_forge_key(lforge->forge, moony->uris.core_maximum);
-							lv2_atom_forge_urid(lforge->forge, moony->uris.patch_wildcard);
-
-							lv2_atom_forge_key(lforge->forge, moony->uris.units_unit);
-							lv2_atom_forge_urid(lforge->forge, moony->uris.patch_wildcard);
-
-							lv2_atom_forge_key(lforge->forge, moony->uris.core_scale_point);
-							lv2_atom_forge_urid(lforge->forge, moony->uris.patch_wildcard);
-						}
-						lv2_atom_forge_pop(lforge->forge, &rem_frame);
-
-						lv2_atom_forge_key(lforge->forge, moony->uris.patch_add);
-						lv2_atom_forge_object(lforge->forge, &add_frame, 0, 0);
-						{
-							lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_label);
-							lv2_atom_forge_string(lforge->forge, label, strlen(label));
-
-							if(lua_getfield(L, -1, "comment") == LUA_TSTRING)
-							{
-								size_t comment_size;
-								const char *comment = lua_tolstring(L, -1, &comment_size);
-								lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_comment);
-								lv2_atom_forge_string(lforge->forge, comment, comment_size);
-							}
-							lua_pop(L, 1); // comment
-
-							lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_range);
-							lv2_atom_forge_urid(lforge->forge, range);
-
-							if(lua_getfield(L, -1, "minimum") != LUA_TNIL)
-							{
-								lv2_atom_forge_key(lforge->forge, moony->uris.core_minimum);
-								_lforge_explicit(L, -1, lforge->forge, range);
-							}
-							lua_pop(L, 1); // minimum
-
-							if(lua_getfield(L, -1, "maximum") != LUA_TNIL)
-							{
-								lv2_atom_forge_key(lforge->forge, moony->uris.core_maximum);
-								_lforge_explicit(L, -1, lforge->forge, range);
-							}
-							lua_pop(L, 1); // maximum
-
-							if(lua_getfield(L, -1, "unit") == LUA_TNUMBER)
-							{
-								const LV2_URID unit = lua_tointeger(L, -1);
-								lv2_atom_forge_key(lforge->forge, moony->uris.units_unit);
-								lv2_atom_forge_urid(lforge->forge, unit);
-							}
-							lua_pop(L, 1); // unit
-
-							if(lua_getfield(L, -1, "scale_points") != LUA_TNIL)
-							{
-								// iterate over properties
-								lua_pushnil(L);  // first key 
-								while(lua_next(L, -2))
-								{
-									// uses 'key' (at index -2) and 'value' (at index -1)
-									size_t point_size;
-									const char *point = luaL_checklstring(L, -2, &point_size);
-									LV2_Atom_Forge_Frame scale_point_frame;
-
-									lv2_atom_forge_key(lforge->forge, moony->uris.core_scale_point);
-									lv2_atom_forge_object(lforge->forge, &scale_point_frame, 0, 0);
-
-									lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_label);
-									lv2_atom_forge_string(lforge->forge, point, point_size);
-
-									lv2_atom_forge_key(lforge->forge, moony->uris.rdf_value);
-									_lforge_explicit(L, -1, lforge->forge, range);
-									
-									lv2_atom_forge_pop(lforge->forge, &scale_point_frame);
-
-									// removes 'value'; keeps 'key' for next iteration
-									lua_pop(L, 1);
-								}
-							}
-							lua_pop(L, 1); // scale_points
-						}
-						lv2_atom_forge_pop(lforge->forge, &add_frame);
-					}
-					lv2_atom_forge_pop(lforge->forge, &obj_frame);
-
-					// removes 'value'; keeps 'key' for next iteration
-					lua_pop(L, 1);
-				}
+				// register state
+				_lstateresponder_register(L, moony, frames, lforge, subject);
 
 				lua_pushboolean(L, 1); // success
 				return 1;
@@ -3038,8 +3054,37 @@ _lstateresponder_new(lua_State *L)
 	return 1;
 }
 
+static int
+_lstateresponder_reg(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	lua_settop(L, 3); // discard superfluous arguments
+	// 1: self
+	// 2: frames
+	// 3: forge
+
+	int64_t frames = luaL_checkinteger(L, 2);
+	lforge_t *lforge = luaL_checkudata(L, 3, "lforge");
+
+	// fake subject
+	const LV2_Atom_URID subject = {
+		.atom = {
+			.size = sizeof(uint32_t),
+			.type = lforge->forge->URID
+		},
+		.body = moony->uris.subject
+	};
+
+	// register state
+	_lstateresponder_register(L, moony, frames, lforge, &subject);
+
+	return 0;
+}
+
 static const luaL_Reg lstateresponder_mt [] = {
 	{"new", _lstateresponder_new},
+	{"register", _lstateresponder_reg},
 	{NULL, NULL}
 };
 

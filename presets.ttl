@@ -300,9 +300,17 @@ function restore(retrieve)
   end
 end
 
-function run(n, seq, forge)
+function default(n, seq, forge)
   for frames, atom in seq:foreach() do
     state(frames, forge, atom)
   end
-end""" 
+end
+
+function once(n, seq, forge)
+  state:register(0, forge)
+	default(n, seq, forge)
+	run = default
+end
+
+run = once"""
 	] .
