@@ -2721,6 +2721,40 @@ static inline void
 _lstateresponder_register(lua_State *L, moony_t *moony, int64_t frames,
 	lforge_t *lforge, const LV2_Atom_URID *subject)
 {
+	LV2_Atom_Forge_Frame obj_frame;
+	LV2_Atom_Forge_Frame add_frame;
+	LV2_Atom_Forge_Frame rem_frame;
+
+	// clear all properties
+	if(  !lv2_atom_forge_frame_time(lforge->forge, frames)
+		|| !lv2_atom_forge_object(lforge->forge, &obj_frame, 0, moony->uris.patch_patch) )
+		luaL_error(L, forge_buffer_overflow);
+	{
+		if(subject)
+		{
+			if(  !lv2_atom_forge_key(lforge->forge, moony->uris.patch_subject)
+				|| !lv2_atom_forge_urid(lforge->forge, subject->body) )
+				luaL_error(L, forge_buffer_overflow);
+		}
+
+		if(  !lv2_atom_forge_key(lforge->forge, moony->uris.patch_remove)
+			|| !lv2_atom_forge_object(lforge->forge, &rem_frame, 0, 0)
+
+			|| !lv2_atom_forge_key(lforge->forge, moony->uris.patch_writable)
+			|| !lv2_atom_forge_urid(lforge->forge, moony->uris.patch_wildcard)
+
+			|| !lv2_atom_forge_key(lforge->forge, moony->uris.patch_readable)
+			|| !lv2_atom_forge_urid(lforge->forge, moony->uris.patch_wildcard) )
+			luaL_error(L, forge_buffer_overflow);
+		lv2_atom_forge_pop(lforge->forge, &rem_frame); // patch:remove
+
+		if(  !lv2_atom_forge_key(lforge->forge, moony->uris.patch_add)
+			|| !lv2_atom_forge_object(lforge->forge, &add_frame, 0, 0) )
+			luaL_error(L, forge_buffer_overflow);
+		lv2_atom_forge_pop(lforge->forge, &add_frame); // patch:add
+	}
+	lv2_atom_forge_pop(lforge->forge, &obj_frame); // patch:patch
+
 	// iterate over properties
 	lua_pushnil(L);  // first key 
 	while(lua_next(L, 1))
@@ -2743,10 +2777,6 @@ _lstateresponder_register(lua_State *L, moony_t *moony, int64_t frames,
 		if(lua_getfield(L, -1, "range") == LUA_TNUMBER)
 			range = lua_tointeger(L, -1);
 		lua_pop(L, 1); // range
-
-		LV2_Atom_Forge_Frame obj_frame;
-		LV2_Atom_Forge_Frame add_frame;
-		LV2_Atom_Forge_Frame rem_frame;
 
 		if(  !lv2_atom_forge_frame_time(lforge->forge, frames)
 		  || !lv2_atom_forge_object(lforge->forge, &obj_frame, 0, moony->uris.patch_patch) )
