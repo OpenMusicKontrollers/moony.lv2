@@ -3170,7 +3170,7 @@ _lstateresponder_save(lua_State *L)
 
 			//TODO check for "get"?
 			lua_getfield(L, -4, "value"); // prop.value
-			lua_call(L, 3, 0); // restore(key, prop.range, prop.value)
+			lua_call(L, 3, 0); // store(key, prop.range, prop.value)
 		}
 
 		// removes 'value'; keeps 'key' for next iteration
@@ -3207,7 +3207,10 @@ _lstateresponder_restore(lua_State *L)
 			lua_call(L, 1, 1); // retrieve(key)
 
 			//TODO check for "set"?
-			lua_setfield(L, -2, "value"); // prop.value = retrieve(key)
+			if(!lua_isnil(L, -1))
+				lua_setfield(L, -2, "value"); // prop.value = retrieve(key)
+			else
+				lua_pop(L, 1); // nil
 		}
 
 		// removes 'value'; keeps 'key' for next iteration
@@ -3346,6 +3349,9 @@ void
 moony_deinit(moony_t *moony)
 {
 	moony_vm_deinit(&moony->vm);
+
+	if(moony->state_obj)
+		free(moony->state_obj);
 }
 
 void
@@ -3701,6 +3707,9 @@ moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type)
 #undef UDATA_OFFSET
 }
 
+static int
+_restore(lua_State *L);
+
 void
 moony_in(moony_t *moony, const LV2_Atom_Sequence *seq)
 {
@@ -3727,6 +3736,15 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *seq)
 					_unlock(&moony->lock.chunk);
 
 					moony->error[0] = 0x0; // reset error flag
+
+					if(moony->state_obj)
+					{
+						// restore Lua defined properties
+						lua_pushlightuserdata(L, moony);
+						lua_pushcclosure(L, _restore, 1);
+						if(lua_pcall(L, 0, 0, 0))
+							moony_error(moony);
+					}
 				}
 			}
 			else
@@ -3934,7 +3952,9 @@ _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 				forge->Object,
 				LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
 
-		free(ser.buf);
+		if(moony->state_obj)
+			free(moony->state_obj);
+		moony->state_obj = obj;
 	}
 
 	return status;
@@ -3944,13 +3964,11 @@ static int
 _retrieve(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	const uint32_t size = lua_tointeger(L, lua_upvalueindex(2));
-	const LV2_Atom_Object_Body *body = lua_touserdata(L, lua_upvalueindex(3));
 
 	const LV2_URID property = luaL_checkinteger(L, 1);
 	const LV2_Atom *value = NULL;
 
-	if(lv2_atom_object_body_get(size, body, property, &value, 0) == 1)
+	if(lv2_atom_object_get(moony->state_obj, property, &value, 0) == 1)
 	{
 		if(value->type == moony->forge.Int)
 			lua_pushinteger(L, ((const LV2_Atom_Int *)value)->body);
@@ -3980,16 +3998,12 @@ static int
 _restore(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	const uint32_t size = lua_tointeger(L, lua_upvalueindex(2));
-	const LV2_Atom_Object_Body *body = lua_touserdata(L, lua_upvalueindex(3));
 
 	lua_getglobal(L, "restore");
 	if(lua_isfunction(L, -1))
 	{
 		lua_pushlightuserdata(L, moony);
-		lua_pushinteger(L, size);
-		lua_pushlightuserdata(L, (void *)body);
-		lua_pushcclosure(L, _retrieve, 3);
+		lua_pushcclosure(L, _retrieve, 1);
 		lua_call(L, 1, 0);
 	}
 	else
@@ -4042,18 +4056,28 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 
 	if(body && (type == moony->forge.Object) )
 	{
-		// restore Lua defined properties
-		lua_pushlightuserdata(L, moony);
-		lua_pushinteger(L, size);
-		lua_pushlightuserdata(L, (void *)body);
-		lua_pushcclosure(L, _restore, 3);
-		if(lua_pcall(L, 0, 0, 0))
+		if(moony->state_obj) // clear old state_obj
+			free(moony->state_obj);
+
+		// allocate new state_obj
+		moony->state_obj = malloc(sizeof(LV2_Atom) + size);
+		if(moony->state_obj) // fill new restore obj
 		{
-			if(moony->log) //TODO send to UI, too
-				lv2_log_error(&moony->logger, "%s", lua_tostring(L, -1));
-			lua_pop(L, 1);
+			moony->state_obj->atom.size = size;
+			moony->state_obj->atom.type = moony->forge.Object;
+			memcpy(&moony->state_obj->body, body, size);
+
+			// restore Lua defined properties
+			lua_pushlightuserdata(L, moony);
+			lua_pushcclosure(L, _restore, 1);
+			if(lua_pcall(L, 0, 0, 0))
+			{
+				if(moony->log) //TODO send to UI, too
+					lv2_log_error(&moony->logger, "%s", lua_tostring(L, -1));
+				lua_pop(L, 1);
+			}
+			lua_gc(L, LUA_GCSTEP, 0);
 		}
-		lua_gc(L, LUA_GCSTEP, 0);
 	}
 
 	return LV2_STATE_SUCCESS;

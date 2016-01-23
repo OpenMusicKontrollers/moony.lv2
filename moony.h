@@ -236,6 +236,8 @@ struct _moony_t {
 		atomic_flag error;
 		atomic_flag state;
 	} lock;
+
+	LV2_Atom_Object *state_obj;
 };
 
 struct _lseq_t {
