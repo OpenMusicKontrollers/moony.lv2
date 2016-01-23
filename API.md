@@ -689,9 +689,66 @@ time_responder = TimeResponder:new({
 function run(n, seq, forge)
 	local from = 0
 	for frames, atom in seq:foreach() do
-		time_responder(from, frames, forge, atom)
+		local handled = time_responder(from, frames, forge, atom)
 		from = frames
 	end
 	time_responder(from, n, forge)
+end
+```
+
+#### StateResponder
+
+``` lua
+prefix = 'http://open-music-kontrollers.ch/lv2/moony#a1xa1'
+urid = {
+	prop1 = Map[prefix .. '#prop1'],
+	prop2 = Map[prefix .. '#prop2']
+}
+
+prop1 = {
+  label = 'Property 1',
+  comment = 'This is Property 1',
+  access = Patch.writable,
+  range = Atom.Int,
+  minimum = -96,
+  maximum = 96,
+  unit = Units.db,
+	value = 0
+}
+
+prop2 = {
+  label = 'Property 2',
+  comment = 'This is Property 2',
+  access = Patch.writable,
+  range = Atom.Float,
+  minimum = 0.0,
+  maximum = 1.0,
+  unit = Units.mm,
+	value = 0.5
+}
+
+state = StateResponder:new({
+  [urid.prop1] = prop1,
+  [urid.prop2] = prop2
+})
+
+function save(store)
+	state:save(store)
+end
+
+function restore(retrieve)
+	state:restore(retrieve)
+end
+
+function default(n, seq, forge)
+  for frames, atom in seq:foreach() do
+    local handled = state(frames, forge, atom)
+  end
+end
+
+function once(n, seq, forge)
+  state:register(0, forge)
+	run = default
+	run(n, seq, forge)
 end
 ```
