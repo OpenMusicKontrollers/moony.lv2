@@ -2224,8 +2224,16 @@ _lmidiresponder__call(lua_State *L)
 	// 3: data
 	// 4: atom
 	
-	latom_t *lchunk = luaL_checkudata(L, 4, "lchunk");
+	latom_t *lchunk = NULL;
+	if(luaL_testudata(L, 4, "lchunk"))
+		lchunk = lua_touserdata(L, 4);
 	lua_pop(L, 1); // atom
+
+	if(!lchunk) // not a valid atom, abort
+	{
+		lua_pushboolean(L, 0);
+		return 1;
+	}
 
 	if(lchunk->atom->type == moony->uris.midi_event)
 	{
