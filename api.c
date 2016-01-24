@@ -3153,15 +3153,18 @@ _lstateresponder_save(lua_State *L)
 	{
 		// uses 'key' (at index -2) and 'value' (at index -1)
 		const LV2_URID key = luaL_checkinteger(L, -2);
+		LV2_URID access = moony->uris.patch_writable; // fallback
 
-		lua_getfield(L, -1, "access"); // prop.access
-		const LV2_URID access = luaL_checkinteger(L, -1);
+		if(lua_getfield(L, -1, "access") == LUA_TNUMBER) // prop.access
+			access = lua_tointeger(L, -1);
 		lua_pop(L, 1); // access
 
 		if(access == moony->uris.patch_writable)
 		{
-			lua_getfield(L, -1, "range"); // prop.range
-			const LV2_URID range = luaL_checkinteger(L, -1);
+			LV2_URID range = moony->forge.Int; // fallback
+
+			if(lua_getfield(L, -1, "range") == LUA_TNUMBER) // prop.range
+				range = lua_tointeger(L, -1);
 			lua_pop(L, 1); // range
 
 			lua_pushvalue(L, 2); // store
@@ -3195,9 +3198,10 @@ _lstateresponder_restore(lua_State *L)
 	{
 		// uses 'key' (at index -2) and 'value' (at index -1)
 		const LV2_URID key = luaL_checkinteger(L, -2);
+		LV2_URID access = moony->uris.patch_writable; // fallback
 
-		lua_getfield(L, -1, "access"); // prop.access
-		const LV2_URID access = luaL_checkinteger(L, -1);
+		if(lua_getfield(L, -1, "access") == LUA_TNUMBER) // prop.access
+			access = lua_tointeger(L, -1);
 		lua_pop(L, 1); // access
 
 		if(access == moony->uris.patch_writable)
