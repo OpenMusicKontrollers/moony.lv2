@@ -61,6 +61,9 @@
 #define MOONY_COMMON_X11_URI	MOONY_URI"#common_x11"
 #define MOONY_COMMON_KX_URI		MOONY_URI"#common_kx"
 
+#define MOONY_SIMPLE_UI_URI		MOONY_URI"#simple_ui"
+#define MOONY_SIMPLE_KX_URI		MOONY_URI"#simple_kx"
+
 #define MOONY_C1XC1_URI				MOONY_URI"#c1xc1"
 #define MOONY_C2XC2_URI				MOONY_URI"#c2xc2"
 #define MOONY_C4XC4_URI				MOONY_URI"#c4xc4"
@@ -89,6 +92,9 @@ extern const LV2UI_Descriptor common_eo;
 extern const LV2UI_Descriptor common_ui;
 extern const LV2UI_Descriptor common_x11;
 extern const LV2UI_Descriptor common_kx;
+
+extern const LV2UI_Descriptor simple_ui;
+extern const LV2UI_Descriptor simple_kx;
 
 // from vm.c
 #define MOONY_POOL_NUM 8
@@ -326,18 +332,27 @@ strndup(const char *s, size_t n)
 }
 #endif
 
-#define _ATOM_ALIGNED __attribute__((aligned(8)))
-
-typedef struct _moony_message_t moony_message_t;
-
-struct _moony_message_t {
-	LV2_Atom_Object obj _ATOM_ALIGNED;
-	LV2_Atom_Property_Body prop _ATOM_ALIGNED;
-	char body [0] _ATOM_ALIGNED;
-} _ATOM_ALIGNED;
-
 #define _spin_lock(FLAG) while(atomic_flag_test_and_set_explicit((FLAG), memory_order_acquire)) {}
 #define _try_lock(FLAG) !atomic_flag_test_and_set_explicit((FLAG), memory_order_acquire)
 #define _unlock(FLAG) atomic_flag_clear_explicit((FLAG), memory_order_release)
+
+static inline LV2_Atom_Forge_Ref
+_moony_message_forge(LV2_Atom_Forge *forge, LV2_URID otype, LV2_URID key,
+	uint32_t size, const char *str)
+{
+	LV2_Atom_Forge_Frame frame;
+
+	LV2_Atom_Forge_Ref ref = lv2_atom_forge_object(forge, &frame, 0, otype);
+	if(size && str)
+	{
+		if(ref)
+			ref = lv2_atom_forge_key(forge, key);
+		if(ref)
+			ref = lv2_atom_forge_string(forge, str, size);
+	}
+	if(ref)
+		lv2_atom_forge_pop(forge, &frame);
+	return ref;
+}
 	
 #endif // _MOONY_H

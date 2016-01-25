@@ -31,13 +31,6 @@ set(MOONY_VERSION "${MOONY_MAJOR_VERSION}.${MOONY_MINOR_VERSION}.${MOONY_MICRO_V
 add_definitions("-DMOONY_VERSION=\"${MOONY_VERSION}\"")
 
 set(DEST lib/lv2/moony.lv2)
-if(WIN32)
-	set(LIB_EXT ".dll")
-elseif(APPLE)
-	set(LIB_EXT ".so")
-else()
-	set(LIB_EXT ".so")
-endif()
 
 find_package(PkgConfig) # ${PKG_CONFIG_FOUND}
 find_package(FLEX)
@@ -46,27 +39,62 @@ pkg_search_module(LV2 REQUIRED lv2>=1.10)
 include_directories(${LV2_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${LV2_LDFLAGS})
 
-pkg_search_module(ELM REQUIRED elementary>=1.8)
-include_directories(${ELM_INCLUDE_DIRS})
-set(LIBS_UI ${LIBS_UI} ${ELM_LDFLAGS})
+# options
+option(BUILD_COMMON_UI "Build common embeddable UI" ON)
+option(BUILD_SIMPLE_UI "Build simple external UI" OFF)
 
-pkg_search_module(ECORE_X OPTIONAL ecore-x)
+if(BUILD_COMMON_UI)
+	pkg_search_module(ELM REQUIRED elementary>=1.8)
+	include_directories(${ELM_INCLUDE_DIRS})
+	set(LIBS_UI ${LIBS_UI} ${ELM_LDFLAGS})
 
-if((${ELM_VERSION} VERSION_EQUAL "1.9.0") OR (${ELM_VERSION} VERSION_GREATER "1.9.0"))
-	add_definitions("-DELM_1_9")
-endif()
+	pkg_search_module(ECORE_X OPTIONAL ecore-x)
 
-if((DEFINED ECORE_X_FOUND) AND ((${ELM_VERSION} VERSION_EQUAL "1.13.0") OR (${ELM_VERSION} VERSION_GREATER "1.13.0")))
-	message(STATUS "X11 UI wrap enabled")
-	set(X11_UI_WRAP "")
-	add_definitions("-DX11_UI_WRAP")
+	if((${ELM_VERSION} VERSION_EQUAL "1.9.0") OR (${ELM_VERSION} VERSION_GREATER "1.9.0"))
+		add_definitions("-DELM_1_9")
+	endif()
+
+	if((DEFINED ECORE_X_FOUND) AND ((${ELM_VERSION} VERSION_EQUAL "1.13.0") OR (${ELM_VERSION} VERSION_GREATER "1.13.0")))
+		message(STATUS "X11 UI wrap enabled")
+		set(X11_UI_WRAP "")
+		add_definitions("-DX11_UI_WRAP")
+	else()
+		message(STATUS "X11 UI wrap disabled")
+		set(X11_UI_WRAP "#")
+	endif()
+
+	flex_target(encoder encoder.l ${PROJECT_BINARY_DIR}/encoder.c
+		COMPILE_FLAGS	"--header-file=${PROJECT_BINARY_DIR}/encoder.h --prefix=enc")
+
+	add_library(moony_ui MODULE
+		moony_ui.c
+		common_ui.c
+		${FLEX_encoder_OUTPUTS})
+	target_link_libraries(moony_ui ${LIBS_UI})
+	set_target_properties(moony_ui PROPERTIES PREFIX "")
+	install(TARGETS moony_ui DESTINATION ${DEST})
 else()
-	message(STATUS "X11 UI wrap disabled")
+	set(EO_UI_WRAP "#")
+	set(UI_UI_WRAP "#")
 	set(X11_UI_WRAP "#")
+	set(KX_UI_WRAP "#")
 endif()
 
-flex_target(encoder encoder.l ${PROJECT_BINARY_DIR}/encoder.c
-	COMPILE_FLAGS	"--header-file=${PROJECT_BINARY_DIR}/encoder.h --prefix=enc")
+if(BUILD_SIMPLE_UI)
+	pkg_search_module(UV REQUIRED libuv>=1.0)
+	include_directories(${UV_INCLUDE_DIRS})
+	set(LIBS_SIMPLE ${LIBS_SIMPLE} ${UV_LDFLAGS})
+
+	add_library(moony_simple MODULE
+		moony_simple.c
+		simple_ui.c)
+	target_link_libraries(moony_simple ${LIBS_SIMPLE})
+	set_target_properties(moony_simple PROPERTIES PREFIX "")
+	install(TARGETS moony_simple DESTINATION ${DEST})
+else()
+	set(UI_SIMPLE_WRAP "#")
+	set(KX_SIMPLE_WRAP "#")
+endif()
 
 add_library(moony MODULE
 	moony.c
@@ -123,14 +151,6 @@ endif()
 target_link_libraries(moony ${LIBS} "-lm")
 set_target_properties(moony PROPERTIES PREFIX "")
 install(TARGETS moony DESTINATION ${DEST})
-
-add_library(moony_ui MODULE
-	moony_ui.c
-	common_ui.c
-	${FLEX_encoder_OUTPUTS})
-target_link_libraries(moony_ui ${LIBS_UI})
-set_target_properties(moony_ui PROPERTIES PREFIX "")
-install(TARGETS moony_ui DESTINATION ${DEST})
 
 configure_file(${PROJECT_SOURCE_DIR}/manifest.ttl.in ${PROJECT_BINARY_DIR}/manifest.ttl)
 install(FILES ${PROJECT_BINARY_DIR}/manifest.ttl DESTINATION ${DEST})

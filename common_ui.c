@@ -74,7 +74,24 @@ struct _UI {
 
 	char *chunk;
 	char *cache;
+	uint8_t buf [0x10000];
 };
+
+static void
+_moony_message_send(UI *ui, LV2_URID otype, LV2_URID key,
+	uint32_t size, const char *str)
+{
+	LV2_Atom_Forge_Frame frame;
+	LV2_Atom_Object *obj = (LV2_Atom_Object *)ui->buf;
+
+	lv2_atom_forge_set_buffer(&ui->forge, ui->buf, 0x10000);
+	if(_moony_message_forge(&ui->forge, otype, key, size, str))
+	{
+		// trigger update
+		ui->write_function(ui->controller, ui->control_port, lv2_atom_total_size(&obj->atom),
+			ui->uris.event_transfer, ui->buf);
+	}
+}
 
 static char *
 _entry_cache(UI *ui, int update)
@@ -92,24 +109,6 @@ _entry_cache(UI *ui, int update)
 }
 
 static void
-_moony_message_fill(UI *ui, moony_message_t *msg, LV2_URID key,
-	uint32_t size, const char *str)
-{
-	uint32_t msg_size = sizeof(moony_message_t) + size;
-
-	msg->obj.atom.size = msg_size - sizeof(LV2_Atom);
-	msg->obj.atom.type = ui->forge.Object;
-	msg->obj.body.id = 0;
-	msg->obj.body.otype = ui->uris.moony_message;
-	msg->prop.context = 0;
-	msg->prop.key = key;
-	msg->prop.value.size = size;
-	msg->prop.value.type = ui->forge.String;
-	if(size && str)
-		strncpy(msg->body, str, size);
-}
-
-static void
 _compile(UI *ui)
 {
 	// clear error
@@ -124,15 +123,7 @@ _compile(UI *ui)
 
 	if(size <= MOONY_MAX_CHUNK_LEN)
 	{
-		uint32_t msg_size = sizeof(moony_message_t) + size;
-		moony_message_t *msg = calloc(1, msg_size);
-
-		_moony_message_fill(ui, msg, ui->uris.moony_code, size, utf8);
-
-		ui->write_function(ui->controller, ui->control_port, msg_size,
-			ui->uris.event_transfer, msg);
-
-		free(msg);
+		_moony_message_send(ui, ui->uris.moony_message, ui->uris.moony_code, size, utf8);
 	}
 	else
 	{
@@ -871,14 +862,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		return NULL;
 	}
 
-	uint32_t msg_size = sizeof(moony_message_t);
-	moony_message_t msg;
-
-	_moony_message_fill(ui, &msg, ui->uris.moony_code, 0, NULL);
-
-	// trigger update
-	ui->write_function(ui->controller, ui->control_port, msg_size,
-		ui->uris.event_transfer, &msg);
+	_moony_message_send(ui, ui->uris.moony_message, ui->uris.moony_code, 0, NULL);
 	
 	efreet_init();
 	ui->desks = efreet_util_desktop_mime_list("text/plain");
@@ -920,6 +904,7 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 
 	if( (port_index == ui->notify_port) && (format == ui->uris.event_transfer) )
 	{
+		/*FIXME
 		const moony_message_t *msg = buffer;
 
 		if(  (msg->obj.atom.type == ui->forge.Object)
@@ -936,6 +921,38 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 			else if(msg->prop.key == ui->uris.moony_error)
 			{
 				elm_object_text_set(ui->error, msg->body);
+				evas_object_show(ui->message);
+			}
+		}
+		*/
+		const LV2_Atom_Object *obj = buffer;
+
+		if(  lv2_atom_forge_is_object_type(&ui->forge, obj->atom.type)
+			&& (obj->body.otype == ui->uris.moony_message) )
+		{
+			const LV2_Atom_String *moony_error = NULL;
+			const LV2_Atom_String *moony_code = NULL;
+			
+			LV2_Atom_Object_Query q[] = {
+				{ ui->uris.moony_error, (const LV2_Atom **)&moony_error },
+				{ ui->uris.moony_code, (const LV2_Atom **)&moony_code },
+				LV2_ATOM_OBJECT_QUERY_END
+			};
+			lv2_atom_object_query(obj, q);
+
+			if(moony_code)
+			{
+				const char *str = LV2_ATOM_BODY_CONST(&moony_code->atom);
+
+				enc.data = ui;
+				lua_to_markup(str, NULL);
+				elm_entry_cursor_pos_set(ui->entry, 0);
+			}
+			else if(moony_error)
+			{
+				const char *str = LV2_ATOM_BODY_CONST(&moony_error->atom);
+
+				elm_object_text_set(ui->error, str);
 				evas_object_show(ui->message);
 			}
 		}

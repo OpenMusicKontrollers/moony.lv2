@@ -3729,22 +3729,30 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *seq)
 
 	LV2_ATOM_SEQUENCE_FOREACH(seq, ev)
 	{
-		const moony_message_t *msg = (const moony_message_t *)&ev->body;
+		const LV2_Atom_Object *obj = (const LV2_Atom_Object *)&ev->body;
 
-		if(  (msg->obj.atom.type == moony->forge.Object)
-			&& (msg->obj.body.otype == moony->uris.moony_message)
-			&& (msg->prop.key == moony->uris.moony_code) )
+		if(  lv2_atom_forge_is_object_type(&moony->forge, obj->atom.type)
+			&& (obj->body.otype == moony->uris.moony_message) )
 		{
-			if(msg->prop.value.size)
+			const LV2_Atom_String *moony_code = NULL;
+			
+			LV2_Atom_Object_Query q[] = {
+				{ moony->uris.moony_code, (const LV2_Atom **)&moony_code },
+				LV2_ATOM_OBJECT_QUERY_END
+			};
+			lv2_atom_object_query(obj, q);
+
+			if(moony_code && moony_code->atom.size)
 			{
-				if(luaL_dostring(L, msg->body)) // failed loading chunk
+				const char *str = LV2_ATOM_BODY_CONST(&moony_code->atom);
+				if(luaL_dostring(L, str)) // failed loading chunk
 				{
 					moony_error(moony);
 				}
 				else // succeeded loading chunk
 				{
 					_spin_lock(&moony->lock.chunk);
-					strncpy(moony->chunk, msg->body, msg->prop.value.size);
+					strncpy(moony->chunk, str, moony_code->atom.size);
 					_unlock(&moony->lock.chunk);
 
 					moony->error[0] = 0x0; // reset error flag
@@ -4218,13 +4226,8 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *seq, uint32_t frames)
 		if(ref)
 			ref = lv2_atom_forge_frame_time(forge, frames);
 		if(ref)
-			ref = lv2_atom_forge_object(forge, &obj_frame, 0, moony->uris.moony_message);
-		if(ref)
-			ref = lv2_atom_forge_key(forge, moony->uris.moony_code);
-		if(ref)
-			ref = lv2_atom_forge_string(forge, moony->chunk, len);
-		if(ref)
-			lv2_atom_forge_pop(forge, &obj_frame);
+			ref = _moony_message_forge(forge, moony->uris.moony_message,
+				moony->uris.moony_code, len, moony->chunk);
 
 		_unlock(&moony->lock.chunk);
 
@@ -4238,13 +4241,8 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *seq, uint32_t frames)
 		if(ref)
 			ref = lv2_atom_forge_frame_time(forge, frames);
 		if(ref)
-			ref = lv2_atom_forge_object(forge, &obj_frame, 0, moony->uris.moony_message);
-		if(ref)
-			ref = lv2_atom_forge_key(forge, moony->uris.moony_error);
-		if(ref)
-			ref = lv2_atom_forge_string(forge, moony->error, len);
-		if(ref)
-			lv2_atom_forge_pop(forge, &obj_frame);
+			ref = _moony_message_forge(forge, moony->uris.moony_message,
+				moony->uris.moony_error, len, moony->error);
 
 		moony->error_out = 0; // reset flag
 	}

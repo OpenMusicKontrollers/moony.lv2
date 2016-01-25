@@ -262,6 +262,107 @@ moony:common_kx
 	] ;
 	lv2:requiredFeature kx:Host, ui:portMap, urid:map .
 
+# Simple UI
+moony:simple_ui
+	a ui:UI ;
+	ui:portNotification [
+		ui:plugin moony:c1xc1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:c2xc2 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:c4xc4 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:a1xa1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:a2xa2 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:a4xa4 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:c1a1xc1a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:c2a1xc2a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:c4a1xc4a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] ;
+	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map ;
+  lv2:extensionData ui:idleInterface, ui:showInterface .
+moony:simple_kx
+	a kx:Widget ;
+	ui:portNotification [
+		ui:plugin moony:c1xc1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:c2xc2 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:c4xc4 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:a1xa1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:a2xa2 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:a4xa4 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:c1a1xc1a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:c2a1xc2a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:c4a1xc4a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] ;
+	lv2:requiredFeature kx:Host, ui:portMap, urid:map .
+
 # C1XC1 Plugin
 moony:c1xc1
 	a lv2:Plugin ,
