@@ -28,14 +28,14 @@ moony:code
 	a rdf:Property ;
 	rdfs:label "Lua code chunk" .
 
-moony:template-control_through
+moony:bank-through_control-through
 	state:state [
 		moony:code """function run(n, ...)
 	return ...
 end"""
 	] .
 
-moony:template-atom_through
+moony:bank-through_atom-through
 	state:state [
 		moony:code """function run(n, seq, forge, ...)
 	for frames, atom in seq:foreach() do
@@ -46,7 +46,7 @@ moony:template-atom_through
 end"""
 	] .
 
-moony:template-atom_through2
+moony:bank-through_atom-through2
 	state:state [
 		moony:code """function run(n, seq1, seq2, forge1, forge2)
 	for frames, atom in seq1:foreach() do
@@ -59,7 +59,7 @@ moony:template-atom_through2
 end"""
 	] .
 
-moony:template-atom_through4
+moony:bank-through_atom-through4
 	state:state [
 		moony:code """function run(n, seq1, seq2, seq3, seq4, forge1, forge2, forge3, forge4)
 	for frames, atom in seq1:foreach() do
@@ -80,7 +80,7 @@ moony:template-atom_through4
 end"""
 	] .
 
-moony:template-atom_multiplex2
+moony:bank-multiplex_atom-multiplex2
 	state:state [
 		moony:code """function multiplex(seq1, seq2)
   return coroutine.wrap(function()
@@ -110,7 +110,7 @@ function run(n, seq1, seq2, forge1, forge2)
 end"""
 	] .
 
-moony:template-atom_multiplex4
+moony:bank-multiplex_atom-multiplex4
 	state:state [
 		moony:code """function nxt(frames)
 	local I = nil
@@ -158,7 +158,7 @@ function run(n, seq1, seq2, seq3, seq4, forge1, forge2, forge3, forge4)
 end"""
 	] .
 
-moony:template-midi_responder
+moony:bank-midi_midi-responder
 	state:state [
 		moony:code """midi_responder = MIDIResponder:new({
 	[MIDI.NoteOn] = function(self, frames, forge, chan, note, vel)
@@ -178,7 +178,7 @@ function run(n, seq, forge)
 end"""
 	] .
 
-moony:template-midi_sequencer
+moony:bank-time_midi-sequencer
 	state:state [
 		moony:code """rolling = false
 		
@@ -212,7 +212,7 @@ function run(n, seq, forge)
 end"""
 	] .
 
-moony:template-osc_responder
+moony:bank-osc_osc-responder
 	state:state [
 		moony:code """osc_responder = OSCResponder:new({
   root = {
@@ -234,7 +234,7 @@ function run(n, seq, forge)
 end"""
 	] .
 
-moony:template-state_responder
+moony:bank-state_state-responder
 	state:state [
 		<http://open-music-kontrollers.ch/lv2/moony#code> """prefix = 'http://open-music-kontrollers.ch/lv2/moony#a1xa1'
 urid = {

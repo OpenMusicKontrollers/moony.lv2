@@ -1087,72 +1087,102 @@ moony:c4a1xc4a1
 end"""
 	] .
 
+# Template banks
+moony:bank-through
+	a pset:Bank ;
+	rdfs:label "Through bank" .
+moony:bank-multiplex
+	a pset:Bank ;
+	rdfs:label "Multiplex bank" .
+moony:bank-midi
+	a pset:Bank ;
+	rdfs:label "MIDI bank" .
+moony:bank-osc
+	a pset:Bank ;
+	rdfs:label "OSC bank" .
+moony:bank-time
+	a pset:Bank ;
+	rdfs:label "Time bank" .
+moony:bank-state
+	a pset:Bank ;
+	rdfs:label "State bank" .
+
 # Template presets
-moony:template-control_through
+moony:bank-through_control-through
 	a pset:Preset ;
 	lv2:appliesTo moony:c1xc1 ;
 	lv2:appliesTo moony:c2xc2 ;
 	lv2:appliesTo moony:c4xc4 ;
+	pset:bank moony:bank-through ;
 	rdfs:label "Through" ;
 	rdfs:seeAlso <presets.ttl> .
 
-moony:template-atom_through
+moony:bank-through_atom-through
 	a pset:Preset ;
 	lv2:appliesTo moony:a1xa1 ;
 	lv2:appliesTo moony:c1a1xc1a1 ;
 	lv2:appliesTo moony:c2a1xc2a1 ;
 	lv2:appliesTo moony:c4a1xc4a1 ;
+	pset:bank moony:bank-through ;
 	rdfs:label "Through" ;
 	rdfs:seeAlso <presets.ttl> .
-moony:template-midi_responder
+moony:bank-midi_midi-responder
 	a pset:Preset ;
 	lv2:appliesTo moony:a1xa1 ;
 	lv2:appliesTo moony:c1a1xc1a1 ;
 	lv2:appliesTo moony:c2a1xc2a1 ;
 	lv2:appliesTo moony:c4a1xc4a1 ;
+	pset:bank moony:bank-midi ;
 	rdfs:label "MIDI responder" ;
 	rdfs:seeAlso <presets.ttl> .
-moony:template-midi_sequencer
+moony:bank-time_midi-sequencer
 	a pset:Preset ;
 	lv2:appliesTo moony:a1xa1 ;
 	lv2:appliesTo moony:c1a1xc1a1 ;
 	lv2:appliesTo moony:c2a1xc2a1 ;
 	lv2:appliesTo moony:c4a1xc4a1 ;
+	pset:bank moony:bank-time ;
 	rdfs:label "MIDI sequencer" ;
 	rdfs:seeAlso <presets.ttl> .
-moony:template-osc_responder
+moony:bank-osc_osc-responder
 	a pset:Preset ;
 	lv2:appliesTo moony:a1xa1 ;
 	lv2:appliesTo moony:c1a1xc1a1 ;
 	lv2:appliesTo moony:c2a1xc2a1 ;
 	lv2:appliesTo moony:c4a1xc4a1 ;
+	pset:bank moony:bank-osc ;
 	rdfs:label "OSC responder" ;
 	rdfs:seeAlso <presets.ttl> .
 
-moony:template-atom_through2
+moony:bank-through_atom-through2
 	a pset:Preset ;
 	lv2:appliesTo moony:a2xa2 ;
+	pset:bank moony:bank-through ;
 	rdfs:label "Through" ;
 	rdfs:seeAlso <presets.ttl> .
-moony:template-atom_multiplex2
+moony:bank-multiplex_atom-multiplex2
 	a pset:Preset ;
 	lv2:appliesTo moony:a2xa2 ;
+	pset:bank moony:bank-multiplex ;
 	rdfs:label "Multiplex" ;
 	rdfs:seeAlso <presets.ttl> .
 
-moony:template-atom_through4
+moony:bank-through_atom-through4
 	a pset:Preset ;
 	lv2:appliesTo moony:a4xa4 ;
+	pset:bank moony:bank-through ;
 	rdfs:label "Through" ;
 	rdfs:seeAlso <presets.ttl> .
-moony:template-atom_multiplex4
+moony:bank-multiplex_atom-multiplex4
 	a pset:Preset ;
 	lv2:appliesTo moony:a4xa4 ;
+	pset:bank moony:bank-multiplex ;
 	rdfs:label "Multiplex" ;
 	rdfs:seeAlso <presets.ttl> .
 
-moony:template-state_responder
+moony:bank-state_state-responder
 	a pset:Preset ;
 	lv2:appliesTo moony:a1xa1 ;
+	pset:bank moony:bank-state ;
 	rdfs:label "State responder" ;
 	rdfs:seeAlso <presets.ttl> .
