@@ -189,34 +189,64 @@ _on_fs_poll(uv_fs_poll_t *pol, int status, const uv_stat_t* prev, const uv_stat_
 }
 #endif
 
+static inline char **
+_parse_env(char *env, char *path)
+{
+	unsigned n = 0;
+	char **args = malloc((n+1) * sizeof(char *));
+	if(!args)
+		goto fail;
+	args[n] = NULL;
+
+	char *pch = strtok(env," \t");
+	while(pch)
+	{
+		//printf("%s\n", pch);
+
+		args[n++] = pch;
+		args = realloc(args, (n+1) * sizeof(char *));
+		if(!args)
+			goto fail;
+		args[n] = NULL;
+
+		pch = strtok(NULL, " \t");
+	}
+
+	args[n++] = path;
+	args = realloc(args, (n+1) * sizeof(char *));
+	if(!args)
+		goto fail;
+	args[n] = NULL;
+
+	return args;
+
+fail:
+	if(args)
+		free(args);
+	return NULL;
+}
+
 static inline void
 _show(UI *ui)
 {
 #if defined(_WIN32)
-	char *command = "START";
+	const char *command = "START \"Moony\" /WAIT";
 #elif defined(__APPLE__)
-	char *command = "open";
+	const char *command = "open -t -n -W --args";
 #else // Linux/BSD
-	//char *command = "urxvt"; // xdg-open
-	char *command = "gvim";
-	//char *command = "/opt/sublime-text/sublime_test";
-	//char *command = "gedit";
+	//const char *command = "xdg-open";
+	const char *command = "xterm -e vim";
 #endif
 
-	//FIXME read from config file or from ENV
+	// get default editor from environment
 	const char *moony_editor = getenv("MOONY_EDITOR");
-	char* args[4];
-	int pos = 0;
-	args[pos++] = command;
-	//args[pos++] = "-e"; // xterm
-	//args[pos++] = "vim"; // xterm
-	args[pos++] = "-f"; // vim
-	//args[pos++] = "-w"; // sublime
-	args[pos++] = ui->path;
-	args[pos++] = NULL;
+	if(!moony_editor)
+		moony_editor = command;
+	char *dup = strdup(moony_editor);
+	char **args = dup ? _parse_env(dup, ui->path) : NULL;
 	
 	ui->opts.exit_cb = _on_exit;
-	ui->opts.file = args[0];
+	ui->opts.file = args ? args[0] : NULL;
 	ui->opts.args = args;
 
 #if USE_FS_EVENT
@@ -234,7 +264,6 @@ _show(UI *ui)
 		{
 			if(ui->log)
 				lv2_log_error(&ui->logger, "%s", uv_strerror(r));
-			return;
 		}
 		else
 		{
@@ -247,6 +276,11 @@ _show(UI *ui)
 		if(ui->log)
 			lv2_log_warning(&ui->logger, "Process already running with ID %d", ui->req.pid);
 	}
+
+	if(dup)
+		free(dup);
+	if(args)
+		free(args);
 }
 
 // External-UI Interface
