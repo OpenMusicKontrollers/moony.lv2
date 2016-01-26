@@ -48,10 +48,18 @@ typedef struct _lobj_t lobj_t;
 typedef struct _ltuple_t ltuple_t;
 typedef struct _lvec_t lvec_t;
 typedef struct _latom_t latom_t;
+typedef struct _atom_ser_t atom_ser_t;
 
 struct _midi_msg_t {
 	uint8_t type;
 	const char *key;
+};
+
+struct _atom_ser_t {
+	tlsf_t tlsf;
+	uint32_t size;
+	uint8_t *buf;
+	uint32_t offset;
 };
 
 static const midi_msg_t midi_msgs [] = {
@@ -2621,6 +2629,54 @@ _ltimeresponder__call(lua_State *L)
 }
 
 static int
+_ltimeresponder_stash(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	lua_settop(L, 2); // discard superfluous arguments
+	// 1: self
+	// 2: lforge
+
+	timely_t *timely = lua_touserdata(L, 1);
+	lforge_t *lforge = luaL_checkudata(L, 2, "lforge");
+
+	// calculate current bar_beat
+	float bar_beat = floor(timely->pos.bar_beat) + timely->offset.beat / timely->window.beat;
+
+	// serialize full time state to stash
+	LV2_Atom_Forge_Frame frame;
+	if(  !lv2_atom_forge_object(lforge->forge, &frame, 0, timely->urid.time_position)
+
+		|| !lv2_atom_forge_key(lforge->forge, timely->urid.time_barBeat)
+		|| !lv2_atom_forge_float(lforge->forge, bar_beat)
+
+		|| !lv2_atom_forge_key(lforge->forge, timely->urid.time_bar)
+		|| !lv2_atom_forge_long(lforge->forge, timely->pos.bar)
+
+		|| !lv2_atom_forge_key(lforge->forge, timely->urid.time_beatUnit)
+		|| !lv2_atom_forge_int(lforge->forge, timely->pos.beat_unit)
+
+		|| !lv2_atom_forge_key(lforge->forge, timely->urid.time_beatsPerBar)
+		|| !lv2_atom_forge_float(lforge->forge, timely->pos.beats_per_bar)
+
+		|| !lv2_atom_forge_key(lforge->forge, timely->urid.time_beatsPerMinute)
+		|| !lv2_atom_forge_float(lforge->forge, timely->pos.beats_per_minute)
+
+		|| !lv2_atom_forge_key(lforge->forge, timely->urid.time_frame)
+		|| !lv2_atom_forge_long(lforge->forge, timely->pos.frame)
+
+		|| !lv2_atom_forge_key(lforge->forge, timely->urid.time_framesPerSecond)
+		|| !lv2_atom_forge_float(lforge->forge, timely->pos.frames_per_second)
+
+		|| !lv2_atom_forge_key(lforge->forge, timely->urid.time_speed)
+		|| !lv2_atom_forge_float(lforge->forge, timely->pos.speed) )
+		luaL_error(L, forge_buffer_overflow);
+	lv2_atom_forge_pop(lforge->forge, &frame);
+
+	return 1; // forge
+}
+
+static int
 _ltimeresponder_new(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -2672,6 +2728,7 @@ _ltimeresponder_new(lua_State *L)
 
 static const luaL_Reg ltimeresponder_mt [] = {
 	{"new", _ltimeresponder_new},
+	{"stash", _ltimeresponder_stash},
 	{NULL, NULL}
 };
 
@@ -3329,6 +3386,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	osc_forge_init(&moony->oforge, moony->map);
 	lv2_atom_forge_init(&moony->forge, moony->map);
 	lv2_atom_forge_init(&moony->state_forge, moony->map);
+	lv2_atom_forge_init(&moony->stash_forge, moony->map);
 	if(moony->log)
 		lv2_log_logger_init(&moony->logger, moony->map, moony->log);
 	
@@ -3360,10 +3418,15 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 void
 moony_deinit(moony_t *moony)
 {
-	moony_vm_deinit(&moony->vm);
-
 	if(moony->state_obj)
 		free(moony->state_obj);
+	moony->state_obj = NULL;
+
+	if(moony->stash_atom)
+		tlsf_free(moony->vm.tlsf, moony->stash_atom);
+	moony->stash_atom = NULL;
+
+	moony_vm_deinit(&moony->vm);
 }
 
 void
@@ -3719,6 +3782,102 @@ moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type)
 #undef UDATA_OFFSET
 }
 
+static inline LV2_Atom_Forge_Ref
+_sink(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
+{
+	atom_ser_t *ser = handle;
+
+	const LV2_Atom_Forge_Ref ref = ser->offset + 1;
+
+	if(ser->offset + size > ser->size)
+	{
+		const uint32_t new_size = ser->size * 2;
+		if(ser->tlsf)
+		{
+			if(!(ser->buf = tlsf_realloc(ser->tlsf, ser->buf, new_size)))
+				return 0; // realloc failed
+		}
+		else
+		{
+			if(!(ser->buf = realloc(ser->buf, new_size)))
+				return 0; // realloc failed
+		}
+
+		ser->size = new_size;
+	}
+
+	memcpy(ser->buf + ser->offset, buf, size);
+	ser->offset += size;
+
+	return ref;
+}
+
+static inline LV2_Atom *
+_deref(LV2_Atom_Forge_Sink_Handle handle, LV2_Atom_Forge_Ref ref)
+{
+	atom_ser_t *ser = handle;
+
+	const uint32_t offset = ref - 1;
+
+	return (LV2_Atom *)(ser->buf + offset);
+}
+
+static int
+_stash(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	lua_getglobal(L, "stash");
+	if(lua_isfunction(L, -1))
+	{
+		lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
+		lframe->depth = 1;
+		lframe->last.frames = 0;
+		lframe->forge = &moony->stash_forge;
+
+		atom_ser_t ser = {
+			.tlsf = moony->vm.tlsf, // use tlsf_realloc
+			.size = 256,
+			.buf = tlsf_malloc(moony->vm.tlsf, 256)
+		};
+
+		if(ser.buf)
+		{
+			LV2_Atom *atom = (LV2_Atom *)ser.buf;
+			atom->type = 0;
+			atom->size = 0;
+
+			lv2_atom_forge_set_sink(lframe->forge, _sink, _deref, &ser);
+			lua_call(L, 1, 0);
+
+			if(moony->stash_atom)
+				tlsf_free(moony->vm.tlsf, moony->stash_atom);
+			moony->stash_atom = atom;
+		}
+	}
+	else
+		lua_pop(L, 1);
+
+	return 0;
+}
+
+static int
+_apply(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	lua_getglobal(L, "apply");
+	if(lua_isfunction(L, -1))
+	{
+		_latom_new(L, moony->stash_atom);
+		lua_call(L, 1, 0);
+	}
+	else
+		lua_pop(L, 1);
+
+	return 0;
+}
+
 static int
 _restore(lua_State *L);
 
@@ -3744,6 +3903,13 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *seq)
 
 			if(moony_code && moony_code->atom.size)
 			{
+				// stash
+				lua_pushlightuserdata(L, moony);
+				lua_pushcclosure(L, _stash, 1);
+				if(lua_pcall(L, 0, 0, 0))
+					moony_error(moony);
+
+				// load chunk
 				const char *str = LV2_ATOM_BODY_CONST(&moony_code->atom);
 				if(luaL_dostring(L, str)) // failed loading chunk
 				{
@@ -3765,6 +3931,18 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *seq)
 						if(lua_pcall(L, 0, 0, 0))
 							moony_error(moony);
 					}
+				}
+
+				// apply stash
+				if(moony->stash_atom) // something has been stashed previously
+				{
+					lua_pushlightuserdata(L, moony);
+					lua_pushcclosure(L, _apply, 1);
+					if(lua_pcall(L, 0, 0, 0))
+						moony_error(moony);
+
+					tlsf_free(moony->vm.tlsf, moony->stash_atom);
+					moony->stash_atom = NULL;
 				}
 			}
 			else
@@ -3866,46 +4044,6 @@ _save(lua_State *L)
 	return 0;
 }
 
-typedef struct _atom_ser_t atom_ser_t;
-
-struct _atom_ser_t {
-	uint32_t size;
-	uint8_t *buf;
-	uint32_t offset;
-};
-
-static inline LV2_Atom_Forge_Ref
-_sink(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
-{
-	atom_ser_t *ser = handle;
-
-	const LV2_Atom_Forge_Ref ref = ser->offset + 1;
-
-	if(ser->offset + size > ser->size)
-	{
-		const uint32_t new_size = ser->size * 2;
-		if(!(ser->buf = realloc(ser->buf, new_size)))
-			return 0; // realloc failed
-
-		ser->size = new_size;
-	}
-
-	memcpy(ser->buf + ser->offset, buf, size);
-	ser->offset += size;
-
-	return ref;
-}
-
-static inline LV2_Atom *
-_deref(LV2_Atom_Forge_Sink_Handle handle, LV2_Atom_Forge_Ref ref)
-{
-	atom_ser_t *ser = handle;
-
-	const uint32_t offset = ref - 1;
-
-	return (LV2_Atom *)(ser->buf + offset);
-}
-
 static LV2_State_Status
 _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 	LV2_State_Handle state, uint32_t flags, const LV2_Feature *const *features)
@@ -3933,6 +4071,7 @@ _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 	}
 
 	atom_ser_t ser = {
+		.tlsf = NULL, // use realloc
 		.size = 256,
 		.buf = malloc(256)
 	};

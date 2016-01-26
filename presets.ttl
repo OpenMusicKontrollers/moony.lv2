@@ -185,20 +185,31 @@ moony:bank-time_midi-sequencer
 time_responder = TimeResponder:new({
 	[Time.speed] = function(self, frames, forge, speed)
 		rolling = speed > 0 and true or false
+    if not rolling and forge then
+      forge:time(frames):midi(MIDI.Controller, MIDI.AllNotesOff)
+    end
 	end,
 	[Time.barBeat] = function(self, frames, forge, bar_beat)
-		if rolling then
-			forge:time(frames):midi(0x80, 24, 0x7f)
-			forge:time(frames):midi(0x90, 24, 0x7f)
+		if rolling and forge then
+			forge:time(frames):midi(MIDI.NoteOff, 24, 0x7f)
+			forge:time(frames):midi(MIDI.NoteOn, 24, 0x7f)
 		end
 	end,
 	[Time.bar] = function(self, frames, forge, bar)
-		if rolling then
-			forge:time(frames):midi(0x80, 48, 0x7f)
-			forge:time(frames):midi(0x90, 48, 0x7f)
+		if rolling and forge then
+			forge:time(frames):midi(MIDI.NoteOff, 48, 0x7f)
+			forge:time(frames):midi(MIDI.NoteOn, 48, 0x7f)
 		end
 	end
 })
+
+function stash(forge)
+  time_responder:stash(forge)
+end
+
+function apply(atom)
+  time_responder(0, 0, nil, atom)
+end
 
 function run(n, seq, forge)
   local from = 0

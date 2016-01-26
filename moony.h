@@ -164,6 +164,7 @@ struct _moony_t {
 	LV2_URID_Unmap *unmap;
 	LV2_Atom_Forge forge;
 	LV2_Atom_Forge state_forge;
+	LV2_Atom_Forge stash_forge;
 
 	struct {
 		LV2_URID subject;
@@ -244,6 +245,7 @@ struct _moony_t {
 	} lock;
 
 	LV2_Atom_Object *state_obj;
+	LV2_Atom *stash_atom;
 };
 
 struct _lseq_t {

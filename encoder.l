@@ -171,6 +171,8 @@ checkKw(char*s)
 		case 'a':
 			CHECK(and, AND);
 			CHECK(assert, CALLER);
+
+			CHECK(apply, CALLER); // lua.lv2 specific
 			break;
 		case 'A':
 			CHECK(Atom.Bool, NUMBER);
@@ -489,6 +491,7 @@ checkKw(char*s)
 			CHECK(select, CALLER);
 			CHECK(setmetatable, CALLER);
 			CHECK(save, CALLER); // lua.lv2 specific
+			CHECK(stash, CALLER); // lua.lv2 specific
 			break;
 		case 'S':
 			CHECK(StateResponder, CALLER);
