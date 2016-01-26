@@ -60,58 +60,7 @@ proj:moony
 	doap:name "Moony Bundle" .
 
 # Common UI
-moony:common_eo
-	a ui:EoUI ;
-	ui:portNotification [
-		ui:plugin moony:c1xc1 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:c2xc2 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:c4xc4 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:a1xa1 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:a2xa2 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:a4xa4 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:c1a1xc1a1 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:c2a1xc2a1 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] , [
-		ui:plugin moony:c4a1xc4a1 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
-	] ;
-	lv2:extensionData ui:resize ;
-	lv2:optionalFeature ui:resize ;
-	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map .
-moony:common_ui
+moony:ui1_common_ui
 	a ui:UI ;
 	ui:portNotification [
 		ui:plugin moony:c1xc1 ;
@@ -161,7 +110,56 @@ moony:common_ui
 	] ;
 	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map ;
   lv2:extensionData ui:idleInterface, ui:showInterface .
-moony:common_x11
+moony:ui3_common_kx
+	a kx:Widget ;
+	ui:portNotification [
+		ui:plugin moony:c1xc1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:c2xc2 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:c4xc4 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:a1xa1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:a2xa2 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:a4xa4 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:c1a1xc1a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:c2a1xc2a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] , [
+		ui:plugin moony:c4a1xc4a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+		ui:notifyType atom:Object ;
+	] ;
+	lv2:requiredFeature kx:Host, ui:portMap, urid:map .
+moony:ui5_common_x11
 	a ui:X11UI ;
 	ui:portNotification [
 		ui:plugin moony:c1xc1 ;
@@ -212,8 +210,8 @@ moony:common_x11
 	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map ;
 	lv2:optionalFeature ui:resize ;
   lv2:extensionData ui:idleInterface, ui:resize .
-moony:common_kx
-	a kx:Widget ;
+moony:ui6_common_eo
+	a ui:EoUI ;
 	ui:portNotification [
 		ui:plugin moony:c1xc1 ;
 		lv2:symbol "notify" ;
@@ -260,10 +258,12 @@ moony:common_kx
 		ui:protocol atom:eventTransfer ;
 		ui:notifyType atom:Object ;
 	] ;
-	lv2:requiredFeature kx:Host, ui:portMap, urid:map .
+	lv2:extensionData ui:resize ;
+	lv2:optionalFeature ui:resize ;
+	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map .
 
 # Simple UI
-moony:simple_ui
+moony:ui2_simple_ui
 	a ui:UI ;
 	ui:portNotification [
 		ui:plugin moony:c1xc1 ;
@@ -313,7 +313,7 @@ moony:simple_ui
 	] ;
 	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map ;
   lv2:extensionData ui:idleInterface, ui:showInterface .
-moony:simple_kx
+moony:ui4_simple_kx
 	a kx:Widget ;
 	ui:portNotification [
 		ui:plugin moony:c1xc1 ;

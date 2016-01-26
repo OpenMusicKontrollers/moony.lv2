@@ -56,13 +56,13 @@
 #define MOONY_ERROR_URI				MOONY_URI"#error"
 #define MOONY_STATE_URI				MOONY_URI"#state"
 
-#define MOONY_COMMON_EO_URI		MOONY_URI"#common_eo"
-#define MOONY_COMMON_UI_URI		MOONY_URI"#common_ui"
-#define MOONY_COMMON_X11_URI	MOONY_URI"#common_x11"
-#define MOONY_COMMON_KX_URI		MOONY_URI"#common_kx"
+#define MOONY_COMMON_UI_URI		MOONY_URI"#ui1_common_ui"
+#define MOONY_COMMON_KX_URI		MOONY_URI"#ui3_common_kx"
+#define MOONY_COMMON_X11_URI	MOONY_URI"#ui5_common_x11"
+#define MOONY_COMMON_EO_URI		MOONY_URI"#ui6_common_eo"
 
-#define MOONY_SIMPLE_UI_URI		MOONY_URI"#simple_ui"
-#define MOONY_SIMPLE_KX_URI		MOONY_URI"#simple_kx"
+#define MOONY_SIMPLE_UI_URI		MOONY_URI"#ui2_simple_ui"
+#define MOONY_SIMPLE_KX_URI		MOONY_URI"#ui4_simple_kx"
 
 #define MOONY_C1XC1_URI				MOONY_URI"#c1xc1"
 #define MOONY_C2XC2_URI				MOONY_URI"#c2xc2"
