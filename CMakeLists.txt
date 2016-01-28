@@ -77,6 +77,7 @@ if(BUILD_COMMON_UI)
 	target_link_libraries(moony_ui ${LIBS_UI})
 	set_target_properties(moony_ui PROPERTIES PREFIX "")
 	install(TARGETS moony_ui DESTINATION ${DEST})
+	install(FILES ${PROJECT_SOURCE_DIR}/omk_logo_256x256.png DESTINATION ${DEST})
 else()
 	set(EO_UI_WRAP "#")
 	set(UI_UI_WRAP "#")
@@ -91,7 +92,11 @@ if(BUILD_SIMPLE_UI)
 
 	pkg_search_module(UV REQUIRED libuv>=1.0)
 	include_directories(${UV_INCLUDE_DIRS})
-	set(LIBS_SIMPLE ${LIBS_SIMPLE} ${UV_LDFLAGS})
+	if(DEFINED STATIC_UV)
+		set(LIBS_SIMPLE ${STATIC_UV} ${LIBS_SIMPLE})
+	else()
+		set(LIBS_SIMPLE ${LIBS_SIMPLE} ${UV_LDFLAGS})
+	endif()
 
 	add_library(moony_simple MODULE
 		moony_simple.c
@@ -164,7 +169,6 @@ configure_file(${PROJECT_SOURCE_DIR}/manifest.ttl.in ${PROJECT_BINARY_DIR}/manif
 install(FILES ${PROJECT_BINARY_DIR}/manifest.ttl DESTINATION ${DEST})
 install(FILES ${PROJECT_SOURCE_DIR}/moony.ttl DESTINATION ${DEST})
 install(FILES ${PROJECT_SOURCE_DIR}/presets.ttl DESTINATION ${DEST})
-install(FILES ${PROJECT_SOURCE_DIR}/omk_logo_256x256.png DESTINATION ${DEST})
 
 include(CTest)
 
@@ -228,7 +232,7 @@ if(${BUILD_TESTING})
 endif()
 
 # CPack
-set(CPACK_GENERATOR "TBZ2;DEB")
+set(CPACK_GENERATOR "ZIP")
 
 set(CPACK_PACKAGE_NAME "moony-lv2")
 set(CPACK_PACKAGE_VERSION "${MOONY_VERSION}")
@@ -239,7 +243,7 @@ set(CPACK_PACKAGE_CONTACT "Hanspeter Portner <dev@open-music-kontrollers.ch>")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Realtime Lua as programmable glue in LV2")
 SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/README.md")
 SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/COPYING")
-SET(CPACK_STRIP_FILES "lib/lv2/moony.lv2/moony.so;lib/lv2/moony.lv2/moon_ui.so")
+SET(CPACK_STRIP_FILES "lib/lv2/moony.lv2/moony.so;lib/lv2/moony.lv2/moon_ui.so;lib/lv2/moony.lv2/moony_simple.so")
 
 # Debian
 set(CPACK_DEBIAN_PACKAGE_NAME ${CPACK_PACKAGE_NAME})

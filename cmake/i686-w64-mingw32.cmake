@@ -1,5 +1,6 @@
 # the name of the target operating system
 set(CMAKE_SYSTEM_NAME Windows)
+set(CMAKE_SYSTEM_PROCESSOR "i686")
 set(TOOLCHAIN "i686-w64-mingw32")
 
 # which compilers to use for C and C++
@@ -17,5 +18,5 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
-set(LIBS_SIMPLE ${LIBS_SIMPLE} "/usr/i686-w64-mingw32/lib/libuv.a")
+set(STATIC_UV "/usr/${TOOLCHAIN}/lib/libuv.a")
 set(LIBS_SIMPLE ${LIBS_SIMPLE} "-static-libgcc -lws2_32 -lpsapi -liphlpapi -Wl,-Bstatic -lwinpthread -luserenv")
