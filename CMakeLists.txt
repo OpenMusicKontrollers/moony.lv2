@@ -21,7 +21,9 @@ endif()
 
 set(CMAKE_C_FLAGS "-std=gnu11 -Wextra -Wno-unused-parameter -ffast-math -fvisibility=hidden ${CMAKE_C_FLAGS}")
 set(CMAKE_C_FLAGS "-Wshadow -Wimplicit-function-declaration -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes ${CMAKE_C_FLAGS}")
-set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-z,nodelete ${CMAKE_MODULE_LINKER_FLAGS}")
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+	set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-z,nodelete ${CMAKE_MODULE_LINKER_FLAGS}")
+endif()
 add_definitions("-D_GNU_SOURCE=1") # asprintf
 
 set(MOONY_MAJOR_VERSION 0)
@@ -40,8 +42,10 @@ include_directories(${LV2_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${LV2_LDFLAGS})
 
 # options
+include(CMakeDependentOption)
 option(BUILD_COMMON_UI "Build common embeddable UI" ON)
 option(BUILD_SIMPLE_UI "Build simple external UI" OFF)
+cmake_dependent_option(USE_FS_EVENT "Use filesystem notify events" ON "BUILD_SIMPLE_UI" OFF)
 
 if(BUILD_COMMON_UI)
 	pkg_search_module(ELM REQUIRED elementary>=1.8)
@@ -81,6 +85,10 @@ else()
 endif()
 
 if(BUILD_SIMPLE_UI)
+	if(USE_FS_EVENT)
+		add_definitions("-DUSE_FS_EVENT=1")
+	endif()
+
 	pkg_search_module(UV REQUIRED libuv>=1.0)
 	include_directories(${UV_INCLUDE_DIRS})
 	set(LIBS_SIMPLE ${LIBS_SIMPLE} ${UV_LDFLAGS})

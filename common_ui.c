@@ -90,7 +90,11 @@ _moony_message_send(UI *ui, LV2_URID otype, LV2_URID key,
 		// trigger update
 		ui->write_function(ui->controller, ui->control_port, lv2_atom_total_size(&obj->atom),
 			ui->uris.event_transfer, ui->buf);
+		if(ui->log)
+			lv2_log_note(&ui->logger, str && size ? "send code chunk" : "query code chunk");
 	}
+	else if(ui->log)
+		lv2_log_error(&ui->logger, "code chunk too long");
 }
 
 static char *

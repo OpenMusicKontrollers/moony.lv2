@@ -24,8 +24,6 @@
 #include <uv.h>
 #include <lv2_external_ui.h> // kxstudio external-ui extension
 
-#define USE_FS_EVENT 1 // this is much more efficient than polling
-
 typedef struct _UI UI;
 
 struct _UI {
@@ -54,6 +52,7 @@ struct _UI {
 	uv_process_options_t opts;
 #if USE_FS_EVENT
 	uv_fs_event_t fs;
+	uv_timespec_t mtim;
 #else
 	uv_fs_poll_t pol;
 #endif
@@ -65,8 +64,27 @@ struct _UI {
 	} kx;
 
 	uint8_t buf [0x10000];
+	char dir [512];
 	char path [512];
 };
+
+static inline void
+_err2(UI *ui, const char *from)
+{
+	if(ui->log)
+		lv2_log_error(&ui->logger, "%s", from);
+	else
+		fprintf(stderr, "%s\n", from);
+}
+
+static inline void
+_err(UI *ui, const char *from, int ret)
+{
+	if(ui->log)
+		lv2_log_error(&ui->logger, "%s: %s", from, uv_strerror(ret));
+	else
+		fprintf(stderr, "%s: %s\n", from, uv_strerror(ret));
+}
 
 static void
 _moony_message_send(UI *ui, LV2_URID otype, LV2_URID key,
@@ -82,8 +100,10 @@ _moony_message_send(UI *ui, LV2_URID otype, LV2_URID key,
 		ui->write_function(ui->controller, ui->control_port, lv2_atom_total_size(&obj->atom),
 			ui->uris.event_transfer, ui->buf);
 		if(ui->log)
-			lv2_log_note(&ui->logger, "sent message");
+			lv2_log_note(&ui->logger, str && size ? "send code chunk" : "query code chunk");
 	}
+	else if(ui->log)
+		lv2_log_error(&ui->logger, "code chunk too long");
 }
 
 static void
@@ -119,18 +139,28 @@ _load_chosen(UI *ui, const char *path)
 static inline void
 _hide(UI *ui)
 {
+	int ret;
 #if USE_FS_EVENT
 	if(uv_is_active((uv_handle_t *)&ui->fs))
-		uv_fs_event_stop(&ui->fs);
+	{
+		if((ret = uv_fs_event_stop(&ui->fs)))
+			_err(ui, "uv_fs_event_stop", ret);
+	}
 	uv_close((uv_handle_t *)&ui->fs, NULL);
 #else
 	if(uv_is_active((uv_handle_t *)&ui->pol))
-		uv_fs_poll_stop(&ui->pol);
+	{
+		if((ret = uv_fs_poll_stop(&ui->pol)))
+			_err(ui, "uv_fs_poll_stop", ret);
+	}
 	uv_close((uv_handle_t *)&ui->pol, NULL);
 #endif
 
 	if(uv_is_active((uv_handle_t *)&ui->req))
-		uv_process_kill(&ui->req, SIGKILL);
+	{
+		if((ret = uv_process_kill(&ui->req, SIGKILL)))
+			_err(ui, "uv_process_kill", ret);
+	}
 	uv_close((uv_handle_t *)&ui->req, NULL);
 
 	uv_stop(&ui->loop);
@@ -165,16 +195,40 @@ _on_fs_event(uv_fs_event_t *fs, const char *path, int events, int status)
 
 	if(events & UV_CHANGE)
 	{
+		uv_fs_t req;
+		int ret;
+		if((ret = uv_fs_stat(&ui->loop, &req, ui->path, NULL)))
+			_err(ui, "uv_fs_stat", ret);
+		else
+		{
+			if(  (ui->mtim.tv_sec == req.statbuf.st_mtim.tv_sec)
+				&& (ui->mtim.tv_nsec == req.statbuf.st_mtim.tv_nsec) )
+			{
+				// same timestamp as before, e.g. false alarm
+				return;
+			}
+			else
+			{
+				ui->mtim.tv_sec = req.statbuf.st_mtim.tv_sec;
+				ui->mtim.tv_nsec = req.statbuf.st_mtim.tv_nsec;
+			}
+		}
+
 		_load_chosen(ui, ui->path);
 	}
 
 	if(events & UV_RENAME)
 	{
+		int ret;
 		if(uv_is_active((uv_handle_t *)&ui->fs))
-			uv_fs_event_stop(&ui->fs);
+		{
+			if((ret = uv_fs_event_stop(&ui->fs)))
+				_err(ui, "uv_fs_event_stop", ret);
+		}
 
 		//restart watcher
-		uv_fs_event_start(&ui->fs, _on_fs_event, ui->path, 0);
+		if((ret = uv_fs_event_start(&ui->fs, _on_fs_event, ui->path, 0)))
+			_err(ui, "uv_fs_event_start", ret);
 	}
 }
 #else
@@ -184,6 +238,13 @@ _on_fs_poll(uv_fs_poll_t *pol, int status, const uv_stat_t* prev, const uv_stat_
 	UI *ui = pol ? (void *)pol - offsetof(UI, pol) : NULL;
 	if(!ui)
 		return;
+
+	if(  (prev->st_mtim.tv_sec == curr->st_mtim.tv_sec)
+		&& (prev->st_mtim.tv_nsec == curr->st_mtim.tv_nsec) )
+	{
+		// same timestamp as before, e.g. false alarm
+		return;
+	}
 
 	_load_chosen(ui, ui->path);
 }
@@ -201,8 +262,6 @@ _parse_env(char *env, char *path)
 	char *pch = strtok(env," \t");
 	while(pch)
 	{
-		//printf("%s\n", pch);
-
 		args[n++] = pch;
 		args = realloc(args, (n+1) * sizeof(char *));
 		if(!args)
@@ -232,7 +291,7 @@ _show(UI *ui)
 #if defined(_WIN32)
 	const char *command = "START \"Moony\" /WAIT";
 #elif defined(__APPLE__)
-	const char *command = "open -t -n -W --args";
+	const char *command = "open -nW";
 #else // Linux/BSD
 	//const char *command = "xdg-open";
 	const char *command = "xterm -e vim";
@@ -249,32 +308,32 @@ _show(UI *ui)
 	ui->opts.file = args ? args[0] : NULL;
 	ui->opts.args = args;
 
+	// touch file
+	FILE *f = fopen(ui->path, "wb");
+	if(f)
+		fclose(f);
+
 #if USE_FS_EVENT
 	if(!uv_is_active((uv_handle_t *)&ui->fs))
-		uv_fs_event_start(&ui->fs, _on_fs_event, ui->path, 0);
+	{
+		int ret;
+		if((ret = uv_fs_event_start(&ui->fs, _on_fs_event, ui->path, 0)))
+			_err(ui, "uv_fs_event_start", ret);
+	}
 #else
 	if(!uv_is_active((uv_handle_t *)&ui->pol))
-		uv_fs_poll_start(&ui->pol, _on_fs_poll, ui->path, 1000); // ms
+	{
+		int ret;
+		if((ret = uv_fs_poll_start(&ui->pol, _on_fs_poll, ui->path, 1000))) // ms
+			_err(ui, "uv_fs_poll_start", ret);
+	}
 #endif
 
 	if(!uv_is_active((uv_handle_t *)&ui->req))
 	{
-		int r;
-		if((r = uv_spawn(&ui->loop, &ui->req, &ui->opts)))
-		{
-			if(ui->log)
-				lv2_log_error(&ui->logger, "%s", uv_strerror(r));
-		}
-		else
-		{
-			if(ui->log)
-				lv2_log_note(&ui->logger, "Launched process with ID %d", ui->req.pid);
-		}
-	}
-	else
-	{
-		if(ui->log)
-			lv2_log_warning(&ui->logger, "Process already running with ID %d", ui->req.pid);
+		int ret;
+		if((ret = uv_spawn(&ui->loop, &ui->req, &ui->opts)))
+			_err(ui, "uv_spawn", ret);
 	}
 
 	if(dup)
@@ -422,19 +481,64 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	ui->write_function = write_function;
 	ui->controller = controller;
 
-	sprintf(ui->path, "%s/moony_XXXXXX.lua", P_tmpdir);
-	int fd = mkstemps(ui->path, 4);
+	int ret;
+	if((ret = uv_loop_init(&ui->loop)))
+	{
+		fprintf(stderr, "%s: %s\n", descriptor->URI, uv_strerror(ret));
+		free(ui);
+		return NULL;
+	}
+
+	char *tmp_template;
+#if defined(_WIN32)
+	char tmp_dir[MAX_PATH + 1];
+	GetTempPath(MAX_PATH + 1, tmp_dir);
+	asprintf(&tmp_template, "%s\\moony_XXXXXX", tmp_dir);
+#else
+	const char *tmp_dir = P_tmpdir;
+	asprintf(&tmp_template, "%s/moony_XXXXXX", tmp_dir);
+#endif
+
+	if(!tmp_template)
+	{
+		fprintf(stderr, "%s: out of memory\n", descriptor->URI);
+		free(ui);
+		return NULL;
+	}
+
+	uv_fs_t req;
+	if((ret = uv_fs_mkdtemp(&ui->loop, &req, tmp_template, NULL)))
+	{
+		fprintf(stderr, "%s: %s\n", descriptor->URI, uv_strerror(ret));
+		free(ui);
+		return NULL;
+	}
+
+	sprintf(ui->dir, "%s", req.path);
+
+#if defined(_WIN32)
+	sprintf(ui->path, "%s\\moony.lua", req.path);
+#else
+	sprintf(ui->path, "%s/moony.lua", req.path);
+#endif
+
+	uv_fs_req_cleanup(&req); // deallocates req.path
+	free(tmp_template);
+
 	if(ui->log)
+	{
+		lv2_log_note(&ui->logger, "dir: %s", ui->dir);
 		lv2_log_note(&ui->logger, "path: %s", ui->path);
-	close(fd);
+	}
 
 	_moony_message_send(ui, ui->uris.moony_message, ui->uris.moony_code, 0, NULL);
 
-	uv_loop_init(&ui->loop);
 #if USE_FS_EVENT
-	uv_fs_event_init(&ui->loop, &ui->fs);
+	if((ret = uv_fs_event_init(&ui->loop, &ui->fs)))
+		_err(ui, "uv_fs_event_init", ret);
 #else
-	uv_fs_poll_init(&ui->loop, &ui->pol);
+	if((ret = uv_fs_poll_init(&ui->loop, &ui->pol)))
+		_err(ui, "uv_fs_poll_init", ret);
 #endif
 
 	return ui;
@@ -444,6 +548,13 @@ static void
 cleanup(LV2UI_Handle handle)
 {
 	UI *ui = handle;
+
+	int ret;
+	uv_fs_t req;
+	if((ret = uv_fs_unlink(&ui->loop, &req, ui->path, NULL)))
+		_err(ui, "uv_fs_unlink", ret);
+	if((ret = uv_fs_rmdir(&ui->loop, &req, ui->dir, NULL)))
+		_err(ui, "uv_fs_rmdir", ret);
 
 	uv_loop_close(&ui->loop);
 }
@@ -475,33 +586,45 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 			{
 				const char *str = LV2_ATOM_BODY_CONST(&moony_code->atom);
 
+				int ret;
 #if USE_FS_EVENT
-				uv_fs_event_stop(&ui->fs);
+				if((ret = uv_fs_event_stop(&ui->fs)))
+					_err(ui, "uv_fs_event_stop", ret);
 #else
-				uv_fs_poll_stop(&ui->pol);
+				if((ret = uv_fs_poll_stop(&ui->pol)))
+					_err(ui, "uv_fs_poll_stop", ret);
 #endif
 
 				FILE *f = fopen(ui->path, "wb");
 				if(f)
 				{
-					fwrite(str, moony_code->atom.size-1, 1, f); //TODO check
+					if(fwrite(str, moony_code->atom.size-1, 1, f) != 1)
+						_err2(ui, "fwrite");
+
 					fclose(f);
 				}
+				else
+					_err2(ui, "fopen");
 
 #if USE_FS_EVENT
-				uv_fs_event_start(&ui->fs, _on_fs_event, ui->path, 0);
+				if((ret = uv_fs_event_start(&ui->fs, _on_fs_event, ui->path, 0)))
+					_err(ui, "uv_fs_event_start", ret);
 #else
-				uv_fs_poll_start(&ui->pol, _on_fs_poll, ui->path, 1000); // ms
+				if((ret = uv_fs_poll_start(&ui->pol, _on_fs_poll, ui->path, 1000))) // ms
+					_err(ui, "uv_fs_poll_start", ret);
 #endif
 			}
 			else if(moony_error)
 			{
 				const char *str = LV2_ATOM_BODY_CONST(&moony_error->atom);
 
+				int ret;
 #if USE_FS_EVENT
-				uv_fs_event_stop(&ui->fs);
+				if((ret = uv_fs_event_stop(&ui->fs)))
+					_err(ui, "uv_fs_event_stop", ret);
 #else
-				uv_fs_poll_stop(&ui->pol);
+				if((ret = uv_fs_poll_stop(&ui->pol)))
+					_err(ui, "uv_fs_poll_stop", ret);
 #endif
 
 				FILE *f = fopen(ui->path, "ab");
@@ -515,9 +638,11 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 				}
 
 #if USE_FS_EVENT
-				uv_fs_event_start(&ui->fs, _on_fs_event, ui->path, 0);
+				if((ret = uv_fs_event_start(&ui->fs, _on_fs_event, ui->path, 0)))
+					_err(ui, "uv_fs_event_start", ret);
 #else
-				uv_fs_poll_start(&ui->pol, _on_fs_poll, ui->path, 1000); // ms
+				if((ret = uv_fs_poll_start(&ui->pol, _on_fs_poll, ui->path, 1000))) // ms
+					_err(ui, "uv_fs_poll_start", ret);
 #endif
 			}
 		}

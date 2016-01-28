@@ -16,3 +16,6 @@ set(CMAKE_FIND_ROOT_PATH "/usr/${TOOLCHAIN}")
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+
+set(LIBS_SIMPLE ${LIBS_SIMPLE} "/usr/i686-w64-mingw32/lib/libuv.a")
+set(LIBS_SIMPLE ${LIBS_SIMPLE} "-static-libgcc -lws2_32 -lpsapi -liphlpapi -Wl,-Bstatic -lwinpthread -luserenv")

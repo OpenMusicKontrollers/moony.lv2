@@ -316,24 +316,6 @@ moony_error(moony_t *moony)
 	lua_pop(L, 1);
 }
 
-// strdup fallback for windows
-#if defined(_WIN32)
-static inline char *
-strndup(const char *s, size_t n)
-{
-	char *result;
-	size_t len = strlen(s);
-	if(n < len)
-		len = n;
-	result = (char *)malloc(len + 1);
-	if(!result)
-		return 0;
-	result[len] = '\0';
-
-	return (char *)strncpy(result, s, len);
-}
-#endif
-
 #define _spin_lock(FLAG) while(atomic_flag_test_and_set_explicit((FLAG), memory_order_acquire)) {}
 #define _try_lock(FLAG) !atomic_flag_test_and_set_explicit((FLAG), memory_order_acquire)
 #define _unlock(FLAG) atomic_flag_clear_explicit((FLAG), memory_order_release)

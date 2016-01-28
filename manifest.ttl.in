@@ -13,13 +13,13 @@
 # along the source as a COPYING file. If not, obtain it from
 # http://www.perlfoundation.org/artistic_license_2_0.
 
-@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .
-@prefix owl:	<http://www.w3.org/2002/07/owl#> .
+@prefix lv2: <http://lv2plug.in/ns/lv2core#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .
-@prefix kx:		<http://kxstudio.sf.net/ns/lv2ext/external-ui#> .
+@prefix ui: <http://lv2plug.in/ns/extensions/ui#> .
+@prefix kx: <http://kxstudio.sf.net/ns/lv2ext/external-ui#> .
 
-@prefix moony:	<http://open-music-kontrollers.ch/lv2/moony#> .
+@prefix moony: <http://open-music-kontrollers.ch/lv2/moony#> .
 
 # to please sord_validate
 ui:EoUI
@@ -36,39 +36,39 @@ moony:c1xc1
 	a lv2:Plugin ;
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
-	lv2:binary <moony@CMAKE_SHARED_LIBRARY_SUFFIX@> ;
-	@UI_UI_WRAP@ui:ui			moony:ui1_common_ui ;
-	@KX_UI_WRAP@ui:ui			moony:ui3_common_kx ;
-	@X11_UI_WRAP@ui:ui		moony:ui5_common_x11 ;
-	@EO_UI_WRAP@ui:ui			moony:ui6_common_eo ;
-	@UI_SIMPLE_WRAP@ui:ui	moony:ui2_simple_ui ;
-	@KX_SIMPLE_WRAP@ui:ui	moony:ui4_simple_kx ;
+	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
+	@UI_UI_WRAP@ui:ui moony:ui1_common_ui ;
+	@KX_UI_WRAP@ui:ui moony:ui3_common_kx ;
+	@X11_UI_WRAP@ui:ui moony:ui5_common_x11 ;
+	@EO_UI_WRAP@ui:ui moony:ui6_common_eo ;
+	@UI_SIMPLE_WRAP@ui:ui moony:ui2_simple_ui ;
+	@KX_SIMPLE_WRAP@ui:ui moony:ui4_simple_kx ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:c2xc2
 	a lv2:Plugin ;
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
-	lv2:binary <moony@CMAKE_SHARED_LIBRARY_SUFFIX@> ;
-	@UI_UI_WRAP@ui:ui			moony:ui1_common_ui ;
-	@KX_UI_WRAP@ui:ui			moony:ui3_common_kx ;
-	@X11_UI_WRAP@ui:ui		moony:ui5_common_x11 ;
-	@EO_UI_WRAP@ui:ui			moony:ui6_common_eo ;
-	@UI_SIMPLE_WRAP@ui:ui	moony:ui2_simple_ui ;
-	@KX_SIMPLE_WRAP@ui:ui	moony:ui4_simple_kx ;
+	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
+	@UI_UI_WRAP@ui:ui moony:ui1_common_ui ;
+	@KX_UI_WRAP@ui:ui moony:ui3_common_kx ;
+	@X11_UI_WRAP@ui:ui moony:ui5_common_x11 ;
+	@EO_UI_WRAP@ui:ui moony:ui6_common_eo ;
+	@UI_SIMPLE_WRAP@ui:ui moony:ui2_simple_ui ;
+	@KX_SIMPLE_WRAP@ui:ui moony:ui4_simple_kx ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:c4xc4
 	a lv2:Plugin ;
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
-	lv2:binary <moony@CMAKE_SHARED_LIBRARY_SUFFIX@> ;
-	@UI_UI_WRAP@ui:ui			moony:ui1_common_ui ;
-	@KX_UI_WRAP@ui:ui			moony:ui3_common_kx ;
-	@X11_UI_WRAP@ui:ui		moony:ui5_common_x11 ;
-	@EO_UI_WRAP@ui:ui			moony:ui6_common_eo ;
-	@UI_SIMPLE_WRAP@ui:ui	moony:ui2_simple_ui ;
-	@KX_SIMPLE_WRAP@ui:ui	moony:ui4_simple_kx ;
+	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
+	@UI_UI_WRAP@ui:ui moony:ui1_common_ui ;
+	@KX_UI_WRAP@ui:ui moony:ui3_common_kx ;
+	@X11_UI_WRAP@ui:ui moony:ui5_common_x11 ;
+	@EO_UI_WRAP@ui:ui moony:ui6_common_eo ;
+	@UI_SIMPLE_WRAP@ui:ui moony:ui2_simple_ui ;
+	@KX_SIMPLE_WRAP@ui:ui moony:ui4_simple_kx ;
 	rdfs:seeAlso <moony.ttl> .
 
 # atom in, atom out
@@ -76,39 +76,39 @@ moony:a1xa1
 	a lv2:Plugin ;
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
-	lv2:binary <moony@CMAKE_SHARED_LIBRARY_SUFFIX@> ;
-	@UI_UI_WRAP@ui:ui			moony:ui1_common_ui ;
-	@KX_UI_WRAP@ui:ui			moony:ui3_common_kx ;
-	@X11_UI_WRAP@ui:ui		moony:ui5_common_x11 ;
-	@EO_UI_WRAP@ui:ui			moony:ui6_common_eo ;
-	@UI_SIMPLE_WRAP@ui:ui	moony:ui2_simple_ui ;
-	@KX_SIMPLE_WRAP@ui:ui	moony:ui4_simple_kx ;
+	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
+	@UI_UI_WRAP@ui:ui moony:ui1_common_ui ;
+	@KX_UI_WRAP@ui:ui moony:ui3_common_kx ;
+	@X11_UI_WRAP@ui:ui moony:ui5_common_x11 ;
+	@EO_UI_WRAP@ui:ui moony:ui6_common_eo ;
+	@UI_SIMPLE_WRAP@ui:ui moony:ui2_simple_ui ;
+	@KX_SIMPLE_WRAP@ui:ui moony:ui4_simple_kx ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:a2xa2
 	a lv2:Plugin ;
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
-	lv2:binary <moony@CMAKE_SHARED_LIBRARY_SUFFIX@> ;
-	@UI_UI_WRAP@ui:ui			moony:ui1_common_ui ;
-	@KX_UI_WRAP@ui:ui			moony:ui3_common_kx ;
-	@X11_UI_WRAP@ui:ui		moony:ui5_common_x11 ;
-	@EO_UI_WRAP@ui:ui			moony:ui6_common_eo ;
-	@UI_SIMPLE_WRAP@ui:ui	moony:ui2_simple_ui ;
-	@KX_SIMPLE_WRAP@ui:ui	moony:ui4_simple_kx ;
+	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
+	@UI_UI_WRAP@ui:ui moony:ui1_common_ui ;
+	@KX_UI_WRAP@ui:ui moony:ui3_common_kx ;
+	@X11_UI_WRAP@ui:ui moony:ui5_common_x11 ;
+	@EO_UI_WRAP@ui:ui moony:ui6_common_eo ;
+	@UI_SIMPLE_WRAP@ui:ui moony:ui2_simple_ui ;
+	@KX_SIMPLE_WRAP@ui:ui moony:ui4_simple_kx ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:a4xa4
 	a lv2:Plugin ;
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
-	lv2:binary <moony@CMAKE_SHARED_LIBRARY_SUFFIX@> ;
-	@UI_UI_WRAP@ui:ui			moony:ui1_common_ui ;
-	@KX_UI_WRAP@ui:ui			moony:ui3_common_kx ;
-	@X11_UI_WRAP@ui:ui		moony:ui5_common_x11 ;
-	@EO_UI_WRAP@ui:ui			moony:ui6_common_eo ;
-	@UI_SIMPLE_WRAP@ui:ui	moony:ui2_simple_ui ;
-	@KX_SIMPLE_WRAP@ui:ui	moony:ui4_simple_kx ;
+	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
+	@UI_UI_WRAP@ui:ui moony:ui1_common_ui ;
+	@KX_UI_WRAP@ui:ui moony:ui3_common_kx ;
+	@X11_UI_WRAP@ui:ui moony:ui5_common_x11 ;
+	@EO_UI_WRAP@ui:ui moony:ui6_common_eo ;
+	@UI_SIMPLE_WRAP@ui:ui moony:ui2_simple_ui ;
+	@KX_SIMPLE_WRAP@ui:ui moony:ui4_simple_kx ;
 	rdfs:seeAlso <moony.ttl> .
 
 # control/atom in, control/atom out
@@ -116,65 +116,65 @@ moony:c1a1xc1a1
 	a lv2:Plugin ;
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
-	lv2:binary <moony@CMAKE_SHARED_LIBRARY_SUFFIX@> ;
-	@UI_UI_WRAP@ui:ui			moony:ui1_common_ui ;
-	@KX_UI_WRAP@ui:ui			moony:ui3_common_kx ;
-	@X11_UI_WRAP@ui:ui		moony:ui5_common_x11 ;
-	@EO_UI_WRAP@ui:ui			moony:ui6_common_eo ;
-	@UI_SIMPLE_WRAP@ui:ui	moony:ui2_simple_ui ;
-	@KX_SIMPLE_WRAP@ui:ui	moony:ui4_simple_kx ;
+	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
+	@UI_UI_WRAP@ui:ui moony:ui1_common_ui ;
+	@KX_UI_WRAP@ui:ui moony:ui3_common_kx ;
+	@X11_UI_WRAP@ui:ui moony:ui5_common_x11 ;
+	@EO_UI_WRAP@ui:ui moony:ui6_common_eo ;
+	@UI_SIMPLE_WRAP@ui:ui moony:ui2_simple_ui ;
+	@KX_SIMPLE_WRAP@ui:ui moony:ui4_simple_kx ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:c2a1xc2a1
 	a lv2:Plugin ;
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
-	lv2:binary <moony@CMAKE_SHARED_LIBRARY_SUFFIX@> ;
-	@UI_UI_WRAP@ui:ui			moony:ui1_common_ui ;
-	@KX_UI_WRAP@ui:ui			moony:ui3_common_kx ;
-	@X11_UI_WRAP@ui:ui		moony:ui5_common_x11 ;
-	@EO_UI_WRAP@ui:ui			moony:ui6_common_eo ;
-	@UI_SIMPLE_WRAP@ui:ui	moony:ui2_simple_ui ;
-	@KX_SIMPLE_WRAP@ui:ui	moony:ui4_simple_kx ;
+	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
+	@UI_UI_WRAP@ui:ui moony:ui1_common_ui ;
+	@KX_UI_WRAP@ui:ui moony:ui3_common_kx ;
+	@X11_UI_WRAP@ui:ui moony:ui5_common_x11 ;
+	@EO_UI_WRAP@ui:ui moony:ui6_common_eo ;
+	@UI_SIMPLE_WRAP@ui:ui moony:ui2_simple_ui ;
+	@KX_SIMPLE_WRAP@ui:ui moony:ui4_simple_kx ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:c4a1xc4a1
 	a lv2:Plugin ;
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
-	lv2:binary <moony@CMAKE_SHARED_LIBRARY_SUFFIX@> ;
-	@UI_UI_WRAP@ui:ui			moony:ui1_common_ui ;
-	@KX_UI_WRAP@ui:ui			moony:ui3_common_kx ;
-	@X11_UI_WRAP@ui:ui		moony:ui5_common_x11 ;
-	@EO_UI_WRAP@ui:ui			moony:ui6_common_eo ;
-	@UI_SIMPLE_WRAP@ui:ui	moony:ui2_simple_ui ;
-	@KX_SIMPLE_WRAP@ui:ui	moony:ui4_simple_kx ;
+	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
+	@UI_UI_WRAP@ui:ui moony:ui1_common_ui ;
+	@KX_UI_WRAP@ui:ui moony:ui3_common_kx ;
+	@X11_UI_WRAP@ui:ui moony:ui5_common_x11 ;
+	@EO_UI_WRAP@ui:ui moony:ui6_common_eo ;
+	@UI_SIMPLE_WRAP@ui:ui moony:ui2_simple_ui ;
+	@KX_SIMPLE_WRAP@ui:ui moony:ui4_simple_kx ;
 	rdfs:seeAlso <moony.ttl> .
 
 # Common UI
 moony:ui1_common_ui
 	a ui:UI ;
-	ui:binary <moony_ui@CMAKE_SHARED_LIBRARY_SUFFIX@> ;
+	ui:binary <moony_ui@CMAKE_SHARED_MODULE_SUFFIX@> ;
 	rdfs:seeAlso <moony.ttl> .
 moony:ui3_common_kx
 	a kx:Widget ;
-	ui:binary <moony_ui@CMAKE_SHARED_LIBRARY_SUFFIX@> ;
+	ui:binary <moony_ui@CMAKE_SHARED_MODULE_SUFFIX@> ;
 	rdfs:seeAlso <moony.ttl> .
 moony:ui5_common_x11
 	a ui:X11UI ;
-	ui:binary <moony_ui@CMAKE_SHARED_LIBRARY_SUFFIX@> ;
+	ui:binary <moony_ui@CMAKE_SHARED_MODULE_SUFFIX@> ;
 	rdfs:seeAlso <moony.ttl> .
 moony:ui6_common_eo
 	a ui:EoUI ;
-	ui:binary <moony_ui@CMAKE_SHARED_LIBRARY_SUFFIX@> ;
+	ui:binary <moony_ui@CMAKE_SHARED_MODULE_SUFFIX@> ;
 	rdfs:seeAlso <moony.ttl> .
 
 # Simple UI
 moony:ui2_simple_ui
 	a ui:UI ;
-	ui:binary <moony_simple@CMAKE_SHARED_LIBRARY_SUFFIX@> ;
+	ui:binary <moony_simple@CMAKE_SHARED_MODULE_SUFFIX@> ;
 	rdfs:seeAlso <moony.ttl> .
 moony:ui4_simple_kx
 	a kx:Widget ;
-	ui:binary <moony_simple@CMAKE_SHARED_LIBRARY_SUFFIX@> ;
+	ui:binary <moony_simple@CMAKE_SHARED_MODULE_SUFFIX@> ;
 	rdfs:seeAlso <moony.ttl> .

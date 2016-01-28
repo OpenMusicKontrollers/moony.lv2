@@ -15,7 +15,9 @@
  * http://www.perlfoundation.org/artistic_license_2_0.
  */
 
-#include <sys/mman.h>
+#if !defined(_WIN32)
+# include <sys/mman.h>
+#endif
 #include <assert.h>
 
 #include <moony.h>
