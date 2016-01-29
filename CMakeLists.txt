@@ -173,15 +173,10 @@ install(FILES ${PROJECT_SOURCE_DIR}/presets.ttl DESTINATION ${DEST})
 include(CTest)
 
 if(${BUILD_TESTING})
-	pkg_search_module(EINA REQUIRED eina>=1.8)
-	include_directories(${EINA_INCLUDE_DIRS})
-
 	add_executable(test_moony
 		test_moony.c
 		api.c
 		vm.c
-
-		ext_urid.c
 
 		tlsf-3.0/tlsf.c
 
@@ -226,7 +221,7 @@ if(${BUILD_TESTING})
 	elseif(APPLE)
 		target_compile_definitions(test_moony PUBLIC -DLUA_USE_MACOSX)
 	endif()
-	target_link_libraries(test_moony ${EINA_LDFLAGS} "-lm")
+	target_link_libraries(test_moony "-lm")
 
 	add_test(API-Test test_moony ${PROJECT_SOURCE_DIR}/test_moony.lua)
 endif()

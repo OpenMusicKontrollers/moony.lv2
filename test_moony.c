@@ -17,25 +17,31 @@
 
 #include <moony.h>
 
-#include <Eina.h>
-#include <ext_urid.h>
-
 #include <lauxlib.h>
 
 #define BUF_SIZE 8192
+#define MAX_URIDS 512
 
+typedef struct _urid_t urid_t;
 typedef struct _handle_t handle_t;
+
+struct _urid_t {
+	LV2_URID urid;
+	char *uri;
+};
 
 struct _handle_t {
 	moony_t moony;
 
 	const LV2_Worker_Interface *iface;
-	ext_urid_t *ext_urid;
 
 	LV2_Atom_Forge forge;
 
 	uint8_t buf [8192] __attribute__((aligned(8)));
 	uint8_t buf2 [8192] __attribute__((aligned(8)));
+
+	urid_t urids [MAX_URIDS];
+	LV2_URID urid;
 };
 
 static int
@@ -100,7 +106,20 @@ _map(LV2_URID_Map_Handle instance, const char *uri)
 {
 	handle_t *handle = instance;
 
-	return ext_urid_map(handle->ext_urid, uri);
+	urid_t *itm;
+	for(itm=handle->urids; itm->urid; itm++)
+	{
+		if(!strcmp(itm->uri, uri))
+			return itm->urid;
+	}
+
+	assert(handle->urid + 1 < MAX_URIDS);
+
+	// create new
+	itm->urid = ++handle->urid;
+	itm->uri = strdup(uri);
+
+	return itm->urid;
 }
 
 static const char *
@@ -108,7 +127,15 @@ _unmap(LV2_URID_Unmap_Handle instance, LV2_URID urid)
 {
 	handle_t *handle = instance;
 
-	return ext_urid_unmap(handle->ext_urid, urid);
+	urid_t *itm;
+	for(itm=handle->urids; itm->urid; itm++)
+	{
+		if(itm->urid == urid)
+			return itm->uri;
+	}
+
+	// not found
+	return NULL;
 }
 
 static LV2_Worker_Status
@@ -158,12 +185,6 @@ main(int argc, char **argv)
 {
 	static handle_t handle;
 	
-	eina_init();
-
-	handle.ext_urid = ext_urid_new();
-	if(!handle.ext_urid)
-		return -1;
-
 	LV2_URID_Map map = {
 		.handle = &handle,
 		.map = _map
@@ -237,9 +258,6 @@ main(int argc, char **argv)
 	}
 
 	moony_deinit(&handle.moony);
-
-	ext_urid_free(handle.ext_urid);
-	eina_shutdown();
 
 	printf("\n[test] Sucessful\n");
 
