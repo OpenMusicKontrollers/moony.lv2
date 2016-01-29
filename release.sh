@@ -12,13 +12,16 @@ do
 	pushd $toolchain &> /dev/null
 	cmake \
 		-DCMAKE_TOOLCHAIN_FILE=../../cmake/$toolchain.cmake \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DBUILD_TESTING=1 \
 		-DBUILD_COMMON_UI=0 \
 		-DBUILD_SIMPLE_UI=1 \
 		-DUSE_FS_EVENT=1 \
-		-DBUILD_TESTING=0 \
 		-DCPACK_SYSTEM_NAME="$toolchain" \
+		-DPLUGIN_DEST=moony.lv2 \
 		../..
-	make
+	make -j4
+	ARGS='-VV' make test
 	sudo make package
 	popd &> /dev/null
 done
