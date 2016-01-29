@@ -57,6 +57,7 @@ struct _UI {
 	uv_fs_poll_t pol;
 #endif
 	int done;
+	int ignore;
 
 	struct {
 		LV2_External_UI_Widget widget;
@@ -214,7 +215,10 @@ _on_fs_event(uv_fs_event_t *fs, const char *path, int events, int status)
 			}
 		}
 
-		_load_chosen(ui, ui->path);
+		if(ui->ignore)
+			ui->ignore = 0;
+		else
+			_load_chosen(ui, ui->path);
 	}
 
 	if(events & UV_RENAME)
@@ -246,7 +250,10 @@ _on_fs_poll(uv_fs_poll_t *pol, int status, const uv_stat_t* prev, const uv_stat_
 		return;
 	}
 
-	_load_chosen(ui, ui->path);
+	if(ui->ignore)
+		ui->ignore = 0;
+	else
+		_load_chosen(ui, ui->path);
 }
 #endif
 
@@ -289,7 +296,7 @@ static inline void
 _show(UI *ui)
 {
 #if defined(_WIN32)
-	const char *command = "START \"Moony\" /WAIT";
+	const char *command = "cmd /c start /wait";
 #elif defined(__APPLE__)
 	const char *command = "open -nW";
 #else // Linux/BSD
@@ -307,6 +314,9 @@ _show(UI *ui)
 	ui->opts.exit_cb = _on_exit;
 	ui->opts.file = args ? args[0] : NULL;
 	ui->opts.args = args;
+#if defined(_WIN32)
+	ui->opts.flags = UV_PROCESS_WINDOWS_HIDE | UV_PROCESS_WINDOWS_VERBATIM_ARGUMENTS;
+#endif
 
 	// touch file
 	FILE *f = fopen(ui->path, "wb");
@@ -493,11 +503,12 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 #if defined(_WIN32)
 	char tmp_dir[MAX_PATH + 1];
 	GetTempPath(MAX_PATH + 1, tmp_dir);
-	asprintf(&tmp_template, "%s\\moony_XXXXXX", tmp_dir);
+	const char *sep = tmp_dir[strlen(tmp_dir) - 1] == '\\' ? "" : "\\";
 #else
 	const char *tmp_dir = P_tmpdir;
-	asprintf(&tmp_template, "%s/moony_XXXXXX", tmp_dir);
+	const char *sep = tmp_dir[strlen(tmp_dir) - 1] == '/' ? "" : "/";
 #endif
+	asprintf(&tmp_template, "%s%smoony_XXXXXX", tmp_dir, sep);
 
 	if(!tmp_template)
 	{
@@ -517,10 +528,11 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	sprintf(ui->dir, "%s", req.path);
 
 #if defined(_WIN32)
-	sprintf(ui->path, "%s\\moony.lua", req.path);
+	sep = req.path[strlen(req.path) - 1] == '\\' ? "" : "\\";
 #else
-	sprintf(ui->path, "%s/moony.lua", req.path);
+	sep = req.path[strlen(req.path) - 1] == '/' ? "" : "/";
 #endif
+	sprintf(ui->path, "%s%smoony.lua", req.path, sep);
 
 	uv_fs_req_cleanup(&req); // deallocates req.path
 	free(tmp_template);
@@ -586,15 +598,6 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 			{
 				const char *str = LV2_ATOM_BODY_CONST(&moony_code->atom);
 
-				int ret;
-#if USE_FS_EVENT
-				if((ret = uv_fs_event_stop(&ui->fs)))
-					_err(ui, "uv_fs_event_stop", ret);
-#else
-				if((ret = uv_fs_poll_stop(&ui->pol)))
-					_err(ui, "uv_fs_poll_stop", ret);
-#endif
-
 				FILE *f = fopen(ui->path, "wb");
 				if(f)
 				{
@@ -602,30 +605,15 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 						_err2(ui, "fwrite");
 
 					fclose(f);
+
+					ui->ignore = 1; // ignore next fs change event
 				}
 				else
 					_err2(ui, "fopen");
-
-#if USE_FS_EVENT
-				if((ret = uv_fs_event_start(&ui->fs, _on_fs_event, ui->path, 0)))
-					_err(ui, "uv_fs_event_start", ret);
-#else
-				if((ret = uv_fs_poll_start(&ui->pol, _on_fs_poll, ui->path, 1000))) // ms
-					_err(ui, "uv_fs_poll_start", ret);
-#endif
 			}
 			else if(moony_error)
 			{
 				const char *str = LV2_ATOM_BODY_CONST(&moony_error->atom);
-
-				int ret;
-#if USE_FS_EVENT
-				if((ret = uv_fs_event_stop(&ui->fs)))
-					_err(ui, "uv_fs_event_stop", ret);
-#else
-				if((ret = uv_fs_poll_stop(&ui->pol)))
-					_err(ui, "uv_fs_poll_stop", ret);
-#endif
 
 				FILE *f = fopen(ui->path, "ab");
 				if(f)
@@ -635,15 +623,9 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 					fwrite(pre, strlen(pre), 1, f); //TODO check
 					fwrite(str, moony_error->atom.size-1, 1, f); //TODO check
 					fclose(f);
-				}
 
-#if USE_FS_EVENT
-				if((ret = uv_fs_event_start(&ui->fs, _on_fs_event, ui->path, 0)))
-					_err(ui, "uv_fs_event_start", ret);
-#else
-				if((ret = uv_fs_poll_start(&ui->pol, _on_fs_poll, ui->path, 1000))) // ms
-					_err(ui, "uv_fs_poll_start", ret);
-#endif
+					ui->ignore = 1; // ignore net fs change event
+				}
 			}
 		}
 	}
