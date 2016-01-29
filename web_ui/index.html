@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<title>Moony</title>
+		<meta name="author" content="Hanspeter Portner" />
+		<meta charset="UTF-8" />
+		<link rel="icon" type="image/png" href="/favicon.png" />
+		<link rel="stylesheet" type="text/css" href="/style.css" />
+		<script type="text/javascript" src="/jquery-2.2.0.min.js" charset="utf-8"></script>
+		<script type="text/javascript" src="/moony.js" charset="utf-8"></script>
+		<script type="text/javascript" src="/ace.js" charset="utf-8"></script>
+		<script type="text/javascript" src="/keybinding-vim.js" charset="utf-8"></script>
+		<script type="text/javascript" src="/keybinding-emacs.js" charset="utf-8"></script>
+	</head>
+
+	<body>
+		<div>
+			<table style="width:100%;">
+				<tr>
+					<td style="vertical-align:middle;">
+						<h1>moony</h1>
+					</td>
+
+					<td style="vertical-align:middle;text-align:right;">
+						Copyright &#169; 2016 Hanspeter Portner<br />
+						Released under <a href="http://www.perlfoundation.org/artistic_license_2_0">Artistic License 2.0</a><br />
+						by <a href="http://open-music-kontrollers.ch">Open Music Kontrollers</a>
+					</td>
+				<tr>
+
+				<tr>
+					<td>
+						v0.2.1 | <span id="status">disconnected</span>
+					</td>
+
+					<td style="text-align:right;">
+						<form class="clip" hidden>
+							<input type="radio" id="emacs" name="mode" value="ace/keyboard/emacs" checked>emacs</input>
+							<input type="radio" id="vim" name="mode" value="ace/keyboard/vim">vim</input>
+						</form>
+					</td>
+				<tr>
+			</table>
+		</div>
+		
+		<div class="clip" hidden>
+			<div id="editor"></div>
+			<div id="errmsg" class="sticky" style="color:#b00" hidden><br /></div>
+		</div>
+
+	</body>
+
+</html>

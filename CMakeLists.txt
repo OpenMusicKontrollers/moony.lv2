@@ -8,6 +8,8 @@ include_directories(${PROJECT_SOURCE_DIR}/eo_ui.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/osc.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/timely.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/lua-5.3.1)
+include_directories(${PROJECT_SOURCE_DIR}/http-parser)
+include_directories(${PROJECT_SOURCE_DIR}/cJSON)
 include_directories(${PROJECT_BINARY_DIR})
 
 # check for visibility support in compiler on Unices
@@ -47,6 +49,7 @@ set(LIBS ${LIBS} ${LV2_LDFLAGS})
 include(CMakeDependentOption)
 option(BUILD_COMMON_UI "Build common embeddable UI" ON)
 option(BUILD_SIMPLE_UI "Build simple external UI" OFF)
+option(BUILD_WEB_UI "Build web-based external UI" OFF)
 cmake_dependent_option(USE_FS_EVENT "Use filesystem notify events" ON "BUILD_SIMPLE_UI" OFF)
 
 if(BUILD_COMMON_UI)
@@ -109,6 +112,39 @@ if(BUILD_SIMPLE_UI)
 else()
 	set(UI_SIMPLE_WRAP "#")
 	set(KX_SIMPLE_WRAP "#")
+endif()
+
+if(BUILD_WEB_UI)
+	pkg_search_module(UV REQUIRED libuv>=1.0)
+	include_directories(${UV_INCLUDE_DIRS})
+	if(DEFINED STATIC_UV)
+		set(LIBS_WEB ${STATIC_UV} ${LIBS_WEB})
+	else()
+		set(LIBS_WEB ${LIBS_WEB} ${UV_LDFLAGS})
+	endif()
+
+	add_library(moony_web MODULE
+		moony_web.c
+		http-parser/http_parser.c
+		cJSON/cJSON.c
+		web_ui.c)
+	target_link_libraries(moony_web ${LIBS_WEB})
+	set_target_properties(moony_web PROPERTIES PREFIX "")
+	install(TARGETS moony_web DESTINATION ${PLUGIN_DEST})
+	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/index.html DESTINATION ${PLUGIN_DEST}/web_ui)
+	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/favicon.png DESTINATION ${PLUGIN_DEST}/web_ui)
+	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/jquery-2.2.0.min.js DESTINATION ${PLUGIN_DEST}/web_ui)
+	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/moony.js DESTINATION ${PLUGIN_DEST}/web_ui)
+	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/style.css DESTINATION ${PLUGIN_DEST}/web_ui)
+	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/Chango-Regular.ttf DESTINATION ${PLUGIN_DEST}/web_ui)
+	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/ace.js DESTINATION ${PLUGIN_DEST}/web_ui)
+	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/mode-lua.js DESTINATION ${PLUGIN_DEST}/web_ui)
+	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/theme-chaos.js DESTINATION ${PLUGIN_DEST}/web_ui)
+	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/keybinding-vim.js DESTINATION ${PLUGIN_DEST}/web_ui)
+	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/keybinding-emacs.js DESTINATION ${PLUGIN_DEST}/web_ui)
+else()
+	set(UI_WEB_WRAP "#")
+	set(KX_WEB_WRAP "#")
 endif()
 
 add_library(moony MODULE
@@ -244,7 +280,7 @@ set(CPACK_PACKAGE_CONTACT "Hanspeter Portner <dev@open-music-kontrollers.ch>")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Realtime Lua as programmable glue in LV2")
 SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/README.md")
 SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/COPYING")
-SET(CPACK_STRIP_FILES "lib/lv2/moony.lv2/moony.so;lib/lv2/moony.lv2/moon_ui.so;lib/lv2/moony.lv2/moony_simple.so")
+SET(CPACK_STRIP_FILES "lib/lv2/moony.lv2/moony.so;lib/lv2/moony.lv2/moon_ui.so;lib/lv2/moony.lv2/moony_simple.so;lib/lv2/moony.lv2/moony_web.so")
 
 # Debian
 set(CPACK_DEBIAN_PACKAGE_NAME ${CPACK_PACKAGE_NAME})

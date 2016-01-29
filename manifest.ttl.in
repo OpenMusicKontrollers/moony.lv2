@@ -43,6 +43,8 @@ moony:c1xc1
 	@EO_UI_WRAP@ui:ui moony:ui6_common_eo ;
 	@UI_SIMPLE_WRAP@ui:ui moony:ui2_simple_ui ;
 	@KX_SIMPLE_WRAP@ui:ui moony:ui4_simple_kx ;
+	@UI_WEB_WRAP@ui:ui moony:ui2_web_ui ;
+	@KX_WEB_WRAP@ui:ui moony:ui4_web_kx ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:c2xc2
@@ -56,6 +58,8 @@ moony:c2xc2
 	@EO_UI_WRAP@ui:ui moony:ui6_common_eo ;
 	@UI_SIMPLE_WRAP@ui:ui moony:ui2_simple_ui ;
 	@KX_SIMPLE_WRAP@ui:ui moony:ui4_simple_kx ;
+	@UI_WEB_WRAP@ui:ui moony:ui2_web_ui ;
+	@KX_WEB_WRAP@ui:ui moony:ui4_web_kx ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:c4xc4
@@ -69,6 +73,8 @@ moony:c4xc4
 	@EO_UI_WRAP@ui:ui moony:ui6_common_eo ;
 	@UI_SIMPLE_WRAP@ui:ui moony:ui2_simple_ui ;
 	@KX_SIMPLE_WRAP@ui:ui moony:ui4_simple_kx ;
+	@UI_WEB_WRAP@ui:ui moony:ui2_web_ui ;
+	@KX_WEB_WRAP@ui:ui moony:ui4_web_kx ;
 	rdfs:seeAlso <moony.ttl> .
 
 # atom in, atom out
@@ -77,12 +83,14 @@ moony:a1xa1
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
 	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	@UI_UI_WRAP@ui:ui moony:ui1_common_ui ;
-	@KX_UI_WRAP@ui:ui moony:ui3_common_kx ;
-	@X11_UI_WRAP@ui:ui moony:ui5_common_x11 ;
-	@EO_UI_WRAP@ui:ui moony:ui6_common_eo ;
-	@UI_SIMPLE_WRAP@ui:ui moony:ui2_simple_ui ;
-	@KX_SIMPLE_WRAP@ui:ui moony:ui4_simple_kx ;
+	#@UI_UI_WRAP@ui:ui moony:ui1_common_ui ;
+	#@KX_UI_WRAP@ui:ui moony:ui3_common_kx ;
+	#@X11_UI_WRAP@ui:ui moony:ui5_common_x11 ;
+	#@EO_UI_WRAP@ui:ui moony:ui6_common_eo ;
+	#@UI_SIMPLE_WRAP@ui:ui moony:ui2_simple_ui ;
+	#@KX_SIMPLE_WRAP@ui:ui moony:ui4_simple_kx ;
+	@UI_WEB_WRAP@ui:ui moony:ui2_web_ui ;
+	@KX_WEB_WRAP@ui:ui moony:ui4_web_kx ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:a2xa2
@@ -96,6 +104,8 @@ moony:a2xa2
 	@EO_UI_WRAP@ui:ui moony:ui6_common_eo ;
 	@UI_SIMPLE_WRAP@ui:ui moony:ui2_simple_ui ;
 	@KX_SIMPLE_WRAP@ui:ui moony:ui4_simple_kx ;
+	@UI_WEB_WRAP@ui:ui moony:ui2_web_ui ;
+	@KX_WEB_WRAP@ui:ui moony:ui4_web_kx ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:a4xa4
@@ -109,6 +119,8 @@ moony:a4xa4
 	@EO_UI_WRAP@ui:ui moony:ui6_common_eo ;
 	@UI_SIMPLE_WRAP@ui:ui moony:ui2_simple_ui ;
 	@KX_SIMPLE_WRAP@ui:ui moony:ui4_simple_kx ;
+	@UI_WEB_WRAP@ui:ui moony:ui2_web_ui ;
+	@KX_WEB_WRAP@ui:ui moony:ui4_web_kx ;
 	rdfs:seeAlso <moony.ttl> .
 
 # control/atom in, control/atom out
@@ -123,6 +135,8 @@ moony:c1a1xc1a1
 	@EO_UI_WRAP@ui:ui moony:ui6_common_eo ;
 	@UI_SIMPLE_WRAP@ui:ui moony:ui2_simple_ui ;
 	@KX_SIMPLE_WRAP@ui:ui moony:ui4_simple_kx ;
+	@UI_WEB_WRAP@ui:ui moony:ui2_web_ui ;
+	@KX_WEB_WRAP@ui:ui moony:ui4_web_kx ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:c2a1xc2a1
@@ -136,6 +150,8 @@ moony:c2a1xc2a1
 	@EO_UI_WRAP@ui:ui moony:ui6_common_eo ;
 	@UI_SIMPLE_WRAP@ui:ui moony:ui2_simple_ui ;
 	@KX_SIMPLE_WRAP@ui:ui moony:ui4_simple_kx ;
+	@UI_WEB_WRAP@ui:ui moony:ui2_web_ui ;
+	@KX_WEB_WRAP@ui:ui moony:ui4_web_kx ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:c4a1xc4a1
@@ -149,6 +165,8 @@ moony:c4a1xc4a1
 	@EO_UI_WRAP@ui:ui moony:ui6_common_eo ;
 	@UI_SIMPLE_WRAP@ui:ui moony:ui2_simple_ui ;
 	@KX_SIMPLE_WRAP@ui:ui moony:ui4_simple_kx ;
+	@UI_WEB_WRAP@ui:ui moony:ui2_web_ui ;
+	@KX_WEB_WRAP@ui:ui moony:ui4_web_kx ;
 	rdfs:seeAlso <moony.ttl> .
 
 # Common UI
@@ -177,4 +195,14 @@ moony:ui2_simple_ui
 moony:ui4_simple_kx
 	a kx:Widget ;
 	ui:binary <moony_simple@CMAKE_SHARED_MODULE_SUFFIX@> ;
+	rdfs:seeAlso <moony.ttl> .
+
+# Web UI
+moony:ui2_web_ui
+	a ui:UI ;
+	ui:binary <moony_web@CMAKE_SHARED_MODULE_SUFFIX@> ;
+	rdfs:seeAlso <moony.ttl> .
+moony:ui4_web_kx
+	a kx:Widget ;
+	ui:binary <moony_web@CMAKE_SHARED_MODULE_SUFFIX@> ;
 	rdfs:seeAlso <moony.ttl> .

@@ -64,6 +64,9 @@
 #define MOONY_SIMPLE_UI_URI		MOONY_URI"#ui2_simple_ui"
 #define MOONY_SIMPLE_KX_URI		MOONY_URI"#ui4_simple_kx"
 
+#define MOONY_WEB_UI_URI			MOONY_URI"#ui2_web_ui"
+#define MOONY_WEB_KX_URI			MOONY_URI"#ui4_web_kx"
+
 #define MOONY_C1XC1_URI				MOONY_URI"#c1xc1"
 #define MOONY_C2XC2_URI				MOONY_URI"#c2xc2"
 #define MOONY_C4XC4_URI				MOONY_URI"#c4xc4"
@@ -95,6 +98,9 @@ extern const LV2UI_Descriptor common_kx;
 
 extern const LV2UI_Descriptor simple_ui;
 extern const LV2UI_Descriptor simple_kx;
+
+extern const LV2UI_Descriptor web_ui;
+extern const LV2UI_Descriptor web_kx;
 
 // from vm.c
 #define MOONY_POOL_NUM 8
