@@ -438,11 +438,13 @@ _show(UI *ui)
 			_err(ui, "uv_listen", ret);
 	}
 
+	/*
 	if(!uv_is_active((uv_handle_t *)&server->timer))
 	{
 		if((ret = uv_timer_start(&server->timer, _timeout, 10000, 0)))
 			_err(ui, "uv_timer_start", ret);
 	}
+	*/
 }
 
 // External-UI Interface
