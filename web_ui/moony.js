@@ -28,7 +28,7 @@ function keepalive() {
 			if(data.code) {
 				editor.setValue(data.code, 1);
 			} else if(data.error) {
-				$('#errmsg').html(data.error).show();
+				$('#errmsg').html(data.error).fadeIn(300);
 			}
 			$('#status').html('connected');
 			$('.clip').show();
@@ -82,6 +82,12 @@ function set_code(code) {
 	});
 }
 
+function compile(editor) {
+	set_code(editor.getValue());
+	$('#errmsg').html('<br />').fadeOut(100);
+	$("#compile").fadeOut(100).fadeIn(300);
+}
+
 $(document).ready(function() {
 	var session = null;
 	editor = ace.edit("editor");
@@ -97,8 +103,7 @@ $(document).ready(function() {
 		name: 'Activate',
 		bindKey: {win: 'Shift-Return',  mac: 'Shift-Return'},
 		exec: function(editor) {
-			set_code(editor.getValue());
-			$('#errmsg').html('<br />').hide();
+			compile(editor);
 		},
 		readOnly: true // false if this command should not apply in readOnly mode
 	});
@@ -112,8 +117,12 @@ $(document).ready(function() {
 		tabSize: 2
 	});
 
-	$('input[name=mode]').click(function() {
+	$('input[name=mode]').click(function(e) {
 		editor.setKeyboardHandler($(this).prop('value'));
+	});
+	$('#compile').click(function(e) {
+		compile(editor);
+		e.preventDefault();
 	});
 
 	keepalive();

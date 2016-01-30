@@ -20,7 +20,7 @@ body {
   margin:20px;
   padding:0px;
 	color:#fff;
-  background-color:#333;
+  background-color:#222;
 }
 
 .sticky {
@@ -31,7 +31,17 @@ body {
   background-color:#111;
 	margin: 0px 20px 0px 20px;
 	padding: 10px 10px 10px 10px;
-	border: 2px solid #333;
+	border: 2px solid #b00;
+}
+
+.fixed {
+	font-size:16px;
+	position:fixed;
+	bottom: 50%;
+	right: 0;
+	z-index:9999;
+  background-color:#fff;
+	padding: 10px 10px 10px 10px;
 }
 
 h1 {
