@@ -20,3 +20,4 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
 set(STATIC_UV "/usr/${TOOLCHAIN}/lib/libuv.a")
 set(LIBS_SIMPLE ${LIBS_SIMPLE} "-static-libgcc -lws2_32 -lpsapi -liphlpapi -Wl,-Bstatic -lwinpthread -luserenv")
+set(LIBS_WEB ${LIBS_WEB} "-static-libgcc -lws2_32 -lpsapi -liphlpapi -Wl,-Bstatic -lwinpthread -luserenv")

@@ -46,7 +46,7 @@ struct _client_t {
 
 	server_t *server;
 	char url [1024];
-	char *body;
+	const char *body;
 	int keepalive;
 };
 
@@ -177,8 +177,6 @@ _timeout(uv_timer_t *timer)
 {
 	UI *ui = timer->data;
 
-	printf("_timeout\n");
-
 	ui->done = 1;
 
 	if(ui->kx.host && ui->kx.host->ui_closed && ui->controller)
@@ -193,16 +191,16 @@ _on_client_close(uv_handle_t *handle)
 {
 	client_t *client = handle->data;
 	server_t *server = client->server;
-
-	printf("_on_client_close\n");
+	UI *ui = (void *)server - offsetof(UI, server);
 
 	server->clients = _client_remove(server->clients, client);
 	free(client);
 
 	if(!server->clients) // no clients any more
 	{
-		printf("start timer\n");
-		uv_timer_start(&server->timer, _timeout, 1000, 0); //TODO check
+		int ret;
+		if((ret = uv_timer_start(&server->timer, _timeout, 1000, 0)))
+			_err(ui, "uv_timer_start", ret);
 	}
 }
 
@@ -231,7 +229,7 @@ _hide(UI *ui)
 		if(uv_is_active((uv_handle_t *)&client->handle))
 		{
 			if((ret = uv_read_stop((uv_stream_t *)&client->handle)))
-				fprintf(stderr, "uv_read_stop: %s\n", uv_strerror(ret));
+				_err(ui, "uv_read_stop", ret);
 		}
 		uv_close((uv_handle_t *)&client->handle, _on_client_close);
 	}
@@ -298,9 +296,101 @@ fail:
 	return NULL;
 }
 
+static void
+_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
+{
+	//client_t *client = handle->data;
+
+	buf->base = malloc(suggested_size);
+	buf->len = buf->base ? suggested_size : 0;
+}
+
+static void
+_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
+{
+	uv_tcp_t *handle = (uv_tcp_t *)stream;
+	client_t *client = handle->data;
+	server_t *server = client->server;
+	UI *ui = (void *)server - offsetof(UI, server);
+	int ret;
+
+	if(nread >= 0)
+	{
+		ssize_t parsed = http_parser_execute(&client->parser, &server->http_settings, buf->base, nread);
+
+		if(parsed < nread)
+		{
+			_err2(ui, "_on_read: http parse error");
+			if(uv_is_active((uv_handle_t *)handle))
+			{
+				if((ret = uv_read_stop((uv_stream_t *)handle)))
+					_err(ui, "uv_read_stop", ret);
+			}
+			uv_close((uv_handle_t *)handle, _on_client_close);
+		}
+	}
+	else
+	{
+		if(nread != UV_EOF)
+			_err(ui, "_on_read", nread);
+		if(uv_is_active((uv_handle_t *)handle))
+		{
+			if((ret = uv_read_stop((uv_stream_t *)handle)))
+				_err(ui, "uv_read_stop", ret);
+		}
+		uv_close((uv_handle_t *)handle, _on_client_close);
+	}
+
+	if(buf->base)
+		free(buf->base);
+}
+
+static void
+_on_connected(uv_stream_t *handle, int status)
+{
+	server_t *server = handle->data;
+	UI *ui = (void *)server - offsetof(UI, server);
+	int ret;
+
+	client_t *client = calloc(1, sizeof(client_t)); //TODO check
+	client->server = server;
+	server->clients = _client_append(server->clients, client);
+
+	if((ret = uv_tcp_init(handle->loop, &client->handle)))
+	{
+		free(client);
+		_err(ui, "uv_tcp_init", ret);
+		return;
+	}
+
+	if((ret = uv_accept(handle, (uv_stream_t *)&client->handle)))
+	{
+		free(client);
+		_err(ui, "uv_accept", ret);
+		return;
+	}
+
+	client->handle.data = client;
+	client->parser.data = client;
+
+	http_parser_init(&client->parser, HTTP_REQUEST);
+
+	if((ret = uv_read_start((uv_stream_t *)&client->handle, _on_alloc, _on_read)))
+	{
+		free(client);
+		_err(ui, "uv_read_start", ret);
+		return;
+	}
+
+	uv_timer_stop(&server->timer);
+}
+
 static inline void
 _show(UI *ui)
 {
+	server_t *server = &ui->server;
+	int ret;
+
 #if defined(_WIN32)
 	const char *command = "cmd /c start";
 #elif defined(__APPLE__)
@@ -322,7 +412,6 @@ _show(UI *ui)
 
 	if(!uv_is_active((uv_handle_t *)&ui->req))
 	{
-		int ret;
 		if((ret = uv_spawn(&ui->loop, &ui->req, &ui->opts)))
 			_err(ui, "uv_spawn", ret);
 	}
@@ -331,6 +420,29 @@ _show(UI *ui)
 		free(dup);
 	if(args)
 		free(args);
+
+	struct sockaddr_in addr_ip4;
+	struct sockaddr *addr = (struct sockaddr *)&addr_ip4;
+
+	uint16_t port = 9091; //FIXME
+	if((ret = uv_ip4_addr("0.0.0.0", port, &addr_ip4)))
+	{
+		_err(ui, "uv_ip4_addr", ret);
+	}
+
+	if(!uv_is_active((uv_handle_t *)&server->http_server))
+	{
+		if((ret = uv_tcp_bind(&server->http_server, addr, 0)))
+			_err(ui, "uv_tcp_bind", ret);
+		if((ret = uv_listen((uv_stream_t *)&server->http_server, 128, _on_connected)))
+			_err(ui, "uv_listen", ret);
+	}
+
+	if(!uv_is_active((uv_handle_t *)&server->timer))
+	{
+		if((ret = uv_timer_start(&server->timer, _timeout, 10000, 0)))
+			_err(ui, "uv_timer_start", ret);
+	}
 }
 
 // External-UI Interface
@@ -401,6 +513,10 @@ static void
 _after_write(uv_write_t *req, int status)
 {
 	uv_tcp_t *handle = (uv_tcp_t *)req->handle;
+	client_t *client = handle->data;
+	server_t *server = client->server;
+	UI *ui = (void *)server - offsetof(UI, server);
+
 	int ret;
 
 	if(req->data)
@@ -409,7 +525,7 @@ _after_write(uv_write_t *req, int status)
 	if(uv_is_active((uv_handle_t *)handle))
 	{
 		if((ret = uv_read_stop((uv_stream_t *)handle)))
-			fprintf(stderr, "uv_read_stop: %s\n", uv_strerror(ret));
+			_err(ui, "uv_read_stop", ret);
 	}
 	uv_close((uv_handle_t *)handle, _on_client_close);
 }
@@ -445,11 +561,22 @@ const char *http_content [] = {
 };
 
 static char *
-_read_file(const char *bundle_path, const char *file_path, size_t *size)
+_read_file(UI *ui, const char *bundle_path, const char *file_path, size_t *size)
 {
+#if defined(_WIN32)
+	const char *sep = bundle_path[strlen(bundle_path) - 1] == '\\' ? "" : "\\";
+	const char *sep2 = "\\";
+#else
+	const char *sep = bundle_path[strlen(bundle_path) - 1] == '/' ? "" : "/";
+	const char *sep2 = "/";
+#endif
+
 	char *full_path;
-	if(asprintf(&full_path, "%s/web_ui/%s", bundle_path, file_path) == -1)
+	if(asprintf(&full_path, "%s%sweb_ui%s%s", bundle_path, sep, sep2, &file_path[1]) == -1)
 		return NULL;
+
+	if(ui->log)
+		lv2_log_note(&ui->logger, "full_path: %s", full_path);
 
 	FILE *f = fopen(full_path, "rb");
 	free(full_path);
@@ -484,100 +611,90 @@ _on_message_complete(http_parser *parser)
 	server_t *server = client->server;
 	UI *ui = (void *)server - offsetof(UI, server);
 
-	//printf("_on_message_complete\n");
-	//FIXME
-	
 	const char *stat = NULL;
 	const char *cont = NULL;
 	char *chunk = NULL;
 
 	size_t size;
-	if(  !strcmp(client->url, "/")
-		|| !strcmp(client->url, "/index.html") )
-	{
-		stat = http_status[STATUS_OK];
-		cont = http_content[CONTENT_TEXT_HTML];
-		chunk = _read_file(ui->bundle_path, "/index.html", &size);
-	}
-	else if(!strcmp(client->url, "/favicon.png"))
+	if(strstr(client->url, "/favicon.png") == client->url)
 	{
 		stat = http_status[STATUS_OK];
 		cont = http_content[CONTENT_IMAGE_PNG];
-		chunk = _read_file(ui->bundle_path, client->url, &size);
+		chunk = _read_file(ui, ui->bundle_path, client->url, &size);
 	}
-	else if(!strcmp(client->url, "/jquery-2.2.0.min.js"))
+	else if(strstr(client->url, "/jquery-2.2.0.min.js") == client->url)
 	{
 		stat = http_status[STATUS_OK];
 		cont = http_content[CONTENT_TEXT_JS];
-		chunk = _read_file(ui->bundle_path, client->url, &size);
+		chunk = _read_file(ui, ui->bundle_path, client->url, &size);
 	}
-	else if(!strcmp(client->url, "/moony.js"))
+	else if(strstr(client->url, "/moony.js") == client->url)
 	{
 		stat = http_status[STATUS_OK];
 		cont = http_content[CONTENT_TEXT_JS];
-		chunk = _read_file(ui->bundle_path, client->url, &size);
+		chunk = _read_file(ui, ui->bundle_path, client->url, &size);
 	}
-	else if(!strcmp(client->url, "/style.css"))
+	else if(strstr(client->url, "/style.css") == client->url)
 	{
 		stat = http_status[STATUS_OK];
 		cont = http_content[CONTENT_TEXT_CSS];
-		chunk = _read_file(ui->bundle_path, client->url, &size);
+		chunk = _read_file(ui, ui->bundle_path, client->url, &size);
 	}
-	else if(!strcmp(client->url, "/Chango-Regular.ttf"))
+	else if(strstr(client->url, "/Chango-Regular.ttf") == client->url)
 	{
 		stat = http_status[STATUS_OK];
 		cont = http_content[CONTENT_APPLICATION_OCTET_STREAM];
-		chunk = _read_file(ui->bundle_path, client->url, &size);
+		chunk = _read_file(ui, ui->bundle_path, client->url, &size);
 	}
-	else if(!strcmp(client->url, "/ace.js"))
+	else if(strstr(client->url, "/ace.js") == client->url)
 	{
 		stat = http_status[STATUS_OK];
 		cont = http_content[CONTENT_TEXT_JS];
-		chunk = _read_file(ui->bundle_path, client->url, &size);
+		chunk = _read_file(ui, ui->bundle_path, client->url, &size);
 	}
-	else if(!strcmp(client->url, "/mode-lua.js"))
+	else if(strstr(client->url, "/mode-lua.js") == client->url)
 	{
 		stat = http_status[STATUS_OK];
 		cont = http_content[CONTENT_TEXT_JS];
-		chunk = _read_file(ui->bundle_path, client->url, &size);
+		chunk = _read_file(ui, ui->bundle_path, client->url, &size);
 	}
-	else if(!strcmp(client->url, "/keybinding-vim.js"))
+	else if(strstr(client->url, "/keybinding-vim.js") == client->url)
 	{
 		stat = http_status[STATUS_OK];
 		cont = http_content[CONTENT_TEXT_JS];
-		chunk = _read_file(ui->bundle_path, client->url, &size);
+		chunk = _read_file(ui, ui->bundle_path, client->url, &size);
 	}
-	else if(!strcmp(client->url, "/keybinding-emacs.js"))
+	else if(strstr(client->url, "/keybinding-emacs.js") == client->url)
 	{
 		stat = http_status[STATUS_OK];
 		cont = http_content[CONTENT_TEXT_JS];
-		chunk = _read_file(ui->bundle_path, client->url, &size);
+		chunk = _read_file(ui, ui->bundle_path, client->url, &size);
 	}
-	else if(!strcmp(client->url, "/theme-chaos.js"))
+	else if(strstr(client->url, "/theme-chaos.js") == client->url)
 	{
 		stat = http_status[STATUS_OK];
 		cont = http_content[CONTENT_TEXT_JS];
-		chunk = _read_file(ui->bundle_path, client->url, &size);
+		chunk = _read_file(ui, ui->bundle_path, client->url, &size);
 	}
-	else if(!strcmp(client->url, "/keepalive"))
+	else if(strstr(client->url, "/keepalive") == client->url)
 	{
 		stat = http_status[STATUS_OK];
 		cont = http_content[CONTENT_TEXT_JSON];
 		client->keepalive = 1;
 		// keepalive
 	}
-	else if(!strcmp(client->url, "/code/get"))
+	else if(strstr(client->url, "/code/get") == client->url)
 	{
 		stat = http_status[STATUS_OK];
 		cont = http_content[CONTENT_TEXT_JSON];
 		_moony_message_send(ui, ui->uris.moony_message, ui->uris.moony_code, 0, NULL);
 		chunk = strdup("{}");
 	}
-	else if(!strcmp(client->url, "/code/set"))
+	else if(strstr(client->url, "/code/set") == client->url)
 	{
 		stat = http_status[STATUS_OK];
 		cont = http_content[CONTENT_TEXT_JSON];
-		cJSON *root = cJSON_Parse(client->body);
+		cJSON *root = cJSON_ParseWithOpts(client->body, NULL, 0);
 		if(root)
 		{
 			cJSON *code = cJSON_GetObjectItem(root, "code");
@@ -587,15 +704,19 @@ _on_message_complete(http_parser *parser)
 			}
 			cJSON_Delete(root);
 		}
-		free(client->body);
 		chunk = strdup("{}");
+	}
+	else if(  (strstr(client->url, "/") == client->url)
+		|| (strstr(client->url, "/index.html") == client->url) )
+	{
+		stat = http_status[STATUS_OK];
+		cont = http_content[CONTENT_TEXT_HTML];
+		chunk = _read_file(ui, ui->bundle_path, "/index.html", &size);
 	}
 	else
 	{
 		stat = http_status[STATUS_NOT_FOUND];
 	}
-
-	//printf("chunk: %zu\n", size);
 
 	client->req.data = chunk;
 
@@ -627,11 +748,10 @@ static int
 _on_url(http_parser *parser, const char *at, size_t len)
 {
 	client_t *client = parser->data;
+	server_t *server = client->server;
+	UI *ui = (void *)server - offsetof(UI, server);
 
-	snprintf(client->url, len+1, "%s", at);
-
-	printf("_on_url: %s\n", client->url);
-	//FIXME
+	snprintf(client->url, len+1, "%s", at); //FIXME
 
 	return 0;
 }
@@ -641,99 +761,9 @@ _on_body(http_parser *parser, const char *at, size_t len)
 {
 	client_t *client = parser->data;
 
-	//printf("_on_body\n");
-	//FIXME
-	client->body = strndup(at, len);
+	client->body = at;
 
 	return 0;
-}
-
-static void
-_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
-{
-	//client_t *client = handle->data;
-
-	buf->base = malloc(suggested_size);
-	buf->len = buf->base ? suggested_size : 0;
-}
-
-static void
-_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
-{
-	uv_tcp_t *handle = (uv_tcp_t *)stream;
-	client_t *client = handle->data;
-	server_t *server = client->server;
-	int ret;
-
-	if(nread >= 0)
-	{
-		ssize_t parsed = http_parser_execute(&client->parser, &server->http_settings, buf->base, nread);
-
-		if(parsed < nread)
-		{
-			fprintf(stderr, "_on_read: http parse error\n");
-			if(uv_is_active((uv_handle_t *)handle))
-			{
-				if((ret = uv_read_stop((uv_stream_t *)handle)))
-					fprintf(stderr, "uv_read_stop: %s\n", uv_strerror(ret));
-			}
-			uv_close((uv_handle_t *)handle, _on_client_close);
-		}
-	}
-	else
-	{
-		if(nread != UV_EOF)
-			fprintf(stderr, "_on_read: %s\n", uv_strerror(nread));
-		if(uv_is_active((uv_handle_t *)handle))
-		{
-			if((ret = uv_read_stop((uv_stream_t *)handle)))
-				fprintf(stderr, "uv_read_stop: %s\n", uv_strerror(ret));
-		}
-		uv_close((uv_handle_t *)handle, _on_client_close);
-	}
-
-	if(buf->base)
-		free(buf->base);
-}
-
-static void
-_on_connected(uv_stream_t *handle, int status)
-{
-	server_t *server = handle->data;
-	int ret;
-
-	client_t *client = calloc(1, sizeof(client_t)); //TODO check
-	client->server = server;
-	server->clients = _client_append(server->clients, client);
-	printf("clients: %u\n", _server_clients_count(server));
-
-	if((ret = uv_tcp_init(handle->loop, &client->handle)))
-	{
-		free(client);
-		fprintf(stderr, "uv_tcp_init: %s\n", uv_strerror(ret));
-		return;
-	}
-
-	if((ret = uv_accept(handle, (uv_stream_t *)&client->handle)))
-	{
-		free(client);
-		fprintf(stderr, "uv_accept: %s\n", uv_strerror(ret));
-		return;
-	}
-
-	client->handle.data = client;
-	client->parser.data = client;
-
-	http_parser_init(&client->parser, HTTP_REQUEST);
-
-	if((ret = uv_read_start((uv_stream_t *)&client->handle, _on_alloc, _on_read)))
-	{
-		free(client);
-		fprintf(stderr, "uv_read_start: %s\n", uv_strerror(ret));
-		return;
-	}
-
-	uv_timer_stop(&server->timer);
 }
 
 static LV2UI_Handle
@@ -821,8 +851,6 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		return NULL;
 	}
 
-	uint16_t port = 9091; //FIXME
-	//sprintf(ui->path, "file://%s/index.html", bundle_path);
 	sprintf(ui->path, "http://localhost:9091");
 
 	server_t *server = &ui->server;
@@ -836,47 +864,20 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	server->http_settings.on_body = _on_body;
 	server->http_server.data = server;
 
+	if((ret = uv_tcp_init(&ui->loop, &server->http_server)))
+	{
+		fprintf(stderr, "%s: %s\n", descriptor->URI, uv_strerror(ret));
+		free(ui);
+		return NULL;
+	}
+
 	if((ret = uv_timer_init(&ui->loop, &server->timer)))
 	{
-		fprintf(stderr, "uv_timer_init: %s\n", uv_strerror(ret));
+		fprintf(stderr, "%s: %s\n", descriptor->URI, uv_strerror(ret));
 		free(ui);
 		return NULL;
 	}
 	server->timer.data = ui;
-
-	if((ret = uv_tcp_init(&ui->loop, &server->http_server)))
-	{
-		fprintf(stderr, "uv_tcp_init: %s\n", uv_strerror(ret));
-		free(ui);
-		return NULL;
-	}
-
-	struct sockaddr_in addr_ip4;
-	struct sockaddr *addr = (struct sockaddr *)&addr_ip4;
-
-	if((ret = uv_ip4_addr("0.0.0.0", port, &addr_ip4)))
-	{
-		fprintf(stderr, "uv_ip4_addr: %s\n", uv_strerror(ret));
-		free(ui);
-		return NULL;
-	}
-
-	if((ret = uv_tcp_bind(&server->http_server, addr, 0)))
-	{
-		fprintf(stderr, "bind: %s\n", uv_strerror(ret));
-		free(ui);
-		return NULL;
-	}
-
-	if((ret = uv_listen((uv_stream_t *)&server->http_server, 128, _on_connected)))
-	{
-		fprintf(stderr, "listen %s\n", uv_strerror(ret));
-		free(ui);
-		return NULL;
-	}
-
-	printf("start timer\n");
-	uv_timer_start(&server->timer, _timeout, 10000, 0); //TODO check
 
 	return ui;
 }
@@ -916,8 +917,6 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 			{
 				const char *str = LV2_ATOM_BODY_CONST(&moony_code->atom);
 
-				//printf("code is: %s\n", str);
-
 				SERVER_CLIENT_FOREACH(&ui->server, client)
 				{
 					if(!client->keepalive)
@@ -932,7 +931,6 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 
 					client->req.data = cJSON_PrintUnformatted(root);
 					cJSON_Delete(root);
-					//printf("json: %s\n", client->req.data);
 					if(!client->req.data)
 						continue;
 
@@ -958,8 +956,6 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 			{
 				const char *str = LV2_ATOM_BODY_CONST(&moony_error->atom);
 
-				//printf("error is: %s\n", str);
-
 				SERVER_CLIENT_FOREACH(&ui->server, client)
 				{
 					if(!client->keepalive)
@@ -974,7 +970,6 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 
 					client->req.data = cJSON_PrintUnformatted(root);
 					cJSON_Delete(root);
-					//printf("json: %s\n", client->req.data);
 					if(!client->req.data)
 						continue;
 
