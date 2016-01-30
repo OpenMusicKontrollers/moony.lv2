@@ -83,12 +83,12 @@ moony:a1xa1
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
 	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	#@UI_UI_WRAP@ui:ui moony:ui1_common_ui ;
-	#@KX_UI_WRAP@ui:ui moony:ui3_common_kx ;
-	#@X11_UI_WRAP@ui:ui moony:ui5_common_x11 ;
-	#@EO_UI_WRAP@ui:ui moony:ui6_common_eo ;
-	#@UI_SIMPLE_WRAP@ui:ui moony:ui2_simple_ui ;
-	#@KX_SIMPLE_WRAP@ui:ui moony:ui4_simple_kx ;
+	@UI_UI_WRAP@ui:ui moony:ui1_common_ui ;
+	@KX_UI_WRAP@ui:ui moony:ui3_common_kx ;
+	@X11_UI_WRAP@ui:ui moony:ui5_common_x11 ;
+	@EO_UI_WRAP@ui:ui moony:ui6_common_eo ;
+	@UI_SIMPLE_WRAP@ui:ui moony:ui2_simple_ui ;
+	@KX_SIMPLE_WRAP@ui:ui moony:ui4_simple_kx ;
 	@UI_WEB_WRAP@ui:ui moony:ui2_web_ui ;
 	@KX_WEB_WRAP@ui:ui moony:ui4_web_kx ;
 	rdfs:seeAlso <moony.ttl> .

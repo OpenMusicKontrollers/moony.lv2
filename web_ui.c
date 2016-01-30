@@ -82,11 +82,14 @@ struct _UI {
 	} kx;
 
 	uint8_t buf [0x10000];
+	uint16_t port;
 	char path [512];
 
 	char bundle_path [1024];
 	server_t server;
 };
+
+static uint16_t port = 9090; //FIXME
 
 static inline client_t *
 _client_append(client_t *list, client_t *child)
@@ -424,8 +427,7 @@ _show(UI *ui)
 	struct sockaddr_in addr_ip4;
 	struct sockaddr *addr = (struct sockaddr *)&addr_ip4;
 
-	uint16_t port = 9091; //FIXME
-	if((ret = uv_ip4_addr("0.0.0.0", port, &addr_ip4)))
+	if((ret = uv_ip4_addr("0.0.0.0", ui->port, &addr_ip4)))
 	{
 		_err(ui, "uv_ip4_addr", ret);
 	}
@@ -438,7 +440,7 @@ _show(UI *ui)
 			_err(ui, "uv_listen", ret);
 	}
 
-	/*
+	/* FIXME
 	if(!uv_is_active((uv_handle_t *)&server->timer))
 	{
 		if((ret = uv_timer_start(&server->timer, _timeout, 10000, 0)))
@@ -853,7 +855,8 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		return NULL;
 	}
 
-	sprintf(ui->path, "http://localhost:9091");
+	ui->port = port++;
+	sprintf(ui->path, "http://localhost:%hu", ui->port);
 
 	server_t *server = &ui->server;
 	server->http_settings.on_message_begin = NULL;
