@@ -94,10 +94,10 @@ $(document).ready(function() {
 	session = editor.getSession();
 
 	editor.setTheme("ace/theme/chaos");
-	editor.setKeyboardHandler("ace/keyboard/emacs");
+	editor.setKeyboardHandler("ace/keyboard/vim");
 	session.setUseWorker(false);
 	session.setMode("ace/mode/lua");
-	$('#emacs').prop('checked', true);
+	$('#vim').prop('checked', true);
 	
 	editor.commands.addCommand({
 		name: 'Activate',
