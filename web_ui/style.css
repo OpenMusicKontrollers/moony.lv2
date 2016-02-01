@@ -14,27 +14,72 @@
 
 body {
 	font-family: "Chango", sans-serif;
-	font-size:12px;
-	font-weight:normal;
-	font-style:normal;
+	font-size:14px;
   margin:20px;
   padding:0px;
 	color:#fff;
   background-color:#222;
 }
 
-.sticky {
-	position:-webkit-sticky;
-	position:sticky;
-	bottom: 0;
-	z-index:9999;
-  background-color:#111;
-	margin: 0px 20px 0px 20px;
-	padding: 10px 10px 10px 10px;
-	border: 2px solid #b00;
+.heading {
+	font-weight:normal;
+	font-style:normal;
 }
 
-.fixed {
+h1 {
+	font-size:70px;
+	font-weight:bold;
+  margin:0px 0px 10px 0px;
+  padding:0px;
+}
+
+.heading-table {
+	width:100%;
+}
+
+.heading-left {
+	vertical-align:middle;
+}
+
+.heading-right {
+	vertical-align:middle;
+	text-align:right;
+}
+
+.trace {
+	font-family:monospace;
+	width:100%;
+	max-height:112px;
+	overflow-y:auto;
+}
+
+.sticky-top {
+	position:-webkit-sticky;
+	position:sticky;
+	top:0;
+	z-index:9999;
+	background-color:#111;
+	margin:0px 20px 0px 20px;
+	padding: 0px;
+	border:2px solid #666;
+}
+
+#editor {
+}
+
+.sticky-bottom {
+	position:-webkit-sticky;
+	position:sticky;
+	bottom:0;
+	z-index:9999;
+  background-color:#111;
+	margin:0px 20px 0px 20px;
+	padding:10px 10px 10px 10px;
+	border:2px solid #b00;
+	font-family:monospace;
+}
+
+.command {
 	font-size:16px;
 	position:fixed;
 	bottom: 50%;
@@ -44,42 +89,6 @@ body {
 	padding: 10px 10px 10px 10px;
 }
 
-h1 {
-  font-family:"Chango", sans-serif;
-	font-size:70px;
-	font-weight:bold;
-  margin:0px 0px 10px 0px;
-  padding:0px;
-}
-
-.content {
-  position:relative; /* Position is declared "relative" to gain control of stacking order (z-index). */
-  width:auto;
-  width:800px;
-  margin:10px auto 10px auto;
-	border-radius: 20px;
-  padding:10px;
-  z-index:3; /* This allows the content to overlap the right menu in narrow windows in good browsers. */
-}
-
-.logo {
-	position:fixed;
-	top:0px;
-	right:0px;
-	margin:10px;
-}
-
-.brand {
-	position:fixed;
-	bottom:0px;
-	left:0px;
-	margin:10px;
-}
-
-p {
-  padding:0px;
-}
-
 a {
 	color:#b00;
   text-decoration:none;
@@ -87,18 +96,3 @@ a {
 a:link {color:#b00;}
 a:visited {color:#b00;}
 a:hover {color:#fff; background-color:#b00;}
-
-a.header {
-	margin-right:1em;
-	font-size:20px;
-	font-weight:bold;
-}
-
-#editor {
-	position:relative;
-	top:0;
-	right:0;
-	bottom:0;
-	left:0;
-	height:400px;
-}

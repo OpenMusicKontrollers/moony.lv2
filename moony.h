@@ -54,6 +54,7 @@
 #define MOONY_MESSAGE_URI			MOONY_URI"#message"
 #define MOONY_CODE_URI				MOONY_URI"#code"
 #define MOONY_ERROR_URI				MOONY_URI"#error"
+#define MOONY_TRACE_URI				MOONY_URI"#trace"
 #define MOONY_STATE_URI				MOONY_URI"#state"
 
 #define MOONY_COMMON_UI_URI		MOONY_URI"#ui1_common_ui"
@@ -178,6 +179,7 @@ struct _moony_t {
 		LV2_URID moony_message;
 		LV2_URID moony_code;
 		LV2_URID moony_error;
+		LV2_URID moony_trace;
 		LV2_URID moony_state;
 
 		LV2_URID midi_event;
@@ -236,7 +238,9 @@ struct _moony_t {
 	char chunk [MOONY_MAX_CHUNK_LEN];
 	volatile int dirty_out;
 	volatile int error_out;
+	volatile int trace_out;
 	char error [MOONY_MAX_ERROR_LEN];
+	char trace [MOONY_MAX_ERROR_LEN];
 
 	// udata cache
 	int itr [MOONY_UDATA_COUNT];
@@ -306,7 +310,7 @@ moony_err(moony_t *moony, const char *msg)
 	if(moony->log)
 		lv2_log_trace(&moony->logger, "%s", err);
 
-	strcpy(moony->error, err);
+	snprintf(moony->error, MOONY_MAX_ERROR_LEN, "%s", err);
 
 	moony->error_out = 1;
 }

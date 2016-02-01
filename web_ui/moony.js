@@ -29,6 +29,8 @@ function keepalive() {
 				editor.setValue(data.code, 1);
 			} else if(data.error) {
 				$('#errmsg').html(data.error).fadeIn(300);
+			} else if(data.trace) {
+				$('#tracemsg').append(data.trace + '<br />').animate({scrollTop: $('#tracemsg').prop('scrollHeight')});
 			}
 			$('#status').html('connected');
 			$('.clip').show();
@@ -122,6 +124,10 @@ $(document).ready(function() {
 	});
 	$('#compile').click(function(e) {
 		compile(editor);
+		e.preventDefault();
+	});
+	$('#clear').click(function(e) {
+		$('#tracemsg').empty();
 		e.preventDefault();
 	});
 

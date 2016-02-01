@@ -55,6 +55,7 @@ struct _UI {
 		LV2_URID moony_message;
 		LV2_URID moony_code;
 		LV2_URID moony_error;
+		LV2_URID moony_trace;
 		LV2_URID event_transfer;
 	} uris;
 
@@ -838,6 +839,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	ui->uris.moony_message = ui->map->map(ui->map->handle, MOONY_MESSAGE_URI);
 	ui->uris.moony_code = ui->map->map(ui->map->handle, MOONY_CODE_URI);
 	ui->uris.moony_error = ui->map->map(ui->map->handle, MOONY_ERROR_URI);
+	ui->uris.moony_trace = ui->map->map(ui->map->handle, MOONY_TRACE_URI);
 	ui->uris.event_transfer = ui->map->map(ui->map->handle, LV2_ATOM__eventTransfer);
 
 	lv2_atom_forge_init(&ui->forge, ui->map);
@@ -910,10 +912,12 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 		{
 			const LV2_Atom_String *moony_error = NULL;
 			const LV2_Atom_String *moony_code = NULL;
+			const LV2_Atom_String *moony_trace = NULL;
 			
 			LV2_Atom_Object_Query q[] = {
 				{ ui->uris.moony_error, (const LV2_Atom **)&moony_error },
 				{ ui->uris.moony_code, (const LV2_Atom **)&moony_code },
+				{ ui->uris.moony_trace, (const LV2_Atom **)&moony_trace },
 				LV2_ATOM_OBJECT_QUERY_END
 			};
 			lv2_atom_object_query(obj, q);
@@ -972,6 +976,45 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 					cJSON *root = cJSON_CreateObject();
 					cJSON *err = cJSON_CreateString(str);
 					cJSON_AddItemToObject(root, "error", err);
+
+					client->req.data = cJSON_PrintUnformatted(root);
+					cJSON_Delete(root);
+					if(!client->req.data)
+						continue;
+
+					uv_buf_t msg [5] = {
+						[0] = {
+							.base = (char *)stat,
+							.len = stat ? strlen(stat) : 0
+						},
+						[1] = {
+							.base = (char *)cont,
+							.len = cont ? strlen(cont) : 0
+						},
+						[2] = {
+							.base = client->req.data,
+							.len = strlen(client->req.data)
+						}
+					};
+
+					uv_write(&client->req, (uv_stream_t *)&client->handle, msg, 3, _after_write);
+				}
+			}
+			else if(moony_trace)
+			{
+				const char *str = LV2_ATOM_BODY_CONST(&moony_trace->atom);
+
+				SERVER_CLIENT_FOREACH(&ui->server, client)
+				{
+					if(!client->keepalive)
+						continue;
+
+					const char *stat = http_status[STATUS_OK];
+					const char *cont = http_content[CONTENT_TEXT_JSON];
+
+					cJSON *root = cJSON_CreateObject();
+					cJSON *err = cJSON_CreateString(str);
+					cJSON_AddItemToObject(root, "trace", err);
 
 					client->req.data = cJSON_PrintUnformatted(root);
 					cJSON_Delete(root);

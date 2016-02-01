@@ -2216,6 +2216,10 @@ _log(lua_State *L)
 	{
 		const char *res = lua_tostring(L, -1);
 		lv2_log_trace(&moony->logger, "%s", res);
+
+		// feedback to UI
+		snprintf(moony->trace, MOONY_MAX_ERROR_LEN, "%s", res);
+		moony->trace_out = 1; // set flag
 	}
 
 	return 0;
@@ -3346,6 +3350,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->uris.moony_message = moony->map->map(moony->map->handle, MOONY_MESSAGE_URI);
 	moony->uris.moony_code = moony->map->map(moony->map->handle, MOONY_CODE_URI);
 	moony->uris.moony_error = moony->map->map(moony->map->handle, MOONY_ERROR_URI);
+	moony->uris.moony_trace = moony->map->map(moony->map->handle, MOONY_TRACE_URI);
 	moony->uris.moony_state = moony->map->map(moony->map->handle, MOONY_STATE_URI);
 
 	moony->uris.midi_event = moony->map->map(moony->map->handle, LV2_MIDI__MidiEvent);
@@ -4384,6 +4389,19 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *seq, uint32_t frames)
 				moony->uris.moony_error, len, moony->error);
 
 		moony->error_out = 0; // reset flag
+	}
+
+	if(moony->trace_out)
+	{
+		uint32_t len = strlen(moony->trace);
+		LV2_Atom_Forge_Frame obj_frame;
+		if(ref)
+			ref = lv2_atom_forge_frame_time(forge, frames);
+		if(ref)
+			ref = _moony_message_forge(forge, moony->uris.moony_message,
+				moony->uris.moony_trace, len, moony->trace);
+
+		moony->trace_out = 0; // reset flag
 	}
 
 	if(ref)

@@ -15,39 +15,47 @@
 	</head>
 
 	<body>
-		<div>
-			<table style="width:100%;">
+		<div class="heading">
+			<table class="heading-table">
 				<tr>
-					<td style="vertical-align:middle;">
+					<td class="heading-left">
 						<h1>moony</h1>
 					</td>
 
-					<td style="vertical-align:middle;text-align:right;">
+					<td class="heading-right">
 						Copyright &#169; 2016 Hanspeter Portner<br />
 						Released under <a href="http://www.perlfoundation.org/artistic_license_2_0">Artistic License 2.0</a><br />
 						by <a href="http://open-music-kontrollers.ch">Open Music Kontrollers</a>
 					</td>
 				<tr>
-
-				<tr>
-					<td>
-						v0.2.1 | <span id="status">disconnected</span>
-					</td>
-
-					<td style="text-align:right;">
-						<form class="clip" hidden>
-							<input type="radio" id="emacs" name="mode" value="ace/keyboard/emacs">emacs</input>
-							<input type="radio" id="vim" name="mode" value="ace/keyboard/vim">vim</input>
-						</form>
-					</td>
-				<tr>
 			</table>
+		</div>
+
+		<div class="sticky-top">
+			<div class="heading">
+				<table class="heading-table">
+					<tr>
+						<td class="heading-left">
+							v0.2.1 | <span id="status">disconnected</span> | <a class="clip" id="clear" href="#">clear log</a>
+						</td>
+
+						<td class="heading-right">
+							<form class="clip" hidden>
+								<input type="radio" id="emacs" name="mode" value="ace/keyboard/emacs">emacs</input>
+								<input type="radio" id="vim" name="mode" value="ace/keyboard/vim">vim</input>
+							</form>
+						</td>
+					<tr>
+				</table>
+			</div>
+
+			<div id="tracemsg" class="trace"></div>
 		</div>
 		
 		<div class="clip" hidden>
 			<div id="editor"></div>
-			<div id="errmsg" class="sticky" style="color:#fff" hidden><br /></div>
-			<a id="compile" class="fixed" href="#">send</a>
+			<div id="errmsg" class="sticky-bottom" hidden><br /></div>
+			<a class="command" id="compile" href="#">send</a><br /><br />
 		</div>
 
 	</body>
