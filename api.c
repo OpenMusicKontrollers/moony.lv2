@@ -3349,6 +3349,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 
 	moony->uris.moony_message = moony->map->map(moony->map->handle, MOONY_MESSAGE_URI);
 	moony->uris.moony_code = moony->map->map(moony->map->handle, MOONY_CODE_URI);
+	moony->uris.moony_selection = moony->map->map(moony->map->handle, MOONY_SELECTION_URI);
 	moony->uris.moony_error = moony->map->map(moony->map->handle, MOONY_ERROR_URI);
 	moony->uris.moony_trace = moony->map->map(moony->map->handle, MOONY_TRACE_URI);
 	moony->uris.moony_state = moony->map->map(moony->map->handle, MOONY_STATE_URI);
@@ -3899,9 +3900,11 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *seq)
 			&& (obj->body.otype == moony->uris.moony_message) )
 		{
 			const LV2_Atom_String *moony_code = NULL;
+			const LV2_Atom_String *moony_selection = NULL;
 			
 			LV2_Atom_Object_Query q[] = {
 				{ moony->uris.moony_code, (const LV2_Atom **)&moony_code },
+				{ moony->uris.moony_selection, (const LV2_Atom **)&moony_selection },
 				LV2_ATOM_OBJECT_QUERY_END
 			};
 			lv2_atom_object_query(obj, q);
@@ -3948,6 +3951,21 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *seq)
 
 					tlsf_free(moony->vm.tlsf, moony->stash_atom);
 					moony->stash_atom = NULL;
+				}
+			}
+			else if(moony_selection && moony_selection->atom.size)
+			{
+				// we do not do any stash, apply and restore for selections
+
+				// load chunk
+				const char *str = LV2_ATOM_BODY_CONST(&moony_selection->atom);
+				if(luaL_dostring(L, str)) // failed loading chunk
+				{
+					moony_error(moony);
+				}
+				else // succeeded loading chunk
+				{
+					moony->error[0] = 0x0; // reset error flag
 				}
 			}
 			else

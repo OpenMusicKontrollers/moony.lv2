@@ -84,8 +84,37 @@ function set_code(code) {
 	});
 }
 
+function set_selection(selection) {
+	$.ajax({
+		type: 'POST',
+		url: '/selection/set',
+		data: JSON.stringify({selection:selection}),
+		dataType: 'json',
+		success: function(data) {
+			//alert(data);
+		},
+		error: function(request, status, err) {
+			if(status == 'timeout') {
+				alert('timeout');
+			}
+		}
+	});
+}
+
 function compile(editor) {
-	set_code(editor.getValue());
+	var sel_range = editor.getSelectionRange();
+	if(sel_range.isEmpty()) {
+		set_code(editor.getValue());
+	} else {
+		var start_line = sel_range.start.row;
+		var end_line = sel_range.end.row;
+		var selection = '';
+		for(var i=0; i<start_line; i++)
+			selection = selection + '\n';
+		selection = selection + editor.getSession().getTextRange(sel_range);
+		set_selection(selection);
+		editor.clearSelection();
+	}
 	$('#errmsg').html('<br />').fadeOut(100);
 	$("#compile").fadeOut(100).fadeIn(300);
 }

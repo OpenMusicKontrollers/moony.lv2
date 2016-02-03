@@ -54,6 +54,7 @@ struct _UI {
 	struct {
 		LV2_URID moony_message;
 		LV2_URID moony_code;
+		LV2_URID moony_selection;
 		LV2_URID moony_error;
 		LV2_URID moony_trace;
 		LV2_URID event_transfer;
@@ -711,6 +712,22 @@ _on_message_complete(http_parser *parser)
 		}
 		chunk = strdup("{}");
 	}
+	else if(strstr(client->url, "/selection/set") == client->url)
+	{
+		stat = http_status[STATUS_OK];
+		cont = http_content[CONTENT_TEXT_JSON];
+		cJSON *root = cJSON_ParseWithOpts(client->body, NULL, 0);
+		if(root)
+		{
+			cJSON *selection = cJSON_GetObjectItem(root, "selection");
+			if(selection)
+			{
+				_moony_message_send(ui, ui->uris.moony_message, ui->uris.moony_selection, strlen(selection->valuestring)+1, selection->valuestring);
+			}
+			cJSON_Delete(root);
+		}
+		chunk = strdup("{}");
+	}
 	else if(  (strstr(client->url, "/") == client->url)
 		|| (strstr(client->url, "/index.html") == client->url) )
 	{
@@ -838,6 +855,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 
 	ui->uris.moony_message = ui->map->map(ui->map->handle, MOONY_MESSAGE_URI);
 	ui->uris.moony_code = ui->map->map(ui->map->handle, MOONY_CODE_URI);
+	ui->uris.moony_selection = ui->map->map(ui->map->handle, MOONY_SELECTION_URI);
 	ui->uris.moony_error = ui->map->map(ui->map->handle, MOONY_ERROR_URI);
 	ui->uris.moony_trace = ui->map->map(ui->map->handle, MOONY_TRACE_URI);
 	ui->uris.event_transfer = ui->map->map(ui->map->handle, LV2_ATOM__eventTransfer);
