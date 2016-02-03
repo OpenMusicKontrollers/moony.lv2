@@ -2212,13 +2212,17 @@ _log(lua_State *L)
 
 	luaL_pushresult(&buf);
 
+	const char *res = lua_tostring(L, -1);
 	if(moony->log)
-	{
-		const char *res = lua_tostring(L, -1);
 		lv2_log_trace(&moony->logger, "%s", res);
 
-		// feedback to UI
-		snprintf(moony->trace, MOONY_MAX_ERROR_LEN, "%s", res);
+	// feedback to UI
+	char *end = strrchr(moony->trace, '\0'); // search end of string
+	if(end)
+	{
+		if(end != moony->trace)
+			*end++ = '\n'; // append to
+		snprintf(end, MOONY_MAX_ERROR_LEN - (end - moony->trace), "%s", res);
 		moony->trace_out = 1; // set flag
 	}
 
@@ -4411,14 +4415,21 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *seq, uint32_t frames)
 
 	if(moony->trace_out)
 	{
-		uint32_t len = strlen(moony->trace);
-		LV2_Atom_Forge_Frame obj_frame;
-		if(ref)
-			ref = lv2_atom_forge_frame_time(forge, frames);
-		if(ref)
-			ref = _moony_message_forge(forge, moony->uris.moony_message,
-				moony->uris.moony_trace, len, moony->trace);
+		char *pch = strtok(moony->trace, "\n");
+		while(pch)
+		{
+			uint32_t len = strlen(pch);
+			LV2_Atom_Forge_Frame obj_frame;
+			if(ref)
+				ref = lv2_atom_forge_frame_time(forge, frames);
+			if(ref)
+				ref = _moony_message_forge(forge, moony->uris.moony_message,
+					moony->uris.moony_trace, len, pch);
 
+			pch = strtok(NULL, "\n");
+		}
+
+		moony->trace[0] = '\0';
 		moony->trace_out = 0; // reset flag
 	}
 
