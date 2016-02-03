@@ -279,7 +279,7 @@ struct _lforge_t {
 int moony_init(moony_t *moony, const char *subject, double sample_rate,
 	const LV2_Feature *const *features);
 void moony_deinit(moony_t *moony);
-void moony_open(moony_t *moony, lua_State *L);
+void moony_open(moony_t *moony, lua_State *L, bool use_assert);
 void moony_in(moony_t *moony, const LV2_Atom_Sequence *seq);
 void moony_out(moony_t *moony, LV2_Atom_Sequence *seq, uint32_t frames);
 const void* extension_data(const char* uri);

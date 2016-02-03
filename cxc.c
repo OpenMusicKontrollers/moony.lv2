@@ -46,7 +46,7 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 		free(handle);
 		return NULL;
 	}
-	moony_open(&handle->moony, handle->moony.vm.L);
+	moony_open(&handle->moony, handle->moony.vm.L, false);
 	
 	if(!strcmp(descriptor->URI, MOONY_C1XC1_URI))
 		handle->max_val = 1;

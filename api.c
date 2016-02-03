@@ -3440,7 +3440,7 @@ moony_deinit(moony_t *moony)
 }
 
 void
-moony_open(moony_t *moony, lua_State *L)
+moony_open(moony_t *moony, lua_State *L, bool use_assert)
 {
 	luaL_newmetatable(L, "lseq");
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
@@ -3732,9 +3732,12 @@ moony_open(moony_t *moony, lua_State *L)
 	lua_pushcclosure(L, _log, 1);
 	lua_setglobal(L, "print");
 
-	// clear assert
-	lua_pushnil(L);
-	lua_setglobal(L, "assert");
+	if(!use_assert)
+	{
+		// clear assert
+		lua_pushnil(L);
+		lua_setglobal(L, "assert");
+	}
 
 	// clear dofile
 	lua_pushnil(L);
