@@ -30,12 +30,19 @@
 typedef struct _UI UI;
 typedef struct _server_t server_t;
 typedef struct _client_t client_t;
+typedef struct _job_t job_t;
+
+struct _job_t {
+	job_t *next;
+	uv_buf_t msg [3];
+};
 
 struct _server_t {
 	uv_tcp_t http_server;
 	client_t *clients;
 	http_parser_settings http_settings;
 	uv_timer_t timer;
+	job_t *jobs;
 };
 
 struct _client_t {
@@ -134,6 +141,31 @@ _server_clients_count(server_t *server)
 		count++;
 
 	return count;
+}
+
+static inline unsigned 
+_server_clients_keepalive_count(server_t *server)
+{
+	unsigned count = 0;
+	SERVER_CLIENT_FOREACH(server, client)
+		if(client->keepalive)
+			count++;
+
+	return count;
+}
+
+static inline job_t *
+_job_append(job_t *list, job_t *job)
+{
+	if(list)
+	{
+		job_t *l;
+		for(l=list; l->next; l=l->next) {}
+		l->next = job;
+		return list;
+	}
+
+	return job;
 }
 
 static inline void
@@ -536,6 +568,40 @@ _after_write(uv_write_t *req, int status)
 	uv_close((uv_handle_t *)handle, _on_client_close);
 }
 
+static inline void
+_keepalive(server_t *server)
+{
+	job_t *job = server->jobs;
+
+	if(job && (_server_clients_keepalive_count(server) > 0) )
+	{
+		SERVER_CLIENT_FOREACH(server, client)
+		{
+			if(!client->keepalive)
+				continue;
+
+			char *json = job->msg[2].base;
+			char *dup = strdup(json);
+			if(dup)
+			{
+				client->req.data = dup;
+				job->msg[2].base = dup;
+
+				uv_write(&client->req, (uv_stream_t *)&client->handle, job->msg, 3, _after_write);
+
+				job->msg[2].base = json;
+			}
+
+			client->keepalive = false;
+		}
+
+		// remove job
+		server->jobs = job->next;
+		free(job->msg[2].base);
+		free(job);
+	}
+}
+
 enum {
 	STATUS_NOT_FOUND,
 	STATUS_OK
@@ -761,7 +827,8 @@ _on_message_complete(http_parser *parser)
 		uv_write(&client->req, (uv_stream_t *)&client->handle, msg, 1, _after_write);
 	else if(chunk)
 		uv_write(&client->req, (uv_stream_t *)&client->handle, msg, 3, _after_write);
-	// else keepalive
+	else
+		_keepalive(server); // answer keep alives
 
 	return 0;
 }
@@ -920,6 +987,7 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 	uint32_t format, const void *buffer)
 {
 	UI *ui = handle;
+	server_t *server = &ui->server;
 
 	if( (port_index == ui->notify_port) && (format == ui->uris.event_transfer) )
 	{
@@ -944,11 +1012,9 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 			{
 				const char *str = LV2_ATOM_BODY_CONST(&moony_code->atom);
 
-				SERVER_CLIENT_FOREACH(&ui->server, client)
+				job_t *job = calloc(1, sizeof(job_t));
+				if(job)
 				{
-					if(!client->keepalive)
-						continue;
-
 					const char *stat = http_status[STATUS_OK];
 					const char *cont = http_content[CONTENT_TEXT_JSON];
 
@@ -956,38 +1022,29 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 					cJSON *code = cJSON_CreateString(str);
 					cJSON_AddItemToObject(root, "code", code);
 
-					client->req.data = cJSON_PrintUnformatted(root);
+					char *json = cJSON_PrintUnformatted(root);
 					cJSON_Delete(root);
-					if(!client->req.data)
-						continue;
 
-					uv_buf_t msg [5] = {
-						[0] = {
-							.base = (char *)stat,
-							.len = stat ? strlen(stat) : 0
-						},
-						[1] = {
-							.base = (char *)cont,
-							.len = cont ? strlen(cont) : 0
-						},
-						[2] = {
-							.base = client->req.data,
-							.len = strlen(client->req.data)
-						}
-					};
+					job->msg[0].base = (char *)stat;
+					job->msg[0].len = stat ? strlen(stat) : 0;
 
-					uv_write(&client->req, (uv_stream_t *)&client->handle, msg, 3, _after_write);
+					job->msg[1].base = (char *)cont;
+					job->msg[1].len = cont ? strlen(cont) : 0;
+
+					job->msg[2].base = json;
+					job->msg[2].len = json ? strlen(json) : 0;
+
+					server->jobs = _job_append(server->jobs, job);
+					_keepalive(server);
 				}
 			}
 			else if(moony_error)
 			{
 				const char *str = LV2_ATOM_BODY_CONST(&moony_error->atom);
 
-				SERVER_CLIENT_FOREACH(&ui->server, client)
+				job_t *job = calloc(1, sizeof(job_t));
+				if(job)
 				{
-					if(!client->keepalive)
-						continue;
-
 					const char *stat = http_status[STATUS_OK];
 					const char *cont = http_content[CONTENT_TEXT_JSON];
 
@@ -995,66 +1052,50 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 					cJSON *err = cJSON_CreateString(str);
 					cJSON_AddItemToObject(root, "error", err);
 
-					client->req.data = cJSON_PrintUnformatted(root);
+					char *json = cJSON_PrintUnformatted(root);
 					cJSON_Delete(root);
-					if(!client->req.data)
-						continue;
 
-					uv_buf_t msg [5] = {
-						[0] = {
-							.base = (char *)stat,
-							.len = stat ? strlen(stat) : 0
-						},
-						[1] = {
-							.base = (char *)cont,
-							.len = cont ? strlen(cont) : 0
-						},
-						[2] = {
-							.base = client->req.data,
-							.len = strlen(client->req.data)
-						}
-					};
+					job->msg[0].base = (char *)stat;
+					job->msg[0].len = stat ? strlen(stat) : 0;
 
-					uv_write(&client->req, (uv_stream_t *)&client->handle, msg, 3, _after_write);
+					job->msg[1].base = (char *)cont;
+					job->msg[1].len = cont ? strlen(cont) : 0;
+
+					job->msg[2].base = json;
+					job->msg[2].len = json ? strlen(json) : 0;
+
+					server->jobs = _job_append(server->jobs, job);
+					_keepalive(server);
 				}
 			}
 			else if(moony_trace)
 			{
 				const char *str = LV2_ATOM_BODY_CONST(&moony_trace->atom);
 
-				SERVER_CLIENT_FOREACH(&ui->server, client)
+				job_t *job = calloc(1, sizeof(job_t));
+				if(job)
 				{
-					if(!client->keepalive)
-						continue;
-
 					const char *stat = http_status[STATUS_OK];
 					const char *cont = http_content[CONTENT_TEXT_JSON];
 
 					cJSON *root = cJSON_CreateObject();
-					cJSON *err = cJSON_CreateString(str);
-					cJSON_AddItemToObject(root, "trace", err);
+					cJSON *trace = cJSON_CreateString(str);
+					cJSON_AddItemToObject(root, "trace", trace);
 
-					client->req.data = cJSON_PrintUnformatted(root);
+					char *json = cJSON_PrintUnformatted(root);
 					cJSON_Delete(root);
-					if(!client->req.data)
-						continue;
 
-					uv_buf_t msg [5] = {
-						[0] = {
-							.base = (char *)stat,
-							.len = stat ? strlen(stat) : 0
-						},
-						[1] = {
-							.base = (char *)cont,
-							.len = cont ? strlen(cont) : 0
-						},
-						[2] = {
-							.base = client->req.data,
-							.len = strlen(client->req.data)
-						}
-					};
+					job->msg[0].base = (char *)stat;
+					job->msg[0].len = stat ? strlen(stat) : 0;
 
-					uv_write(&client->req, (uv_stream_t *)&client->handle, msg, 3, _after_write);
+					job->msg[1].base = (char *)cont;
+					job->msg[1].len = cont ? strlen(cont) : 0;
+
+					job->msg[2].base = json;
+					job->msg[2].len = json ? strlen(json) : 0;
+
+					server->jobs = _job_append(server->jobs, job);
+					_keepalive(server);
 				}
 			}
 		}

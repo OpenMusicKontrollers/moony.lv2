@@ -23,7 +23,7 @@ function keepalive() {
 		url: '/keepalive',
 		data: {},
 		dataType: 'json',
-		timeout: 10000, // ms
+		timeout: 60000, // 1min
 		success: function(data) {
 			if(data.code) {
 				editor.setValue(data.code, 1);
@@ -45,6 +45,7 @@ function keepalive() {
 			} else {
 				$('#status').html('disconnected');
 				$('.clip').hide();
+				$('#tracemsg').empty();
 			}
 		}
 	});
