@@ -3732,6 +3732,18 @@ moony_open(moony_t *moony, lua_State *L)
 	lua_pushcclosure(L, _log, 1);
 	lua_setglobal(L, "print");
 
+	// clear assert
+	lua_pushnil(L);
+	lua_setglobal(L, "assert");
+
+	// clear dofile
+	lua_pushnil(L);
+	lua_setglobal(L, "dofile");
+
+	// clear loadfile
+	lua_pushnil(L);
+	lua_setglobal(L, "loadfile");
+
 	// MIDIResponder
 	lua_newtable(L);
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1

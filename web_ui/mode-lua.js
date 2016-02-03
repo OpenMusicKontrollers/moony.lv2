@@ -7,64 +7,92 @@ var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
 var LuaHighlightRules = function() {
 
     var keywords = (
-        "break|do|else|elseif|end|for|function|if|in|local|repeat|"+
-         "return|then|until|while|or|and|not"
-    );
+				"while|do|end|repeat|until|if|then|elseif|else|for|goto|break|return|"+
+				"local|function");
 
-    var builtinConstants = ("true|false|nil|_G|_VERSION|"+
-				//moony MIDI
-				"NoteOn|NoteOff|Controller|Bender|"+
-				// moony Atom
-				"Bool|Int|Long|URID|Float|Double|String|URI|Literal|Chunk|Tuple|Object|Vector|"+
-				// moony Patch
-				"Get|Set|Put|subject|property|value|writable|readable|body|"+
-				// moony Units
-				"hz|db");
+		var booleanOps = ("and|or|not");
+
+    var builtinConstants = ("true|false|nil|_G|_VERSION");
 
     var functions = (
-        "string|xpcall|package|tostring|print|os|unpack|require|"+
-        "getfenv|setmetatable|next|assert|tonumber|io|rawequal|"+
-        "collectgarbage|getmetatable|module|rawset|math|debug|"+
-        "pcall|table|newproxy|type|coroutine|_G|select|gcinfo|"+
-        "pairs|rawget|loadstring|ipairs|_VERSION|dofile|setfenv|"+
-        "load|error|loadfile|"+
+				// Lua basic
+				"collectgarbage|error|getmetatable|ipairs|load|next|pairs|pcall|print|"+
+				"rawequal|rawget|rawlen|rawset|select|setmetatable|tonumber|tostring|type|xpcall|"+
+				// Lua metamethods
+				"__add|__sub|__mul|__div|__mod|__pow|__unm|__idiv|"+
+				"__band|__bor|__bxor|__bnot|__shl|__shr|"+
+				"__concat|__len|__eq|__lt|__le|__index|__newindex|__call|"+
+				"__gc|__mode|__name|__tostring|__metatable|__pairs|"+
+				// moony basic
+				"run|save|restore|stash|apply|new|register");
 
-        "sub|upper|len|gfind|rep|find|match|char|dump|gmatch|"+
-        "reverse|byte|format|gsub|lower|preload|loadlib|loaded|"+
-        "loaders|cpath|config|path|seeall|exit|setlocale|date|"+
-        "getenv|difftime|remove|time|clock|tmpname|rename|execute|"+
-        "lines|write|close|flush|open|output|type|read|stderr|"+
-        "stdin|input|stdout|popen|tmpfile|log|max|acos|huge|"+
-        "ldexp|pi|cos|tanh|pow|deg|tan|cosh|sinh|random|randomseed|"+
-        "frexp|ceil|floor|rad|abs|sqrt|modf|asin|min|mod|fmod|log10|"+
-        "atan2|exp|sin|atan|getupvalue|debug|sethook|getmetatable|"+
-        "gethook|setmetatable|setlocal|traceback|setfenv|getinfo|"+
-        "setupvalue|getlocal|getregistry|getfenv|setn|insert|getn|"+
-        "foreachi|maxn|foreach|concat|sort|remove|resume|yield|"+
-        "status|wrap|create|running|"+
-        "__add|__sub|__mod|__unm|__concat|__lt|__index|__call|__gc|__metatable|"+
-        "__mul|__div|__pow|__len|__eq|__le|__newindex|__tostring|__mode|__tonumber|"+
-				//moony general
-				"run|save|restore|stash|apply|new|register|"+
-				//moony forge
-				"bool|int|long|float|double|urid|string|uri|literal|object|atom|tuple|vector|midi|message|bundle"
-    );
+		var field_functions = (
+				// Lua coroutine
+				"create|isyieldable|resume|running|status|wrap|yield|"+
+				// Lua string
+				"byte|char|dump|find|format|gmatch|gsub|len|lower|match|pack|packsize|rep|reverse|sub|unpack|upper|"+
+				// Lua UTF-8
+				"char|charpattern|codes|codepoint|len|offset|"+
+				// Lua table
+				"concat|insert|move|pack|remove|sort|unpack|"+
+				// Lua math
+				"abs|acos|asin|atan|ceil|cos|deg|exp|floor|fmod|log|max|min|modf|"+
+				"rad|random|randomseed|sin|sqrt|tan|tointeger|type|ult|"+
+				// moony forge
+				"frame_time|beat_time|time|atom|int|long|float|double|bool|urid|string|literal|uri|path|"+
+				"chunk|midi|bundle|message|tuple|object|key|property|vector|sequence|"+
+				"typed|get|set|put|patch|remove|add|pop|"+
+				// moony sequence
+				"foreach|unpack|new|stash|register|save|restore");
 
-    var stdLibaries = ("string|package|os|io|math|debug|table|coroutine|"+
-				//moony
-				"MIDI|Atom|Patch|RDFS|RDF|Core|Units|"+
+		var field_constants = (
+				// Lua math
+				"huge|maxinteger|mininteger|pi|"+
+				// moony Atom
+				"Bool|Chunk|Double|Float|Int|Long|Literal|Object|Path|Property|Sequence|String|Tuple|URI|URID|Vector|"+
+				// moony MIDI
+				"MidiEvent|"+
+				"NoteOff|NoteOn|NotePressure|Controller|ProgramChange|ChannelPressure|Bender|SystemExclusive|QuarterFrame|SongPosition|SongSelect|TuneRequest|Clock|Start|Continue|Stop|ActiveSense|Reset|"+
+				"BankSelection_MSB|Modulation_MSB|Breath_MSB|Foot_MSB|PortamentoTime_MSB|DataEntry_MSB|MainVolume_MSB|Balance_MSB|Panpot_MSB|Expression_MSB|Effect1_MSB|Effect2_MSB|GeneralPurpose1_MSB|GeneralPurpose2_MSB|GeneralPurpose3_MSB|GeneralPurpose4_MSB|BankSelection_LSB|Modulation_LSB|Breath_LSB|Foot_LSB|PortamentoTime_LSB|DataEntry_LSB|MainVolume_LSB|Balance_LSB|Panpot_LSB|Expression_LSB|Effect1_LSB|Effect2_LSB|GeneralPurpose1_LSB|GeneralPurpose2_LSB|GeneralPurpose3_LSB|GeneralPurpose4_LSB|SustainPedal|Portamento|Sostenuto|SoftPedal|LegatoFootSwitch|Hold2|SoundVariation|ReleaseTime|Timbre|AttackTime|Brightness|SC1|SC2|SC3|SC4|SC5|SC6|SC7|SC8|SC9|SC10|GeneralPurpose5|GeneralPurpose6|GeneralPurpose7|GeneralPurpose8|PortamentoControl|ReverbDepth|TremoloDepth|ChorusDepth|DetuneDepth|PhaserDepth|E1|E2|E3|E4|E5|DataIncrement|DataDecrement|NRPN_LSB|NRPN_MSB|RPN_LSB|RPN_MSB|AllSoundsOff|ResetControllers|LocalControlSwitch|AllNotesOff|OmniOff|OmniOn|Mono1|Mono2|"+
+				// moony Time
+				"Position|barBeat|bar|beat|beatUnit|beatsPerBar|beatsPerMinute|frame|framesPerSecond|speed|"+
+				// moony OSC
+				"Event|Bundle|Message|bundleTimestamp|bundleItems|messagePath|messageFormat|messageArguments|"+
+				// moony Core
+				"sampleRate|minimum|maximum|scalePoint|"+
+				// moony Buf_Size
+				"minBlockLength|maxBlockLength|sequenceSize|"+
+				// moony Patch
+				"Get|Set|Put|subject|property|value|writable|readable|body|"+
+				"Ack|Delete|Copy|Error|Get|Message|Move|Patch|Post|Put|Request|Response|Set|"+
+				"add|body|destination|property|readable|remove|request|subject|sequenceNumber|value|wildcard|writable|"+
+				// moony RDF
+				"value|"+
+				// moony RDFS
+				"label|range|"+
+				// moony Units
+				"Conversion|Unit|bar|beat|bpm|cent|cm|coef|conversion|db|degree|frame|hz|inch|khz|km|m|mhz|midiNote|mile|min|mm|ms|name|oct|pc|prefixConversion|render|s|semitone12TET|symbol|unit");
+
+    var libraries = (
+				// Lua
+				"coroutine|string|utf8|table|math|"+
+				// moony
+				"Atom|MIDI|Time|OSC|Core|Buf_Size|Patch|RDF|RDFS|Units|Options|"+
 				"MIDIResponder|OSCResponder|TimeResponder|StateResponder|Map|Unmap");
-
-    var deprecatedIn5152 = ("setn|foreach|foreachi|gcinfo|log10|maxn");
 
     var keywordMapper = this.createKeywordMapper({
         "keyword": keywords,
+				"keyword.operator" : booleanOps,
         "support.function": functions,
-        "keyword.deprecated": deprecatedIn5152,
-        "constant.library": stdLibaries,
+        "constant.library": libraries,
         "constant.language": builtinConstants,
         "variable.language": "self"
     }, "identifier");
+
+		var fieldMapper = this.createKeywordMapper({
+			"constant.language" : field_constants,
+			"support.function" : field_functions 
+		}, "identifier");
 
     var decimalInteger = "(?:(?:[1-9]\\d*)|(?:0))";
     var hexInteger = "(?:0[xX][\\dA-Fa-f]+)";
@@ -111,7 +139,7 @@ var LuaHighlightRules = function() {
             stateName: "bracketedString",
             onMatch : function(value, currentState, stack){
                 stack.unshift(this.next, value.length, currentState);
-                return "comment";
+                return "string";
             },
             regex : /\[=*\[/,
             next  : [
@@ -124,13 +152,13 @@ var LuaHighlightRules = function() {
                         } else {
                             this.next = "";
                         }
-                        return "comment";
+                        return "string";
                     },
                     
                     regex : /\]=*\]/,
                     next  : "start"
                 }, {
-                    defaultToken : "comment"
+                    defaultToken : "string"
                 }
             ]
         },
@@ -147,13 +175,27 @@ var LuaHighlightRules = function() {
             token : "constant.numeric", // integer
             regex : integer + "\\b"
         }, {
+						token: "keyword.operator",
+						regex : "[\\:\\.]",
+						next: [{
+							token : "keyword.operator",
+							regex : "[\\:\\.]+",
+							next: "start"
+						}, {
+							//token: "string",
+							token : fieldMapper,
+							regex : "[a-zA-Z_$][a-zA-Z0-9_$]*\\b",
+							next: "start"
+						}]
+        }, {
             token : keywordMapper,
-            regex : "[a-zA-Z_$][a-zA-Z0-9_$]*\\b"
+            regex : "[a-zA-Z_$][a-zA-Z0-9_$]*\\b",
         }, {
             token : "keyword.operator",
-            regex : "\\+|\\-|\\*|\\/|%|\\#|\\^|~|<|>|<=|=>|==|~=|=|\\:|\\.\\.\\.|\\.\\."+
-							//moony bitwise
-							"|\\||\\&|<<|>>"
+            regex : "\\+|\\-|\\*|\\/|\\/|%|\\^|"+
+							"\\&|\\||~|"+
+							"==|~=|<=|>=|<|>|"+
+							"#"
         }, {
             token : "paren.lparen",
             regex : "[\\[\\(\\{]"
@@ -163,7 +205,7 @@ var LuaHighlightRules = function() {
         }, {
             token : "text",
             regex : "\\s+|\\w+"
-        } ]
+        }]
     };
     
     this.normalizeRules();
