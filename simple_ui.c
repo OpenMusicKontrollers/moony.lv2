@@ -308,6 +308,8 @@ _show(UI *ui)
 	const char *moony_editor = getenv("MOONY_EDITOR");
 	if(!moony_editor)
 		moony_editor = command;
+	if(!moony_editor)
+		moony_editor = getenv("EDITOR");
 	char *dup = strdup(moony_editor);
 	char **args = dup ? _parse_env(dup, ui->path) : NULL;
 	

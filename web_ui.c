@@ -439,6 +439,8 @@ _show(UI *ui)
 	// get default editor from environment
 	const char *moony_editor = getenv("MOONY_BROWSER");
 	if(!moony_editor)
+		moony_editor = getenv("BROWSER");
+	if(!moony_editor)
 		moony_editor = command;
 	char *dup = strdup(moony_editor);
 	char **args = dup ? _parse_env(dup, ui->path) : NULL;
