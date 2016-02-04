@@ -2562,7 +2562,7 @@ _ltimeresponder_cb(timely_t *timely, int64_t frames, LV2_URID type,
 	lua_gettable(L, 5); // uservalue
 	if(!lua_isnil(L, -1))
 	{
-		lua_pushvalue(L, 1); // self TODO or uservalue?
+		lua_pushvalue(L, 5); // uservalue
 		lua_pushinteger(L, frames); // frames
 		lua_pushvalue(L, 4); // data
 

@@ -162,11 +162,11 @@ moony:bank-midi_midi-responder
 	state:state [
 		moony:code """midi_responder = MIDIResponder:new({
 	[MIDI.NoteOn] = function(self, frames, forge, chan, note, vel)
-		--forge:time(frames):midi(MIDI.NoteOn | chan, note, vel)
+		forge:time(frames):midi(MIDI.NoteOn | chan, note, vel)
 		return true -- handled
 	end,
 	[MIDI.NoteOff] = function(self, frames, forge, chan, note, vel)
-		--forge:time(frames):midi(MIDI.NoteOff | chan, note, vel)
+		forge:time(frames):midi(MIDI.NoteOff | chan, note, vel)
 		return true -- handled
 	end
 })
@@ -180,27 +180,26 @@ end"""
 
 moony:bank-time_midi-sequencer
 	state:state [
-		moony:code """rolling = false
-		
-time_responder = TimeResponder:new({
-	[Time.speed] = function(self, frames, forge, speed)
-		rolling = speed > 0 and true or false
-    if not rolling and forge then
+		moony:code """time_responder = TimeResponder:new({
+  [Time.speed] = function(self, frames, forge, speed)
+    self.rolling = speed > 0.0
+    if not self.rolling and forge then
       forge:time(frames):midi(MIDI.Controller, MIDI.AllNotesOff)
     end
-	end,
-	[Time.barBeat] = function(self, frames, forge, bar_beat)
-		if rolling and forge then
-			forge:time(frames):midi(MIDI.NoteOff, 24, 0x7f)
-			forge:time(frames):midi(MIDI.NoteOn, 24, 0x7f)
-		end
-	end,
-	[Time.bar] = function(self, frames, forge, bar)
-		if rolling and forge then
-			forge:time(frames):midi(MIDI.NoteOff, 48, 0x7f)
-			forge:time(frames):midi(MIDI.NoteOn, 48, 0x7f)
-		end
-	end
+  end,
+  [Time.barBeat] = function(self, frames, forge, bar_beat)
+    if self.rolling and forge then
+      forge:time(frames):midi(MIDI.NoteOff, 24, 0x7f)
+      forge:time(frames):midi(MIDI.NoteOn, 24, 0x7f)
+    end
+  end,
+  [Time.bar] = function(self, frames, forge, bar)
+    if self.rolling and forge then
+      forge:time(frames):midi(MIDI.NoteOff, 48, 0x7f)
+      forge:time(frames):midi(MIDI.NoteOn, 48, 0x7f)
+    end
+  end,
+  rolling = false
 })
 
 function stash(forge)
@@ -213,13 +212,11 @@ end
 
 function run(n, seq, forge)
   local from = 0
-
   for frames, atom in seq:foreach() do
-		time_responder(from, frames, forge, atom)
-		from = frames
+    time_responder(from, frames, forge, atom)
+    from = frames
   end
-
-	time_responder(from, n, forge)
+  time_responder(from, n, forge)
 end"""
 	] .
 
