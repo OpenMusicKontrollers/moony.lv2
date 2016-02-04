@@ -3,7 +3,7 @@
 mkdir -p release
 pushd release &> /dev/null
 
-#for toolchain in armv7-linux i686-linux i686-w64-mingw32 x86_64-linux x86_64-w64-mingw32;
+#for toolchain in armv7h-linux;
 for toolchain in i686-linux i686-w64-mingw32 x86_64-linux x86_64-w64-mingw32;
 do
 	echo $toolchain
