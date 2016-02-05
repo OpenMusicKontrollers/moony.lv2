@@ -160,7 +160,7 @@ end"""
 
 moony:bank-midi_midi-responder
 	state:state [
-		moony:code """midi_responder = MIDIResponder:new({
+		moony:code """midi_responder = MIDIResponder({
 	[MIDI.NoteOn] = function(self, frames, forge, chan, note, vel)
 		forge:time(frames):midi(MIDI.NoteOn | chan, note, vel)
 		return true -- handled
@@ -180,7 +180,7 @@ end"""
 
 moony:bank-time_midi-sequencer
 	state:state [
-		moony:code """time_responder = TimeResponder:new({
+		moony:code """time_responder = TimeResponder({
   [Time.speed] = function(self, frames, forge, speed)
     self.rolling = speed > 0.0
     if not self.rolling and forge then
@@ -222,7 +222,7 @@ end"""
 
 moony:bank-osc_osc-responder
 	state:state [
-		moony:code """osc_responder = OSCResponder:new({
+		moony:code """osc_responder = OSCResponder({
   root = {
     ping = function(self, frames, forge, fmt, ...)
       forge:time(frames):message('/pong', fmt, ...)
@@ -286,7 +286,7 @@ gamma = {
 	value = 1.0
 }
 
-state = StateResponder:new({
+state = StateResponder({
   [urid.alpha] = alpha,
   [urid.beta] = beta,
   [urid.gamma] = gamma

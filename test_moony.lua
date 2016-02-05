@@ -359,7 +359,7 @@ do
 	local note_start_responder = false
 	local note_stop_responder = false
 
-	local midi_responder = MIDIResponder:new({
+	local midi_responder = MIDIResponder({
 		[MIDI.NoteOn] = function(self, frames, forge, chan, note, vel)
 			assert(frames == 0)
 			assert(chan == _chan)
@@ -781,7 +781,7 @@ do
 	local pong_responded = false
 	local complex_responded = false
 
-	local osc_responder = OSCResponder:new({
+	local osc_responder = OSCResponder({
 		root = {
 			ping = function(self, frames, forge, fmt, i)
 				assert(frames == 0)
@@ -850,7 +850,7 @@ do
 	local frames_per_second_responded = 0
 	local speed_responded = 0
 
-	local time_responder = TimeResponder:new({
+	local time_responder = TimeResponder({
 		[Time.barBeat] = function(self, frames, forge, bar_beat)
 			if bar_beat_responded == 0 then
 				assert(bar_beat == 0.0)
@@ -1246,30 +1246,44 @@ do
 		range = Atom.Float,
 		minimum = -0.5,
 		maximum = 10.0,
-		_value = 1.0,
+		value = 1.0,
 		[Patch.Get] = function(self, frames, forge)
 			flt_get_responded = true
-			return self._value
+			return self.value
 		end,
 		[Patch.Set] = function(self, frames, forge, value)
 			flt_set_responded = true
-			self._value = value
+			self.value = value
 		end
 	}
 
-	local state = StateResponder:new({
+
+	local state = StateResponder({
 		[urid.int] = state_int,
 		[urid.flt] = state_flt
 	})
+
+	local function store(key, range, value)
+		if key == urid.int then
+			assert(range == state_int.range)
+			assert(value == state_int.value)
+		elseif key == urid.flt then
+			assert(range == state_flt.range)
+			assert(value == state_flt.value)
+		end
+	end
+	
+	state:save(store)
+
+	--FIXME retrieve
 
 	local function consumer(seq, forge)
 		for frames, atom in seq:foreach() do
 			assert(state(frames, forge, atom) == true)
 		end
 
-		assert(state[urid.int].value == 2)
-		assert(state[urid.flt].value == nil)
-		assert(state[urid.flt]._value == 2.0)
+		assert(state_int.value == 2)
+		assert(state_flt.value == 2.0)
 		assert(flt_get_responded)
 		assert(flt_set_responded)
 	end

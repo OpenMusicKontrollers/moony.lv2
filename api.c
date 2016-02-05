@@ -2258,9 +2258,11 @@ _lmidiresponder__call(lua_State *L)
 		const uint8_t command = status & 0xf0;
 		const bool is_system = command == 0xf0;
 
-		lua_pushinteger(L, is_system ? status : command);
-		lua_gettable(L, 1);
-		if(!lua_isnil(L, -1))
+		// replace self with its uservalue
+		lua_getuservalue(L, 1);
+		lua_replace(L, 1);
+
+		if(lua_geti(L, 1, is_system ? status : command) != LUA_TNIL)
 		{
 			lua_insert(L, 1);
 			if(is_system)
@@ -2283,30 +2285,22 @@ _lmidiresponder__call(lua_State *L)
 }
 
 static int
-_lmidiresponder_new(lua_State *L)
+_lmidiresponder(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	
-	lua_settop(L, 2); // discard superfluous arguments
+	lua_settop(L, 1); // discard superfluous arguments
 
-	// o = o or {}
-	if(!lua_istable(L, 2))
-	{
-		lua_pop(L, 1);
-		lua_newtable(L);
-	}
+	// o = new
+	int32_t *dummy = lua_newuserdata(L, sizeof(int32_t));
+	(void)dummy;
 
-	// self.__index = self
-	lua_pushvalue(L, 1);
-	lua_setfield(L, 1, "__index");
-
-	// self.__call = _lmidiresponder__call
-	lua_pushlightuserdata(L, moony);
-	lua_pushcclosure(L, _lmidiresponder__call, 1);
-	lua_setfield(L, 1, "__call");
+	// o.uservalue = uservalue
+	lua_insert(L, 1);
+	lua_setuservalue(L, -2);
 
 	// setmetatable(o, self)
-	lua_pushvalue(L, 1);
+	luaL_getmetatable(L, "lmidiresponder");
 	lua_setmetatable(L, -2);
 
 	// return o
@@ -2314,7 +2308,7 @@ _lmidiresponder_new(lua_State *L)
 }
 
 static const luaL_Reg lmidiresponder_mt [] = {
-	{"new", _lmidiresponder_new},
+	{"__call", _lmidiresponder__call},
 	{NULL, NULL}
 };
 
@@ -2348,7 +2342,7 @@ _loscresponder_msg(const char *path, const char *fmt, const LV2_Atom_Tuple *args
 	LV2_Atom_Forge *forge = &moony->forge;
 	osc_forge_t *oforge = &moony->oforge;
 
-	// 1: self
+	// 1: uservalue
 	// 2: frames
 	// 3: data
 
@@ -2509,6 +2503,10 @@ _loscresponder__call(lua_State *L)
 		return 1;
 	}
 
+	// replace self with it uservalue
+	lua_getuservalue(L, 1);
+	lua_replace(L, 1);
+
 	moony->osc_responder_handled = 0;
 	osc_atom_event_unroll(&moony->oforge, lobj->obj, NULL, NULL, _loscresponder_msg, moony);
 	lua_pushboolean(L, moony->osc_responder_handled);
@@ -2517,30 +2515,22 @@ _loscresponder__call(lua_State *L)
 }
 
 static int
-_loscresponder_new(lua_State *L)
+_loscresponder(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	
-	lua_settop(L, 2); // discard superfluous arguments
+	lua_settop(L, 1); // discard superfluous arguments
 
-	// o = o or {}
-	if(!lua_istable(L, 2))
-	{
-		lua_pop(L, 1);
-		lua_newtable(L);
-	}
+	// o = new 
+	int32_t *dummy = lua_newuserdata(L, sizeof(int32_t));
+	(void)dummy;
 
-	// self.__index = self
-	lua_pushvalue(L, 1);
-	lua_setfield(L, 1, "__index");
-
-	// self.__call = _loscresponder__call
-	lua_pushlightuserdata(L, moony);
-	lua_pushcclosure(L, _loscresponder__call, 1);
-	lua_setfield(L, 1, "__call");
+	// o.uservalue = uservalue
+	lua_insert(L, 1);
+	lua_setuservalue(L, -2);
 
 	// setmetatable(o, self)
-	lua_pushvalue(L, 1);
+	luaL_getmetatable(L, "loscresponder");
 	lua_setmetatable(L, -2);
 
 	// return o
@@ -2548,7 +2538,7 @@ _loscresponder_new(lua_State *L)
 }
 
 static const luaL_Reg loscresponder_mt [] = {
-	{"new", _loscresponder_new},
+	{"__call", _loscresponder__call},
 	{NULL, NULL}
 };
 
@@ -2685,11 +2675,11 @@ _ltimeresponder_stash(lua_State *L)
 }
 
 static int
-_ltimeresponder_new(lua_State *L)
+_ltimeresponder(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	
-	lua_settop(L, 2); // discard superfluous arguments
+	lua_settop(L, 1); // discard superfluous arguments
 
 	timely_mask_t mask = TIMELY_MASK_BAR_BEAT
 		| TIMELY_MASK_BAR
@@ -2702,7 +2692,7 @@ _ltimeresponder_new(lua_State *L)
 		| TIMELY_MASK_BAR_WHOLE;
 
 	// o = o or {}
-	if(!lua_istable(L, 2))
+	if(lua_isnil(L, 1))
 	{
 		lua_pop(L, 1);
 		lua_newtable(L);
@@ -2714,20 +2704,11 @@ _ltimeresponder_new(lua_State *L)
 		_ltimeresponder_cb, L);
 
 	// userdata.uservalue = o
-	lua_insert(L, -2);
+	lua_insert(L, 1);
 	lua_setuservalue(L, -2);
 
-	// self.__index = self
-	lua_pushvalue(L, 1);
-	lua_setfield(L, 1, "__index");
-
-	// self.__call = _ltimeresponder__call
-	lua_pushlightuserdata(L, moony);
-	lua_pushcclosure(L, _ltimeresponder__call, 1);
-	lua_setfield(L, 1, "__call");
-
 	// setmetatable(o, self)
-	lua_pushvalue(L, 1);
+	luaL_getmetatable(L, "ltimeresponder");
 	lua_setmetatable(L, -2);
 
 	// return o
@@ -2735,7 +2716,7 @@ _ltimeresponder_new(lua_State *L)
 }
 
 static const luaL_Reg ltimeresponder_mt [] = {
-	{"new", _ltimeresponder_new},
+	{"__call", _ltimeresponder__call},
 	{"stash", _ltimeresponder_stash},
 	{NULL, NULL}
 };
@@ -3024,6 +3005,10 @@ _lstateresponder__call(lua_State *L)
 		return 1;
 	}
 
+	// replace self with its uservalue
+	lua_getuservalue(L, 1);
+	lua_replace(L, 1);
+
 	if(lobj->obj->body.otype == moony->uris.patch_get)
 	{
 		const LV2_Atom_URID *subject = NULL;
@@ -3048,9 +3033,7 @@ _lstateresponder__call(lua_State *L)
 			}
 			else if(property->atom.type == moony->forge.URID)
 			{
-				lua_pushinteger(L, property->body);
-				lua_gettable(L, 1); // self[property]
-				if(!lua_isnil(L, -1))
+				if(lua_geti(L, 1, property->body) != LUA_TNIL) // self[property]
 				{
 					LV2_URID range = moony->forge.Int; // fallback
 
@@ -3122,9 +3105,7 @@ _lstateresponder__call(lua_State *L)
 		{
 			if(property && (property->atom.type == moony->forge.URID) && value)
 			{
-				lua_pushinteger(L, property->body);
-				lua_gettable(L, 1); // self[property]
-				if(!lua_isnil(L, -1))
+				if(lua_geti(L, 1, property->body) != LUA_TNIL) // self[property]
 				{
 					if(lua_geti(L, -1, moony->uris.patch_set) != LUA_TNIL)
 					{
@@ -3153,30 +3134,22 @@ _lstateresponder__call(lua_State *L)
 }
 
 static int
-_lstateresponder_new(lua_State *L)
+_lstateresponder(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	
-	lua_settop(L, 2); // discard superfluous arguments
+	lua_settop(L, 1); // discard superfluous arguments
 
-	// o = o or {}
-	if(!lua_istable(L, 2))
-	{
-		lua_pop(L, 1);
-		lua_newtable(L);
-	}
+	// o = new 
+	int32_t *dummy = lua_newuserdata(L, sizeof(int32_t));
+	(void)dummy;
 
-	// self.__index = self
-	lua_pushvalue(L, 1);
-	lua_setfield(L, 1, "__index");
-
-	// self.__call = _lstateresponder__call
-	lua_pushlightuserdata(L, moony);
-	lua_pushcclosure(L, _lstateresponder__call, 1);
-	lua_setfield(L, 1, "__call");
+	// o.uservalue = uservalue
+	lua_insert(L, 1);
+	lua_setuservalue(L, -2);
 
 	// setmetatable(o, self)
-	lua_pushvalue(L, 1);
+	luaL_getmetatable(L, "lstateresponder");
 	lua_setmetatable(L, -2);
 
 	// return o
@@ -3192,6 +3165,10 @@ _lstateresponder_reg(lua_State *L)
 	// 1: self
 	// 2: frames
 	// 3: forge
+
+	// replace self with its uservalue
+	lua_getuservalue(L, 1);
+	lua_replace(L, 1);
 
 	int64_t frames = luaL_checkinteger(L, 2);
 	lforge_t *lforge = luaL_checkudata(L, 3, "lforge");
@@ -3219,6 +3196,10 @@ _lstateresponder_save(lua_State *L)
 	lua_settop(L, 2); // discard superfluous arguments
 	// 1: self
 	// 2: store
+
+	// replace self with its uservalue
+	lua_getuservalue(L, 1);
+	lua_replace(L, 1);
 
 	// iterate over properties
 	lua_pushnil(L);  // first key 
@@ -3265,6 +3246,10 @@ _lstateresponder_restore(lua_State *L)
 	// 1: self
 	// 2: retrieve
 
+	// replace self with its uservalue
+	lua_getuservalue(L, 1);
+	lua_replace(L, 1);
+
 	// iterate over properties
 	lua_pushnil(L);  // first key 
 	while(lua_next(L, 1))
@@ -3298,7 +3283,7 @@ _lstateresponder_restore(lua_State *L)
 }
 
 static const luaL_Reg lstateresponder_mt [] = {
-	{"new", _lstateresponder_new},
+	{"__call", _lstateresponder__call},
 	{"register", _lstateresponder_reg},
 	{"save", _lstateresponder_save},
 	{"restore", _lstateresponder_restore},
@@ -3747,28 +3732,56 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	lua_pushnil(L);
 	lua_setglobal(L, "loadfile");
 
-	// MIDIResponder
-	lua_newtable(L);
+	// MIDIResponder metatable
+	luaL_newmetatable(L, "lmidiresponder");
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
-	luaL_setfuncs(L, lmidiresponder_mt, 1);
+	luaL_setfuncs (L, lmidiresponder_mt, 1);
+	lua_pushvalue(L, -1);
+	lua_setfield(L, -2, "__index");
+	lua_pop(L, 1);
+
+	// MIDIResponder factory
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	lua_pushcclosure(L, _lmidiresponder, 1);
 	lua_setglobal(L, "MIDIResponder");
 
-	// OSCResponder
-	lua_newtable(L);
+	// OSCResponder metatable
+	luaL_newmetatable(L, "loscresponder");
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
-	luaL_setfuncs(L, loscresponder_mt, 1);
+	luaL_setfuncs (L, loscresponder_mt, 1);
+	lua_pushvalue(L, -1);
+	lua_setfield(L, -2, "__index");
+	lua_pop(L, 1);
+
+	// OSCResponder factory
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	lua_pushcclosure(L, _loscresponder, 1);
 	lua_setglobal(L, "OSCResponder");
 
-	// TimeResponder
-	lua_newtable(L);
+	// TimeResponder metatable
+	luaL_newmetatable(L, "ltimeresponder");
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
-	luaL_setfuncs(L, ltimeresponder_mt, 1);
+	luaL_setfuncs (L, ltimeresponder_mt, 1);
+	lua_pushvalue(L, -1);
+	lua_setfield(L, -2, "__index");
+	lua_pop(L, 1);
+
+	// TimeResponder factory
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	lua_pushcclosure(L, _ltimeresponder, 1);
 	lua_setglobal(L, "TimeResponder");
 
-	// StateResponder
-	lua_newtable(L);
+	// StateResponder metatable
+	luaL_newmetatable(L, "lstateresponder");
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
-	luaL_setfuncs(L, lstateresponder_mt, 1);
+	luaL_setfuncs (L, lstateresponder_mt, 1);
+	lua_pushvalue(L, -1);
+	lua_setfield(L, -2, "__index");
+	lua_pop(L, 1);
+
+	// StateResponder factory
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	lua_pushcclosure(L, _lstateresponder, 1);
 	lua_setglobal(L, "StateResponder");
 
 #undef SET_MAP
