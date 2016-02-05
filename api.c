@@ -2312,26 +2312,48 @@ static const luaL_Reg lmidiresponder_mt [] = {
 	{NULL, NULL}
 };
 
-static void
-_walk(lua_State *L, const char *path, int indent)
+static inline bool
+_osc_path_has_wildcards(const char *path)
 {
-	//TODO handle wildcard '*', e.g. iterate over elements
-	const char *stop = strchr(path, '/');
-	if(stop)
-	{
-		lua_pushlstring(L, path, stop-path);
-		const int type = lua_gettable(L, -2);
-		lua_remove(L, -2); // remove parent
-
-		if(type != LUA_TNIL)
-			_walk(L, stop+1, indent+1);
-	}
-	else
-	{
-		lua_getfield(L, -1, path);
-		lua_remove(L, -2); // remove parent
-	}
+	for(const char *ptr=path+1; *ptr; ptr++)
+		if(strchr("?*[{", *ptr))
+			return true;
+	return false;
 }
+
+//TODO can we rewrite this directly in C?
+static const char *loscresponder_match =
+	"function __expand(v)\n"
+	"	return coroutine.wrap(function()\n"
+	"		local item = string.match(v, '%b{}')\n"
+	"		if item then\n"
+	"			for key in string.gmatch(item, '{?([^,}]*)') do\n"
+	"				local vv = string.gsub(v, item, key)\n"
+	"				for w in __expand(vv) do\n"
+	"					coroutine.yield(w)\n"
+	"				end\n"
+	"			end\n"
+	"		else\n"
+	"			coroutine.yield(v)\n"
+	"		end\n"
+	"	end)\n"
+	"end\n"
+	"\n"
+	"function __match(v, o, ...)\n"
+	"	local handled = false\n"
+	"	v = string.gsub(v, '%?', '.')\n"
+	"	v = string.gsub(v, '%*', '.*')\n"
+	"	v = string.gsub(v, '%[%!', '[^')\n"
+	"	v = '^' .. v .. '$'\n"
+	"	for w in __expand(v) do\n"
+	"		for k, x in pairs(o) do\n"
+	"			if string.match(k, w) then\n"
+	"				handled = x(o, ...) or handled\n"
+	"			end\n"
+	"		end\n"
+	"	end\n"
+	"	return handled\n"
+	"end";
 
 static void
 _loscresponder_msg(const char *path, const char *fmt, const LV2_Atom_Tuple *args,
@@ -2346,139 +2368,136 @@ _loscresponder_msg(const char *path, const char *fmt, const LV2_Atom_Tuple *args
 	// 2: frames
 	// 3: data
 
-	const char *stop = strchr(path, '/');
-	if(stop)
+	int matching = 0;
+	if(_osc_path_has_wildcards(path))
 	{
-		if(lua_getfield(L, 1, "root") != LUA_TNIL)
-			_walk(L, stop+1, 0);
+		lua_getglobal(L, "__match"); // push pattern matching function
+		lua_pushstring(L, path); // path
+		matching = 1;
 	}
-	else
-		lua_pushnil(L); // invalid path
-
-	if(!lua_isnil(L, -1))
-	{
-		lua_pushvalue(L, 1); // self
-		lua_pushvalue(L, 2); // frames
-		lua_pushvalue(L, 3); // data
-		lua_pushstring(L, fmt);
-
-		int oldtop = lua_gettop(L);
-		const LV2_Atom *atom = lv2_atom_tuple_begin(args);
-
-		for(const char *type = fmt; *type && atom; type++)
-		{
-			switch(*type)
-			{
-				case 'i':
-				{
-					int32_t i = 0;
-					atom = osc_deforge_int32(oforge, forge, atom, &i);
-					lua_pushinteger(L, i);
-					break;
-				}
-				case 'f':
-				{
-					float f = 0.f;
-					atom = osc_deforge_float(oforge, forge, atom, &f);
-					lua_pushnumber(L, f);
-					break;
-				}
-				case 's':
-				{
-					const char *s = NULL;
-					atom = osc_deforge_string(oforge, forge, atom, &s);
-					lua_pushstring(L, s);
-					break;
-				}
-				case 'S':
-				{
-					const char *s = NULL;
-					atom = osc_deforge_symbol(oforge, forge, atom, &s);
-					lua_pushstring(L, s);
-					break;
-				}
-				case 'b':
-				{
-					uint32_t size = 0;
-					const uint8_t *b = NULL;
-					atom = osc_deforge_blob(oforge, forge, atom, &size, &b);
-					//TODO or return a AtomChunk?
-					lua_createtable(L, size, 0);
-					for(unsigned i=0; i<size; i++)
-					{
-						lua_pushinteger(L, b[i]);
-						lua_rawseti(L, -2, i+1);
-					}
-					break;
-				}
-				
-				case 'h':
-				{
-					int64_t h = 0;
-					atom = osc_deforge_int64(oforge, forge, atom, &h);
-					lua_pushinteger(L, h);
-					break;
-				}
-				case 'd':
-				{
-					double d = 0.f;
-					atom = osc_deforge_double(oforge, forge, atom, &d);
-					lua_pushnumber(L, d);
-					break;
-				}
-				case 't':
-				{
-					uint64_t t = 0;
-					atom = osc_deforge_timestamp(oforge, forge, atom, &t);
-					lua_pushinteger(L, t);
-					break;
-				}
-				
-				case 'c':
-				{
-					char c = '\0';
-					atom = osc_deforge_char(oforge, forge, atom, &c);
-					lua_pushinteger(L, c);
-					break;
-				}
-				case 'm':
-				{
-					uint32_t size = 0;
-					const uint8_t *m = NULL;
-					atom = osc_deforge_midi(oforge, forge, atom, &size, &m);
-					//TODO or return a MIDIEvent?
-					lua_createtable(L, size, 0);
-					for(unsigned i=0; i<size; i++)
-					{
-						lua_pushinteger(L, m[i]);
-						lua_rawseti(L, -2, i+1);
-					}
-					break;
-				}
-				
-				case 'T':
-				case 'F':
-				case 'N':
-				case 'I':
-				{
-					break;
-				}
-
-				default: // unknown argument type
-				{
-					break;
-				}
-			}
-		}
-
-		lua_call(L, 4 + lua_gettop(L) - oldtop, 1);
-		moony->osc_responder_handled |= lua_toboolean(L, -1);
-		lua_pop(L, 1); // bool
-	}
-	else
+	else if(lua_getfield(L, 1, path) == LUA_TNIL) // raw string match
 	{
 		lua_pop(L, 1); // nil
+		return; // no match
 	}
+
+	lua_pushvalue(L, 1); // self
+	lua_pushvalue(L, 2); // frames
+	lua_pushvalue(L, 3); // data
+	lua_pushstring(L, fmt);
+
+	int oldtop = lua_gettop(L);
+	const LV2_Atom *atom = lv2_atom_tuple_begin(args);
+
+	for(const char *type = fmt; *type && atom; type++)
+	{
+		switch(*type)
+		{
+			case 'i':
+			{
+				int32_t i = 0;
+				atom = osc_deforge_int32(oforge, forge, atom, &i);
+				lua_pushinteger(L, i);
+				break;
+			}
+			case 'f':
+			{
+				float f = 0.f;
+				atom = osc_deforge_float(oforge, forge, atom, &f);
+				lua_pushnumber(L, f);
+				break;
+			}
+			case 's':
+			{
+				const char *s = NULL;
+				atom = osc_deforge_string(oforge, forge, atom, &s);
+				lua_pushstring(L, s);
+				break;
+			}
+			case 'S':
+			{
+				const char *s = NULL;
+				atom = osc_deforge_symbol(oforge, forge, atom, &s);
+				lua_pushstring(L, s);
+				break;
+			}
+			case 'b':
+			{
+				uint32_t size = 0;
+				const uint8_t *b = NULL;
+				atom = osc_deforge_blob(oforge, forge, atom, &size, &b);
+				//TODO or return a AtomChunk?
+				lua_createtable(L, size, 0);
+				for(unsigned i=0; i<size; i++)
+				{
+					lua_pushinteger(L, b[i]);
+					lua_rawseti(L, -2, i+1);
+				}
+				break;
+			}
+			
+			case 'h':
+			{
+				int64_t h = 0;
+				atom = osc_deforge_int64(oforge, forge, atom, &h);
+				lua_pushinteger(L, h);
+				break;
+			}
+			case 'd':
+			{
+				double d = 0.f;
+				atom = osc_deforge_double(oforge, forge, atom, &d);
+				lua_pushnumber(L, d);
+				break;
+			}
+			case 't':
+			{
+				uint64_t t = 0;
+				atom = osc_deforge_timestamp(oforge, forge, atom, &t);
+				lua_pushinteger(L, t);
+				break;
+			}
+			
+			case 'c':
+			{
+				char c = '\0';
+				atom = osc_deforge_char(oforge, forge, atom, &c);
+				lua_pushinteger(L, c);
+				break;
+			}
+			case 'm':
+			{
+				uint32_t size = 0;
+				const uint8_t *m = NULL;
+				atom = osc_deforge_midi(oforge, forge, atom, &size, &m);
+				//TODO or return a MIDIEvent?
+				lua_createtable(L, size, 0);
+				for(unsigned i=0; i<size; i++)
+				{
+					lua_pushinteger(L, m[i]);
+					lua_rawseti(L, -2, i+1);
+				}
+				break;
+			}
+			
+			case 'T':
+			case 'F':
+			case 'N':
+			case 'I':
+			{
+				break;
+			}
+
+			default: // unknown argument type
+			{
+				break;
+			}
+		}
+	}
+
+	lua_call(L, 4 + matching + lua_gettop(L) - oldtop, 1);
+	moony->osc_responder_handled |= lua_toboolean(L, -1); //FIXME
+	lua_pop(L, 1); // bool
 }
 
 static int
@@ -2503,7 +2522,7 @@ _loscresponder__call(lua_State *L)
 		return 1;
 	}
 
-	// replace self with it uservalue
+	// replace self with its uservalue
 	lua_getuservalue(L, 1);
 	lua_replace(L, 1);
 
@@ -3757,6 +3776,9 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	lua_pushcclosure(L, _loscresponder, 1);
 	lua_setglobal(L, "OSCResponder");
+
+	// OSCResponder pattern matcher
+	luaL_dostring(L, loscresponder_match); // cannot fail
 
 	// TimeResponder metatable
 	luaL_newmetatable(L, "ltimeresponder");
