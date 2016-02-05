@@ -60,7 +60,7 @@ proj:moony
 	doap:name "Moony Bundle" .
 
 # Common UI
-moony:ui1_common_ui
+moony:ui5_common_ui
 	a ui:UI ;
 	ui:portNotification [
 		ui:plugin moony:c1xc1 ;
@@ -110,7 +110,7 @@ moony:ui1_common_ui
 	] ;
 	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map ;
   lv2:extensionData ui:idleInterface, ui:showInterface .
-moony:ui3_common_kx
+moony:ui6_common_kx
 	a kx:Widget ;
 	ui:portNotification [
 		ui:plugin moony:c1xc1 ;
@@ -159,7 +159,7 @@ moony:ui3_common_kx
 		ui:notifyType atom:Object ;
 	] ;
 	lv2:requiredFeature kx:Host, ui:portMap, urid:map .
-moony:ui5_common_x11
+moony:ui7_common_x11
 	a ui:X11UI ;
 	ui:portNotification [
 		ui:plugin moony:c1xc1 ;
@@ -210,7 +210,7 @@ moony:ui5_common_x11
 	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map ;
 	lv2:optionalFeature ui:resize ;
   lv2:extensionData ui:idleInterface, ui:resize .
-moony:ui6_common_eo
+moony:ui8_common_eo
 	a ui:EoUI ;
 	ui:portNotification [
 		ui:plugin moony:c1xc1 ;
@@ -263,7 +263,7 @@ moony:ui6_common_eo
 	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map .
 
 # Simple UI
-moony:ui2_simple_ui
+moony:ui3_simple_ui
 	a ui:UI ;
 	ui:portNotification [
 		ui:plugin moony:c1xc1 ;
@@ -364,7 +364,7 @@ moony:ui4_simple_kx
 	lv2:requiredFeature kx:Host, ui:portMap, urid:map .
 
 # Web UI
-moony:ui2_web_ui
+moony:ui1_web_ui
 	a ui:UI ;
 	ui:portNotification [
 		ui:plugin moony:c1xc1 ;
@@ -414,7 +414,7 @@ moony:ui2_web_ui
 	] ;
 	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map ;
   lv2:extensionData ui:idleInterface, ui:showInterface .
-moony:ui4_web_kx
+moony:ui2_web_kx
 	a kx:Widget ;
 	ui:portNotification [
 		ui:plugin moony:c1xc1 ;

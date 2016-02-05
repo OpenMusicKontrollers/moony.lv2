@@ -47,9 +47,9 @@ set(LIBS ${LIBS} ${LV2_LDFLAGS})
 
 # options
 include(CMakeDependentOption)
-option(BUILD_COMMON_UI "Build common embeddable UI" ON)
+option(BUILD_COMMON_UI "Build common embeddable UI" OFF)
 option(BUILD_SIMPLE_UI "Build simple external UI" OFF)
-option(BUILD_WEB_UI "Build web-based external UI" OFF)
+option(BUILD_WEB_UI "Build web-based external UI" ON)
 cmake_dependent_option(USE_FS_EVENT "Use filesystem notify events" ON "BUILD_SIMPLE_UI" OFF)
 
 if(BUILD_COMMON_UI)
