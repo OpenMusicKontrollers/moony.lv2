@@ -1233,44 +1233,43 @@ do
 	local flt_set_responded = false
 
 	local state_int = {
-		label = 'Int',
-		access = Patch.writable,
-		range = Atom.Int,
-		minimum = 0,
-		maximum = 10,
-		value = 1
+		[RDFS.label] = 'Int',
+		[RDFS.range] = Atom.Int,
+		[Core.minimum] = 0,
+		[Core.maximum] = 10,
+		[RDF.value] = 1
 	}
 
 	local state_flt = {
-		label = 'Flt',
-		access = Patch.writable,
-		range = Atom.Float,
-		minimum = -0.5,
-		maximum = 10.0,
-		value = 1.0,
+		[RDFS.label] = 'Flt',
+		[RDFS.range] = Atom.Float,
+		[Core.minimum] = -0.5,
+		[Core.maximum] = 10.0,
+		[RDF.value] = 1.0,
 		[Patch.Get] = function(self, frames, forge)
 			flt_get_responded = true
-			return self.value
+			return self[RDF.value]
 		end,
 		[Patch.Set] = function(self, frames, forge, value)
 			flt_set_responded = true
-			self.value = value
+			self[RDF.value] = value
 		end
 	}
 
-
 	local state = StateResponder({
-		[urid.int] = state_int,
-		[urid.flt] = state_flt
+		[Patch.writable] = {
+			[urid.int] = state_int,
+			[urid.flt] = state_flt
+		}
 	})
 
 	local function store(key, range, value)
 		if key == urid.int then
-			assert(range == state_int.range)
-			assert(value == state_int.value)
+			assert(range == state_int[RDFS.range])
+			assert(value == state_int[RDF.value])
 		elseif key == urid.flt then
-			assert(range == state_flt.range)
-			assert(value == state_flt.value)
+			assert(range == state_flt[RDFS.range])
+			assert(value == state_flt[RDF.value])
 		end
 	end
 	
@@ -1283,8 +1282,8 @@ do
 			assert(state(frames, forge, atom) == true)
 		end
 
-		assert(state_int.value == 2)
-		assert(state_flt.value == 2.0)
+		assert(state_int[RDF.value] == 2)
+		assert(state_flt[RDF.value] == 2.0)
 		assert(flt_get_responded)
 		assert(flt_set_responded)
 	end

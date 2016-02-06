@@ -468,6 +468,7 @@ checkKw(char*s)
 			CHECK(RDF.value, NUMBER);
 			CHECK(RDFS.label, NUMBER);
 			CHECK(RDFS.range, NUMBER);
+			CHECK(RDFS.comment, NUMBER);
 			break;
 		case 's':
 			CHECK(string.char, CALLER);
