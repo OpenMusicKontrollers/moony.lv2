@@ -3927,7 +3927,7 @@ _stash(lua_State *L)
 	if(lua_isfunction(L, -1))
 	{
 		lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
-		lframe->depth = 1;
+		lframe->depth = 0;
 		lframe->last.frames = 0;
 		lframe->forge = &moony->stash_forge;
 
