@@ -169,7 +169,8 @@ $(document).ready(function() {
     maxLines: Infinity,
 		showPrintMargin: false,
 		fontSize: 14,
-		tabSize: 2
+		tabSize: 2,
+		displayIndentGuides: false
 	});
 
 	$('input[name=mode]').click(function(e) {
