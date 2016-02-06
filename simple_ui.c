@@ -147,14 +147,16 @@ _hide(UI *ui)
 		if((ret = uv_fs_event_stop(&ui->fs)))
 			_err(ui, "uv_fs_event_stop", ret);
 	}
-	uv_close((uv_handle_t *)&ui->fs, NULL);
+	if(!uv_is_closing((uv_handle_t *)&ui->fs))
+		uv_close((uv_handle_t *)&ui->fs, NULL);
 #else
 	if(uv_is_active((uv_handle_t *)&ui->pol))
 	{
 		if((ret = uv_fs_poll_stop(&ui->pol)))
 			_err(ui, "uv_fs_poll_stop", ret);
 	}
-	uv_close((uv_handle_t *)&ui->pol, NULL);
+	if(!uv_is_closing((uv_handle_t *)&ui->pol))
+		uv_close((uv_handle_t *)&ui->pol, NULL);
 #endif
 
 	if(uv_is_active((uv_handle_t *)&ui->req))
@@ -162,7 +164,8 @@ _hide(UI *ui)
 		if((ret = uv_process_kill(&ui->req, SIGKILL)))
 			_err(ui, "uv_process_kill", ret);
 	}
-	uv_close((uv_handle_t *)&ui->req, NULL);
+	if(!uv_is_closing((uv_handle_t *)&ui->req))
+		uv_close((uv_handle_t *)&ui->req, NULL);
 
 	uv_stop(&ui->loop);
 	uv_run(&ui->loop, UV_RUN_DEFAULT); // cleanup
