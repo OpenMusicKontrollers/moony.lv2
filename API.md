@@ -706,30 +706,30 @@ urid = {
 }
 
 prop1 = {
-  label = 'Property 1',
-  comment = 'This is Property 1',
-  access = Patch.writable,
-  range = Atom.Int,
-  minimum = -96,
-  maximum = 96,
-  unit = Units.db,
-	value = 0
+  [RDFS.label] = 'Property 1',
+  [RDFS.comment] = 'This is Property 1',
+  [RDFS.range] = Atom.Int,
+  [Core.minimum] = -96,
+  [Core.maximum] = 96,
+  [Units.unit] = Units.db,
+	[RDF.value] = 0
 }
 
 prop2 = {
-  label = 'Property 2',
-  comment = 'This is Property 2',
-  access = Patch.writable,
-  range = Atom.Float,
-  minimum = 0.0,
-  maximum = 1.0,
-  unit = Units.mm,
-	value = 0.5
+  [RDFS.label] = 'Property 2',
+  [RDFS.comment] = 'This is Property 2',
+  [RDFS.range] = Atom.Float,
+  [Core.minimum] = 0.0,
+  [Core.maximum] = 1.0,
+  [Units.unit] = Units.mm,
+	[RDF.value] = 0.5
 }
 
 state = StateResponder:new({
-  [urid.prop1] = prop1,
-  [urid.prop2] = prop2
+	[Patch.writable] = {
+		[urid.prop1] = prop1,
+		[urid.prop2] = prop2
+	}
 })
 
 function save(store)
