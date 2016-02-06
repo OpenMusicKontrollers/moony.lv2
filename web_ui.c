@@ -34,7 +34,8 @@ typedef struct _job_t job_t;
 
 struct _job_t {
 	job_t *next;
-	uv_buf_t msg [3];
+	char content_length [128];
+	uv_buf_t msg [4];
 };
 
 struct _server_t {
@@ -254,7 +255,8 @@ _hide(UI *ui)
 		if((ret = uv_process_kill(&ui->req, SIGKILL)))
 			_err(ui, "uv_process_kill", ret);
 	}
-	uv_close((uv_handle_t *)&ui->req, NULL);
+	if(!uv_is_closing((uv_handle_t *)&ui->req))
+		uv_close((uv_handle_t *)&ui->req, NULL);
 
 	SERVER_CLIENT_FOREACH(server, client)
 	{
@@ -268,11 +270,13 @@ _hide(UI *ui)
 			if((ret = uv_read_stop((uv_stream_t *)&client->handle)))
 				_err(ui, "uv_read_stop", ret);
 		}
-		uv_close((uv_handle_t *)&client->handle, _on_client_close);
+		if(!uv_is_closing((uv_handle_t *)&client->handle))
+			uv_close((uv_handle_t *)&client->handle, _on_client_close);
 	}
 
 	// close server
-	uv_close((uv_handle_t *)&server->http_server, NULL);
+	if(!uv_is_closing((uv_handle_t *)&server->http_server))
+		uv_close((uv_handle_t *)&server->http_server, NULL);
 
 	uv_stop(&ui->loop);
 	uv_run(&ui->loop, UV_RUN_DEFAULT); // cleanup
@@ -363,10 +367,11 @@ _on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
 				if((ret = uv_read_stop((uv_stream_t *)handle)))
 					_err(ui, "uv_read_stop", ret);
 			}
-			uv_close((uv_handle_t *)handle, _on_client_close);
+			if(!uv_is_closing((uv_handle_t *)handle))
+				uv_close((uv_handle_t *)handle, _on_client_close);
 		}
 	}
-	else
+	else if(nread < 0)
 	{
 		if(nread != UV_EOF)
 			_err(ui, "_on_read", nread);
@@ -375,7 +380,12 @@ _on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
 			if((ret = uv_read_stop((uv_stream_t *)handle)))
 				_err(ui, "uv_read_stop", ret);
 		}
-		uv_close((uv_handle_t *)handle, _on_client_close);
+		if(!uv_is_closing((uv_handle_t *)handle))
+			uv_close((uv_handle_t *)handle, _on_client_close);
+	}
+	else // nread == 0
+	{
+		// this is only reached in non-blocking read from pipes
 	}
 
 	if(buf->base)
@@ -567,8 +577,11 @@ _after_write(uv_write_t *req, int status)
 		if((ret = uv_read_stop((uv_stream_t *)handle)))
 			_err(ui, "uv_read_stop", ret);
 	}
-	uv_close((uv_handle_t *)handle, _on_client_close);
+	if(!uv_is_closing((uv_handle_t *)handle))
+		uv_close((uv_handle_t *)handle, _on_client_close);
 }
+
+static const char *content_length = "Content-Length: %u\r\n\r\n";
 
 static inline void
 _keepalive(server_t *server)
@@ -582,16 +595,16 @@ _keepalive(server_t *server)
 			if(!client->keepalive)
 				continue;
 
-			char *json = job->msg[2].base;
+			char *json = job->msg[3].base;
 			char *dup = strdup(json);
 			if(dup)
 			{
 				client->req.data = dup;
-				job->msg[2].base = dup;
+				job->msg[3].base = dup;
 
-				uv_write(&client->req, (uv_stream_t *)&client->handle, job->msg, 3, _after_write);
+				uv_write(&client->req, (uv_stream_t *)&client->handle, job->msg, 4, _after_write);
 
-				job->msg[2].base = json;
+				job->msg[3].base = json;
 			}
 
 			client->keepalive = false;
@@ -599,7 +612,7 @@ _keepalive(server_t *server)
 
 		// remove job
 		server->jobs = job->next;
-		free(job->msg[2].base);
+		free(job->msg[3].base);
 		free(job);
 	}
 }
@@ -619,19 +632,19 @@ enum {
 	CONTENT_IMAGE_PNG
 };
 
-const char *http_status [] = {
+static const char *http_status [] = {
 	[STATUS_NOT_FOUND] = "HTTP/1.1 404 Not Found\r\n",
 	[STATUS_OK] = "HTTP/1.1 200 OK\r\n"
 };
 
-const char *http_content [] = {
-	[CONTENT_APPLICATION_OCTET_STREAM] = "Content-Type: application/octet-stream\r\n\r\n",
-	[CONTENT_TEXT_HTML] = "Content-Type: text/html\r\n\r\n",
-	[CONTENT_TEXT_JSON] = "Content-Type: text/json\r\n\r\n",
-	[CONTENT_TEXT_CSS] = "Content-Type: text/css\r\n\r\n",
-	[CONTENT_TEXT_JS] = "Content-Type: text/javascript\r\n\r\n",
-	[CONTENT_TEXT_PLAIN] = "Content-Type: text/plain\r\n\r\n",
-	[CONTENT_IMAGE_PNG] = "Content-Type: image/png\r\n\r\n"
+static const char *http_content [] = {
+	[CONTENT_APPLICATION_OCTET_STREAM] = "Content-Type: application/octet-stream\r\n",
+	[CONTENT_TEXT_HTML] = "Content-Type: text/html\r\n",
+	[CONTENT_TEXT_JSON] = "Content-Type: text/json\r\n",
+	[CONTENT_TEXT_CSS] = "Content-Type: text/css\r\n",
+	[CONTENT_TEXT_JS] = "Content-Type: text/javascript\r\n",
+	[CONTENT_TEXT_PLAIN] = "Content-Type: text/plain\r\n",
+	[CONTENT_IMAGE_PNG] = "Content-Type: image/png\r\n"
 };
 
 static char *
@@ -660,12 +673,15 @@ _read_file(UI *ui, const char *bundle_path, const char *file_path, size_t *size)
 		long fsize = ftell(f);
 		fseek(f, 0, SEEK_SET);
 
-		char *str = malloc(fsize);
+		char *str = malloc(128 + fsize);
 		if(str)
 		{
-			if(fread(str, fsize, 1, f) == 1)
+			sprintf(str, content_length, fsize);
+			size_t len = strlen(str);
+			char *ptr = str + len;
+			if(fread(ptr, fsize, 1, f) == 1)
 			{
-				*size = fsize;
+				*size = len + fsize;
 				return str; // success
 			}
 
@@ -762,7 +778,7 @@ _on_message_complete(http_parser *parser)
 		stat = http_status[STATUS_OK];
 		cont = http_content[CONTENT_TEXT_JSON];
 		_moony_message_send(ui, ui->uris.moony_message, ui->uris.moony_code, 0, NULL);
-		chunk = strdup("{}");
+		chunk = strdup("Content-Length: 2\r\n\r\n{}");
 	}
 	else if(strstr(client->url, "/code/set") == client->url)
 	{
@@ -778,7 +794,7 @@ _on_message_complete(http_parser *parser)
 			}
 			cJSON_Delete(root);
 		}
-		chunk = strdup("{}");
+		chunk = strdup("Content-Length: 2\r\n\r\n{}");
 	}
 	else if(strstr(client->url, "/selection/set") == client->url)
 	{
@@ -794,7 +810,7 @@ _on_message_complete(http_parser *parser)
 			}
 			cJSON_Delete(root);
 		}
-		chunk = strdup("{}");
+		chunk = strdup("Content-Length: 2\r\n\r\n{}");
 	}
 	else if(  (strstr(client->url, "/") == client->url)
 		|| (strstr(client->url, "/index.html") == client->url) )
@@ -1033,8 +1049,12 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 					job->msg[1].base = (char *)cont;
 					job->msg[1].len = cont ? strlen(cont) : 0;
 
-					job->msg[2].base = json;
-					job->msg[2].len = json ? strlen(json) : 0;
+					job->msg[3].base = json;
+					job->msg[3].len = json ? strlen(json) : 0;
+
+					sprintf(job->content_length, content_length, job->msg[3].len);
+					job->msg[2].base = job->content_length;
+					job->msg[2].len = strlen(job->content_length);
 
 					server->jobs = _job_append(server->jobs, job);
 					_keepalive(server);
@@ -1063,8 +1083,12 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 					job->msg[1].base = (char *)cont;
 					job->msg[1].len = cont ? strlen(cont) : 0;
 
-					job->msg[2].base = json;
-					job->msg[2].len = json ? strlen(json) : 0;
+					job->msg[3].base = json;
+					job->msg[3].len = json ? strlen(json) : 0;
+
+					sprintf(job->content_length, content_length, job->msg[3].len);
+					job->msg[2].base = job->content_length;
+					job->msg[2].len = strlen(job->content_length);
 
 					server->jobs = _job_append(server->jobs, job);
 					_keepalive(server);
@@ -1093,8 +1117,12 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 					job->msg[1].base = (char *)cont;
 					job->msg[1].len = cont ? strlen(cont) : 0;
 
-					job->msg[2].base = json;
-					job->msg[2].len = json ? strlen(json) : 0;
+					job->msg[3].base = json;
+					job->msg[3].len = json ? strlen(json) : 0;
+
+					sprintf(job->content_length, content_length, job->msg[3].len);
+					job->msg[2].base = job->content_length;
+					job->msg[2].len = strlen(job->content_length);
 
 					server->jobs = _job_append(server->jobs, job);
 					_keepalive(server);
