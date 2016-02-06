@@ -54,7 +54,6 @@ h1 {
 }
 
 .sticky-top {
-	position:-webkit-sticky;
 	position:sticky;
 	top:0;
 	z-index:9999;
@@ -68,7 +67,6 @@ h1 {
 }
 
 .sticky-bottom {
-	position:-webkit-sticky;
 	position:sticky;
 	bottom:0;
 	z-index:9999;
@@ -79,14 +77,19 @@ h1 {
 	font-family:monospace;
 }
 
-.command {
+.button {
 	font-size:16px;
-	position:fixed;
-	bottom: 50%;
-	right: 0;
-	z-index:9999;
   background-color:#fff;
-	padding: 10px 10px 10px 10px;
+	padding:10px;
+	margin:5px 0px 0px 0px;
+}
+
+.box {
+	text-align:right;
+	position:fixed;
+	bottom:25%;
+	right:0;
+	z-index:9999;
 }
 
 a {

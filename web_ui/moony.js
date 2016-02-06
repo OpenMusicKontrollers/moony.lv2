@@ -30,7 +30,8 @@ function keepalive() {
 			} else if(data.error) {
 				$('#errmsg').html(data.error).fadeIn(300);
 			} else if(data.trace) {
-				$('#tracemsg').append(data.trace + '<br />').animate({scrollTop: $('#tracemsg').prop('scrollHeight')});
+				var tracemsg = $('#tracemsg');
+				tracemsg.append(data.trace + '<br />').scrollTop(tracemsg.prop('scrollHeight'));
 			}
 			$('#status').html('connected');
 			$('.clip').show();
@@ -117,7 +118,21 @@ function compile(editor) {
 		editor.clearSelection();
 	}
 	$('#errmsg').html('<br />').fadeOut(100);
-	$("#compile").fadeOut(100).fadeIn(300);
+	$("#compile").parent().fadeOut(100).fadeIn(300);
+}
+
+function compile_line(editor) {
+	var cur_line = editor.getCursorPosition().row;
+	if(cur_line) {
+		var selection = '';
+		for(var i=0; i<cur_line; i++)
+			selection = selection + '\n';
+		selection = selection + editor.getSession().getLine(cur_line);
+		set_selection(selection);
+		editor.clearSelection();
+	}
+	$('#errmsg').html('<br />').fadeOut(100);
+	$("#compile_line").parent().fadeOut(100).fadeIn(300);
 }
 
 $(document).ready(function() {
@@ -132,10 +147,18 @@ $(document).ready(function() {
 	$('#vim').prop('checked', true);
 	
 	editor.commands.addCommand({
-		name: 'Activate',
+		name: 'compile selection/all',
 		bindKey: {win: 'Shift-Return',  mac: 'Shift-Return'},
 		exec: function(editor) {
 			compile(editor);
+		},
+		readOnly: true // false if this command should not apply in readOnly mode
+	});
+	editor.commands.addCommand({
+		name: 'compile line',
+		bindKey: {win: 'Ctrl-Shift-Return',  mac: 'Ctrl-Shift-Return'},
+		exec: function(editor) {
+			compile_line(editor);
 		},
 		readOnly: true // false if this command should not apply in readOnly mode
 	});
@@ -154,6 +177,10 @@ $(document).ready(function() {
 	});
 	$('#compile').click(function(e) {
 		compile(editor);
+		e.preventDefault();
+	});
+	$('#compile_line').click(function(e) {
+		compile_line(editor);
 		e.preventDefault();
 	});
 	$('#clear').click(function(e) {

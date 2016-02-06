@@ -69,7 +69,7 @@ var LuaHighlightRules = function() {
 				// moony RDF
 				"value|"+
 				// moony RDFS
-				"label|range|"+
+				"label|range|comment|"+
 				// moony Units
 				"Conversion|Unit|bar|beat|bpm|cent|cm|coef|conversion|db|degree|frame|hz|inch|khz|km|m|mhz|midiNote|mile|min|mm|ms|name|oct|pc|prefixConversion|render|s|semitone12TET|symbol|unit");
 
@@ -194,7 +194,7 @@ var LuaHighlightRules = function() {
             token : "keyword.operator",
             regex : "\\+|\\-|\\*|\\/|\\/|%|\\^|"+
 							"\\&|\\||~|"+
-							"==|~=|<=|>=|<|>|"+
+							"=|<|>|"+
 							"#"
         }, {
             token : "paren.lparen",
