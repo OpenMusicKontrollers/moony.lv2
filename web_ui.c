@@ -92,14 +92,11 @@ struct _UI {
 	} kx;
 
 	uint8_t buf [0x10000];
-	uint16_t port;
 	char path [512];
 
 	char bundle_path [1024];
 	server_t server;
 };
-
-static uint16_t port = 9090; //FIXME
 
 static inline client_t *
 _client_append(client_t *list, client_t *child)
@@ -438,6 +435,40 @@ _show(UI *ui)
 	server_t *server = &ui->server;
 	int ret;
 
+	struct sockaddr_in addr_ip4;
+	struct sockaddr *addr = (struct sockaddr *)&addr_ip4;
+
+	if((ret = uv_ip4_addr("0.0.0.0", 0, &addr_ip4))) // let OS choose unused port
+	{
+		_err(ui, "uv_ip4_addr", ret);
+	}
+
+	if(!uv_is_active((uv_handle_t *)&server->http_server))
+	{
+		if((ret = uv_tcp_bind(&server->http_server, addr, 0)))
+			_err(ui, "uv_tcp_bind", ret);
+		if((ret = uv_listen((uv_stream_t *)&server->http_server, 128, _on_connected)))
+			_err(ui, "uv_listen", ret);
+
+		// get chosen port
+		struct sockaddr_storage storage;
+		struct sockaddr_in *storage_ip4 = (struct sockaddr_in *)&storage;
+		int namelen = sizeof(struct sockaddr_storage);
+		if((ret = uv_tcp_getsockname(&server->http_server, (struct sockaddr *)&storage, &namelen)))
+			_err(ui, "uv_tcp_get_sockname", ret);
+
+		const uint16_t port = be16toh(storage_ip4->sin_port);
+		sprintf(ui->path, "http://localhost:%hu", port);
+	}
+
+	/* FIXME
+	if(!uv_is_active((uv_handle_t *)&server->timer))
+	{
+		if((ret = uv_timer_start(&server->timer, _timeout, 10000, 0)))
+			_err(ui, "uv_timer_start", ret);
+	}
+	*/
+
 #if defined(_WIN32)
 	const char *command = "cmd /c start";
 #elif defined(__APPLE__)
@@ -469,30 +500,6 @@ _show(UI *ui)
 		free(dup);
 	if(args)
 		free(args);
-
-	struct sockaddr_in addr_ip4;
-	struct sockaddr *addr = (struct sockaddr *)&addr_ip4;
-
-	if((ret = uv_ip4_addr("0.0.0.0", ui->port, &addr_ip4)))
-	{
-		_err(ui, "uv_ip4_addr", ret);
-	}
-
-	if(!uv_is_active((uv_handle_t *)&server->http_server))
-	{
-		if((ret = uv_tcp_bind(&server->http_server, addr, 0)))
-			_err(ui, "uv_tcp_bind", ret);
-		if((ret = uv_listen((uv_stream_t *)&server->http_server, 128, _on_connected)))
-			_err(ui, "uv_listen", ret);
-	}
-
-	/* FIXME
-	if(!uv_is_active((uv_handle_t *)&server->timer))
-	{
-		if((ret = uv_timer_start(&server->timer, _timeout, 10000, 0)))
-			_err(ui, "uv_timer_start", ret);
-	}
-	*/
 }
 
 // External-UI Interface
@@ -959,9 +966,6 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		free(ui);
 		return NULL;
 	}
-
-	ui->port = port++;
-	sprintf(ui->path, "http://localhost:%hu", ui->port);
 
 	server_t *server = &ui->server;
 	server->http_settings.on_message_begin = NULL;
