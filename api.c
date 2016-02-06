@@ -2158,7 +2158,7 @@ _log(lua_State *L)
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	int n = lua_gettop(L);
 
-	if(!moony->log || !n)
+	if(!n)
 		return 0;
 
 	luaL_Buffer buf;
