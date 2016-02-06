@@ -339,7 +339,7 @@ _moony_message_forge(LV2_Atom_Forge *forge, LV2_URID otype, LV2_URID key,
 	LV2_Atom_Forge_Frame frame;
 
 	LV2_Atom_Forge_Ref ref = lv2_atom_forge_object(forge, &frame, 0, otype);
-	if(size && str)
+	if(str)
 	{
 		if(ref)
 			ref = lv2_atom_forge_key(forge, key);
