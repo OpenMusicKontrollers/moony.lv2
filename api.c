@@ -3355,6 +3355,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	}
 	
 	LV2_Options_Option *opts = NULL;
+	bool load_default_state = false;
 
 	for(unsigned i=0; features[i]; i++)
 	{
@@ -3370,6 +3371,8 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 			opts = (LV2_Options_Option *)features[i]->data;
 		else if(!strcmp(features[i]->URI, OSC__schedule))
 			moony->osc_sched = (osc_schedule_t *)features[i]->data;
+		else if(!strcmp(features[i]->URI, LV2_STATE__loadDefaultState))
+			load_default_state = true;
 	}
 
 	if(!moony->map)
@@ -3386,6 +3389,13 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	{
 		fprintf(stderr, "Host does not support worker:schedule\n");
 		return -1;
+	}
+	if(!load_default_state)
+	{
+		strcpy(moony->chunk,
+			"-- host does not support state:loadDefaultState feature\n\n"
+			"function run(...)\n"
+			"end");
 	}
 
 	moony->uris.subject = moony->map->map(moony->map->handle, subject);
