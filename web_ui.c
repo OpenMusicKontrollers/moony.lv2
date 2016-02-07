@@ -66,6 +66,7 @@ struct _UI {
 		LV2_URID moony_error;
 		LV2_URID moony_trace;
 		LV2_URID event_transfer;
+		LV2_URID window_title;
 	} uris;
 
 	LV2_Log_Log *log;
@@ -93,8 +94,9 @@ struct _UI {
 
 	uint8_t buf [0x10000];
 	char path [512];
+	char title [512];
 
-	char bundle_path [1024];
+	char bundle_path [512];
 	server_t server;
 };
 
@@ -780,6 +782,27 @@ _on_message_complete(http_parser *parser)
 		client->keepalive = 1;
 		// keepalive
 	}
+	else if(strstr(client->url, "/title/get") == client->url)
+	{
+		stat = http_status[STATUS_OK];
+		cont = http_content[CONTENT_TEXT_JSON];
+
+		cJSON *root = cJSON_CreateObject();
+		cJSON *title = cJSON_CreateString(ui->title);
+		cJSON_AddItemToObject(root, "title", title);
+		
+		char *json = cJSON_PrintUnformatted(root);
+		cJSON_Delete(root);
+
+		if(json)
+		{
+			asprintf(&chunk, "Content-Length: %zu\r\n\r\n%s", strlen(json), json);
+			printf("chunk: %s\n", chunk);
+			free(json);
+		}
+		else
+			chunk = strdup("Content-Length: 2\r\n\r\n{}");
+	}
 	else if(strstr(client->url, "/code/get") == client->url)
 	{
 		stat = http_status[STATUS_OK];
@@ -905,6 +928,8 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	if(!ui)
 		return NULL;
 
+	LV2_Options_Option *opts = NULL;
+
 	for(int i=0; features[i]; i++)
 	{
 		if(!strcmp(features[i]->URI, LV2_URID__map))
@@ -915,9 +940,11 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 			ui->log = features[i]->data;
 		else if(!strcmp(features[i]->URI, LV2_EXTERNAL_UI__Host) && (descriptor == &web_kx))
 			ui->kx.host = features[i]->data;
+		else if(!strcmp(features[i]->URI, LV2_OPTIONS__options))
+			opts = features[i]->data;
 	}
 
-	sprintf(ui->bundle_path, "%s", bundle_path);
+	snprintf(ui->bundle_path, 512, "%s", bundle_path);
 
 	ui->kx.widget.run = _kx_run;
 	ui->kx.widget.show = _kx_show;
@@ -940,6 +967,12 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		free(ui);
 		return NULL;
 	}
+	if(!ui->kx.host && (descriptor == &web_kx) )
+	{
+		fprintf(stderr, "%s: Host does not support kx:Host\n", descriptor->URI);
+		free(ui);
+		return NULL;
+	}
 
 	// query port index of "control" port
 	ui->control_port = ui->port_map->port_index(ui->port_map->handle, "control");
@@ -951,10 +984,26 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	ui->uris.moony_error = ui->map->map(ui->map->handle, MOONY_ERROR_URI);
 	ui->uris.moony_trace = ui->map->map(ui->map->handle, MOONY_TRACE_URI);
 	ui->uris.event_transfer = ui->map->map(ui->map->handle, LV2_ATOM__eventTransfer);
+	ui->uris.window_title = ui->map->map(ui->map->handle, LV2_UI__windowTitle);
 
 	lv2_atom_forge_init(&ui->forge, ui->map);
 	if(ui->log)
 		lv2_log_logger_init(&ui->logger, ui->map, ui->log);
+
+	// set window title
+	snprintf(ui->title, 512, "%s", descriptor->URI);
+	if(opts)
+	{
+		for(LV2_Options_Option *opt = opts;
+			(opt->key != 0) && (opt->value != NULL);
+			opt++)
+		{
+			if( (opt->key == ui->uris.window_title) && (opt->type == ui->forge.String) )
+				snprintf(ui->title, 512, "%s", opt->value);
+		}
+	}
+	if( (descriptor == &web_kx) && (ui->kx.host->plugin_human_id))
+		snprintf(ui->title, 512, "%s", ui->kx.host->plugin_human_id);
 
 	ui->write_function = write_function;
 	ui->controller = controller;

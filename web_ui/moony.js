@@ -52,6 +52,23 @@ function keepalive() {
 	});
 }
 
+function get_title() {
+	$.ajax({
+		type: 'POST',
+		url: '/title/get',
+		data: {},
+		dataType: 'json',
+		success: function(data) {
+			document.title = data.title;
+		},
+		error: function(request, status, err) {
+			if(status == 'timeout') {
+				alert('timeout');
+			}
+		}
+	});
+}
+
 function get_code() {
 	$.ajax({
 		type: 'POST',
@@ -190,5 +207,6 @@ $(document).ready(function() {
 	});
 
 	keepalive();
+	get_title();
 	get_code();
 });
