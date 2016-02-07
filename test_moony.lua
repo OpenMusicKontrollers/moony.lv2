@@ -844,7 +844,7 @@ do
 	local frames_per_second_responded = 0
 	local speed_responded = 0
 
-	local time_responder = TimeResponder({
+	local time_cb = {
 		[Time.barBeat] = function(self, frames, forge, bar_beat)
 			if bar_beat_responded == 0 then
 				assert(bar_beat == 0.0)
@@ -923,7 +923,8 @@ do
 				speed_responded = 2
 			end
 		end,
-	})
+	}
+	local time_responder = TimeResponder(time_cb)
 
 	local function consumer(seq)
 		assert(#seq == 1)
@@ -946,6 +947,15 @@ do
 		assert(frame_responded == 0)
 		assert(frames_per_second_responded == 2)
 		assert(speed_responded == 2)
+
+		--assert(time_responder[Time.barBeat] == 0.5) --TODO compare real barBeat here
+		assert(time_responder[Time.bar] == 34)
+		assert(time_responder[Time.beatUnit] == 8)
+		assert(time_responder[Time.beatsPerBar] == 6.0)
+		assert(time_responder[Time.beatsPerMinute] == 200.0)
+		assert(time_responder[Time.frame] == 23000 + 256)
+		assert(time_responder[Time.framesPerSecond] == 44100.0)
+		assert(time_responder[Time.speed] == 1.0)
 	end
 
 	test(producer, consumer)

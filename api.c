@@ -2640,6 +2640,58 @@ _ltimeresponder__call(lua_State *L)
 }
 
 static int
+_ltimeresponder__index(lua_State *L)
+{
+	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	lua_settop(L, 2); // discard superfluous arguments
+	// 1: self
+	// 2: type
+	
+	timely_t *timely = lua_touserdata(L, 1);
+	LV2_URID type = luaL_checkinteger(L, 2);
+
+	if(type == TIMELY_URI_BAR_BEAT(timely))
+	{
+		lua_pushnumber(L, TIMELY_BAR_BEAT(timely));
+	}
+	else if(type == TIMELY_URI_BAR(timely))
+	{
+		lua_pushinteger(L, TIMELY_BAR(timely));
+	}
+	else if(type == TIMELY_URI_BEAT_UNIT(timely))
+	{
+		lua_pushinteger(L, TIMELY_BEAT_UNIT(timely));
+	}
+	else if(type == TIMELY_URI_BEATS_PER_BAR(timely))
+	{
+		lua_pushnumber(L, TIMELY_BEATS_PER_BAR(timely));
+	}
+	else if(type == TIMELY_URI_BEATS_PER_MINUTE(timely))
+	{
+		lua_pushnumber(L, TIMELY_BEATS_PER_MINUTE(timely));
+	}
+	else if(type == TIMELY_URI_FRAME(timely))
+	{
+		lua_pushinteger(L, TIMELY_FRAME(timely));
+	}
+	else if(type == TIMELY_URI_FRAMES_PER_SECOND(timely))
+	{
+		lua_pushnumber(L, TIMELY_FRAMES_PER_SECOND(timely));
+	}
+	else if(type == TIMELY_URI_SPEED(timely))
+	{
+		lua_pushnumber(L, TIMELY_SPEED(timely));
+	}
+	else
+	{
+		lua_pushnil(L);
+	}
+
+	return 1;
+}
+
+static int
 _ltimeresponder_stash(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -2726,6 +2778,7 @@ _ltimeresponder(lua_State *L)
 }
 
 static const luaL_Reg ltimeresponder_mt [] = {
+	{"__index", _ltimeresponder__index},
 	{"__call", _ltimeresponder__call},
 	{"stash", _ltimeresponder_stash},
 	{NULL, NULL}
@@ -3821,8 +3874,7 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	luaL_newmetatable(L, "ltimeresponder");
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs (L, ltimeresponder_mt, 1);
-	lua_pushvalue(L, -1);
-	lua_setfield(L, -2, "__index");
+	// we have a __index function, thus no __index table here
 	lua_pop(L, 1);
 
 	// TimeResponder factory
