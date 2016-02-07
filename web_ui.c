@@ -797,7 +797,6 @@ _on_message_complete(http_parser *parser)
 		if(json)
 		{
 			asprintf(&chunk, "Content-Length: %zu\r\n\r\n%s", strlen(json), json);
-			printf("chunk: %s\n", chunk);
 			free(json);
 		}
 		else
