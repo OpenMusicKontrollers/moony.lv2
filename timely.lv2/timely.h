@@ -98,6 +98,7 @@ struct _timely_t {
 #define TIMELY_URI_FRAMES_PER_SECOND(timely)	((timely)->urid.time_framesPerSecond)
 #define TIMELY_URI_SPEED(timely)							((timely)->urid.time_speed)
 
+#define TIMELY_BAR_BEAT_RAW(timely)						((timely)->pos.bar_beat)
 #define TIMELY_BAR_BEAT(timely)								(floor((timely)->pos.bar_beat) + (timely)->offset.beat / (timely)->frames_per_beat)
 #define TIMELY_BAR(timely)										((timely)->pos.bar)
 #define TIMELY_BEAT_UNIT(timely)							((timely)->pos.beat_unit)
