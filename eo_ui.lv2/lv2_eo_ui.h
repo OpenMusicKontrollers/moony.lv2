@@ -25,6 +25,9 @@
 #endif
 
 #include <lv2/lv2plug.in/ns/extensions/ui/ui.h>
+#include <lv2/lv2plug.in/ns/ext/options/options.h>
+#include <lv2/lv2plug.in/ns/ext/urid/urid.h>
+#include <lv2/lv2plug.in/ns/ext/atom/atom.h>
 #include <lv2_external_ui.h> // kxstudio external-ui extension
 
 typedef enum _eo_ui_driver_t eo_ui_driver_t;
@@ -49,6 +52,10 @@ struct _eo_ui_t {
 
 	Evas_Object *content;
 	eo_ui_content_get content_get;
+
+	LV2_URID window_title;
+	LV2_URID atom_string;
+	char title [512];
 
 	union {
 		// eo iface
@@ -118,7 +125,7 @@ _show_cb(LV2UI_Handle instance)
 		return -1;
 
 	// create main window
-	eoui->win = elm_win_add(NULL, "EoUI", ELM_WIN_BASIC);
+	eoui->win = elm_win_add(NULL, eoui->title, ELM_WIN_BASIC);
 	if(!eoui->win)
 		return -1;
 	evas_object_smart_callback_add(eoui->win, "delete,request",
@@ -252,10 +259,7 @@ _kx_show(LV2_External_UI_Widget *widget)
 		return;
 
 	// create main window
-	const char *title = eoui->kx.host->plugin_human_id
-		? eoui->kx.host->plugin_human_id
-		: "EoUI";
-	eoui->win = elm_win_add(NULL, title, ELM_WIN_BASIC);
+	eoui->win = elm_win_add(NULL, eoui->title, ELM_WIN_BASIC);
 	if(!eoui->win)
 		return;
 	elm_win_autodel_set(eoui->win, EINA_TRUE);
@@ -343,6 +347,19 @@ eoui_instantiate(eo_ui_t *eoui, const LV2UI_Descriptor *descriptor,
 	eoui->w = eoui->w > 0 ? eoui->w : 400; // fall-back if w == 0
 	eoui->h = eoui->h > 0 ? eoui->h : 400; // fall-back if h == 0
 
+	LV2_URID_Map *map = NULL;
+	for(unsigned i=0; features[i]; i++)
+	{
+		if(!strcmp(features[i]->URI, LV2_URID__map))
+			map = features[i]->data;
+	}
+
+	if(!map)
+		return -1;
+
+	eoui->atom_string = map->map(map->handle, LV2_ATOM__String);
+	eoui->window_title = map->map(map->handle, LV2_UI__windowTitle);
+
 	*widget = NULL;
 
 	switch(eoui->driver)
@@ -356,7 +373,7 @@ eoui_instantiate(eo_ui_t *eoui, const LV2UI_Descriptor *descriptor,
 				if(!strcmp(features[i]->URI, LV2_UI__parent))
 					eoui->eo.parent = features[i]->data;
 				else if(!strcmp(features[i]->URI, LV2_UI__resize))
-					eoui->eo.resize = (LV2UI_Resize *)features[i]->data;
+					eoui->eo.resize = features[i]->data;
 			}
 			if(!eoui->eo.parent)
 				return -1;
@@ -378,13 +395,28 @@ eoui_instantiate(eo_ui_t *eoui, const LV2UI_Descriptor *descriptor,
 			// according to the LV2 spec, the host MUST signal availability of
 			// idle interface via features, thus we test for it here
 			int host_provides_idle_iface = 0; // mandatory
+			LV2_Options_Option *opts = NULL; // optional
 			for(int i=0; features[i]; i++)
 			{
 				if(!strcmp(features[i]->URI, LV2_UI__idleInterface))
 					host_provides_idle_iface = 1;
+				else if(!strcmp(features[i]->URI, LV2_OPTIONS__options))
+					opts = features[i]->data;
 			}
 			if(!host_provides_idle_iface)
 				return -1;
+
+			snprintf(eoui->title, 512, "%s", descriptor->URI);
+			if(opts)
+			{
+				for(LV2_Options_Option *opt = opts;
+					(opt->key != 0) && (opt->value != NULL);
+					opt++)
+				{
+					if( (opt->key == eoui->window_title) && (opt->type == eoui->atom_string) )
+						snprintf(eoui->title, 512, "%s", opt->value);
+				}
+			}
 
 			// initialize elementary library
 			_elm_startup_time = ecore_time_unix_get();
@@ -404,7 +436,7 @@ eoui_instantiate(eo_ui_t *eoui, const LV2UI_Descriptor *descriptor,
 				if(!strcmp(features[i]->URI, LV2_UI__parent))
 					eoui->x11.parent = (Ecore_X_Window)(uintptr_t)features[i]->data;
 				else if(!strcmp(features[i]->URI, LV2_UI__resize))
-					eoui->x11.resize = (LV2UI_Resize *)features[i]->data;
+					eoui->x11.resize = features[i]->data;
 				else if(!strcmp(features[i]->URI, LV2_UI__idleInterface))
 					host_provides_idle_iface = 1;
 			}
@@ -468,13 +500,30 @@ eoui_instantiate(eo_ui_t *eoui, const LV2UI_Descriptor *descriptor,
 		case EO_UI_DRIVER_KX:
 		{
 			eoui->kx.host = NULL; // mandatory
+			LV2_Options_Option *opts = NULL; // optional
 			for(int i=0; features[i]; i++)
 			{
 				if(!strcmp(features[i]->URI, LV2_EXTERNAL_UI__Host))
 					eoui->kx.host = features[i]->data;
+				else if(!strcmp(features[i]->URI, LV2_OPTIONS__options))
+					opts = features[i]->data;
 			}
 			if(!eoui->kx.host)
 				return -1;
+
+			snprintf(eoui->title, 512, "%s", descriptor->URI);
+			if(opts)
+			{
+				for(LV2_Options_Option *opt = opts;
+					(opt->key != 0) && (opt->value != NULL);
+					opt++)
+				{
+					if( (opt->key == eoui->window_title) && (opt->type == eoui->atom_string) )
+						snprintf(eoui->title, 512, "%s", opt->value);
+				}
+			}
+			if(eoui->kx.host->plugin_human_id)
+				snprintf(eoui->title, 512, "%s", eoui->kx.host->plugin_human_id);
 
 			// initialize elementary library
 			_elm_startup_time = ecore_time_unix_get();
@@ -558,12 +607,8 @@ eoui_cleanup(eo_ui_t *eoui)
 	memset(eoui, 0, sizeof(eo_ui_t));
 }
 
-// extension data callback for EoUI
-static inline const void *
-eoui_eo_extension_data(const char *uri)
-{
-	return NULL;
-}
+#define eoui_eo_extension_data NULL
+#define eoui_kx_extension_data NULL
 
 // extension data callback for show interface UI
 static inline const void *
@@ -586,13 +631,6 @@ eoui_x11_extension_data(const char *uri)
 	else if(!strcmp(uri, LV2_UI__resize))
 		return &resize_ext;
 		
-	return NULL;
-}
-
-// extension data callback for external-ui
-static inline const void *
-eoui_kx_extension_data(const char *uri)
-{
 	return NULL;
 }
 

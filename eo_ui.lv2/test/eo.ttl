@@ -1,0 +1,104 @@
+# Copyright (c) 2016 Hanspeter Portner (dev@open-music-kontrollers.ch)
+#
+# This is free software: you can redistribute it and/or modify
+# it under the terms of the Artistic License 2.0 as published by
+# The Perl Foundation.
+#
+# This source is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# Artistic License 2.0 for more details.
+#
+# You should have received a copy of the Artistic License 2.0
+# along the source as a COPYING file. If not, obtain it from
+# http://www.perlfoundation.org/artistic_license_2_0.
+
+@prefix owl:			<http://www.w3.org/2002/07/owl#> .
+@prefix foaf:			<http://xmlns.com/foaf/0.1/> .
+@prefix doap:			<http://usefulinc.com/ns/doap#> .
+@prefix rdf:			<http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: 		<http://www.w3.org/2000/01/rdf-schema#> .
+@prefix lv2:			<http://lv2plug.in/ns/lv2core#> .
+@prefix atom:			<http://lv2plug.in/ns/ext/atom#> .
+@prefix urid:			<http://lv2plug.in/ns/ext/urid#> .
+@prefix state:		<http://lv2plug.in/ns/ext/state#> .
+@prefix patch:		<http://lv2plug.in/ns/ext/patch#> .
+@prefix log:			<http://lv2plug.in/ns/ext/log#> .
+@prefix units:		<http://lv2plug.in/ns/extensions/units#> .
+@prefix xsd:			<http://www.w3.org/2001/XMLSchema#> .
+@prefix ui:				<http://lv2plug.in/ns/extensions/ui#> .
+@prefix kx: <http://kxstudio.sf.net/ns/lv2ext/external-ui#> .
+
+@prefix lic:			<http://opensource.org/licenses/> .
+@prefix omk:			<http://open-music-kontrollers.ch/ventosus#> .
+@prefix proj:			<http://open-music-kontrollers.ch/lv2/> .
+@prefix eo:				<http://open-music-kontrollers.ch/lv2/eo#> .
+
+ui:EoUI
+	a rdfs:Class, owl:Class ;
+	rdfs:subClassOf ui:UI .
+kx:Widget
+	a rdfs:Class, owl:Class ;
+	rdfs:subClassOf ui:UI .
+kx:Host
+	a lv2:Feature .
+
+# Maintainer
+omk:me
+	a foaf:Person ;
+	foaf:name "Hanspeter Portner" ;
+	foaf:mbox <mailto:dev@open-music-kontrollers.ch> ;
+	foaf:homepage <http://open-music-kontrollers.ch> .
+
+# Project
+proj:eo
+	a doap:Project ;
+	doap:maintainer omk:me ;
+	doap:name "EoUI Bundle" .
+
+# Test Plugin
+eo:test
+	a lv2:Plugin ,
+		lv2:ConverterPlugin ;
+	doap:name "EoUI Test" ;
+	doap:license lic:Artistic-2.0 ;
+	lv2:project proj:eo ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable ;
+
+	lv2:port [
+	  a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 0 ;
+		lv2:symbol "x_in" ;
+		lv2:name "X In" ;
+		lv2:default 0.5 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] , [
+	  a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 1 ;
+		lv2:symbol "y_in" ;
+		lv2:name "Y In" ;
+		lv2:default 0.5 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] .
+
+# Test UI
+eo:ui
+	a ui:UI ;
+	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map ;
+  lv2:extensionData ui:idleInterface, ui:showInterface .
+eo:kx
+	a kx:Widget ;
+	lv2:requiredFeature kx:Host, ui:portMap, urid:map .
+eo:x11
+	a ui:X11UI ;
+	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map ;
+	lv2:optionalFeature ui:resize ;
+  lv2:extensionData ui:idleInterface, ui:resize .
+eo:eo
+	a ui:EoUI ;
+	lv2:optionalFeature ui:resize ;
+	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map .
