@@ -944,7 +944,7 @@ do
 		assert(beat_unit_responded == 2)
 		assert(beats_per_bar_responded == 2)
 		assert(beats_per_minute_responded == 2)
-		assert(frame_responded == 0)
+		assert(frame_responded == 2)
 		assert(frames_per_second_responded == 2)
 		assert(speed_responded == 2)
 
