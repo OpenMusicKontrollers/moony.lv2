@@ -98,7 +98,7 @@ struct _timely_t {
 #define TIMELY_URI_FRAMES_PER_SECOND(timely)	((timely)->urid.time_framesPerSecond)
 #define TIMELY_URI_SPEED(timely)							((timely)->urid.time_speed)
 
-#define TIMELY_BAR_BEAT(timely)								((timely)->pos.bar_beat)
+#define TIMELY_BAR_BEAT(timely)								((timely)->pos.bar_beat + (timely)->offset.beat / (timely)->frames_per_beat)
 #define TIMELY_BAR(timely)										((timely)->pos.bar)
 #define TIMELY_BEAT_UNIT(timely)							((timely)->pos.beat_unit)
 #define TIMELY_BEATS_PER_BAR(timely)					((timely)->pos.beats_per_bar)
@@ -208,7 +208,7 @@ _timely_refresh(timely_t *timely)
 	timely->frames_per_beat = 240.0 / (timely->pos.beats_per_minute * timely->pos.beat_unit)
 		* timely->pos.frames_per_second;
 	timely->frames_per_bar = timely->frames_per_beat * timely->pos.beats_per_bar;
-	
+
 	// bar
 	timely->window.bar = timely->frames_per_bar;
 	timely->offset.bar = timely->pos.bar_beat * timely->frames_per_beat;
@@ -250,7 +250,7 @@ timely_init(timely_t *timely, LV2_URID_Map *map, double rate,
 	timely->pos.beats_per_minute = 120.f;
 	timely->pos.frame = 0;
 	timely->pos.frames_per_second = rate;
-	
+
 	_timely_refresh(timely);
 
 	timely->first = true;
@@ -273,19 +273,19 @@ timely_advance(timely_t *timely, const LV2_Atom_Object *obj,
 
 		if(timely->mask & TIMELY_MASK_BEATS_PER_BAR)
 			timely->cb(timely, 0, timely->urid.time_beatsPerBar, timely->data);
-		
+
 		if(timely->mask & TIMELY_MASK_BEATS_PER_MINUTE)
 			timely->cb(timely, 0, timely->urid.time_beatsPerMinute, timely->data);
 
 		if(timely->mask & TIMELY_MASK_FRAME)
 			timely->cb(timely, 0, timely->urid.time_frame, timely->data);
-		
+
 		if(timely->mask & TIMELY_MASK_FRAMES_PER_SECOND)
 			timely->cb(timely, 0, timely->urid.time_framesPerSecond, timely->data);
-		
+
 		if(timely->mask & TIMELY_MASK_BAR)
 			timely->cb(timely, 0, timely->urid.time_bar, timely->data);
-		
+
 		if(timely->mask & TIMELY_MASK_BAR_BEAT)
 			timely->cb(timely, 0, timely->urid.time_barBeat, timely->data);
 	}
@@ -302,15 +302,19 @@ timely_advance(timely_t *timely, const LV2_Atom_Object *obj,
 		if( (timely->offset.beat == 0) && (timely->pos.bar_beat == 0) )
 		{
 			if(timely->mask & (TIMELY_MASK_BAR_BEAT | TIMELY_MASK_BAR_BEAT_WHOLE) )
-				timely->cb(timely, from, timely->urid.time_barBeat, timely->data); 
+				timely->cb(timely, from, timely->urid.time_barBeat, timely->data);
 		}
 
+		unsigned update_frame = to;
 		for(unsigned i=from; i<to; i++)
 		{
 			if(timely->offset.bar >= timely->window.bar)
 			{
 				timely->pos.bar += 1;
 				timely->offset.bar -= timely->window.bar;
+
+				if(timely->mask & TIMELY_MASK_FRAME)
+					timely->cb(timely, (update_frame = i), timely->urid.time_frame, timely->data);
 
 				if(timely->mask & TIMELY_MASK_BAR_WHOLE)
 					timely->cb(timely, i, timely->urid.time_bar, timely->data);
@@ -322,17 +326,22 @@ timely_advance(timely_t *timely, const LV2_Atom_Object *obj,
 				timely->offset.beat -= timely->window.beat;
 
 				if(timely->pos.bar_beat >= timely->pos.beats_per_bar)
-					timely->pos.bar_beat = 0;
+					timely->pos.bar_beat -= timely->pos.beats_per_bar;
+
+				if( (timely->mask & TIMELY_MASK_FRAME) && (update_frame != i) )
+					timely->cb(timely, (update_frame = i), timely->urid.time_frame, timely->data);
 
 				if(timely->mask & TIMELY_MASK_BAR_BEAT_WHOLE)
-					timely->cb(timely, i, timely->urid.time_barBeat, timely->data); 
+					timely->cb(timely, i, timely->urid.time_barBeat, timely->data);
 			}
 
 			timely->offset.bar += 1;
 			timely->offset.beat += 1;
+			timely->pos.frame += 1;
 		}
-		
-		timely->pos.frame += to - from;
+
+		if( (timely->mask & TIMELY_MASK_FRAME) && (to - from > 0) && (update_frame != to - 1) )
+				timely->cb(timely, to - 1, timely->urid.time_frame, timely->data);
 	}
 
 	// is this a time position event?
