@@ -366,7 +366,6 @@ do
 			assert(note == _note)
 			assert(vel == _vel)
 			note_on_responded = true
-			return true
 		end,
 		[MIDI.NoteOff] = function(self, frames, forge, chan, note, vel)
 			assert(frames == 1)
@@ -374,21 +373,18 @@ do
 			assert(note == _note)
 			assert(vel == _vel)
 			note_off_responded = true
-			return true
 		end,
 		[MIDI.Start] = function(self, frames, forge, chan, dat1)
 			assert(frames == 2)
 			assert(chan == nil)
 			assert(dat1 == 0x1)
 			note_start_responded = true
-			return true
 		end,
 		[MIDI.Stop] = function(self, frames, forge, chan, dat1)
 			assert(frames == 3)
 			assert(chan == nil)
 			assert(dat1 == 0x2)
 			note_stop_responded = true
-			return true
 		end
 	})
 
@@ -794,21 +790,18 @@ do
 			assert(fmt == 'i')
 			assert(i == 13)
 			ping_responded = true
-			return true
 		end,
 		['/pong'] = function(self, frames, forge, fmt, s)
 			assert(frames == 1)
 			assert(fmt == 's')
 			assert(s == 'world')
 			pong_responded = true
-			return true
 		end,
 		['/one/two/three'] = function(self, frames, forge, fmt, d)
 			assert(frames == 2)
 			assert(fmt == 'd')
 			assert(d == 12.3)
 			complex_responded = complex_responded + 1
-			return true
 		end
 	})
 

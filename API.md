@@ -641,7 +641,6 @@ path = atom.value -- Lua string
 midi_responder = MIDIResponder:new({
 	[MIDI.NoteOn] = function(self, frames, forge, chan, note, vel)
 		--
-		return true -- handled
 	end
 })
 
@@ -659,7 +658,6 @@ osc_responder = OSCResponder:new({
 	root = {
 		ping = function(self, frames, forge, fmt, ...)
 			--
-			return true -- handled
 		end
 	}
 })

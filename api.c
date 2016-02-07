@@ -2245,42 +2245,37 @@ _lmidiresponder__call(lua_State *L)
 		lchunk = lua_touserdata(L, 4);
 	lua_pop(L, 1); // atom
 
-	if(!lchunk) // not a valid atom, abort
+	// check for valid atom and event type
+	if(!lchunk || (lchunk->atom->type != moony->uris.midi_event))
 	{
-		lua_pushboolean(L, 0);
+		lua_pushboolean(L, 0); // not handled
 		return 1;
 	}
 
-	if(lchunk->atom->type == moony->uris.midi_event)
+	const uint8_t *midi = LV2_ATOM_BODY_CONST(lchunk->atom);
+	const uint8_t status = midi[0];
+	const uint8_t command = status & 0xf0;
+	const bool is_system = command == 0xf0;
+
+	// replace self with its uservalue
+	lua_getuservalue(L, 1);
+	lua_replace(L, 1);
+
+	if(lua_geti(L, 1, is_system ? status : command) != LUA_TNIL)
 	{
-		const uint8_t *midi = LV2_ATOM_BODY_CONST(lchunk->atom);
-		const uint8_t status = midi[0];
-		const uint8_t command = status & 0xf0;
-		const bool is_system = command == 0xf0;
-
-		// replace self with its uservalue
-		lua_getuservalue(L, 1);
-		lua_replace(L, 1);
-
-		if(lua_geti(L, 1, is_system ? status : command) != LUA_TNIL)
-		{
-			lua_insert(L, 1);
-			if(is_system)
-				lua_pushnil(L); // system messages have no channel
-			else
-				lua_pushinteger(L, status & 0x0f); // 4: channel
-
-			for(unsigned i=1; i<lchunk->atom->size; i++)
-				lua_pushinteger(L, midi[i]);
-
-			lua_call(L, 4 + lchunk->atom->size - 1, 1);
-		}
+		lua_insert(L, 1);
+		if(is_system)
+			lua_pushnil(L); // system messages have no channel
 		else
-			lua_pushboolean(L, 0); // event not handled
-	}
-	else
-		lua_pushboolean(L, 0); // wrong type 
+			lua_pushinteger(L, status & 0x0f); // 4: channel
 
+		for(unsigned i=1; i<lchunk->atom->size; i++)
+			lua_pushinteger(L, midi[i]);
+
+		lua_call(L, 4 + lchunk->atom->size - 1, 0);
+	}
+
+	lua_pushboolean(L, 1); // handled
 	return 1;
 }
 
@@ -2495,9 +2490,7 @@ _loscresponder_msg(const char *path, const char *fmt, const LV2_Atom_Tuple *args
 		}
 	}
 
-	lua_call(L, 4 + matching + lua_gettop(L) - oldtop, 1);
-	moony->osc_responder_handled |= lua_toboolean(L, -1); //FIXME
-	lua_pop(L, 1); // bool
+	lua_call(L, 4 + matching + lua_gettop(L) - oldtop, 0);
 }
 
 static int
@@ -2516,9 +2509,11 @@ _loscresponder__call(lua_State *L)
 		lobj = lua_touserdata(L, 4);
 	lua_pop(L, 1); // atom
 
-	if(!lobj) // not a valid atom, abort
+	// check for valid atom and event type
+	if(!lobj || !(osc_atom_is_bundle(&moony->oforge, lobj->obj)
+		|| osc_atom_is_message(&moony->oforge, lobj->obj)))
 	{
-		lua_pushboolean(L, 0);
+		lua_pushboolean(L, 0); // not handled
 		return 1;
 	}
 
@@ -2526,10 +2521,9 @@ _loscresponder__call(lua_State *L)
 	lua_getuservalue(L, 1);
 	lua_replace(L, 1);
 
-	moony->osc_responder_handled = 0;
 	osc_atom_event_unroll(&moony->oforge, lobj->obj, NULL, NULL, _loscresponder_msg, moony);
-	lua_pushboolean(L, moony->osc_responder_handled);
 
+	lua_pushboolean(L, 1); // handled
 	return 1;
 }
 
@@ -3065,7 +3059,7 @@ _lstateresponder__call(lua_State *L)
 				// register state
 				_lstateresponder_register(L, moony, frames, lforge, subject);
 
-				lua_pushboolean(L, 1); // success
+				lua_pushboolean(L, 1); // handled
 				return 1;
 			}
 			else if(property->atom.type == moony->forge.URID)
@@ -3143,7 +3137,7 @@ _lstateresponder__call(lua_State *L)
 					}
 					lv2_atom_forge_pop(lforge->forge, &obj_frame);
 
-					lua_pushboolean(L, 1); // success
+					lua_pushboolean(L, 1); // handled
 					return 1;
 				}
 			}
@@ -3185,7 +3179,7 @@ _lstateresponder__call(lua_State *L)
 						lua_seti(L, -2, moony->uris.rdf_value); // self[property].value = value
 					}
 
-					lua_pushboolean(L, 1); // success
+					lua_pushboolean(L, 1); // handled
 					return 1;
 				}
 			}

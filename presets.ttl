@@ -163,11 +163,9 @@ moony:bank-midi_midi-responder
 		moony:code """midi_responder = MIDIResponder({
 	[MIDI.NoteOn] = function(self, frames, forge, chan, note, vel)
 		forge:time(frames):midi(MIDI.NoteOn | chan, note, vel)
-		return true -- handled
 	end,
 	[MIDI.NoteOff] = function(self, frames, forge, chan, note, vel)
 		forge:time(frames):midi(MIDI.NoteOff | chan, note, vel)
-		return true -- handled
 	end
 })
 
@@ -225,11 +223,9 @@ moony:bank-osc_osc-responder
 		moony:code """osc_responder = OSCResponder({
 	['/ping'] = function(self, frames, forge, fmt, ...)
 		forge:time(frames):message('/pong', fmt, ...)
-		return true -- handled
 	end,
 	['/pong'] = function(self, frames, forge, fmt, ...)
 		forge:time(frames):message('/ping', fmt, ...)
-		return true -- handled
 	end
 })
 
