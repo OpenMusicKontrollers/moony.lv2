@@ -95,7 +95,7 @@ h1 {
 .box {
 	text-align:right;
 	position:fixed;
-	bottom:25%;
+	bottom:50%;
 	right:0;
 	z-index:9999;
 }
