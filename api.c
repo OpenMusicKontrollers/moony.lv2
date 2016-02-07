@@ -2571,7 +2571,7 @@ _ltimeresponder_cb(timely_t *timely, int64_t frames, LV2_URID type,
 
 		if(type == TIMELY_URI_BAR_BEAT(timely))
 		{
-			lua_pushnumber(L, TIMELY_BAR_BEAT(timely));
+			lua_pushnumber(L, TIMELY_BAR_BEAT_RAW(timely));
 		}
 		else if(type == TIMELY_URI_BAR(timely))
 		{
@@ -2651,36 +2651,33 @@ _ltimeresponder_stash(lua_State *L)
 	timely_t *timely = lua_touserdata(L, 1);
 	lforge_t *lforge = luaL_checkudata(L, 2, "lforge");
 
-	// calculate current bar_beat
-	float bar_beat = floor(timely->pos.bar_beat) + timely->offset.beat / timely->window.beat;
-
 	// serialize full time state to stash
 	LV2_Atom_Forge_Frame frame;
 	if(  !lv2_atom_forge_object(lforge->forge, &frame, 0, timely->urid.time_position)
 
 		|| !lv2_atom_forge_key(lforge->forge, timely->urid.time_barBeat)
-		|| !lv2_atom_forge_float(lforge->forge, bar_beat)
+		|| !lv2_atom_forge_float(lforge->forge, TIMELY_BAR_BEAT(timely))
 
 		|| !lv2_atom_forge_key(lforge->forge, timely->urid.time_bar)
-		|| !lv2_atom_forge_long(lforge->forge, timely->pos.bar)
+		|| !lv2_atom_forge_long(lforge->forge, TIMELY_BAR(timely))
 
 		|| !lv2_atom_forge_key(lforge->forge, timely->urid.time_beatUnit)
-		|| !lv2_atom_forge_int(lforge->forge, timely->pos.beat_unit)
+		|| !lv2_atom_forge_int(lforge->forge, TIMELY_BEAT_UNIT(timely))
 
 		|| !lv2_atom_forge_key(lforge->forge, timely->urid.time_beatsPerBar)
-		|| !lv2_atom_forge_float(lforge->forge, timely->pos.beats_per_bar)
+		|| !lv2_atom_forge_float(lforge->forge, TIMELY_BEATS_PER_BAR(timely))
 
 		|| !lv2_atom_forge_key(lforge->forge, timely->urid.time_beatsPerMinute)
-		|| !lv2_atom_forge_float(lforge->forge, timely->pos.beats_per_minute)
+		|| !lv2_atom_forge_float(lforge->forge, TIMELY_BEATS_PER_MINUTE(timely))
 
 		|| !lv2_atom_forge_key(lforge->forge, timely->urid.time_frame)
-		|| !lv2_atom_forge_long(lforge->forge, timely->pos.frame)
+		|| !lv2_atom_forge_long(lforge->forge, TIMELY_FRAME(timely))
 
 		|| !lv2_atom_forge_key(lforge->forge, timely->urid.time_framesPerSecond)
-		|| !lv2_atom_forge_float(lforge->forge, timely->pos.frames_per_second)
+		|| !lv2_atom_forge_float(lforge->forge, TIMELY_FRAMES_PER_SECOND(timely))
 
 		|| !lv2_atom_forge_key(lforge->forge, timely->urid.time_speed)
-		|| !lv2_atom_forge_float(lforge->forge, timely->pos.speed) )
+		|| !lv2_atom_forge_float(lforge->forge, TIMELY_SPEED(timely)) )
 		luaL_error(L, forge_buffer_overflow);
 	lv2_atom_forge_pop(lforge->forge, &frame);
 
