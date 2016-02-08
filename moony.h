@@ -253,7 +253,7 @@ struct _moony_t {
 		atomic_flag state;
 	} lock;
 
-	LV2_Atom_Object *state_obj;
+	LV2_Atom *state_atom;
 	LV2_Atom *stash_atom;
 };
 

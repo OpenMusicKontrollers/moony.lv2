@@ -1266,19 +1266,7 @@ do
 		}
 	})
 
-	local function store(key, range, value)
-		if key == urid.int then
-			assert(range == state_int[RDFS.range])
-			assert(value == state_int[RDF.value])
-		elseif key == urid.flt then
-			assert(range == state_flt[RDFS.range])
-			assert(value == state_flt[RDF.value])
-		end
-	end
-	
-	state:save(store)
-
-	--FIXME retrieve
+	--FIXME test state:save and state:restore
 
 	local function consumer(seq, forge)
 		for frames, atom in seq:foreach() do

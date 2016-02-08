@@ -294,12 +294,12 @@ state = StateResponder({
 	}
 })
 
-function save(store)
-	state:save(store)
+function save(forge)
+	state:save(forge)
 end
 
-function restore(retrieve)
-	state:restore(retrieve)
+function restore(atom)
+	state:restore(atom)
 	alpha[Patch.Set](alpha, 0, nil, alpha[RDF.value])
 end
 
