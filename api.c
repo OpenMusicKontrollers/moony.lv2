@@ -2698,7 +2698,7 @@ _ltimeresponder__call(lua_State *L)
 	// 1: self
 	// 2: from
 	// 3: to
-	// 4: data
+	// 4: data aka forge
 	// 5: atom || nil
 	
 	timely_t *timely = lua_touserdata(L, 1);
@@ -2714,6 +2714,24 @@ _ltimeresponder__call(lua_State *L)
 
 	lua_pushboolean(L, handled); // handled vs not handled
 	return 1;
+}
+
+static int
+_ltimeresponder_apply(lua_State *L)
+{
+	// 1: self
+	// 2: atom
+	
+	lua_pushinteger(L, 0);
+	lua_insert(L, 2); // from
+
+	lua_pushinteger(L, 0);
+	lua_insert(L, 3); // to
+
+	lua_pushnil(L);
+	lua_insert(L, 4); // data aka forge
+
+	return _ltimeresponder__call(L);
 }
 
 static int
@@ -2775,10 +2793,21 @@ _ltimeresponder__index(lua_State *L)
 	int ltype = lua_type(L, 2);
 	if(ltype != LUA_TNUMBER)
 	{
-		if( (ltype == LUA_TSTRING) && !strcmp(lua_tostring(L, 2), "stash") )
+		if(ltype == LUA_TSTRING)
 		{
-			lua_pushlightuserdata(L, moony);
-			lua_pushcclosure(L, _ltimeresponder_stash, 1);
+			const char *key = lua_tostring(L, 2);
+			if(!strcmp(key, "stash"))
+			{
+				lua_pushlightuserdata(L, moony);
+				lua_pushcclosure(L, _ltimeresponder_stash, 1);
+			}
+			else if(!strcmp(key, "apply"))
+			{
+				lua_pushlightuserdata(L, moony);
+				lua_pushcclosure(L, _ltimeresponder_apply, 1);
+			}
+			else
+				lua_pushnil(L);
 		}
 		else
 			lua_pushnil(L);
@@ -2827,7 +2856,6 @@ _ltimeresponder__index(lua_State *L)
 
 	return 1;
 }
-
 
 static int
 _ltimeresponder(lua_State *L)
@@ -3389,7 +3417,7 @@ _lstateresponder_reg(lua_State *L)
 }
 
 static int
-_lstateresponder_save(lua_State *L)
+_lstateresponder_stash(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 
@@ -3442,7 +3470,7 @@ _lstateresponder_save(lua_State *L)
 }
 
 static int
-_lstateresponder_restore(lua_State *L)
+_lstateresponder_apply(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 
@@ -3478,8 +3506,8 @@ _lstateresponder_restore(lua_State *L)
 static const luaL_Reg lstateresponder_mt [] = {
 	{"__call", _lstateresponder__call},
 	{"register", _lstateresponder_reg},
-	{"save", _lstateresponder_save},
-	{"restore", _lstateresponder_restore},
+	{"stash", _lstateresponder_stash},
+	{"apply", _lstateresponder_apply},
 	{NULL, NULL}
 };
 

@@ -821,19 +821,6 @@ end
 -- TimeResponder
 print('[test] TimeResponder')
 do
-	local function producer(forge)
-		local obj = forge:frame_time(0):object(0, Time.Position)
-		obj:key(Time.barBeat):float(0.5)
-		obj:key(Time.bar):long(34)
-		obj:key(Time.beatUnit):int(8)
-		obj:key(Time.beatsPerBar):float(6.0)
-		obj:key(Time.beatsPerMinute):float(200.0)
-		obj:key(Time.frame):long(23000)
-		obj:key(Time.framesPerSecond):float(44100.0)
-		obj:key(Time.speed):float(1.0)
-		obj:pop()
-	end
-
 	local rolling = 0
 	local bar_beat_responded = 0
 	local bar_responded = 0
@@ -926,16 +913,34 @@ do
 	}
 	local time_responder = TimeResponder(time_cb)
 
+	local function producer(forge)
+		local obj = forge:frame_time(0):object(0, Time.Position)
+		obj:key(Time.barBeat):float(0.5)
+		obj:key(Time.bar):long(34)
+		obj:key(Time.beatUnit):int(8)
+		obj:key(Time.beatsPerBar):float(6.0)
+		obj:key(Time.beatsPerMinute):float(200.0)
+		obj:key(Time.frame):long(23000)
+		obj:key(Time.framesPerSecond):float(44100.0)
+		obj:key(Time.speed):float(1.0)
+		obj:pop()
+
+		-- time:stash
+		forge:frame_time(1)
+		time_responder:stash(forge)
+	end
+
 	local function consumer(seq)
-		assert(#seq == 1)
+		assert(#seq == 2)
 
 		local from = 0
 		for frames, atom in seq:foreach() do
-			assert(atom.type == Atom.Object)
-			assert(atom.otype == Time.Position)
-
-			time_responder(from, frames, nil, atom)
-			from = frames
+			if frames == 0 then
+				assert(atom.type == Atom.Object)
+				assert(atom.otype == Time.Position)
+				time_responder(from, frames, nil, atom)
+				from = frames
+			end
 		end
 		time_responder(from, 256, nil, nil)
 
@@ -948,12 +953,37 @@ do
 		assert(frames_per_second_responded == 2)
 		assert(speed_responded == 2)
 
-		--assert(time_responder[Time.barBeat] == 0.5) --TODO compare real barBeat here
+		assert(time_responder[Time.barBeat] > 0.5) --!
 		assert(time_responder[Time.bar] == 34)
 		assert(time_responder[Time.beatUnit] == 8)
 		assert(time_responder[Time.beatsPerBar] == 6.0)
 		assert(time_responder[Time.beatsPerMinute] == 200.0)
 		assert(time_responder[Time.frame] == 23000 + 256)
+		assert(time_responder[Time.framesPerSecond] == 44100.0)
+		assert(time_responder[Time.speed] == 1.0)
+
+		-- test time:stash
+		local atom = seq[1]
+		assert(atom.type == Atom.Object)
+		assert(atom.otype == Time.Position)
+		assert(atom[Time.barBeat].value == 0.5)
+		assert(atom[Time.bar].value == 34)
+		assert(atom[Time.beatUnit].value == 8)
+		assert(atom[Time.beatsPerBar].value == 6.0)
+		assert(atom[Time.beatsPerMinute].value == 200.0)
+		assert(atom[Time.frame].value == 23000)
+		assert(atom[Time.framesPerSecond].value == 44100.0)
+		assert(atom[Time.speed].value == 1.0)
+
+		-- test time:apply
+		--time_responder(0, 0, nil, atom)
+		time_responder:apply(atom)
+		assert(time_responder[Time.barBeat] == 0.5)
+		assert(time_responder[Time.bar] == 34)
+		assert(time_responder[Time.beatUnit] == 8)
+		assert(time_responder[Time.beatsPerBar] == 6.0)
+		assert(time_responder[Time.beatsPerMinute] == 200.0)
+		assert(time_responder[Time.frame] == 23000)
 		assert(time_responder[Time.framesPerSecond] == 44100.0)
 		assert(time_responder[Time.speed] == 1.0)
 	end
@@ -1224,14 +1254,6 @@ do
 		flt = Map[prefix .. '#flt']
 	}
 
-	local function producer(forge)
-		forge:frame_time(0):get(urid.subject, urid.int)
-		forge:frame_time(1):set(urid.subject, urid.int):typed(Atom.Int, 2):pop()
-
-		forge:frame_time(2):get(urid.subject, urid.flt)
-		forge:frame_time(3):set(urid.subject, urid.flt):typed(Atom.Float, 2.0):pop()
-	end
-
 	local flt_get_responded = false
 	local flt_set_responded = false
 
@@ -1266,17 +1288,43 @@ do
 		}
 	})
 
-	--FIXME test state:save and state:restore
+	local function producer(forge)
+		forge:frame_time(0):get(urid.subject, urid.int)
+		forge:frame_time(1):set(urid.subject, urid.int):typed(Atom.Int, 2):pop()
+
+		forge:frame_time(2):get(urid.subject, urid.flt)
+		forge:frame_time(3):set(urid.subject, urid.flt):typed(Atom.Float, 2.0):pop()
+
+		-- state:stash
+		forge:frame_time(4)
+		state:stash(forge)
+	end
 
 	local function consumer(seq, forge)
 		for frames, atom in seq:foreach() do
-			assert(state(frames, forge, atom) == true)
+			if frames < 4 then
+				assert(state(frames, forge, atom) == true)
+			end
 		end
 
 		assert(state_int[RDF.value] == 2)
 		assert(state_flt[RDF.value] == 2.0)
 		assert(flt_get_responded)
 		assert(flt_set_responded)
+
+		--test state:stash
+		local atom = seq[5]
+		assert(atom.type == Atom.Object)
+		assert(#atom == 2)
+		assert(atom[urid.int].type == Atom.Int)
+		assert(atom[urid.int].value == 1)
+		assert(atom[urid.flt].type == Atom.Float)
+		assert(atom[urid.flt].value == 1.0)
+
+		-- test state:apply
+		state:apply(atom)
+		assert(state_int[RDF.value] == 1)
+		assert(state_flt[RDF.value] == 1.0)
 	end
 
 	test(producer, consumer)

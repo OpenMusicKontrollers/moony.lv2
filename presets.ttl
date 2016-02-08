@@ -205,7 +205,7 @@ function stash(forge)
 end
 
 function apply(atom)
-  time_responder(0, 0, nil, atom)
+  time_responder:apply(atom)
 end
 
 function run(n, seq, forge)
@@ -295,11 +295,11 @@ state = StateResponder({
 })
 
 function save(forge)
-	state:save(forge)
+	state:stash(forge)
 end
 
 function restore(atom)
-	state:restore(atom)
+	state:apply(atom)
 	alpha[Patch.Set](alpha, 0, nil, alpha[RDF.value])
 end
 
