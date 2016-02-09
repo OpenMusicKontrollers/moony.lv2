@@ -97,7 +97,7 @@ _run(lua_State *L)
 		lua_pushinteger(L, handle->sample_count);
 
 		// push sequence
-		lseq_t *lseq = moony_newuserdata(L, &handle->moony, MOONY_UDATA_SEQ);
+		lseq_t *lseq = moony_newuserdata(L, &handle->moony, MOONY_UDATA_ATOM);
 		lseq->seq = handle->event_in;
 		lseq->itr = NULL;
 		

@@ -93,7 +93,7 @@ _run(lua_State *L)
 		// push sequence
 		for(unsigned i=0; i<handle->max_val; i++)
 		{
-			lseq_t *lseq = moony_newuserdata(L, &handle->moony, MOONY_UDATA_SEQ);
+			lseq_t *lseq = moony_newuserdata(L, &handle->moony, MOONY_UDATA_ATOM);
 			lseq->seq = handle->event_in[i];
 			lseq->itr = NULL;
 		}

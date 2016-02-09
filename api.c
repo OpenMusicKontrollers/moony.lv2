@@ -47,7 +47,6 @@ typedef struct _midi_msg_t midi_msg_t;
 typedef struct _lobj_t lobj_t;
 typedef struct _ltuple_t ltuple_t;
 typedef struct _lvec_t lvec_t;
-typedef struct _latom_t latom_t;
 typedef struct _atom_ser_t atom_ser_t;
 typedef struct _lstash_t lstash_t;
 
@@ -185,25 +184,37 @@ static const midi_msg_t controllers [] = {
 struct _lobj_t {
 	const LV2_Atom_Object *obj;
 	const LV2_Atom_Property_Body *itr;
-	LV2_Atom body [0];
 };
 
 struct _ltuple_t {
 	const LV2_Atom_Tuple *tuple;
 	int pos;
 	const LV2_Atom *itr;
-	LV2_Atom body [0];
 };
 
 struct _lvec_t {
 	const LV2_Atom_Vector *vec;
 	int count;
 	int pos;
-	LV2_Atom body [0];
 };
 
 struct _latom_t {
-	const LV2_Atom *atom;
+	union {
+		const LV2_Atom *atom;
+
+		const LV2_Atom_Int *i32;
+		const LV2_Atom_Long *i64;
+		const LV2_Atom_Float *f32;
+		const LV2_Atom_Double *f64;
+		const LV2_Atom_URID *u32;
+		const LV2_Atom_Literal *lit;
+
+		lseq_t seq;
+		lobj_t obj;
+		ltuple_t tuple;
+		lvec_t vec;
+	};
+
 	LV2_Atom body [0];
 };
 
@@ -214,22 +225,12 @@ struct _lstash_t {
 };
 
 static const char *moony_ref [MOONY_UDATA_COUNT] = {
-	[MOONY_UDATA_SEQ]		= "lseq",
-	[MOONY_UDATA_OBJ]		= "lobj",
-	[MOONY_UDATA_TUPLE]	= "ltuple",
-	[MOONY_UDATA_VEC]		= "lvec",
-	[MOONY_UDATA_CHUNK]	= "lchunk",
 	[MOONY_UDATA_ATOM]	= "latom",
 	[MOONY_UDATA_FORGE]	= "lforge",
 	[MOONY_UDATA_STASH]	= "lforge"
 };
 
 static const size_t moony_sz [MOONY_UDATA_COUNT] = {
-	[MOONY_UDATA_SEQ]		= sizeof(lseq_t),
-	[MOONY_UDATA_OBJ]		= sizeof(lobj_t),
-	[MOONY_UDATA_TUPLE]	= sizeof(ltuple_t),
-	[MOONY_UDATA_VEC]		= sizeof(lvec_t),
-	[MOONY_UDATA_CHUNK]	= sizeof(latom_t),
 	[MOONY_UDATA_ATOM]	= sizeof(latom_t),
 	[MOONY_UDATA_FORGE]	= sizeof(lforge_t),
 	[MOONY_UDATA_STASH]	= sizeof(lstash_t)
@@ -237,336 +238,417 @@ static const size_t moony_sz [MOONY_UDATA_COUNT] = {
 
 static const char *forge_buffer_overflow = "forge buffer overflow";
 
-static void
+static inline void
 _latom_new(lua_State *L, const LV2_Atom *atom)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	LV2_Atom_Forge *forge = &moony->forge;
 
-	if(atom->type == forge->Object)
-	{
-		lobj_t *lobj = moony_newuserdata(L, moony, MOONY_UDATA_OBJ);
-		lobj->obj = (const LV2_Atom_Object *)atom;
-	}
-	else if(atom->type == forge->Tuple)
-	{
-		ltuple_t *ltuple = moony_newuserdata(L, moony, MOONY_UDATA_TUPLE);
-		ltuple->tuple = (const LV2_Atom_Tuple *)atom;
-	}
-	else if(atom->type == forge->Vector)
-	{
-		lvec_t *lvec = moony_newuserdata(L, moony, MOONY_UDATA_VEC);
-		lvec->vec = (const LV2_Atom_Vector *)atom;
-		lvec->count = (lvec->vec->atom.size - sizeof(LV2_Atom_Vector_Body))
-			/ lvec->vec->body.child_size;
-	}
-	else if(atom->type == forge->Sequence)
-	{
-		lseq_t *lseq = moony_newuserdata(L, moony, MOONY_UDATA_SEQ);
-		lseq->seq = (const LV2_Atom_Sequence *)atom;
-		lseq->itr = NULL;
-	}
-	else if( (atom->type == forge->Chunk) || (atom->type == moony->uris.midi_event) )
-	{
-		latom_t *latom = moony_newuserdata(L, moony, MOONY_UDATA_CHUNK);
-		latom->atom = atom;
-	}
-	else if( (atom->type == 0) && (atom->size == 0) ) // nil atom
-	{
-		lua_pushnil(L);
-	}
-	else // basic atom
-	{
-		latom_t *latom = moony_newuserdata(L, moony, MOONY_UDATA_ATOM);
-		latom->atom = atom;
-	}
+	latom_t *latom = moony_newuserdata(L, moony, MOONY_UDATA_ATOM);
+	latom->atom = atom;
 }
 
-static void
+static inline void
 _latom_body_new(lua_State *L, uint32_t size, LV2_URID type, const void *body)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	LV2_Atom_Forge *forge = &moony->forge;
 	size_t atom_size = sizeof(LV2_Atom) + size;
 
-	if(type == forge->Object)
-	{
-		lobj_t *lobj = lua_newuserdata(L, sizeof(lobj_t) + atom_size);
-		lobj->obj = (const LV2_Atom_Object *)lobj->body;
-		lobj->body->size = size;
-		lobj->body->type = type;
-		memcpy(LV2_ATOM_BODY(lobj->body), body, size);
-		luaL_getmetatable(L, "lobj");
-	}
-	else if(type == forge->Tuple)
-	{
-		ltuple_t *ltuple = lua_newuserdata(L, sizeof(ltuple_t) + atom_size);
-		ltuple->tuple = (const LV2_Atom_Tuple *)ltuple->body;
-		ltuple->body->size = size;
-		ltuple->body->type = type;
-		memcpy(LV2_ATOM_BODY(ltuple->body), body, size);
-		luaL_getmetatable(L, "ltuple");
-	}
-	else if(type == forge->Vector)
-	{
-		lvec_t *lvec = lua_newuserdata(L, sizeof(lvec_t) + atom_size);
-		lvec->vec = (const LV2_Atom_Vector *)lvec->body;
-		lvec->body->size = size;
-		lvec->body->type = type;
-		memcpy(LV2_ATOM_BODY(lvec->body), body, size);
-		lvec->count = (lvec->vec->atom.size - sizeof(LV2_Atom_Vector_Body))
-			/ lvec->vec->body.child_size;
-		luaL_getmetatable(L, "lvec");
-	}
-	else if(type == forge->Sequence)
-	{
-		lseq_t *lseq = lua_newuserdata(L, sizeof(lseq_t) + atom_size);
-		lseq->seq = (const LV2_Atom_Sequence *)lseq->body;
-		lseq->body->size = size;
-		lseq->body->type = type;
-		memcpy(LV2_ATOM_BODY(lseq->body), body, size);
-		lseq->itr = NULL;
-		luaL_getmetatable(L, "lseq");
-	}
-	else if( (type == forge->Chunk) || (type == moony->uris.midi_event) )
-	{
-		latom_t *latom = lua_newuserdata(L, sizeof(latom_t) + atom_size);
-		latom->atom = (const LV2_Atom *)latom->body;
-		latom->body->size = size;
-		latom->body->type = type;
-		memcpy(LV2_ATOM_BODY(latom->body), body, size);
-		luaL_getmetatable(L, "lchunk");
-	}
-	else
-	{
-		latom_t *latom = lua_newuserdata(L, sizeof(latom_t) + atom_size);
-		latom->atom = (const LV2_Atom *)latom->body;
-		latom->body->size = size;
-		latom->body->type = type;
-		memcpy(LV2_ATOM_BODY(latom->body), body, size);
-		luaL_getmetatable(L, "latom");
-	}
+	latom_t *latom = lua_newuserdata(L, sizeof(latom_t) + atom_size);
+	latom->atom = (const LV2_Atom *)latom->body;
+	latom->body->size = size;
+	latom->body->type = type;
+	memcpy(LV2_ATOM_BODY(latom->body), body, size);
+	luaL_getmetatable(L, "latom");
 
 	lua_setmetatable(L, -2);
 }
 
 static int
-_lseq_foreach_itr(lua_State *L)
+_hash_sort(const void *itm1, const void *itm2)
 {
-	lseq_t *lseq = luaL_checkudata(L, 1, "lseq");
+	const latom_driver_hash_t *hash1 = itm1;
+	const latom_driver_hash_t *hash2 = itm2;
 
-	if(!lv2_atom_sequence_is_end(&lseq->seq->body, lseq->seq->atom.size, lseq->itr))
-	{
-		// push frame time
-		lua_pushinteger(L, lseq->itr->time.frames);
-		// push atom
-		_latom_new(L, &lseq->itr->body);
-	
-		// advance iterator
-		lseq->itr = lv2_atom_sequence_next(lseq->itr);
-
-		return 2;
-	}
-
-	// end of sequence reached
-	lua_pushnil(L);
-	return 1;
+	if(hash1->type < hash2->type)
+		return -1;
+	else if(hash1->type > hash2->type)
+		return 1;
+	return 0;
 }
 
-static int
-_lseq__index(lua_State *L)
+static inline const latom_driver_t *
+_latom_driver(moony_t *moony, LV2_URID type)
 {
-	lseq_t *lseq = luaL_checkudata(L, 1, "lseq");
+	const latom_driver_hash_t *base = moony->atom_driver_hash;
+	size_t lim;
+	const latom_driver_hash_t *p;
 
-	if(lua_isinteger(L, 2))
+	for(lim = DRIVER_HASH_MAX; lim != 0; lim >>= 1)
 	{
-		int index = lua_tointeger(L, 2); // indexing start from 1
-		int count = 0;
-		LV2_ATOM_SEQUENCE_FOREACH(lseq->seq, ev)
-		{
-			if(++count == index) 
-			{
-				_latom_new(L, &ev->body);
-				break;
-			}
-		}
-		if( (count != index) || (lseq->seq->atom.size == sizeof(LV2_Atom_Sequence_Body)) ) // index is out of bounds
-			lua_pushnil(L);
-	}
-	else if(lua_isstring(L, 2))
-	{
-		const char *key = lua_tostring(L, 2);
+		p = base + (lim >> 1);
 
-		if(!strcmp(key, "type"))
+		if(type == p->type)
+			return p->driver;
+
+		if(type > p->type)
 		{
-			lua_pushinteger(L, lseq->seq->atom.type);
-		}
-		else // look in metatable
-		{
-			lua_getmetatable(L, 1);
-			lua_pushvalue(L, 2);
-			lua_rawget(L, -2);
+			base = p + 1;
+			lim--;
 		}
 	}
-	else
-		lua_pushnil(L); // unsupported key
 
-	return 1;
+	return NULL;
 }
 
-static int
-_lseq__len(lua_State *L)
-{
-	lseq_t *lseq = luaL_checkudata(L, 1, "lseq");
-
-	int count = 0;
-	LV2_ATOM_SEQUENCE_FOREACH(lseq->seq, ev)
-		count++;
-	lua_pushinteger(L, count);
-
-	return 1;
-}
-
-static int
-_lseq__tostring(lua_State *L)
-{
-	lua_pushstring(L, "Atom_Sequence");
-
-	return 1;
-}
-
-static int
-_lseq_foreach(lua_State *L)
+static void
+_latom_value(lua_State *L, const LV2_Atom *atom)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lseq_t *lseq = luaL_checkudata(L, 1, "lseq");
+	const latom_driver_t *driver = _latom_driver(moony, atom->type);
+	LV2_Atom_Forge *forge = &moony->forge;
 
-	// reset iterator to beginning of sequence
-	lseq->itr = lv2_atom_sequence_begin(&lseq->seq->body);
+	// dummy wrapping
+	latom_t latom = {
+		.atom = atom
+	};
 
-	lua_pushlightuserdata(L, moony);
-	lua_pushcclosure(L, _lseq_foreach_itr, 1);
-	lua_pushvalue(L, 1);
-
-	return 2;
+	if(driver && driver->value)
+		driver->value(L, &latom);
+	else
+		lua_pushnil(L); // unknown type
 }
 
-static const luaL_Reg lseq_mt [] = {
-	{"__index", _lseq__index},
-	{"__len", _lseq__len},
-	{"__tostring", _lseq__tostring},
-	{"foreach", _lseq_foreach},
-	{NULL, NULL}
+// Int driver
+static int
+_latom_int__len(lua_State *L, latom_t *latom)
+{
+	lua_pushinteger(L, latom->atom->size);
+	return 1;
+}
+
+static int
+_latom_int__tostring(lua_State *L, latom_t *latom)
+{
+	lua_pushfstring(L, "%i", latom->i32->body);
+	return 1;
+}
+
+static inline int
+_latom_int_value(lua_State *L, latom_t *latom)
+{
+	lua_pushinteger(L, latom->i32->body);
+	return 1;
+}
+
+static int
+_latom_int_unpack(lua_State *L)
+{
+	latom_t *latom = lua_touserdata(L, 1);
+	return _latom_int_value(L, latom);
+}
+
+static const latom_driver_t latom_int_driver = {
+	.__len = _latom_int__len,
+	.__tostring = _latom_int__tostring,
+	.value = _latom_int_value,
+	.unpack = _latom_int_unpack
+};
+
+// Long driver
+static int
+_latom_long__len(lua_State *L, latom_t *latom)
+{
+	lua_pushinteger(L, latom->atom->size);
+	return 1;
+}
+
+static int
+_latom_long__tostring(lua_State *L, latom_t *latom)
+{
+	lua_pushfstring(L, "%li", latom->i64->body);
+	return 1;
+}
+
+static inline int
+_latom_long_value(lua_State *L, latom_t *latom)
+{
+	lua_pushinteger(L, latom->i64->body);
+	return 1;
+}
+
+static int
+_latom_long_unpack(lua_State *L)
+{
+	latom_t *latom = lua_touserdata(L, 1);
+	return _latom_long_value(L, latom);
+}
+
+static const latom_driver_t latom_long_driver = {
+	.__len = _latom_long__len,
+	.__tostring = _latom_long__tostring,
+	.value = _latom_long_value,
+	.unpack = _latom_long_unpack
+};
+
+// Float driver
+static int
+_latom_float__len(lua_State *L, latom_t *latom)
+{
+	lua_pushinteger(L, latom->atom->size);
+	return 1;
+}
+
+static int
+_latom_float__tostring(lua_State *L, latom_t *latom)
+{
+	lua_pushfstring(L, "%f", latom->f32->body);
+	return 1;
+}
+
+static inline int
+_latom_float_value(lua_State *L, latom_t *latom)
+{
+	lua_pushnumber(L, latom->f32->body);
+	return 1;
+}
+
+static int
+_latom_float_unpack(lua_State *L)
+{
+	latom_t *latom = lua_touserdata(L, 1);
+	return _latom_float_value(L, latom);
+}
+
+static const latom_driver_t latom_float_driver = {
+	.__len = _latom_float__len,
+	.__tostring = _latom_float__tostring,
+	.value = _latom_float_value,
+	.unpack = _latom_float_unpack
+};
+
+// Double driver
+static int
+_latom_double__len(lua_State *L, latom_t *latom)
+{
+	lua_pushinteger(L, latom->atom->size);
+	return 1;
+}
+
+static int
+_latom_double__tostring(lua_State *L, latom_t *latom)
+{
+	lua_pushfstring(L, "%lf", latom->f64->body);
+	return 1;
+}
+
+static inline int
+_latom_double_value(lua_State *L, latom_t *latom)
+{
+	lua_pushnumber(L, latom->f64->body);
+	return 1;
+}
+
+static int
+_latom_double_unpack(lua_State *L)
+{
+	latom_t *latom = lua_touserdata(L, 1);
+	return _latom_double_value(L, latom);
+}
+
+static const latom_driver_t latom_double_driver = {
+	.__len = _latom_double__len,
+	.__tostring = _latom_double__tostring,
+	.value = _latom_double_value,
+	.unpack = _latom_double_unpack
+};
+
+// Bool driver
+static int
+_latom_bool__len(lua_State *L, latom_t *latom)
+{
+	lua_pushinteger(L, latom->atom->size);
+	return 1;
+}
+
+static int
+_latom_bool__tostring(lua_State *L, latom_t *latom)
+{
+	lua_pushfstring(L, "%s", latom->i32->body ? "true" : "false");
+	return 1;
+}
+
+static inline int
+_latom_bool_value(lua_State *L, latom_t *latom)
+{
+	lua_pushboolean(L, latom->i32->body);
+	return 1;
+}
+
+static int
+_latom_bool_unpack(lua_State *L)
+{
+	latom_t *latom = lua_touserdata(L, 1);
+	return _latom_bool_value(L, latom);
+}
+
+static const latom_driver_t latom_bool_driver = {
+	.__len = _latom_bool__len,
+	.__tostring = _latom_bool__tostring,
+	.value = _latom_bool_value,
+	.unpack = _latom_bool_unpack
+};
+
+// URID driver
+static int
+_latom_urid__len(lua_State *L, latom_t *latom)
+{
+	lua_pushinteger(L, latom->atom->size);
+	return 1;
+}
+
+static int
+_latom_urid__tostring(lua_State *L, latom_t *latom)
+{
+	lua_pushfstring(L, "%u", latom->u32->body);
+	return 1;
+}
+
+static inline int
+_latom_urid_value(lua_State *L, latom_t *latom)
+{
+	lua_pushinteger(L, latom->u32->body);
+	return 1;
+}
+
+static int
+_latom_urid_unpack(lua_State *L)
+{
+	latom_t *latom = lua_touserdata(L, 1);
+	return _latom_urid_value(L, latom);
+}
+
+static const latom_driver_t latom_urid_driver = {
+	.__len = _latom_urid__len,
+	.__tostring = _latom_urid__tostring,
+	.value = _latom_urid_value,
+	.unpack = _latom_urid_unpack
+};
+
+// String driver
+static int
+_latom_string__len(lua_State *L, latom_t *latom)
+{
+	lua_pushinteger(L, latom->atom->size);
+	return 1;
+}
+
+static inline int
+_latom_string_value(lua_State *L, latom_t *latom)
+{
+	lua_pushlstring(L, LV2_ATOM_BODY_CONST(latom->atom), latom->atom->size - 1);
+	return 1;
+}
+
+static int
+_latom_string_unpack(lua_State *L)
+{
+	latom_t *latom = lua_touserdata(L, 1);
+	return _latom_string_value(L, latom);
+}
+
+static const latom_driver_t latom_string_driver = {
+	.__len = _latom_string__len,
+	.__tostring = _latom_string_value,
+	.value = _latom_string_value,
+	.unpack = _latom_string_unpack
+};
+
+// Literal driver
+static int
+_latom_literal__indexk(lua_State *L, latom_t *latom)
+{
+	const char *key = lua_tostring(L, 2);
+	if(!strcmp(key, "datatype"))
+		lua_pushinteger(L, latom->lit->body.datatype);
+	else if(!strcmp(key, "lang"))
+		lua_pushinteger(L, latom->lit->body.lang);
+	else
+		lua_pushnil(L);
+	return 1;
+}
+
+static int
+_latom_literal_value(lua_State *L, latom_t *latom)
+{
+	lua_pushlstring(L, LV2_ATOM_CONTENTS_CONST(LV2_Atom_Literal, latom->atom), latom->atom->size - 1 - sizeof(LV2_Atom_Literal_Body));
+	return 1;
+}
+
+static int
+_latom_literal_unpack(lua_State *L)
+{
+	latom_t *latom = lua_touserdata(L, 1);
+	lua_pushlstring(L, LV2_ATOM_CONTENTS_CONST(LV2_Atom_Literal, latom->atom), latom->atom->size - 1 - sizeof(LV2_Atom_Literal_Body));
+	lua_pushinteger(L, latom->lit->body.datatype);
+	lua_pushinteger(L, latom->lit->body.lang);
+	return 1;
+}
+
+static const latom_driver_t latom_literal_driver = {
+	.__indexk = _latom_literal__indexk,
+	.__len = _latom_string__len,
+	.__tostring = _latom_literal_value,
+	.value = _latom_literal_value,
+	.unpack = _latom_literal_unpack
 };
 
 static int
-_ltuple_foreach_itr(lua_State *L)
+_latom_tuple__indexi(lua_State *L, latom_t *latom)
 {
-	ltuple_t *ltuple = luaL_checkudata(L, 1, "ltuple");
+	ltuple_t *ltuple = &latom->tuple;
+	const int idx = lua_tointeger(L, 2);
 
-	if(!lv2_atom_tuple_is_end(LV2_ATOM_BODY(ltuple->tuple), ltuple->tuple->atom.size, ltuple->itr))
+	int count = 0;
+	LV2_ATOM_TUPLE_FOREACH(ltuple->tuple, atom)
 	{
-		// push index
-		lua_pushinteger(L, ltuple->pos + 1);
-
-		// push atom
-		_latom_new(L, ltuple->itr);
-	
-		// advance iterator
-		ltuple->pos += 1;
-		ltuple->itr = lv2_atom_tuple_next(ltuple->itr);
-
-		return 2;
+		if(++count == idx)
+		{
+			_latom_new(L, atom);
+			return 1;
+		}
 	}
 
-	// end of tuple reached
 	lua_pushnil(L);
 	return 1;
 }
 
 static int
-_ltuple__index(lua_State *L)
+_latom_tuple__len(lua_State *L, latom_t *latom)
 {
-	ltuple_t *ltuple = luaL_checkudata(L, 1, "ltuple");
-
-	if(lua_isnumber(L, 2))
-	{
-		int index = lua_tointeger(L, 2); // indexing start from 1
-		int count = 0;
-		LV2_ATOM_TUPLE_FOREACH(ltuple->tuple, atom)
-		{
-			if(++count == index) 
-			{
-				_latom_new(L, atom);
-				break;
-			}
-		}
-		if( (count != index) || (ltuple->tuple->atom.size == 0) ) // index is out of bounds
-			lua_pushnil(L);
-	}
-	else if(lua_isstring(L, 2))
-	{
-		const char *key = lua_tostring(L, 2);
-
-		if(!strcmp(key, "type"))
-		{
-			lua_pushinteger(L, ltuple->tuple->atom.type);
-		}
-		else // look in metatable
-		{
-			lua_getmetatable(L, 1);
-			lua_pushvalue(L, 2);
-			lua_rawget(L, -2);
-		}
-	}
-	else
-		lua_pushnil(L); // unsupported key
-
-	return 1;
-}
-
-static int
-_ltuple__len(lua_State *L)
-{
-	ltuple_t *ltuple = luaL_checkudata(L, 1, "ltuple");
+	ltuple_t *ltuple = &latom->tuple;
 
 	int count = 0;
 	LV2_ATOM_TUPLE_FOREACH(ltuple->tuple, atom)
-		count++;
+		++count;
+
 	lua_pushinteger(L, count);
-
 	return 1;
 }
 
 static int
-_ltuple__tostring(lua_State *L)
+_latom_tuple__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushstring(L, "Atom_Tuple");
+	ltuple_t *ltuple = &latom->tuple;
 
+	lua_pushstring(L, "(tuple)");
 	return 1;
 }
 
 static int
-_ltuple_foreach(lua_State *L)
+_latom_tuple_unpack(lua_State *L)
 {
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	ltuple_t *ltuple = luaL_checkudata(L, 1, "ltuple");
-
-	// reset iterator to beginning of tuple
-	ltuple->pos = 0;
-	ltuple->itr = lv2_atom_tuple_begin(ltuple->tuple);
-
-	lua_pushlightuserdata(L, moony);
-	lua_pushcclosure(L, _ltuple_foreach_itr, 1);
-	lua_pushvalue(L, 1);
-
-	return 2;
-}
-
-static int
-_ltuple_unpack(lua_State *L)
-{
-	ltuple_t *ltuple = luaL_checkudata(L, 1, "ltuple");
+	ltuple_t *ltuple = lua_touserdata(L, 1);
 
 	int n = lua_gettop(L);
 	int min = n > 1
@@ -597,123 +679,305 @@ _ltuple_unpack(lua_State *L)
 	return count;
 }
 
-static const luaL_Reg ltuple_mt [] = {
-	{"__index", _ltuple__index},
-	{"__len", _ltuple__len},
-	{"__tostring", _ltuple__tostring},
-	{"foreach", _ltuple_foreach},
-	{"unpack", _ltuple_unpack},
-	{NULL, NULL}
-};
-
 static int
-_lvec_foreach_itr(lua_State *L)
+_latom_tuple_foreach_itr(lua_State *L)
 {
-	lvec_t *lvec = luaL_checkudata(L, 1, "lvec");
+	ltuple_t *ltuple = lua_touserdata(L, 1);
 
-	if(lvec->pos < lvec->count)
+	if(!lv2_atom_tuple_is_end(LV2_ATOM_BODY(ltuple->tuple), ltuple->tuple->atom.size, ltuple->itr))
 	{
 		// push index
-		lua_pushinteger(L, lvec->pos + 1);
+		lua_pushinteger(L, ltuple->pos);
 
 		// push atom
-		_latom_body_new(L, lvec->vec->body.child_size, lvec->vec->body.child_type,
-			LV2_ATOM_VECTOR_ITEM_CONST(lvec->vec, lvec->pos));
-
+		_latom_new(L, ltuple->itr);
+	
 		// advance iterator
-		lvec->pos += 1;
+		ltuple->pos += 1;
+		ltuple->itr = lv2_atom_tuple_next(ltuple->itr);
 
 		return 2;
 	}
 
-	// end of vector reached
+	// end of tuple reached
 	lua_pushnil(L);
 	return 1;
 }
 
 static int
-_lvec__index(lua_State *L)
-{
-	lvec_t *lvec = luaL_checkudata(L, 1, "lvec");
-
-	if(lua_isnumber(L, 2))
-	{
-		int index = lua_tointeger(L, 2); // indexing start from 1
-		if( (index > 0) && (index <= lvec->count) )
-		{
-			_latom_body_new(L, lvec->vec->body.child_size, lvec->vec->body.child_type,
-				LV2_ATOM_VECTOR_ITEM_CONST(lvec->vec, index - 1));
-		}
-		else // index is out of bounds
-			lua_pushnil(L);
-	}
-	else if(lua_isstring(L, 2))
-	{
-		const char *key = lua_tostring(L, 2);
-
-		if(!strcmp(key, "type"))
-		{
-			lua_pushinteger(L, lvec->vec->atom.type);
-		}
-		else if(!strcmp(key, "child_type"))
-		{
-			lua_pushinteger(L, lvec->vec->body.child_type);
-		}
-		else if(!strcmp(key, "child_size"))
-		{
-			lua_pushinteger(L, lvec->vec->body.child_size);
-		}
-		else // look in metatable
-		{
-			lua_getmetatable(L, 1);
-			lua_pushvalue(L, 2);
-			lua_rawget(L, -2);
-		}
-	}
-	else
-		lua_pushnil(L); // unsupported key
-
-	return 1;
-}
-
-static int
-_lvec__len(lua_State *L)
-{
-	lvec_t *lvec = luaL_checkudata(L, 1, "lvec");
-
-	lua_pushinteger(L, lvec->count);
-
-	return 1;
-}
-
-static int
-_lvec__tostring(lua_State *L)
-{
-	lua_pushstring(L, "Atom_Vector");
-
-	return 1;
-}
-
-static int
-_lvec_foreach(lua_State *L)
+_latom_tuple_foreach(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lvec_t *lvec = luaL_checkudata(L, 1, "lvec");
+	ltuple_t *ltuple = lua_touserdata(L, 1);
 
 	// reset iterator to beginning of tuple
-	lvec->pos = 0;
+	ltuple->pos = 1;
+	ltuple->itr = lv2_atom_tuple_begin(ltuple->tuple);
 
 	lua_pushlightuserdata(L, moony);
-	lua_pushcclosure(L, _lvec_foreach_itr, 1);
+	lua_pushcclosure(L, _latom_tuple_foreach_itr, 1);
 	lua_pushvalue(L, 1);
 
 	return 2;
 }
 
+static const latom_driver_t latom_tuple_driver = {
+	.__indexi = _latom_tuple__indexi,
+	.__len = _latom_tuple__len,
+	.__tostring = _latom_tuple__tostring,
+	.unpack = _latom_tuple_unpack,
+	.foreach = _latom_tuple_foreach
+};
+
 static int
-_lvec_unpack(lua_State *L)
+_latom_obj__indexi(lua_State *L, latom_t *latom)
 {
-	lvec_t *lvec = luaL_checkudata(L, 1, "lvec");
+	lobj_t *lobj = &latom->obj;
+	const LV2_URID urid = lua_tointeger(L, 2);
+
+	// start a query for given URID
+	const LV2_Atom *atom = NULL;
+	LV2_Atom_Object_Query q [] = {
+		{ urid, &atom },
+		{	0, NULL }
+	};
+	lv2_atom_object_query(lobj->obj, q);
+
+	if(atom) // query returned a matching atom
+		_latom_new(L, atom);
+	else // query returned no matching atom
+		lua_pushnil(L);
+
+	return 1;
+}
+
+static int
+_latom_obj__indexk(lua_State *L, latom_t *latom)
+{
+	const char *key = lua_tostring(L, 2);
+	if(!strcmp(key, "id"))
+		lua_pushinteger(L, latom->obj.obj->body.id);
+	else if(!strcmp(key, "otype"))
+		lua_pushinteger(L, latom->obj.obj->body.otype);
+	else
+		lua_pushnil(L);
+	return 1;
+}
+
+static int
+_latom_obj__len(lua_State *L, latom_t *latom)
+{
+	lobj_t *lobj = &latom->obj;
+
+	int count = 0;
+	LV2_ATOM_OBJECT_FOREACH(lobj->obj, prop)
+		++count;
+
+	lua_pushinteger(L, count);
+	return 1;
+}
+
+static int
+_latom_obj__tostring(lua_State *L, latom_t *latom)
+{
+	lobj_t *lobj = &latom->obj;
+
+	lua_pushstring(L, "(object)");
+	return 1;
+}
+
+static int
+_latom_obj_foreach_itr(lua_State *L)
+{
+	lobj_t *lobj = lua_touserdata(L, 1);
+
+	if(!lv2_atom_object_is_end(&lobj->obj->body, lobj->obj->atom.size, lobj->itr))
+	{
+		// push atom
+		lua_pushinteger(L, lobj->itr->key);
+		lua_pushinteger(L, lobj->itr->context);
+		_latom_new(L, &lobj->itr->value);
+	
+		// advance iterator
+		lobj->itr = lv2_atom_object_next(lobj->itr);
+
+		return 3;
+	}
+
+	// end of object reached
+	lua_pushnil(L);
+	return 1;
+}
+
+static int
+_latom_obj_foreach(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lobj_t *lobj = lua_touserdata(L, 1);
+
+	// reset iterator to beginning of object
+	lobj->itr = lv2_atom_object_begin(&lobj->obj->body);
+
+	lua_pushlightuserdata(L, moony);
+	lua_pushcclosure(L, _latom_obj_foreach_itr, 1);
+	lua_pushvalue(L, 1);
+
+	return 2;
+}
+
+static const latom_driver_t latom_object_driver = {
+	.__indexi = _latom_obj__indexi,
+	.__indexk = _latom_obj__indexk,
+	.__len = _latom_obj__len,
+	.__tostring = _latom_obj__tostring,
+	.foreach = _latom_obj_foreach
+};
+
+static int
+_latom_seq__indexi(lua_State *L, latom_t *latom)
+{
+	lseq_t *lseq = lua_touserdata(L, 1);
+	int index = lua_tointeger(L, 2); // indexing start from 1
+
+	int count = 0;
+	LV2_ATOM_SEQUENCE_FOREACH(lseq->seq, ev)
+	{
+		if(++count == index) 
+		{
+			_latom_new(L, &ev->body);
+			return 1;
+		}
+	}
+
+	lua_pushnil(L);
+	return 1;
+}
+
+static int
+_latom_seq__len(lua_State *L, latom_t *latom)
+{
+	lseq_t *lseq = lua_touserdata(L, 1);
+
+	int count = 0;
+	LV2_ATOM_SEQUENCE_FOREACH(lseq->seq, ev)
+		++count;
+
+	lua_pushinteger(L, count);
+	return 1;
+}
+
+static int
+_latom_seq__tostring(lua_State *L, latom_t *latom)
+{
+	lua_pushstring(L, "(sequence)");
+	return 1;
+}
+
+static int
+_latom_seq_foreach_itr(lua_State *L)
+{
+	lseq_t *lseq = lua_touserdata(L, 1);
+
+	if(!lv2_atom_sequence_is_end(&lseq->seq->body, lseq->seq->atom.size, lseq->itr))
+	{
+		// push frame time
+		lua_pushinteger(L, lseq->itr->time.frames);
+		// push atom
+		_latom_new(L, &lseq->itr->body);
+	
+		// advance iterator
+		lseq->itr = lv2_atom_sequence_next(lseq->itr);
+
+		return 2;
+	}
+
+	// end of sequence reached
+	lua_pushnil(L);
+	return 1;
+}
+
+static int
+_latom_seq_foreach(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lseq_t *lseq = lua_touserdata(L, 1);
+
+	// reset iterator to beginning of sequence
+	lseq->itr = lv2_atom_sequence_begin(&lseq->seq->body);
+
+	lua_pushlightuserdata(L, moony);
+	lua_pushcclosure(L, _latom_seq_foreach_itr, 1);
+	lua_pushvalue(L, 1);
+
+	return 2;
+}
+
+static const latom_driver_t latom_sequence_driver = {
+	.__indexi = _latom_seq__indexi,
+	.__len = _latom_seq__len,
+	.__tostring = _latom_seq__tostring,
+	.foreach = _latom_seq_foreach
+};
+
+static int
+_latom_vec__indexi(lua_State *L, latom_t *latom)
+{
+	lvec_t *lvec = lua_touserdata(L, 1);
+	int index = lua_tointeger(L, 2); // indexing start from 1
+
+	lvec->count = (lvec->vec->atom.size - sizeof(LV2_Atom_Vector_Body))
+		/ lvec->vec->body.child_size;
+
+	if( (index > 0) && (index <= lvec->count) )
+	{
+		_latom_body_new(L, lvec->vec->body.child_size, lvec->vec->body.child_type,
+			LV2_ATOM_VECTOR_ITEM_CONST(lvec->vec, index - 1));
+	}
+	else // index is out of bounds
+		lua_pushnil(L);
+
+	return 1;
+}
+
+static int
+_latom_vec__indexk(lua_State *L, latom_t *latom)
+{
+	const char *key = lua_tostring(L, 2);
+	if(!strcmp(key, "child_type"))
+		lua_pushinteger(L, latom->vec.vec->body.child_type);
+	else if(!strcmp(key, "child_size"))
+		lua_pushinteger(L, latom->vec.vec->body.child_size);
+	else
+		lua_pushnil(L);
+	return 1;
+}
+
+static int
+_latom_vec__len(lua_State *L, latom_t *latom)
+{
+	lvec_t *lvec = lua_touserdata(L, 1);
+
+	lvec->count = (lvec->vec->atom.size - sizeof(LV2_Atom_Vector_Body))
+		/ lvec->vec->body.child_size;
+
+	lua_pushinteger(L, lvec->count);
+	return 1;
+}
+
+static int
+_latom_vec__tostring(lua_State *L, latom_t *latom)
+{
+	lua_pushstring(L, "(vector)");
+	return 1;
+}
+
+static int
+_latom_vec_unpack(lua_State *L)
+{
+	lvec_t *lvec = lua_touserdata(L, 1);
+
+	lvec->count = (lvec->vec->atom.size - sizeof(LV2_Atom_Vector_Body))
+		/ lvec->vec->body.child_size;
 
 	int n = lua_gettop(L);
 	int min = 1;
@@ -748,94 +1012,119 @@ _lvec_unpack(lua_State *L)
 	return max - min + 1;
 }
 
-static const luaL_Reg lvec_mt [] = {
-	{"__index", _lvec__index},
-	{"__len", _lvec__len},
-	{"__tostring", _lvec__tostring},
-	{"foreach", _lvec_foreach},
-	{"unpack", _lvec_unpack},
-	{NULL, NULL}
+static int
+_latom_vec_foreach_itr(lua_State *L)
+{
+	lvec_t *lvec = lua_touserdata(L, 1);
+
+	lvec->count = (lvec->vec->atom.size - sizeof(LV2_Atom_Vector_Body))
+		/ lvec->vec->body.child_size;
+
+	if(lvec->pos < lvec->count)
+	{
+		// push index
+		lua_pushinteger(L, lvec->pos + 1);
+
+		// push atom
+		_latom_body_new(L, lvec->vec->body.child_size, lvec->vec->body.child_type,
+			LV2_ATOM_VECTOR_ITEM_CONST(lvec->vec, lvec->pos));
+
+		// advance iterator
+		lvec->pos += 1;
+
+		return 2;
+	}
+
+	// end of vector reached
+	lua_pushnil(L);
+	return 1;
+}
+
+static int
+_latom_vec_foreach(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lvec_t *lvec = lua_touserdata(L, 1);
+
+	// reset iterator to beginning of vector
+	lvec->pos = 0;
+
+	lua_pushlightuserdata(L, moony);
+	lua_pushcclosure(L, _latom_vec_foreach_itr, 1);
+	lua_pushvalue(L, 1);
+
+	return 2;
+}
+
+static const latom_driver_t latom_vector_driver = {
+	.__indexi = _latom_vec__indexi,
+	.__indexk = _latom_vec__indexk,
+	.__len = _latom_vec__len,
+	.__tostring = _latom_vec__tostring,
+	.unpack = _latom_vec_unpack,
+	.foreach = _latom_vec_foreach
 };
 
 static int
-_lchunk__index(lua_State *L)
+_latom_chunk__indexi(lua_State *L, latom_t *latom)
 {
-	latom_t *lchunk = luaL_checkudata(L, 1, "lchunk");
-	const uint8_t *payload = LV2_ATOM_BODY_CONST(lchunk->atom);
+	const uint8_t *payload = LV2_ATOM_BODY_CONST(latom->atom);
+	int index = lua_tointeger(L, 2); // indexing start from 1
 
-	if(lua_isnumber(L, 2))
+	if( (index > 0) && (index <= (int)latom->atom->size) )
+		lua_pushinteger(L, payload[index-1]);
+	else // index is out of bounds
+		lua_pushnil(L);
+
+	return 1;
+}
+
+static int
+_latom_chunk__len(lua_State *L, latom_t *latom)
+{
+	lua_pushinteger(L, latom->atom->size);
+	return 1;
+}
+
+static int
+_latom_chunk__tostring(lua_State *L, latom_t *latom)
+{
+	lua_pushstring(L, "(chunk)");
+	return 1;
+}
+
+static int
+_latom_chunk_value(lua_State *L, latom_t *latom)
+{
+	const uint8_t *payload = LV2_ATOM_BODY_CONST(latom->atom);
+
+	lua_newtable(L);
+	for(unsigned i=0; i<latom->atom->size; i++)
 	{
-		int index = lua_tointeger(L, 2); // indexing start from 1
-		if( (index > 0) && (index <= (int)lchunk->atom->size) )
-			lua_pushinteger(L, payload[index-1]);
-		else // index is out of bounds
-			lua_pushnil(L);
+		lua_pushinteger(L, payload[i]);
+		lua_rawseti(L, -2, i+1);
 	}
-	else if(lua_isstring(L, 2))
-	{
-		const char *key = lua_tostring(L, 2);
-
-		if(!strcmp(key, "type"))
-		{
-			lua_pushinteger(L, lchunk->atom->type);
-		}
-		else if(!strcmp(key, "value"))
-		{
-			lua_createtable(L, lchunk->atom->size, 0);
-			for(unsigned i=0; i<lchunk->atom->size; i++)
-			{
-				lua_pushinteger(L, payload[i]);
-				lua_rawseti(L, -2, i+1);
-			}
-		}
-		else // look in metatable
-		{
-			lua_getmetatable(L, 1);
-			lua_pushvalue(L, 2);
-			lua_rawget(L, -2);
-		}
-	}
-	else
-		lua_pushnil(L); // unsupported key
 
 	return 1;
 }
 
 static int
-_lchunk__len(lua_State *L)
+_latom_chunk_unpack(lua_State *L)
 {
-	latom_t *lchunk = luaL_checkudata(L, 1, "lchunk");
-
-	lua_pushinteger(L, lchunk->atom->size);
-
-	return 1;
-}
-
-static int
-_lchunk__tostring(lua_State *L)
-{
-	lua_pushstring(L, "Atom_Chunk");
-
-	return 1;
-}
-
-static int
-_lchunk_unpack(lua_State *L)
-{
-	latom_t *lchunk = luaL_checkudata(L, 1, "lchunk");
-	const uint8_t *payload = LV2_ATOM_BODY_CONST(lchunk->atom);
+	latom_t *latom = lua_touserdata(L, 1);
+	const uint8_t *payload = LV2_ATOM_BODY_CONST(latom->atom);
 
 	int n = lua_gettop(L);
 	int min = 1;
-	int max = lchunk->atom->size;
+	int max = latom->atom->size;
 
 	if(n > 1) // check provided index ranges
 	{
 		min = luaL_checkinteger(L, 2);
 		min = min < 1
 			? 1
-			: (min > (int)lchunk->atom->size
-				? (int)lchunk->atom->size
+			: (min > (int)latom->atom->size
+				? (int)latom->atom->size
 				: min);
 
 		if(n > 2)
@@ -843,8 +1132,8 @@ _lchunk_unpack(lua_State *L)
 			max = luaL_checkinteger(L, 3);
 			max = max < 1
 				? 1
-				: (max > (int)lchunk->atom->size
-					? (int)lchunk->atom->size
+				: (max > (int)latom->atom->size
+					? (int)latom->atom->size
 					: max);
 		}
 	}
@@ -855,189 +1144,60 @@ _lchunk_unpack(lua_State *L)
 	return max - min + 1;
 }
 
-static const luaL_Reg lchunk_mt [] = {
-	{"__index", _lchunk__index},
-	{"__len", _lchunk__len},
-	{"__tostring", _lchunk__tostring},
-	{"unpack", _lchunk_unpack},
-	{NULL, NULL}
+static const latom_driver_t latom_chunk_driver = {
+	.__indexi = _latom_chunk__indexi,
+	.__len = _latom_chunk__len,
+	.__tostring = _latom_chunk__tostring,
+	.value = _latom_chunk_value,
+	.unpack = _latom_chunk_unpack,
 };
-
-static int
-_lobj_foreach_itr(lua_State *L)
-{
-	lobj_t *lobj = luaL_checkudata(L, 1, "lobj");
-
-	if(!lv2_atom_object_is_end(&lobj->obj->body, lobj->obj->atom.size, lobj->itr))
-	{
-		// push atom
-		lua_pushinteger(L, lobj->itr->key);
-		lua_pushinteger(L, lobj->itr->context);
-		_latom_new(L, &lobj->itr->value);
-	
-		// advance iterator
-		lobj->itr = lv2_atom_object_next(lobj->itr);
-
-		return 3;
-	}
-
-	// end of object reached
-	lua_pushnil(L);
-	return 1;
-}
-
-static int
-_lobj__index(lua_State *L)
-{
-	lobj_t *lobj = luaL_checkudata(L, 1, "lobj");
-
-	if(lua_isinteger(L, 2))
-	{
-		LV2_URID urid = lua_tointeger(L, 2);
-
-		// start a query for given URID
-		const LV2_Atom *atom = NULL;
-		LV2_Atom_Object_Query q [] = {
-			{ urid, &atom },
-			{	0, NULL }
-		};
-		lv2_atom_object_query(lobj->obj, q);
-
-		if(atom) // query returned a matching atom
-			_latom_new(L, atom);
-		else // query returned no matching atom
-			lua_pushnil(L);
-	}
-	else if(lua_isstring(L, 2))
-	{
-		const char *key = lua_tostring(L, 2);
-
-		if(!strcmp(key, "type"))
-		{
-			lua_pushinteger(L, lobj->obj->atom.type);
-		}
-		else if(!strcmp(key, "id"))
-		{
-			lua_pushinteger(L, lobj->obj->body.id);
-		}
-		else if(!strcmp(key, "otype"))
-		{
-			lua_pushinteger(L, lobj->obj->body.otype);
-		}
-		else // look in metatable
-		{
-			lua_getmetatable(L, 1);
-			lua_pushvalue(L, 2);
-			lua_rawget(L, -2);
-		}
-	}
-	else
-		lua_pushnil(L); // unsupported key
-
-	return 1;
-}
-
-static int
-_lobj__len(lua_State *L)
-{
-	lobj_t *lobj = luaL_checkudata(L, 1, "lobj");
-
-	int count = 0;
-	LV2_ATOM_OBJECT_FOREACH(lobj->obj, prop)
-		count++;
-	lua_pushinteger(L, count);
-
-	return 1;
-}
-static int
-_lobj__tostring(lua_State *L)
-{
-	lua_pushstring(L, "Atom_Object");
-
-	return 1;
-}
-
-static int
-_lobj_foreach(lua_State *L)
-{
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lobj_t *lobj = luaL_checkudata(L, 1, "lobj");
-
-	// reset iterator to beginning of tuple
-	lobj->itr = lv2_atom_object_begin(&lobj->obj->body);
-
-	lua_pushlightuserdata(L, moony);
-	lua_pushcclosure(L, _lobj_foreach_itr, 1);
-	lua_pushvalue(L, 1);
-
-	return 2;
-}
-
-static const luaL_Reg lobj_mt [] = {
-	{"__index", _lobj__index},
-	{"__len", _lobj__len},
-	{"__tostring", _lobj__tostring},
-	{"foreach", _lobj_foreach},
-	{NULL, NULL}
-};
-
-static void
-_latom_value(lua_State *L, const LV2_Atom *atom)
-{
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	LV2_Atom_Forge *forge = &moony->forge;
-
-	if(atom->type == forge->Int)
-		lua_pushinteger(L, ((const LV2_Atom_Int *)atom)->body);
-	else if(atom->type == forge->Long)
-		lua_pushinteger(L, ((const LV2_Atom_Long *)atom)->body);
-	else if(atom->type == forge->Float)
-		lua_pushnumber(L, ((const LV2_Atom_Float *)atom)->body);
-	else if(atom->type == forge->Double)
-		lua_pushnumber(L, ((const LV2_Atom_Double *)atom)->body);
-	else if(atom->type == forge->Bool)
-		lua_pushboolean(L, ((const LV2_Atom_Bool *)atom)->body);
-	else if(atom->type == forge->URID)
-		lua_pushinteger(L, ((const LV2_Atom_URID *)atom)->body);
-	else if(atom->type == forge->String)
-		lua_pushstring(L, LV2_ATOM_CONTENTS_CONST(LV2_Atom_String, atom));
-	else if(atom->type == forge->URI)
-		lua_pushstring(L, LV2_ATOM_CONTENTS_CONST(LV2_Atom_String, atom));
-	else if(atom->type == forge->Path)
-		lua_pushstring(L, LV2_ATOM_CONTENTS_CONST(LV2_Atom_String, atom));
-	else if(atom->type == forge->Literal)
-		lua_pushstring(L, LV2_ATOM_CONTENTS_CONST(LV2_Atom_Literal, atom));
-	else
-		lua_pushnil(L); // unknown type
-}
 
 static int
 _latom__index(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	latom_t *latom = luaL_checkudata(L, 1, "latom");
-	const char *key = lua_tostring(L, 2);
+	const latom_driver_t *driver = _latom_driver(moony, latom->atom->type);
 
-	if(!strcmp(key, "type"))
+	if(driver)
 	{
-		if(latom->atom->type)
-			lua_pushinteger(L, latom->atom->type);
-		else
-			lua_pushnil(L); // null atom
-	}
-	else if(!strcmp(key, "value"))
-		_latom_value(L, latom->atom);
-	else if(!strcmp(key, "datatype") && (latom->atom->type == moony->forge.Literal) )
-		lua_pushinteger(L, ((LV2_Atom_Literal *)latom->atom)->body.datatype);
-	else if(!strcmp(key, "lang") && (latom->atom->type == moony->forge.Literal) )
-		lua_pushinteger(L, ((LV2_Atom_Literal *)latom->atom)->body.lang);
-	else // look in metatable
-	{
-		lua_getmetatable(L, 1);
-		lua_pushvalue(L, 2);
-		lua_rawget(L, -2);
+		const int type = lua_type(L, 2);
+		if(type == LUA_TSTRING)
+		{
+			const char *key = lua_tostring(L, 2);
+			if(!strcmp(key, "type"))
+			{
+				lua_pushinteger(L, latom->atom->type);
+				return 1;
+			}
+			else if(driver->value && !strcmp(key, "value"))
+			{
+				return driver->value(L, latom);
+			}
+			else if(driver->foreach && !strcmp(key, "foreach"))
+			{
+				lua_pushlightuserdata(L, moony);
+				lua_pushcclosure(L, driver->foreach, 1);
+				return 1;
+			}
+			else if(driver->unpack && !strcmp(key, "unpack"))
+			{
+				lua_pushlightuserdata(L, moony);
+				lua_pushcclosure(L, driver->unpack, 1);
+				return 1;
+			}
+			else if(driver->__indexk)
+			{
+				return driver->__indexk(L, latom);
+			}
+		}
+		else if(driver->__indexi && (type == LUA_TNUMBER) )
+		{
+			return driver->__indexi(L, latom);
+		}
 	}
 
+	lua_pushnil(L);
 	return 1;
 }
 
@@ -1046,51 +1206,26 @@ _latom__len(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	latom_t *latom = luaL_checkudata(L, 1, "latom");
+	const latom_driver_t *driver = _latom_driver(moony, latom->atom->type);
 
-	if(latom->atom->type == moony->forge.Literal)
-		lua_pushinteger(L, latom->atom->size - sizeof(LV2_Atom_Literal_Body));
-	else
-		lua_pushinteger(L, latom->atom->size);
+	if(driver && driver->__len)
+		return driver->__len(L, latom);
 
+	lua_pushnil(L);
 	return 1;
 }
 
 static int
 _latom__tostring(lua_State *L)
 {
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	latom_t *latom = luaL_checkudata(L, 1, "latom");
+	const latom_driver_t *driver = _latom_driver(moony, latom->atom->type);
 
-	_latom_value(L, latom->atom);
-	if(!lua_isstring(L, -1))
-		lua_tostring(L, -1);
+	if(driver && driver->__tostring)
+		return driver->__tostring(L, latom);
 
-	return 1;
-}
-
-static int
-_latom__concat(lua_State *L)
-{
-	latom_t *latom;
-	if((latom = luaL_testudata(L, 1, "latom")))
-	{
-		_latom_value(L, latom->atom);
-		if(!lua_isstring(L, -1))
-			lua_tostring(L, -1);
-	}
-	else
-		lua_pushvalue(L, 1);
-	
-	if((latom = luaL_testudata(L, 2, "latom")))
-	{
-		_latom_value(L, latom->atom);
-		if(!lua_isstring(L, -1))
-			lua_tostring(L, -1);
-	}
-	else
-		lua_pushvalue(L, 2);
-
-	lua_concat(L, 2);
-
+	lua_pushnil(L);
 	return 1;
 }
 
@@ -1098,7 +1233,7 @@ static const luaL_Reg latom_mt [] = {
 	{"__index", _latom__index},
 	{"__len", _latom__len},
 	{"__tostring", _latom__tostring},
-	{"__concat", _latom__concat},
+
 	{NULL, NULL}
 };
 
@@ -1177,25 +1312,17 @@ static int
 _lforge_atom(lua_State *L)
 {
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
-	if(  luaL_testudata(L, 2, "lseq")
-		|| luaL_testudata(L, 2, "lobj")
-		|| luaL_testudata(L, 2, "ltuple")
-		|| luaL_testudata(L, 2, "lvec")
-		|| luaL_testudata(L, 2, "lchunk")
-		|| luaL_testudata(L, 2, "latom") )
-	{
-		const LV2_Atom **atom_ptr = lua_touserdata(L, 2);
-		const LV2_Atom *atom = *atom_ptr;
+	latom_t *latom = luaL_checkudata(L, 2, "latom");
 
-		if(!lv2_atom_forge_raw(lforge->forge, atom, sizeof(LV2_Atom) + atom->size))
-			luaL_error(L, forge_buffer_overflow);
-		lv2_atom_forge_pad(lforge->forge, atom->size);
+	const LV2_Atom **atom_ptr = lua_touserdata(L, 2);
+	const LV2_Atom *atom = *atom_ptr;
 
-		lua_settop(L, 1);
-		return 1;
-	}
+	if(!lv2_atom_forge_raw(lforge->forge, atom, sizeof(LV2_Atom) + atom->size))
+		luaL_error(L, forge_buffer_overflow);
+	lv2_atom_forge_pad(lforge->forge, atom->size);
 
-	return luaL_error(L, "Atom expected at position #2");
+	lua_settop(L, 1);
+	return 1;
 }
 
 static inline int
@@ -1442,7 +1569,7 @@ _lforge_bytes(lua_State *L, moony_t *moony, LV2_URID type)
 		}
 		lv2_atom_forge_pad(lforge->forge, size);
 	}
-	else if(luaL_testudata(L, 2, "lchunk")) //to convert between chunk <-> midi
+	else if(luaL_testudata(L, 2, "latom")) //to convert between chunk <-> midi
 	{
 		latom_t *lchunk = lua_touserdata(L, 2);
 		uint32_t size = lchunk->atom->size;
@@ -1709,8 +1836,8 @@ _lforge_object(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
-	LV2_URID id = luaL_checkinteger(L, 2);
-	LV2_URID otype = luaL_checkinteger(L, 3);
+	LV2_URID id = luaL_optinteger(L, 2, 0);
+	LV2_URID otype = luaL_optinteger(L, 3, 0);
 	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
 	lframe->depth = 1;
 	lframe->last.frames = lforge->last.frames;
@@ -2361,7 +2488,7 @@ _lmidiresponder__call(lua_State *L)
 	// 4: atom
 	
 	latom_t *lchunk = NULL;
-	if(luaL_testudata(L, 4, "lchunk"))
+	if(luaL_testudata(L, 4, "latom"))
 		lchunk = lua_touserdata(L, 4);
 	lua_pop(L, 1); // atom
 
@@ -2625,7 +2752,7 @@ _loscresponder__call(lua_State *L)
 	// 4: atom
 	
 	lobj_t *lobj = NULL;
-	if(luaL_testudata(L, 4, "lobj"))
+	if(luaL_testudata(L, 4, "latom"))
 		lobj = lua_touserdata(L, 4);
 	lua_pop(L, 1); // atom
 
@@ -2746,7 +2873,7 @@ _ltimeresponder__call(lua_State *L)
 	int64_t from = luaL_checkinteger(L, 2);
 	int64_t to = luaL_checkinteger(L, 3);
 	lobj_t *lobj = NULL;
-	if(luaL_testudata(L, 5, "lobj"))
+	if(luaL_testudata(L, 5, "latom"))
 		lobj = lua_touserdata(L, 5);
 	lua_pop(L, 1); // atom
 
@@ -3238,7 +3365,7 @@ _lstateresponder__call(lua_State *L)
 	int64_t frames = luaL_checkinteger(L, 2);
 	lforge_t *lforge = luaL_checkudata(L, 3, "lforge");
 	lobj_t *lobj = NULL;
-	if(luaL_testudata(L, 4, "lobj"))
+	if(luaL_testudata(L, 4, "latom"))
 		lobj = lua_touserdata(L, 4);
 	lua_pop(L, 1); // atom
 
@@ -3523,7 +3650,7 @@ _lstateresponder_apply(lua_State *L)
 	lua_getuservalue(L, 1);
 	lua_replace(L, 1);
 	
-	lobj_t *lobj = luaL_checkudata(L, 2, "lobj");
+	lobj_t *lobj = luaL_checkudata(L, 2, "latom");
 
 	// ignore patch:readable's
 	if(lua_geti(L, 1, moony->uris.patch_writable) == LUA_TNIL)
@@ -3733,6 +3860,60 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	lv2_atom_forge_init(&moony->stash_forge, moony->map);
 	if(moony->log)
 		lv2_log_logger_init(&moony->logger, moony->map, moony->log);
+
+	latom_driver_hash_t *latom_driver_hash = moony->atom_driver_hash;
+	unsigned pos = 0;
+
+	latom_driver_hash[pos].type = moony->forge.Int;
+	latom_driver_hash[pos++].driver = &latom_int_driver;
+
+	latom_driver_hash[pos].type = moony->forge.Long;
+	latom_driver_hash[pos++].driver = &latom_long_driver;
+
+	latom_driver_hash[pos].type = moony->forge.Float;
+	latom_driver_hash[pos++].driver = &latom_float_driver;
+
+	latom_driver_hash[pos].type = moony->forge.Double;
+	latom_driver_hash[pos++].driver = &latom_double_driver;
+
+	latom_driver_hash[pos].type = moony->forge.Bool;
+	latom_driver_hash[pos++].driver = &latom_bool_driver;
+
+	latom_driver_hash[pos].type = moony->forge.URID;
+	latom_driver_hash[pos++].driver = &latom_urid_driver;
+
+	latom_driver_hash[pos].type = moony->forge.String;
+	latom_driver_hash[pos++].driver = &latom_string_driver;
+
+	latom_driver_hash[pos].type = moony->forge.URI;
+	latom_driver_hash[pos++].driver = &latom_string_driver;
+
+	latom_driver_hash[pos].type = moony->forge.Path;
+	latom_driver_hash[pos++].driver = &latom_string_driver;
+
+	latom_driver_hash[pos].type = moony->forge.Literal;
+	latom_driver_hash[pos++].driver = &latom_literal_driver;
+
+	latom_driver_hash[pos].type = moony->forge.Tuple;
+	latom_driver_hash[pos++].driver = &latom_tuple_driver;
+
+	latom_driver_hash[pos].type = moony->forge.Object;
+	latom_driver_hash[pos++].driver = &latom_object_driver;
+
+	latom_driver_hash[pos].type = moony->forge.Vector;
+	latom_driver_hash[pos++].driver = &latom_vector_driver;
+
+	latom_driver_hash[pos].type = moony->forge.Sequence;
+	latom_driver_hash[pos++].driver = &latom_sequence_driver;
+
+	latom_driver_hash[pos].type = moony->forge.Chunk;
+	latom_driver_hash[pos++].driver = &latom_chunk_driver;
+
+	latom_driver_hash[pos].type = moony->uris.midi_event;
+	latom_driver_hash[pos++].driver = &latom_chunk_driver;
+
+	assert(pos++ == DRIVER_HASH_MAX);
+	qsort(latom_driver_hash, DRIVER_HASH_MAX, sizeof(latom_driver_hash_t), _hash_sort);
 	
 	if(opts)
 	{
@@ -3776,31 +3957,6 @@ moony_deinit(moony_t *moony)
 void
 moony_open(moony_t *moony, lua_State *L, bool use_assert)
 {
-	luaL_newmetatable(L, "lseq");
-	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
-	luaL_setfuncs (L, lseq_mt, 1);
-	lua_pop(L, 1);
-	
-	luaL_newmetatable(L, "lobj");
-	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
-	luaL_setfuncs (L, lobj_mt, 1);
-	lua_pop(L, 1);
-	
-	luaL_newmetatable(L, "ltuple");
-	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
-	luaL_setfuncs (L, ltuple_mt, 1);
-	lua_pop(L, 1);
-	
-	luaL_newmetatable(L, "lvec");
-	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
-	luaL_setfuncs (L, lvec_mt, 1);
-	lua_pop(L, 1);
-	
-	luaL_newmetatable(L, "lchunk");
-	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
-	luaL_setfuncs (L, lchunk_mt, 1);
-	lua_pop(L, 1);
-
 	luaL_newmetatable(L, "latom");
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs (L, latom_mt, 1);
@@ -4048,16 +4204,6 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 #define UDATA_OFFSET (LUA_RIDX_LAST + 1)
 	// create userdata caches
 	lua_newtable(L);
-		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_SEQ);
-	lua_newtable(L);
-		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_OBJ);
-	lua_newtable(L);
-		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_TUPLE);
-	lua_newtable(L);
-		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_VEC);
-	lua_newtable(L);
-		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_CHUNK);
-	lua_newtable(L);
 		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_ATOM);
 	lua_newtable(L);
 		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_FORGE);
@@ -4149,7 +4295,7 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 void *
 moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type)
 {
-	assert( (type >= MOONY_UDATA_SEQ) && (type < MOONY_UDATA_COUNT) );
+	assert( (type >= MOONY_UDATA_ATOM) && (type < MOONY_UDATA_COUNT) );
 
 	int *itr = &moony->itr[type];
 	void *data = NULL;

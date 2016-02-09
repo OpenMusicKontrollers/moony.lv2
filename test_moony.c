@@ -82,7 +82,7 @@ _test(lua_State *L)
 	{
 		lua_pushvalue(L, 2); // consumer
 
-		lseq_t *lseq = moony_newuserdata(L, &handle->moony, MOONY_UDATA_SEQ);
+		lseq_t *lseq = moony_newuserdata(L, &handle->moony, MOONY_UDATA_ATOM);
 		lseq->seq = (const LV2_Atom_Sequence *)handle->buf;
 		lseq->itr = NULL;
 		

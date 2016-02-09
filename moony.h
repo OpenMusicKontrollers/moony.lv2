@@ -135,11 +135,6 @@ void moony_vm_mem_free(void *area, size_t size);
 int moony_vm_mem_extend(moony_vm_t *vm);
 
 typedef enum _moony_udata_t {
-	MOONY_UDATA_SEQ		= 0,
-	MOONY_UDATA_OBJ,
-	MOONY_UDATA_TUPLE,
-	MOONY_UDATA_VEC,
-	MOONY_UDATA_CHUNK,
 	MOONY_UDATA_ATOM,
 	MOONY_UDATA_FORGE,
 	MOONY_UDATA_STASH,
@@ -163,10 +158,36 @@ extern moony_encoder_t *encoder;
 
 void lua_to_markup(const char *utf8, FILE *f);
 
+// from api.c
+typedef struct _latom_t latom_t;
+typedef struct _latom_driver_t latom_driver_t;
+typedef struct _latom_driver_hash_t latom_driver_hash_t;
+
+typedef int (*latom_driver_function_t)(lua_State *L, latom_t *latom);
+
+struct _latom_driver_t {
+	latom_driver_function_t __indexi;
+	latom_driver_function_t __indexk;
+	latom_driver_function_t __len;
+	latom_driver_function_t __tostring;
+	latom_driver_function_t __call;
+
+	latom_driver_function_t value;
+	lua_CFunction unpack;
+	lua_CFunction foreach;
+};
+
+struct _latom_driver_hash_t {
+	LV2_URID type;
+	const latom_driver_t *driver;
+};
+
 // from moony.c
 typedef struct _moony_t moony_t;
 typedef struct _lseq_t lseq_t;
 typedef struct _lforge_t lforge_t;
+
+#define DRIVER_HASH_MAX 16
 
 struct _moony_t {
 	LV2_URID_Map *map;
@@ -256,6 +277,8 @@ struct _moony_t {
 
 	LV2_Atom *state_atom;
 	LV2_Atom *stash_atom;
+
+	latom_driver_hash_t atom_driver_hash [DRIVER_HASH_MAX];
 };
 
 struct _lseq_t {
