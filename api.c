@@ -49,6 +49,7 @@ typedef struct _ltuple_t ltuple_t;
 typedef struct _lvec_t lvec_t;
 typedef struct _latom_t latom_t;
 typedef struct _atom_ser_t atom_ser_t;
+typedef struct _lstash_t lstash_t;
 
 struct _midi_msg_t {
 	uint8_t type;
@@ -206,6 +207,12 @@ struct _latom_t {
 	LV2_Atom body [0];
 };
 
+struct _lstash_t {
+	lforge_t lforge;
+	LV2_Atom_Forge forge;
+	atom_ser_t ser;
+};
+
 static const char *moony_ref [MOONY_UDATA_COUNT] = {
 	[MOONY_UDATA_SEQ]		= "lseq",
 	[MOONY_UDATA_OBJ]		= "lobj",
@@ -213,7 +220,8 @@ static const char *moony_ref [MOONY_UDATA_COUNT] = {
 	[MOONY_UDATA_VEC]		= "lvec",
 	[MOONY_UDATA_CHUNK]	= "lchunk",
 	[MOONY_UDATA_ATOM]	= "latom",
-	[MOONY_UDATA_FORGE]	= "lforge"
+	[MOONY_UDATA_FORGE]	= "lforge",
+	[MOONY_UDATA_STASH]	= "lforge"
 };
 
 static const size_t moony_sz [MOONY_UDATA_COUNT] = {
@@ -223,7 +231,8 @@ static const size_t moony_sz [MOONY_UDATA_COUNT] = {
 	[MOONY_UDATA_VEC]		= sizeof(lvec_t),
 	[MOONY_UDATA_CHUNK]	= sizeof(latom_t),
 	[MOONY_UDATA_ATOM]	= sizeof(latom_t),
-	[MOONY_UDATA_FORGE]	= sizeof(lforge_t)
+	[MOONY_UDATA_FORGE]	= sizeof(lforge_t),
+	[MOONY_UDATA_STASH]	= sizeof(lstash_t)
 };
 
 static const char *forge_buffer_overflow = "forge buffer overflow";
@@ -262,7 +271,11 @@ _latom_new(lua_State *L, const LV2_Atom *atom)
 		latom_t *latom = moony_newuserdata(L, moony, MOONY_UDATA_CHUNK);
 		latom->atom = atom;
 	}
-	else
+	else if( (atom->type == 0) && (atom->size == 0) ) // nil atom
+	{
+		lua_pushnil(L);
+	}
+	else // basic atom
 	{
 		latom_t *latom = moony_newuserdata(L, moony, MOONY_UDATA_ATOM);
 		latom->atom = atom;
@@ -2101,6 +2114,30 @@ _lforge_pop(lua_State *L)
 	return 0;
 }
 
+static int
+_lstash_clear(lua_State *L)
+{
+	lstash_t *lstash = luaL_checkudata(L, 1, "lforge");
+
+	LV2_Atom *atom = (LV2_Atom *)lstash->ser.buf;
+	atom->type = 0;
+	atom->size = 0;
+	lstash->ser.offset = 0;
+
+	return 1;
+}
+
+static int
+_lstash_handle(lua_State *L)
+{
+	lstash_t *lstash = luaL_checkudata(L, 1, "lforge");
+
+	const LV2_Atom *atom = (const LV2_Atom *)lstash->ser.buf;
+	_latom_new(L, atom);
+
+	return 1;
+}
+
 static const luaL_Reg lforge_mt [] = {
 	{"frame_time", _lforge_frame_time},
 	{"beat_time", _lforge_beat_time},
@@ -2140,6 +2177,10 @@ static const luaL_Reg lforge_mt [] = {
 	{"add", _lforge_add},
 
 	{"pop", _lforge_pop},
+
+	//FIXME are only valid for stash
+	{"handle", _lstash_handle},
+	{"clear", _lstash_clear},
 
 	{NULL, NULL}
 };
@@ -3511,6 +3552,83 @@ static const luaL_Reg lstateresponder_mt [] = {
 	{NULL, NULL}
 };
 
+static inline LV2_Atom_Forge_Ref
+_sink(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
+{
+	atom_ser_t *ser = handle;
+
+	const LV2_Atom_Forge_Ref ref = ser->offset + 1;
+
+	if(ser->offset + size > ser->size)
+	{
+		const uint32_t new_size = ser->size * 2;
+		if(ser->tlsf)
+		{
+			if(!(ser->buf = tlsf_realloc(ser->tlsf, ser->buf, new_size)))
+				return 0; // realloc failed
+		}
+		else
+		{
+			if(!(ser->buf = realloc(ser->buf, new_size)))
+				return 0; // realloc failed
+		}
+
+		ser->size = new_size;
+	}
+
+	memcpy(ser->buf + ser->offset, buf, size);
+	ser->offset += size;
+
+	return ref;
+}
+
+static inline LV2_Atom *
+_deref(LV2_Atom_Forge_Sink_Handle handle, LV2_Atom_Forge_Ref ref)
+{
+	atom_ser_t *ser = handle;
+
+	const uint32_t offset = ref - 1;
+
+	return (LV2_Atom *)(ser->buf + offset);
+}
+
+static int
+_lstash(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	lstash_t *lstash = moony_newuserdata(L, moony, MOONY_UDATA_STASH);
+	lforge_t *lforge = &lstash->lforge;
+	LV2_Atom_Forge *forge = &lstash->forge;
+	atom_ser_t *ser = &lstash->ser;
+
+	lforge->depth = 0;
+	lforge->last.frames = 0;
+	lforge->forge = forge;
+
+	ser->tlsf = moony->vm.tlsf;
+	ser->size = 256;
+	ser->buf = tlsf_malloc(moony->vm.tlsf, 256);
+	ser->offset = 0;
+
+	if(ser->buf)
+	{
+		LV2_Atom *atom = (LV2_Atom *)ser->buf;
+		atom->size = 0;
+		atom->type = 0;
+
+		// initialize forge (URIDs)
+		memcpy(forge, &moony->forge, sizeof(LV2_Atom_Forge));
+		lv2_atom_forge_set_sink(forge, _sink, _deref, ser);
+
+		//FIXME needs __gc
+	}
+	else
+		lua_pushnil(L); // failed to allocate memory
+
+	return 1;
+}
+
 int
 moony_init(moony_t *moony, const char *subject, double sample_rate,
 	const LV2_Feature *const *features)
@@ -3943,6 +4061,8 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_ATOM);
 	lua_newtable(L);
 		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_FORGE);
+	lua_newtable(L);
+		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_STASH);
 
 	// overwrite print function with LV2 log
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
@@ -4018,6 +4138,11 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	lua_pushcclosure(L, _lstateresponder, 1);
 	lua_setglobal(L, "StateResponder");
 
+	// Stash factory
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	lua_pushcclosure(L, _lstash, 1);
+	lua_setglobal(L, "Stash");
+
 #undef SET_MAP
 }
 
@@ -4052,46 +4177,6 @@ moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type)
 	return data;
 
 #undef UDATA_OFFSET
-}
-
-static inline LV2_Atom_Forge_Ref
-_sink(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
-{
-	atom_ser_t *ser = handle;
-
-	const LV2_Atom_Forge_Ref ref = ser->offset + 1;
-
-	if(ser->offset + size > ser->size)
-	{
-		const uint32_t new_size = ser->size * 2;
-		if(ser->tlsf)
-		{
-			if(!(ser->buf = tlsf_realloc(ser->tlsf, ser->buf, new_size)))
-				return 0; // realloc failed
-		}
-		else
-		{
-			if(!(ser->buf = realloc(ser->buf, new_size)))
-				return 0; // realloc failed
-		}
-
-		ser->size = new_size;
-	}
-
-	memcpy(ser->buf + ser->offset, buf, size);
-	ser->offset += size;
-
-	return ref;
-}
-
-static inline LV2_Atom *
-_deref(LV2_Atom_Forge_Sink_Handle handle, LV2_Atom_Forge_Ref ref)
-{
-	atom_ser_t *ser = handle;
-
-	const uint32_t offset = ref - 1;
-
-	return (LV2_Atom *)(ser->buf + offset);
 }
 
 static int

@@ -142,6 +142,7 @@ typedef enum _moony_udata_t {
 	MOONY_UDATA_CHUNK,
 	MOONY_UDATA_ATOM,
 	MOONY_UDATA_FORGE,
+	MOONY_UDATA_STASH,
 
 	MOONY_UDATA_COUNT
 } moony_udata_t;

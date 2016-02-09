@@ -1329,3 +1329,26 @@ do
 
 	test(producer, consumer)
 end
+
+-- Stash
+print('[test] Stash')
+do
+	local stash = Stash()
+
+	local function producer(forge)
+		stash:int(12)
+	end
+
+	local function consumer(seq)
+		local atom = stash:handle()
+		assert(#atom == 4)
+		assert(atom.type == Atom.Int)
+		assert(atom.value == 12)
+		
+		stash:clear()
+		atom = stash:handle()
+		assert(atom == nil)
+	end
+
+	test(producer, consumer)
+end
