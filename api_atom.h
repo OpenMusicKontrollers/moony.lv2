@@ -143,4 +143,21 @@ _latom_driver(moony_t *moony, LV2_URID type)
 	return NULL;
 }
 
+static void
+_latom_value(lua_State *L, const LV2_Atom *atom)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	const latom_driver_t *driver = _latom_driver(moony, atom->type);
+
+	// dummy wrapping
+	latom_t latom = {
+		.atom = atom
+	};
+
+	if(driver && driver->value)
+		driver->value(L, &latom);
+	else
+		lua_pushnil(L); // unknown type
+}
+
 #endif

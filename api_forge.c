@@ -103,49 +103,49 @@ _lforge_atom(lua_State *L)
 	return 1;
 }
 
-static inline int
+static inline LV2_Atom_Forge_Ref
 _lforge_basic_int(lua_State *L, int pos, LV2_Atom_Forge *forge)
 {
 	int32_t val = luaL_checkinteger(L, pos);
 	return lv2_atom_forge_int(forge, val);
 }
 
-static inline int
+static inline LV2_Atom_Forge_Ref
 _lforge_basic_long(lua_State *L, int pos, LV2_Atom_Forge *forge)
 {
 	int64_t val = luaL_checkinteger(L, pos);
 	return lv2_atom_forge_long(forge, val);
 }
 
-static inline int
+static inline LV2_Atom_Forge_Ref
 _lforge_basic_float(lua_State *L, int pos, LV2_Atom_Forge *forge)
 {
 	float val = luaL_checknumber(L, pos);
 	return lv2_atom_forge_float(forge, val);
 }
 
-static inline int
+static inline LV2_Atom_Forge_Ref
 _lforge_basic_double(lua_State *L, int pos, LV2_Atom_Forge *forge)
 {
 	double val = luaL_checknumber(L, pos);
 	return lv2_atom_forge_double(forge, val);
 }
 
-static inline int
+static inline LV2_Atom_Forge_Ref
 _lforge_basic_bool(lua_State *L, int pos, LV2_Atom_Forge *forge)
 {
 	int32_t val = lua_toboolean(L, pos);
 	return lv2_atom_forge_bool(forge, val);
 }
 
-static inline int
+static inline LV2_Atom_Forge_Ref
 _lforge_basic_urid(lua_State *L, int pos, LV2_Atom_Forge *forge)
 {
 	LV2_URID val = luaL_checkinteger(L, pos);
 	return lv2_atom_forge_urid(forge, val);
 }
 
-static inline int
+static inline LV2_Atom_Forge_Ref
 _lforge_basic_string(lua_State *L, int pos, LV2_Atom_Forge *forge)
 {
 	size_t len;
@@ -153,7 +153,7 @@ _lforge_basic_string(lua_State *L, int pos, LV2_Atom_Forge *forge)
 	return lv2_atom_forge_string(forge, val, len);
 }
 
-static inline int
+static inline LV2_Atom_Forge_Ref
 _lforge_basic_uri(lua_State *L, int pos, LV2_Atom_Forge *forge)
 {
 	size_t len;
@@ -161,7 +161,7 @@ _lforge_basic_uri(lua_State *L, int pos, LV2_Atom_Forge *forge)
 	return lv2_atom_forge_uri(forge, val, len);
 }
 
-static inline int
+static inline LV2_Atom_Forge_Ref
 _lforge_basic_path(lua_State *L, int pos, LV2_Atom_Forge *forge)
 {
 	size_t len;
@@ -169,7 +169,7 @@ _lforge_basic_path(lua_State *L, int pos, LV2_Atom_Forge *forge)
 	return lv2_atom_forge_path(forge, val, len);
 }
 
-static inline int
+static inline LV2_Atom_Forge_Ref
 _lforge_basic_literal(lua_State *L, int pos, LV2_Atom_Forge *forge)
 {
 	size_t len;
@@ -177,7 +177,7 @@ _lforge_basic_literal(lua_State *L, int pos, LV2_Atom_Forge *forge)
 	return lv2_atom_forge_literal(forge, val, len, 0, 0); //TODO context, lang
 }
 
-int
+LV2_Atom_Forge_Ref
 _lforge_basic(lua_State *L, int pos, LV2_Atom_Forge *forge, LV2_URID range)
 {
 	//FIXME binary lookup?

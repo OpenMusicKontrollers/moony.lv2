@@ -19,73 +19,6 @@
 #include <api_atom.h>
 #include <api_forge.h>
 
-static void
-_latom_value(lua_State *L, const LV2_Atom *atom)
-{
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	const latom_driver_t *driver = _latom_driver(moony, atom->type);
-
-	// dummy wrapping
-	latom_t latom = {
-		.atom = atom
-	};
-
-	if(driver && driver->value)
-		driver->value(L, &latom);
-	else
-		lua_pushnil(L); // unknown type
-}
-
-static LV2_Atom_Forge_Ref
-_lforge_explicit(lua_State *L, int idx, LV2_Atom_Forge *forge, LV2_URID range)
-{
-	if(range == forge->Int)
-	{
-		const int32_t value = luaL_checkinteger(L, idx);
-		return lv2_atom_forge_int(forge, value);
-	}
-	else if(range == forge->URID)
-	{
-		const uint32_t value = luaL_checkinteger(L, idx);
-		return lv2_atom_forge_urid(forge, value);
-	}
-	else if(range == forge->Long)
-	{
-		const int64_t value = luaL_checkinteger(L, idx);
-		return lv2_atom_forge_long(forge, value);
-	}
-	else if(range == forge->Bool)
-	{
-		const int32_t value = lua_toboolean(L, idx);
-		return lv2_atom_forge_bool(forge, value);
-	}
-	else if(range == forge->Float)
-	{
-		const float value = luaL_checknumber(L, idx);
-		return lv2_atom_forge_float(forge, value);
-	}
-	else if(range == forge->Double)
-	{
-		const double value = luaL_checknumber(L, idx);
-		return lv2_atom_forge_double(forge, value);
-	}
-	else if(range == forge->String)
-	{
-		size_t size;
-		const char *value = luaL_checklstring(L, idx, &size);
-		return lv2_atom_forge_string(forge, value, size);
-	}
-	else if(range == forge->URI)
-	{
-		size_t size;
-		const char *value = luaL_checklstring(L, idx, &size);
-		return lv2_atom_forge_uri(forge, value, size);
-	}
-	//TODO more types, e.g. Path , Literal
-
-	return lv2_atom_forge_atom(forge, 0, 0); // nil
-}
-
 static inline void
 _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 	lforge_t *lforge, const LV2_Atom_URID *subject, LV2_URID access)
@@ -201,7 +134,7 @@ _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 				if(lua_geti(L, -1, moony->uris.core_minimum) != LUA_TNIL)
 				{
 					if(  !lv2_atom_forge_key(lforge->forge, moony->uris.core_minimum)
-						|| !_lforge_explicit(L, -1, lforge->forge, range) )
+						|| !_lforge_basic(L, -1, lforge->forge, range) )
 						luaL_error(L, forge_buffer_overflow);
 				}
 				lua_pop(L, 1); // minimum
@@ -209,7 +142,7 @@ _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 				if(lua_geti(L, -1, moony->uris.core_maximum) != LUA_TNIL)
 				{
 					if(  !lv2_atom_forge_key(lforge->forge, moony->uris.core_maximum)
-						|| !_lforge_explicit(L, -1, lforge->forge, range) )
+						|| !_lforge_basic(L, -1, lforge->forge, range) )
 						luaL_error(L, forge_buffer_overflow);
 				}
 				lua_pop(L, 1); // maximum
@@ -241,7 +174,7 @@ _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 							|| !lv2_atom_forge_string(lforge->forge, point, point_size)
 
 							|| !lv2_atom_forge_key(lforge->forge, moony->uris.rdf_value)
-							|| !_lforge_explicit(L, -1, lforge->forge, range) )
+							|| !_lforge_basic(L, -1, lforge->forge, range) )
 							luaL_error(L, forge_buffer_overflow);
 						
 						lv2_atom_forge_pop(lforge->forge, &scale_point_frame); // core:scalePoint
@@ -433,7 +366,7 @@ _lstateresponder__call(lua_State *L)
 						if(!lua_isnil(L, -1))
 						{
 							if(  !lv2_atom_forge_key(lforge->forge, moony->uris.patch_value)
-								|| !_lforge_explicit(L, -1, lforge->forge, range) )
+								|| !_lforge_basic(L, -1, lforge->forge, range) )
 								luaL_error(L, forge_buffer_overflow);
 						}
 					}

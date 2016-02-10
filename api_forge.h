@@ -20,7 +20,7 @@
 
 #include <moony.h>
 
-int
+LV2_Atom_Forge_Ref
 _lforge_basic(lua_State *L, int pos, LV2_Atom_Forge *forge, LV2_URID range);
 
 extern const char *forge_buffer_overflow;
