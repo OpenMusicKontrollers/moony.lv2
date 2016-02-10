@@ -19,8 +19,11 @@
 # include <sys/mman.h>
 #endif
 #include <assert.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <moony.h>
+#include <api_vm.h>
 
 #include <lualib.h>
 #include <lauxlib.h>

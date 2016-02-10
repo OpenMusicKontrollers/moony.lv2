@@ -23,6 +23,7 @@
 
 #include <lv2_eo_ui.h>
 
+#include <common_ui.h>
 #include <encoder.h>
 
 typedef struct _UI UI;

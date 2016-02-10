@@ -20,9 +20,42 @@
 
 #include <moony.h>
 
+typedef struct _lseq_t lseq_t;
+typedef struct _lforge_t lforge_t;
+typedef struct _latom_t latom_t;
 typedef struct _lobj_t lobj_t;
 typedef struct _ltuple_t ltuple_t;
 typedef struct _lvec_t lvec_t;
+
+typedef int (*latom_driver_function_t)(lua_State *L, latom_t *latom);
+
+struct _latom_driver_t {
+	latom_driver_function_t __indexi;
+	latom_driver_function_t __indexk;
+	latom_driver_function_t __len;
+	latom_driver_function_t __tostring;
+	latom_driver_function_t __call;
+
+	latom_driver_function_t value;
+	lua_CFunction unpack;
+	lua_CFunction foreach;
+};
+
+struct _lseq_t {
+	const LV2_Atom_Sequence *seq;
+	const LV2_Atom_Event *itr;
+	LV2_Atom body [0];
+};
+
+struct _lforge_t {
+	LV2_Atom_Forge *forge;
+	int depth;
+	union {
+		int64_t frames;	// Time in audio frames
+		double  beats; // Time in beats
+	} last;
+	LV2_Atom_Forge_Frame frame [2];
+};
 
 struct _lobj_t {
 	const LV2_Atom_Object *obj;

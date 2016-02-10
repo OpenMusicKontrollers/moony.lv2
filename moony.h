@@ -23,8 +23,6 @@
 #include <stdint.h>
 #include <stdatomic.h>
 
-#include <tlsf.h>
-
 #include <lv2/lv2plug.in/ns/ext/atom/atom.h>
 #include <lv2/lv2plug.in/ns/ext/atom/util.h>
 #include <lv2/lv2plug.in/ns/ext/atom/forge.h>
@@ -42,6 +40,7 @@
 #include <lv2/lv2plug.in/ns/extensions/ui/ui.h>
 #include <lv2/lv2plug.in/ns/extensions/units/units.h>
 
+#include <api_vm.h>
 #include <lv2_osc.h>
 
 #include <lua.h>
@@ -105,36 +104,6 @@ extern const LV2UI_Descriptor simple_kx;
 extern const LV2UI_Descriptor web_ui;
 extern const LV2UI_Descriptor web_kx;
 
-// from vm.c
-#define MOONY_POOL_NUM 8
-
-typedef struct _moony_vm_t moony_vm_t;
-typedef struct _moony_mem_t moony_mem_t;
-
-struct _moony_vm_t {
-	tlsf_t tlsf;
-
-	size_t size [MOONY_POOL_NUM];
-	void *area [MOONY_POOL_NUM]; // 128K, 256K, 512K, 1M, 2M, 4M, 8M, 16M
-	pool_t pool [MOONY_POOL_NUM];
-
-	size_t space;
-	size_t used;
-
-	lua_State *L;
-};
-
-struct _moony_mem_t {
-	int i;
-	void *mem;
-};
-
-int moony_vm_init(moony_vm_t *vm);
-int moony_vm_deinit(moony_vm_t *vm);
-void *moony_vm_mem_alloc(size_t size);
-void moony_vm_mem_free(void *area, size_t size);
-int moony_vm_mem_extend(moony_vm_t *vm);
-
 typedef enum _moony_udata_t {
 	MOONY_UDATA_ATOM,
 	MOONY_UDATA_FORGE,
@@ -143,52 +112,19 @@ typedef enum _moony_udata_t {
 	MOONY_UDATA_COUNT
 } moony_udata_t;
 
-// from encoder.l
-typedef void (*encoder_begin_t)(void *data);
-typedef void (*encoder_append_t)(const char *str, void *data);
-typedef void (*encoder_end_t)(void *data);
-typedef struct _moony_encoder_t moony_encoder_t;
-
-struct _moony_encoder_t {
-	encoder_begin_t begin;
-	encoder_append_t append;
-	encoder_end_t end;
-	void *data;
-};
-extern moony_encoder_t *encoder;
-
-void lua_to_markup(const char *utf8, FILE *f);
-
-// from api.c
-typedef struct _latom_t latom_t;
+// from api_atom.c
 typedef struct _latom_driver_t latom_driver_t;
 typedef struct _latom_driver_hash_t latom_driver_hash_t;
-
-typedef int (*latom_driver_function_t)(lua_State *L, latom_t *latom);
-
-struct _latom_driver_t {
-	latom_driver_function_t __indexi;
-	latom_driver_function_t __indexk;
-	latom_driver_function_t __len;
-	latom_driver_function_t __tostring;
-	latom_driver_function_t __call;
-
-	latom_driver_function_t value;
-	lua_CFunction unpack;
-	lua_CFunction foreach;
-};
 
 struct _latom_driver_hash_t {
 	LV2_URID type;
 	const latom_driver_t *driver;
 };
 
+#define DRIVER_HASH_MAX 16
+
 // from moony.c
 typedef struct _moony_t moony_t;
-typedef struct _lseq_t lseq_t;
-typedef struct _lforge_t lforge_t;
-
-#define DRIVER_HASH_MAX 16
 
 struct _moony_t {
 	LV2_URID_Map *map;
@@ -282,22 +218,7 @@ struct _moony_t {
 	latom_driver_hash_t atom_driver_hash [DRIVER_HASH_MAX];
 };
 
-struct _lseq_t {
-	const LV2_Atom_Sequence *seq;
-	const LV2_Atom_Event *itr;
-	LV2_Atom body [0];
-};
-
-struct _lforge_t {
-	LV2_Atom_Forge *forge;
-	int depth;
-	union {
-		int64_t frames;	// Time in audio frames
-		double  beats; // Time in beats
-	} last;
-	LV2_Atom_Forge_Frame frame [2];
-};
-
+// in api.c
 int moony_init(moony_t *moony, const char *subject, double sample_rate,
 	const LV2_Feature *const *features);
 void moony_deinit(moony_t *moony);
@@ -305,9 +226,7 @@ void moony_open(moony_t *moony, lua_State *L, bool use_assert);
 void moony_in(moony_t *moony, const LV2_Atom_Sequence *seq);
 void moony_out(moony_t *moony, LV2_Atom_Sequence *seq, uint32_t frames);
 const void* extension_data(const char* uri);
-
-void *
-moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type);
+void *moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type);
 
 static inline void
 moony_freeuserdata(moony_t *moony)

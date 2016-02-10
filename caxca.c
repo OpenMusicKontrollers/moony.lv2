@@ -16,6 +16,7 @@
  */
 
 #include <moony.h>
+#include <api_atom.h>
 
 #include <lauxlib.h>
 
