@@ -651,7 +651,7 @@ brace					 [\(\)\[\]\{\}]
 
 <XLONGCOMMENT>
 {
-   "--]]"  				BEGIN(0); return TK_LONG_COMMENT_OUT;
+   "]]"  					BEGIN(0); return TK_LONG_COMMENT_OUT;
    {eol}          return TK_NEWLINE;
    .              return TK_RAW;
 }
@@ -785,7 +785,7 @@ lua_to_markup(const char *utf8, FILE *f)
 				_add_plain("--[[");
 				break;
 			case TK_LONG_COMMENT_OUT:
-				_add_plain("--]]");
+				_add_plain("]]");
 				_add_markup_end(MARKUP_COMMENT);
 				break;
 
