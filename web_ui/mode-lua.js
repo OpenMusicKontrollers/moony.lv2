@@ -126,14 +126,26 @@ var LuaHighlightRules = function() {
                     regex : /\]=*\]/,
                     next  : "start"
                 }, {
+                    token : "comment.fixme",
+										regex : /(FIXME|TODO)/
+                }, {
                     defaultToken : "comment"
                 }
             ]
         },
-
         {
             token : "comment",
-            regex : "\\-\\-.*$"
+            //regex : "\\-\\-.*$"
+            regex : /\-\-/,
+						next : [{	
+								next : "start",
+								regex : /$/
+							}, {
+								token : "comment.fixme",
+								regex : /(FIXME|TODO)/
+							}, {
+								defaultToken : "comment"
+							}]
         },
         {
             stateName: "bracketedString",

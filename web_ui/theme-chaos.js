@@ -96,6 +96,9 @@ color:#00AEEF;\
 .ace-chaos .ace_string {\
 color:#58C554;\
 }\
+.ace-chaos .ace_comment.ace_fixme {\
+background-color:#ffff00;\
+}\
 .ace-chaos .ace_comment {\
 color:#555;\
 font-style:italic;\
