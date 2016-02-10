@@ -459,7 +459,7 @@ _show(UI *ui)
 		if((ret = uv_tcp_getsockname(&server->http_server, (struct sockaddr *)&storage, &namelen)))
 			_err(ui, "uv_tcp_get_sockname", ret);
 
-		const uint16_t port = be16toh(storage_ip4->sin_port);
+		const uint16_t port = ntohs(storage_ip4->sin_port);
 		sprintf(ui->path, "http://localhost:%hu", port);
 	}
 
