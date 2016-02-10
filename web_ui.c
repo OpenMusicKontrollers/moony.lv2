@@ -306,6 +306,7 @@ _parse_env(char *env, char *path)
 {
 	unsigned n = 0;
 	char **args = malloc((n+1) * sizeof(char *));
+	char **oldargs = NULL;
 	if(!args)
 		goto fail;
 	args[n] = NULL;
@@ -314,26 +315,32 @@ _parse_env(char *env, char *path)
 	while(pch)
 	{
 		args[n++] = pch;
+		oldargs = args;
 		args = realloc(args, (n+1) * sizeof(char *));
 		if(!args)
 			goto fail;
+		oldargs = NULL;
 		args[n] = NULL;
 
 		pch = strtok(NULL, " \t");
 	}
 
 	args[n++] = path;
+	oldargs = args;
 	args = realloc(args, (n+1) * sizeof(char *));
 	if(!args)
 		goto fail;
+	oldargs = NULL;
 	args[n] = NULL;
 
 	return args;
 
 fail:
+	if(oldargs)
+		free(oldargs);
 	if(args)
 		free(args);
-	return NULL;
+	return 0;
 }
 
 static void
@@ -884,8 +891,8 @@ static int
 _on_url(http_parser *parser, const char *at, size_t len)
 {
 	client_t *client = parser->data;
-	server_t *server = client->server;
-	UI *ui = (void *)server - offsetof(UI, server);
+	//server_t *server = client->server;
+	//UI *ui = (void *)server - offsetof(UI, server);
 
 	snprintf(client->url, len+1, "%s", at); //FIXME
 
@@ -1074,7 +1081,7 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 				{ ui->uris.moony_error, (const LV2_Atom **)&moony_error },
 				{ ui->uris.moony_code, (const LV2_Atom **)&moony_code },
 				{ ui->uris.moony_trace, (const LV2_Atom **)&moony_trace },
-				LV2_ATOM_OBJECT_QUERY_END
+				{ 0, NULL}
 			};
 			lv2_atom_object_query(obj, q);
 

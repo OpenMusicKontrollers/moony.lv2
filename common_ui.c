@@ -940,7 +940,7 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 			LV2_Atom_Object_Query q[] = {
 				{ ui->uris.moony_error, (const LV2_Atom **)&moony_error },
 				{ ui->uris.moony_code, (const LV2_Atom **)&moony_code },
-				LV2_ATOM_OBJECT_QUERY_END
+				{ 0, NULL}
 			};
 			lv2_atom_object_query(obj, q);
 

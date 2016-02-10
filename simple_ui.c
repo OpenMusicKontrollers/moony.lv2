@@ -263,8 +263,9 @@ _on_fs_poll(uv_fs_poll_t *pol, int status, const uv_stat_t* prev, const uv_stat_
 static inline char **
 _parse_env(char *env, char *path)
 {
-	unsigned n = 0;
+	unsigned n = 1;
 	char **args = malloc((n+1) * sizeof(char *));
+	char **oldargs = NULL;
 	if(!args)
 		goto fail;
 	args[n] = NULL;
@@ -273,26 +274,32 @@ _parse_env(char *env, char *path)
 	while(pch)
 	{
 		args[n++] = pch;
+		oldargs = args;
 		args = realloc(args, (n+1) * sizeof(char *));
 		if(!args)
 			goto fail;
+		oldargs = NULL;
 		args[n] = NULL;
 
 		pch = strtok(NULL, " \t");
 	}
 
 	args[n++] = path;
+	oldargs = args;
 	args = realloc(args, (n+1) * sizeof(char *));
 	if(!args)
 		goto fail;
+	oldargs = NULL;
 	args[n] = NULL;
 
 	return args;
 
 fail:
+	if(oldargs)
+		free(oldargs);
 	if(args)
 		free(args);
-	return NULL;
+	return 0;
 }
 
 static inline void
@@ -595,7 +602,7 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 			LV2_Atom_Object_Query q[] = {
 				{ ui->uris.moony_error, (const LV2_Atom **)&moony_error },
 				{ ui->uris.moony_code, (const LV2_Atom **)&moony_code },
-				LV2_ATOM_OBJECT_QUERY_END
+				{ 0, NULL }
 			};
 			lv2_atom_object_query(obj, q);
 

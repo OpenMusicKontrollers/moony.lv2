@@ -250,8 +250,7 @@ _latom_new(lua_State *L, const LV2_Atom *atom)
 static inline void
 _latom_body_new(lua_State *L, uint32_t size, LV2_URID type, const void *body)
 {
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	LV2_Atom_Forge *forge = &moony->forge;
+	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	size_t atom_size = sizeof(LV2_Atom) + size;
 
 	latom_t *latom = lua_newuserdata(L, sizeof(latom_t) + atom_size);
@@ -306,7 +305,6 @@ _latom_value(lua_State *L, const LV2_Atom *atom)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	const latom_driver_t *driver = _latom_driver(moony, atom->type);
-	LV2_Atom_Forge *forge = &moony->forge;
 
 	// dummy wrapping
 	latom_t latom = {
@@ -639,8 +637,6 @@ _latom_tuple__len(lua_State *L, latom_t *latom)
 static int
 _latom_tuple__tostring(lua_State *L, latom_t *latom)
 {
-	ltuple_t *ltuple = &latom->tuple;
-
 	lua_pushstring(L, "(tuple)");
 	return 1;
 }
@@ -780,8 +776,6 @@ _latom_obj__len(lua_State *L, latom_t *latom)
 static int
 _latom_obj__tostring(lua_State *L, latom_t *latom)
 {
-	lobj_t *lobj = &latom->obj;
-
 	lua_pushstring(L, "(object)");
 	return 1;
 }
@@ -1314,12 +1308,9 @@ _lforge_atom(lua_State *L)
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	latom_t *latom = luaL_checkudata(L, 2, "latom");
 
-	const LV2_Atom **atom_ptr = lua_touserdata(L, 2);
-	const LV2_Atom *atom = *atom_ptr;
-
-	if(!lv2_atom_forge_raw(lforge->forge, atom, sizeof(LV2_Atom) + atom->size))
+	if(!lv2_atom_forge_raw(lforge->forge, latom->atom, sizeof(LV2_Atom) + latom->atom->size))
 		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pad(lforge->forge, atom->size);
+	lv2_atom_forge_pad(lforge->forge, latom->atom->size);
 
 	lua_settop(L, 1);
 	return 1;
@@ -2529,7 +2520,7 @@ _lmidiresponder__call(lua_State *L)
 static int
 _lmidiresponder(lua_State *L)
 {
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	
 	lua_settop(L, 1); // discard superfluous arguments
 
@@ -2777,7 +2768,7 @@ _loscresponder__call(lua_State *L)
 static int
 _loscresponder(lua_State *L)
 {
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	
 	lua_settop(L, 1); // discard superfluous arguments
 
@@ -2905,7 +2896,7 @@ _ltimeresponder_apply(lua_State *L)
 static int
 _ltimeresponder_stash(lua_State *L)
 {
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 
 	lua_settop(L, 2); // discard superfluous arguments
 	// 1: self
@@ -3532,7 +3523,7 @@ _lstateresponder__call(lua_State *L)
 static int
 _lstateresponder(lua_State *L)
 {
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	
 	lua_settop(L, 1); // discard superfluous arguments
 
@@ -4402,7 +4393,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *seq)
 			LV2_Atom_Object_Query q[] = {
 				{ moony->uris.moony_code, (const LV2_Atom **)&moony_code },
 				{ moony->uris.moony_selection, (const LV2_Atom **)&moony_selection },
-				LV2_ATOM_OBJECT_QUERY_END
+				{ 0, NULL}
 			};
 			lv2_atom_object_query(obj, q);
 
