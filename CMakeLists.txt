@@ -147,17 +147,7 @@ else()
 	set(KX_WEB_WRAP "#")
 endif()
 
-add_library(moony MODULE
-	moony.c
-	api.c
-	vm.c
-
-	cxc.c
-	axa.c
-	caxca.c
-
-	tlsf-3.0/tlsf.c
-
+add_library(lua OBJECT
 	lua-5.3.1/lapi.c
 	lua-5.3.1/lcode.c
 	lua-5.3.1/lctype.c
@@ -185,13 +175,28 @@ add_library(moony MODULE
 	lua-5.3.1/lmathlib.c
 	lua-5.3.1/lstrlib.c
 	lua-5.3.1/ltablib.c
-	lua-5.3.1/lutf8lib.c)
+	lua-5.3.1/lutf8lib.c
+
 	#lua-5.3.1/lbitlib.c
 	#lua-5.3.1/ldblib.c
 	#lua-5.3.1/liolib.c
 	#lua-5.3.1/loslib.c
 	#lua-5.3.1/loadlib.c
 	#lua-5.3.1/linit.c
+	)
+set_target_properties(lua PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
+
+add_library(moony MODULE
+	moony.c
+	api.c
+	vm.c
+
+	cxc.c
+	axa.c
+	caxca.c
+
+	tlsf-3.0/tlsf.c
+	$<TARGET_OBJECTS:lua>)
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	target_compile_definitions(moony PUBLIC -DLUA_USE_LINUX)
 elseif(WIN32)
@@ -217,41 +222,7 @@ if(${BUILD_TESTING})
 		vm.c
 
 		tlsf-3.0/tlsf.c
-
-		lua-5.3.1/lapi.c
-		lua-5.3.1/lcode.c
-		lua-5.3.1/lctype.c
-		lua-5.3.1/ldebug.c
-		lua-5.3.1/ldo.c
-		lua-5.3.1/ldump.c
-		lua-5.3.1/lfunc.c
-		lua-5.3.1/lgc.c
-		lua-5.3.1/llex.c
-		lua-5.3.1/lmem.c
-		lua-5.3.1/lobject.c
-		lua-5.3.1/lopcodes.c
-		lua-5.3.1/lparser.c
-		lua-5.3.1/lstate.c
-		lua-5.3.1/lstring.c
-		lua-5.3.1/ltable.c
-		lua-5.3.1/ltm.c
-		lua-5.3.1/lundump.c
-		lua-5.3.1/lvm.c
-		lua-5.3.1/lzio.c
-
-		lua-5.3.1/lbaselib.c
-		lua-5.3.1/lauxlib.c
-		lua-5.3.1/lcorolib.c
-		lua-5.3.1/lmathlib.c
-		lua-5.3.1/lstrlib.c
-		lua-5.3.1/ltablib.c
-		lua-5.3.1/lutf8lib.c)
-		#lua-5.3.1/lbitlib.c
-		#lua-5.3.1/ldblib.c
-		#lua-5.3.1/liolib.c
-		#lua-5.3.1/loslib.c
-		#lua-5.3.1/loadlib.c
-		#lua-5.3.1/linit.c
+		$<TARGET_OBJECTS:lua>)
 	if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 		target_compile_definitions(test_moony PUBLIC -DLUA_USE_LINUX)
 	elseif(WIN32)
