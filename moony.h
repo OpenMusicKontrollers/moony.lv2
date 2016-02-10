@@ -45,6 +45,7 @@
 #include <lv2_osc.h>
 
 #include <lua.h>
+#include <lauxlib.h>
 
 #define MOONY_MAX_CHUNK_LEN		0x10000 // 64KB
 #define MOONY_MAX_ERROR_LEN		0x400 // 1KB
@@ -371,5 +372,5 @@ _moony_message_forge(LV2_Atom_Forge *forge, LV2_URID otype, LV2_URID key,
 		lv2_atom_forge_pop(forge, &frame);
 	return ref;
 }
-	
+
 #endif // _MOONY_H

@@ -169,33 +169,39 @@ add_library(lua OBJECT
 	lua-5.3.1/lvm.c
 	lua-5.3.1/lzio.c
 
-	lua-5.3.1/lbaselib.c
-	lua-5.3.1/lauxlib.c
-	lua-5.3.1/lcorolib.c
-	lua-5.3.1/lmathlib.c
-	lua-5.3.1/lstrlib.c
-	lua-5.3.1/ltablib.c
-	lua-5.3.1/lutf8lib.c
-
 	#lua-5.3.1/lbitlib.c
 	#lua-5.3.1/ldblib.c
 	#lua-5.3.1/liolib.c
 	#lua-5.3.1/loslib.c
 	#lua-5.3.1/loadlib.c
 	#lua-5.3.1/linit.c
-	)
+	lua-5.3.1/lbaselib.c
+	lua-5.3.1/lauxlib.c
+	lua-5.3.1/lcorolib.c
+	lua-5.3.1/lmathlib.c
+	lua-5.3.1/lstrlib.c
+	lua-5.3.1/ltablib.c
+	lua-5.3.1/lutf8lib.c)
 set_target_properties(lua PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
+
+add_library(api OBJECT
+	api.c
+	api_atom.c
+	api_forge.c
+	api_midi.c
+	api_osc.c
+	api_time.c
+	api_state.c
+	api_vm.c
+	tlsf-3.0/tlsf.c)
+set_target_properties(api PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
 
 add_library(moony MODULE
 	moony.c
-	api.c
-	vm.c
-
 	cxc.c
 	axa.c
 	caxca.c
-
-	tlsf-3.0/tlsf.c
+	$<TARGET_OBJECTS:api>
 	$<TARGET_OBJECTS:lua>)
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	target_compile_definitions(moony PUBLIC -DLUA_USE_LINUX)
@@ -205,6 +211,7 @@ elseif(APPLE)
 	target_compile_definitions(moony PUBLIC -DLUA_USE_MACOSX)
 endif()
 target_link_libraries(moony ${LIBS} "-lm")
+set_target_properties(moony PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 set_target_properties(moony PROPERTIES PREFIX "")
 install(TARGETS moony DESTINATION ${PLUGIN_DEST})
 
@@ -218,10 +225,7 @@ include(CTest)
 if(${BUILD_TESTING})
 	add_executable(test_moony
 		test_moony.c
-		api.c
-		vm.c
-
-		tlsf-3.0/tlsf.c
+		$<TARGET_OBJECTS:api>
 		$<TARGET_OBJECTS:lua>)
 	if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 		target_compile_definitions(test_moony PUBLIC -DLUA_USE_LINUX)
@@ -230,6 +234,7 @@ if(${BUILD_TESTING})
 	elseif(APPLE)
 		target_compile_definitions(test_moony PUBLIC -DLUA_USE_MACOSX)
 	endif()
+	set_target_properties(test_moony PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 	target_link_libraries(test_moony "-lm")
 
 	if(NOT WIN32)
