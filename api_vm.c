@@ -28,7 +28,7 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
-#define MEM_SIZE 0x20000UL // 128KB
+#define MEM_SIZE 0x40000UL // 256KB
 
 // rt
 static inline void *
