@@ -604,6 +604,34 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	}
 	lua_setglobal(L, "MIDI");
 
+	lua_createtable(L, 0x80, 0x80);
+	{
+		const char *keys [12] = {
+			"C", "C#",
+			"D", "D#",
+			"E",
+			"F", "F#",
+			"G", "G#",
+			"A", "A#",
+			"H"
+		};
+		char name [8];
+
+		for(unsigned i=0; i<0x80; i++)
+		{
+			const unsigned octave = i / 12;
+			const unsigned key = i % 12;
+			snprintf(name, 8, "%s%u", keys[key], octave);
+
+			lua_pushinteger(L, i);
+			lua_setfield(L, -2, name);
+
+			lua_pushstring(L, name);
+			lua_rawseti(L, -2, i);
+		}
+	}
+	lua_setglobal(L, "Note");
+
 	lua_newtable(L);
 	{
 		SET_MAP(L, LV2_TIME__, Position);

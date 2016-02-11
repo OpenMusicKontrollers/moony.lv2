@@ -1331,6 +1331,45 @@ do
 	test(producer, consumer)
 end
 
+-- Note 
+print('[test] Note')
+do
+	assert(Note[0] == 'C0')
+	assert(Note[1] == 'C#0')
+	assert(Note[12] == 'C1')
+	assert(Note[13] == 'C#1')
+
+	assert(Note.C0 == 0)
+	assert(Note['C#0'] == 1)
+	assert(Note.C1 == 12)
+	assert(Note['C#1'] == 13)
+
+	assert(Note.C5 == 60)
+	assert(Note[60] == 'C5')
+
+	assert(Note[-1] == nil)
+	assert(Note[0x80] == nil)
+	assert(Note.foo == nil)
+	assert(Note.bar == nil)
+
+	local keys = {'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'H'}
+
+	local function itr()
+		return coroutine.wrap(function()
+			for octave = 0, 9 do
+				for i, key in ipairs(keys) do
+					coroutine.yield(octave * #keys + i - 1, key .. octave)
+				end
+			end
+		end)
+	end
+
+	for i, note_name in itr() do
+		assert(Note[i] == note_name)
+		assert(Note[note_name] == i)
+	end
+end
+
 --[[ FIXME
 -- Stash
 print('[test] Stash')
