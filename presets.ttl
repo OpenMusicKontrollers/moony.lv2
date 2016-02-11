@@ -245,28 +245,32 @@ urid = {
   gamma = Map[prefix .. '#gamm']
 }
 
+function alpha_stringify(value)
+  return 'alpha = ' .. value .. ' Hz'
+end
+
 alpha = {
   [RDFS.label] = 'Alpha',
   [RDFS.comment] = 'This is Alpha',
   [RDFS.range] = Atom.Int,
   [Core.minimum] = 0,
   [Core.maximum] = 10,
-	[Units.unit] = Units.hz,
+  [Units.unit] = Units.hz,
   [RDF.value] = 5,
-	[Patch.Set] = function(self, frames, forge, value)
-		self[RDF.value] = value
-		beta[RDF.value] = 'Alpha is now ' .. value .. ' Hz'
-		if forge then
-			forge:time(frames):set(nil, urid.beta):string(beta[RDF.value]):pop()
-		end
-	end
+  [Patch.Set] = function(self, frames, forge, value)
+    self[RDF.value] = value
+    beta[RDF.value] = alpha_stringify(value)
+    if forge then
+      forge:time(frames):set(nil, urid.beta):string(beta[RDF.value]):pop()
+    end
+  end
 }
 
 beta = {
   [RDFS.label] = 'Beta',
   [RDFS.comment] = 'This is Beta',
   [RDFS.range] = Atom.String,
-  [RDF.value] = ''
+  [RDF.value] = alpha_stringify(alpha[RDF.value])
 }
 
 gamma = {
@@ -278,42 +282,41 @@ gamma = {
   [Units.unit] = Units.mm,
   [Core.scalePoint] = {
     zero = 0.0,
-		one = 1.0,
-		two = 2.0
+    one = 1.0,
+    two = 2.0
   },
-	[RDF.value] = 1.0
+  [RDF.value] = 1.0
 }
 
 state = StateResponder({
-	[Patch.writable] = {
-		[urid.alpha] = alpha,
-		[urid.gamma] = gamma
-	},
-	[Patch.readable] = {
-		[urid.beta] = beta,
-	}
+  [Patch.writable] = {
+    [urid.alpha] = alpha,
+    [urid.gamma] = gamma
+  },
+  [Patch.readable] = {
+    [urid.beta] = beta,
+  }
 })
 
 function save(forge)
-	state:stash(forge)
+  state:stash(forge)
 end
 
 function restore(atom)
-	state:apply(atom)
-	alpha[Patch.Set](alpha, 0, nil, alpha[RDF.value])
+  state:apply(atom)
+  alpha_stringify(alpha[RDF.value])
 end
 
-function default(n, seq, forge)
-  for frames, atom in seq:foreach() do
-    state(frames, forge, atom)
-  end
-end
-
-function once(n, seq, forge)
+function run(n, seq, forge)
   state:register(0, forge)
-	run = default
-	run(n, seq, forge)
-end
 
-run = once"""
+  run = function(n, seq, forge)
+    for frames, atom in seq:foreach() do
+      state(frames, forge, atom)
+    end
+  end
+
+  run(n, seq, forge)
+end"""
 	] .
+
