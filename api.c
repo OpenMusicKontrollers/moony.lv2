@@ -161,6 +161,103 @@ static const luaL_Reg lunmap_mt [] = {
 	{NULL, NULL}
 };
 
+static const char *note_keys [12] = {
+	"C", "C#",
+	"D", "D#",
+	"E",
+	"F", "F#",
+	"G", "G#",
+	"A", "A#",
+	"H"
+};
+
+static int
+_lnote__index(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	lua_settop(L, 2); // ignore superfluous arguments
+
+	const int type = lua_type(L, 2);
+	if(type == LUA_TNUMBER)
+	{
+		const int note = lua_tointeger(L, 2);
+
+		if( (note >= 0) && (note < 0x80) )
+		{
+			char name [8];
+			const unsigned octave = note / 12;
+			const unsigned key = note % 12;
+			snprintf(name, 8, "%s%u", note_keys[key], octave);
+
+			lua_pushstring(L, name);
+			return 1;
+		}
+	}
+	else if(type == LUA_TSTRING)
+	{
+		size_t str_len;
+		const char *str = lua_tolstring(L, 2, &str_len);
+
+		if(str_len == 2)
+		{
+			for(int i=0; i<12; i++)
+			{
+				const char *key = note_keys[i];
+				const size_t key_len = strlen(key);
+
+				if( (key_len == 1) && (str[0] == key[0]) )
+				{
+					const int octave = atoi(str + key_len);
+					const int note = octave*12 + i;
+					if( (note >= 0) && (note < 0x80) )
+					{
+						lua_pushinteger(L, note);
+						return 1;
+					}
+				}
+			}
+		}
+		else if(str_len == 3)
+		{
+			for(int i=0; i<12; i++)
+			{
+				const char *key = note_keys[i];
+				const size_t key_len = strlen(key);
+
+				if( (key_len == 2) && (str[0] == key[0]) && (str[1] == key[1]) )
+				{
+					const int octave = atoi(str + key_len);
+					const int note = octave*12 + i;
+					if( (note >= 0) && (note < 0x80) )
+					{
+						lua_pushinteger(L, note);
+						return 1;
+					}
+				}
+			}
+		}
+	}
+
+	lua_pushnil(L);
+	return 1;
+}
+
+static int
+_lnote__call(lua_State *L)
+{
+	lua_settop(L, 2);
+	lua_gettable(L, -2); // self[uri]
+
+	return 1;
+}
+
+static const luaL_Reg lnote_mt [] = {
+	{"__index", _lnote__index},
+	{"__call", _lnote__index},
+	{NULL, NULL}
+};
+
 static int
 _log(lua_State *L)
 {
@@ -630,6 +727,14 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 			lua_rawseti(L, -2, i);
 		}
 	}
+	lua_setglobal(L, "Note");
+
+	// Note 
+	lua_newtable(L);
+	lua_newtable(L);
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	luaL_setfuncs(L, lnote_mt, 1);
+	lua_setmetatable(L, -2);
 	lua_setglobal(L, "Note");
 
 	lua_newtable(L);

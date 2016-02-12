@@ -1336,19 +1336,19 @@ print('[test] Note')
 do
 	assert(Note[0] == 'C0')
 	assert(Note[1] == 'C#0')
-	assert(Note[12] == 'C1')
-	assert(Note[13] == 'C#1')
+	assert(Note(12) == 'C1')
+	assert(Note(13) == 'C#1')
 
 	assert(Note.C0 == 0)
 	assert(Note['C#0'] == 1)
 	assert(Note.C1 == 12)
-	assert(Note['C#1'] == 13)
+	assert(Note('C#1') == 13)
 
 	assert(Note.C5 == 60)
 	assert(Note[60] == 'C5')
 
 	assert(Note[-1] == nil)
-	assert(Note[0x80] == nil)
+	assert(Note(0x80) == nil)
 	assert(Note.foo == nil)
 	assert(Note.bar == nil)
 
