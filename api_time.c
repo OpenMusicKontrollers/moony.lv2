@@ -186,12 +186,12 @@ _ltimeresponder__index(lua_State *L)
 			if(!strcmp(key, "stash"))
 			{
 				lua_pushlightuserdata(L, moony);
-				lua_pushcclosure(L, _ltimeresponder_stash, 1);
+				lua_pushcclosure(L, _ltimeresponder_stash, 1); //TODO cache/reuse
 			}
 			else if(!strcmp(key, "apply"))
 			{
 				lua_pushlightuserdata(L, moony);
-				lua_pushcclosure(L, _ltimeresponder_apply, 1);
+				lua_pushcclosure(L, _ltimeresponder_apply, 1); //TODO cache/reuse
 			}
 			else
 				lua_pushnil(L);

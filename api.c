@@ -1141,7 +1141,7 @@ _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 		// restore Lua defined properties
 		lua_State *L = moony->vm.L;
 		lua_pushlightuserdata(L, moony);
-		lua_pushcclosure(L, _save, 1);
+		lua_pushcclosure(L, _save, 1); //TODO cache/reuse
 		if(lua_pcall(L, 0, 0, 0))
 		{
 			if(moony->log) //TODO send to UI, too
@@ -1241,7 +1241,7 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 
 			// restore Lua defined properties
 			lua_pushlightuserdata(L, moony);
-			lua_pushcclosure(L, _restore, 1);
+			lua_pushcclosure(L, _restore, 1); //TODO cache/reuse
 			if(lua_pcall(L, 0, 0, 0))
 			{
 				if(moony->log) //TODO send to UI, too
@@ -1383,7 +1383,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *seq)
 			{
 				// stash
 				lua_pushlightuserdata(L, moony);
-				lua_pushcclosure(L, _stash, 1);
+				lua_pushcclosure(L, _stash, 1); //TODO cache/reuse
 				if(lua_pcall(L, 0, 0, 0))
 					moony_error(moony);
 
@@ -1405,7 +1405,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *seq)
 					{
 						// restore Lua defined properties
 						lua_pushlightuserdata(L, moony);
-						lua_pushcclosure(L, _restore, 1);
+						lua_pushcclosure(L, _restore, 1); //TODO cache/reuse
 						if(lua_pcall(L, 0, 0, 0))
 							moony_error(moony);
 					}
@@ -1415,7 +1415,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *seq)
 				if(moony->stash_atom) // something has been stashed previously
 				{
 					lua_pushlightuserdata(L, moony);
-					lua_pushcclosure(L, _apply, 1);
+					lua_pushcclosure(L, _apply, 1); //TODO cache/reuse
 					if(lua_pcall(L, 0, 0, 0))
 						moony_error(moony);
 

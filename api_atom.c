@@ -452,7 +452,7 @@ _latom_tuple_foreach(lua_State *L)
 
 	lua_pushlightuserdata(L, moony);
 	_latom_new(L, NULL); // place-holder
-	lua_pushcclosure(L, _latom_tuple_foreach_itr, 2);
+	lua_pushcclosure(L, _latom_tuple_foreach_itr, 2); //TODO cach/reuse
 	lua_pushvalue(L, 1);
 
 	return 2;
@@ -558,7 +558,7 @@ _latom_obj_foreach(lua_State *L)
 
 	lua_pushlightuserdata(L, moony);
 	_latom_new(L, NULL); // place-holder
-	lua_pushcclosure(L, _latom_obj_foreach_itr, 2);
+	lua_pushcclosure(L, _latom_obj_foreach_itr, 2); //TODO cache/reuse
 	lua_pushvalue(L, 1);
 
 	return 2;
@@ -648,7 +648,7 @@ _latom_seq_foreach(lua_State *L)
 
 	lua_pushlightuserdata(L, moony);
 	_latom_new(L, NULL); // place-holder
-	lua_pushcclosure(L, _latom_seq_foreach_itr, 2);
+	lua_pushcclosure(L, _latom_seq_foreach_itr, 2); //TODO cache/reuse
 	lua_pushvalue(L, 1);
 
 	return 2;
@@ -918,19 +918,19 @@ _latom__index(lua_State *L)
 			else if(driver->foreach && !strcmp(key, "foreach"))
 			{
 				lua_pushlightuserdata(L, moony);
-				lua_pushcclosure(L, driver->foreach, 1);
+				lua_pushcclosure(L, driver->foreach, 1); //TODO cache/reuse
 				return 1;
 			}
 			else if(driver->unpack && !strcmp(key, "unpack"))
 			{
 				lua_pushlightuserdata(L, moony);
-				lua_pushcclosure(L, driver->unpack, 1);
+				lua_pushcclosure(L, driver->unpack, 1); //TODO cache/reuse
 				return 1;
 			}
 			else if(!strcmp(key, "clone"))
 			{
 				lua_pushlightuserdata(L, moony);
-				lua_pushcclosure(L, _latom_clone, 1);
+				lua_pushcclosure(L, _latom_clone, 1); //TODO cache/reuse
 				return 1;
 			}
 			else if(driver->__indexk)
