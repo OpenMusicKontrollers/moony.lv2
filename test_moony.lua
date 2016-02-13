@@ -1370,6 +1370,49 @@ do
 	end
 end
 
+-- Clone
+print('[test] Clone')
+do
+	local function producer(forge)
+		forge:time(1):int(1)
+		forge:time(2):long(2)
+	end
+
+	local references = {}
+	local clones = {}
+
+	local function consumer(seq)
+		for frames, atom in seq:foreach() do
+			local clone = atom:clone()
+
+			assert(#atom == #clone)
+			assert(atom.type == clone.type)
+			assert(atom.value == clone.value)
+
+			clones[frames] = clone
+			references[frames] = atom
+		end
+	end
+
+	test(producer, consumer)
+
+	assert(#clones[1] == 4)
+	assert(clones[1].type == Atom.Int)
+	assert(clones[1].value == 1)
+
+	assert(#clones[2] == 8)
+	assert(clones[2].type == Atom.Long)
+	assert(clones[2].value == 2)
+
+	--assert(#references[1] == 8)
+	--assert(references[1].type == Atom.Long)
+	--assert(references[1].value == 2)
+
+	assert(#references[2] == 8)
+	assert(references[2].type == Atom.Long)
+	assert(references[2].value == 2)
+end
+
 --[[ FIXME
 -- Stash
 print('[test] Stash')

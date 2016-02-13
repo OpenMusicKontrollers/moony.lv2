@@ -40,9 +40,20 @@ _latom_body_new(lua_State *L, uint32_t size, LV2_URID type, const void *body)
 	latom->body->size = size;
 	latom->body->type = type;
 	memcpy(LV2_ATOM_BODY(latom->body), body, size);
-	luaL_getmetatable(L, "latom");
 
+	luaL_getmetatable(L, "latom");
 	lua_setmetatable(L, -2);
+}
+
+static int
+_latom_clone(lua_State *L)
+{
+	latom_t *latom = lua_touserdata(L, 1);
+	const LV2_Atom *atom = latom->atom;
+
+	_latom_body_new(L, atom->size, atom->type, LV2_ATOM_BODY_CONST(atom));
+
+	return 1;
 }
 
 // Int driver
@@ -906,6 +917,12 @@ _latom__index(lua_State *L)
 			{
 				lua_pushlightuserdata(L, moony);
 				lua_pushcclosure(L, driver->unpack, 1);
+				return 1;
+			}
+			else if(!strcmp(key, "clone"))
+			{
+				lua_pushlightuserdata(L, moony);
+				lua_pushcclosure(L, _latom_clone, 1);
 				return 1;
 			}
 			else if(driver->__indexk)
