@@ -1404,9 +1404,9 @@ do
 	assert(clones[2].type == Atom.Long)
 	assert(clones[2].value == 2)
 
-	--assert(#references[1] == 8)
-	--assert(references[1].type == Atom.Long)
-	--assert(references[1].value == 2)
+	assert(#references[1] == 8) -- latoms in :foreach are recycled
+	assert(references[1].type == Atom.Long)
+	assert(references[1].value == 2)
 
 	assert(#references[2] == 8)
 	assert(references[2].type == Atom.Long)

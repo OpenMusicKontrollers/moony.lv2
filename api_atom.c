@@ -423,9 +423,10 @@ _latom_tuple_foreach_itr(lua_State *L)
 	{
 		// push index
 		lua_pushinteger(L, ltuple->pos);
-
 		// push atom
-		_latom_new(L, ltuple->itr);
+		lua_pushvalue(L, lua_upvalueindex(2));
+		latom_t *latom = lua_touserdata(L, lua_upvalueindex(2));
+		latom->atom = ltuple->itr;
 	
 		// advance iterator
 		ltuple->pos += 1;
@@ -450,7 +451,8 @@ _latom_tuple_foreach(lua_State *L)
 	ltuple->itr = lv2_atom_tuple_begin(ltuple->tuple);
 
 	lua_pushlightuserdata(L, moony);
-	lua_pushcclosure(L, _latom_tuple_foreach_itr, 1);
+	_latom_new(L, NULL); // place-holder
+	lua_pushcclosure(L, _latom_tuple_foreach_itr, 2);
 	lua_pushvalue(L, 1);
 
 	return 2;
@@ -526,10 +528,13 @@ _latom_obj_foreach_itr(lua_State *L)
 
 	if(!lv2_atom_object_is_end(&lobj->obj->body, lobj->obj->atom.size, lobj->itr))
 	{
-		// push atom
+		// push key/context
 		lua_pushinteger(L, lobj->itr->key);
 		lua_pushinteger(L, lobj->itr->context);
-		_latom_new(L, &lobj->itr->value);
+		// push atom
+		lua_pushvalue(L, lua_upvalueindex(2));
+		latom_t *latom = lua_touserdata(L, lua_upvalueindex(2));
+		latom->atom = &lobj->itr->value;
 	
 		// advance iterator
 		lobj->itr = lv2_atom_object_next(lobj->itr);
@@ -552,7 +557,8 @@ _latom_obj_foreach(lua_State *L)
 	lobj->itr = lv2_atom_object_begin(&lobj->obj->body);
 
 	lua_pushlightuserdata(L, moony);
-	lua_pushcclosure(L, _latom_obj_foreach_itr, 1);
+	_latom_new(L, NULL); // place-holder
+	lua_pushcclosure(L, _latom_obj_foreach_itr, 2);
 	lua_pushvalue(L, 1);
 
 	return 2;
@@ -616,7 +622,9 @@ _latom_seq_foreach_itr(lua_State *L)
 		// push frame time
 		lua_pushinteger(L, lseq->itr->time.frames);
 		// push atom
-		_latom_new(L, &lseq->itr->body);
+		lua_pushvalue(L, lua_upvalueindex(2));
+		latom_t *latom = lua_touserdata(L, lua_upvalueindex(2));
+		latom->atom = &lseq->itr->body;
 	
 		// advance iterator
 		lseq->itr = lv2_atom_sequence_next(lseq->itr);
@@ -639,7 +647,8 @@ _latom_seq_foreach(lua_State *L)
 	lseq->itr = lv2_atom_sequence_begin(&lseq->seq->body);
 
 	lua_pushlightuserdata(L, moony);
-	lua_pushcclosure(L, _latom_seq_foreach_itr, 1);
+	_latom_new(L, NULL); // place-holder
+	lua_pushcclosure(L, _latom_seq_foreach_itr, 2);
 	lua_pushvalue(L, 1);
 
 	return 2;
@@ -757,8 +766,7 @@ _latom_vec_foreach_itr(lua_State *L)
 	{
 		// push index
 		lua_pushinteger(L, lvec->pos + 1);
-
-		// push atom
+		// push atom TODO try to recycle
 		_latom_body_new(L, lvec->vec->body.child_size, lvec->vec->body.child_type,
 			LV2_ATOM_VECTOR_ITEM_CONST(lvec->vec, lvec->pos));
 
