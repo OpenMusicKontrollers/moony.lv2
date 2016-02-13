@@ -62,6 +62,13 @@ lua_alloc(void *ud, void *ptr, size_t osize, size_t nsize)
 	if(vm->used > (vm->space >> 1))
 		moony_vm_mem_extend(vm);
 
+#if 0
+	moony_t *moony = (void *)vm - offsetof(moony_t, vm);
+	if(moony->log)
+		lv2_log_trace(&moony->logger, "mem: %zu (used) %zu (old) %zu (new)",
+			vm->used, osize, nsize);
+#endif
+
 	if(nsize == 0)
 	{
 		if(ptr)

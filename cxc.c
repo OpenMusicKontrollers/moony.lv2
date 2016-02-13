@@ -120,8 +120,14 @@ run(LV2_Handle instance, uint32_t nsamples)
 	// run
 	if(!moony_bypass(&handle->moony) && _try_lock(&handle->moony.lock.state))
 	{
-		lua_pushlightuserdata(L, handle);
-		lua_pushcclosure(L, _run, 1);
+		if(lua_gettop(L) != 1)
+		{
+			// cache for reuse
+			lua_settop(L, 0);
+			lua_pushlightuserdata(L, handle);
+			lua_pushcclosure(L, _run, 1);
+		}
+		lua_pushvalue(L, 1); // _run with upvalue
 		if(lua_pcall(L, 0, 0, 0))
 			moony_error(&handle->moony);
 
