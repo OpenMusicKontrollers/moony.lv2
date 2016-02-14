@@ -29,6 +29,41 @@
 #define LV2_ATOM_VECTOR_ITEM_CONST(vec, i) \
 	(LV2_ATOM_CONTENTS_CONST(LV2_Atom_Vector, (vec)) + (i)*(vec)->body.child_size)
 
+static const lua_CFunction upclosures [MOONY_UPCLOSURE_COUNT] = {
+	[MOONY_UPCLOSURE_TUPLE_FOREACH] = _latom_tuple_foreach_itr,
+	[MOONY_UPCLOSURE_VECTOR_FOREACH] = _latom_vec_foreach_itr,
+	[MOONY_UPCLOSURE_OBJECT_FOREACH] = _latom_obj_foreach_itr,
+	[MOONY_UPCLOSURE_SEQUENCE_FOREACH] = _latom_seq_foreach_itr
+};
+
+static inline void
+_pushupclosure(lua_State *L, moony_t *moony, moony_upclosure_t type)
+{
+	assert( (type >= MOONY_UPCLOSURE_TUPLE_FOREACH) && (type < MOONY_UPCLOSURE_COUNT) );
+
+	int *upc = &moony->upc[type];
+	void *data = NULL;
+
+	lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_COUNT + type); // ref
+	if(lua_rawgeti(L, -1, *upc) == LUA_TNIL) // no cached udata, create one!
+	{
+#if 0
+		if(moony->log)
+			lv2_log_trace(&moony->logger, "_pushupclosure:\n");
+#endif
+		lua_pop(L, 1); // nil
+
+		lua_pushlightuserdata(L, moony);
+		_latom_new(L, NULL); // place-holder
+		lua_pushcclosure(L, upclosures[type], 2);
+
+		lua_pushvalue(L, -1);
+		lua_rawseti(L, -3, *upc); // store in cache
+	}
+	lua_remove(L, -2); // ref
+	*upc += 1;
+}
+
 static inline void
 _latom_body_new(lua_State *L, uint32_t size, LV2_URID type, const void *body)
 {
@@ -45,7 +80,7 @@ _latom_body_new(lua_State *L, uint32_t size, LV2_URID type, const void *body)
 	lua_setmetatable(L, -2);
 }
 
-static int
+int
 _latom_clone(lua_State *L)
 {
 	latom_t *latom = lua_touserdata(L, 1);
@@ -78,18 +113,10 @@ _latom_int_value(lua_State *L, latom_t *latom)
 	return 1;
 }
 
-static int
-_latom_int_unpack(lua_State *L)
-{
-	latom_t *latom = lua_touserdata(L, 1);
-	return _latom_int_value(L, latom);
-}
-
 const latom_driver_t latom_int_driver = {
 	.__len = _latom_int__len,
 	.__tostring = _latom_int__tostring,
-	.value = _latom_int_value,
-	.unpack = _latom_int_unpack
+	.value = _latom_int_value
 };
 
 // Long driver
@@ -114,18 +141,10 @@ _latom_long_value(lua_State *L, latom_t *latom)
 	return 1;
 }
 
-static int
-_latom_long_unpack(lua_State *L)
-{
-	latom_t *latom = lua_touserdata(L, 1);
-	return _latom_long_value(L, latom);
-}
-
 const latom_driver_t latom_long_driver = {
 	.__len = _latom_long__len,
 	.__tostring = _latom_long__tostring,
-	.value = _latom_long_value,
-	.unpack = _latom_long_unpack
+	.value = _latom_long_value
 };
 
 // Float driver
@@ -150,18 +169,10 @@ _latom_float_value(lua_State *L, latom_t *latom)
 	return 1;
 }
 
-static int
-_latom_float_unpack(lua_State *L)
-{
-	latom_t *latom = lua_touserdata(L, 1);
-	return _latom_float_value(L, latom);
-}
-
 const latom_driver_t latom_float_driver = {
 	.__len = _latom_float__len,
 	.__tostring = _latom_float__tostring,
-	.value = _latom_float_value,
-	.unpack = _latom_float_unpack
+	.value = _latom_float_value
 };
 
 // Double driver
@@ -186,18 +197,10 @@ _latom_double_value(lua_State *L, latom_t *latom)
 	return 1;
 }
 
-static int
-_latom_double_unpack(lua_State *L)
-{
-	latom_t *latom = lua_touserdata(L, 1);
-	return _latom_double_value(L, latom);
-}
-
 const latom_driver_t latom_double_driver = {
 	.__len = _latom_double__len,
 	.__tostring = _latom_double__tostring,
-	.value = _latom_double_value,
-	.unpack = _latom_double_unpack
+	.value = _latom_double_value
 };
 
 // Bool driver
@@ -222,18 +225,10 @@ _latom_bool_value(lua_State *L, latom_t *latom)
 	return 1;
 }
 
-static int
-_latom_bool_unpack(lua_State *L)
-{
-	latom_t *latom = lua_touserdata(L, 1);
-	return _latom_bool_value(L, latom);
-}
-
 const latom_driver_t latom_bool_driver = {
 	.__len = _latom_bool__len,
 	.__tostring = _latom_bool__tostring,
-	.value = _latom_bool_value,
-	.unpack = _latom_bool_unpack
+	.value = _latom_bool_value
 };
 
 // URID driver
@@ -258,18 +253,10 @@ _latom_urid_value(lua_State *L, latom_t *latom)
 	return 1;
 }
 
-static int
-_latom_urid_unpack(lua_State *L)
-{
-	latom_t *latom = lua_touserdata(L, 1);
-	return _latom_urid_value(L, latom);
-}
-
 const latom_driver_t latom_urid_driver = {
 	.__len = _latom_urid__len,
 	.__tostring = _latom_urid__tostring,
-	.value = _latom_urid_value,
-	.unpack = _latom_urid_unpack
+	.value = _latom_urid_value
 };
 
 // String driver
@@ -287,18 +274,10 @@ _latom_string_value(lua_State *L, latom_t *latom)
 	return 1;
 }
 
-static int
-_latom_string_unpack(lua_State *L)
-{
-	latom_t *latom = lua_touserdata(L, 1);
-	return _latom_string_value(L, latom);
-}
-
 const latom_driver_t latom_string_driver = {
 	.__len = _latom_string__len,
 	.__tostring = _latom_string_value,
-	.value = _latom_string_value,
-	.unpack = _latom_string_unpack
+	.value = _latom_string_value
 };
 
 // Literal driver
@@ -322,7 +301,7 @@ _latom_literal_value(lua_State *L, latom_t *latom)
 	return 1;
 }
 
-static int
+int
 _latom_literal_unpack(lua_State *L)
 {
 	latom_t *latom = lua_touserdata(L, 1);
@@ -337,7 +316,7 @@ const latom_driver_t latom_literal_driver = {
 	.__len = _latom_string__len,
 	.__tostring = _latom_literal_value,
 	.value = _latom_literal_value,
-	.unpack = _latom_literal_unpack
+	.unpack = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_LIT_UNPACK
 };
 
 static int
@@ -380,7 +359,7 @@ _latom_tuple__tostring(lua_State *L, latom_t *latom)
 	return 1;
 }
 
-static int
+int
 _latom_tuple_unpack(lua_State *L)
 {
 	ltuple_t *ltuple = lua_touserdata(L, 1);
@@ -414,7 +393,7 @@ _latom_tuple_unpack(lua_State *L)
 	return count;
 }
 
-static int
+int
 _latom_tuple_foreach_itr(lua_State *L)
 {
 	ltuple_t *ltuple = lua_touserdata(L, 1);
@@ -440,7 +419,7 @@ _latom_tuple_foreach_itr(lua_State *L)
 	return 1;
 }
 
-static int
+int
 _latom_tuple_foreach(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -450,9 +429,7 @@ _latom_tuple_foreach(lua_State *L)
 	ltuple->pos = 1;
 	ltuple->itr = lv2_atom_tuple_begin(ltuple->tuple);
 
-	lua_pushlightuserdata(L, moony);
-	_latom_new(L, NULL); // place-holder
-	lua_pushcclosure(L, _latom_tuple_foreach_itr, 2); //TODO cach/reuse
+	_pushupclosure(L, moony, MOONY_UPCLOSURE_TUPLE_FOREACH);
 	lua_pushvalue(L, 1);
 
 	return 2;
@@ -462,8 +439,8 @@ const latom_driver_t latom_tuple_driver = {
 	.__indexi = _latom_tuple__indexi,
 	.__len = _latom_tuple__len,
 	.__tostring = _latom_tuple__tostring,
-	.unpack = _latom_tuple_unpack,
-	.foreach = _latom_tuple_foreach
+	.unpack = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_TUPLE_UNPACK,
+	.foreach = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_TUPLE_FOREACH
 };
 
 static int
@@ -521,7 +498,7 @@ _latom_obj__tostring(lua_State *L, latom_t *latom)
 	return 1;
 }
 
-static int
+int
 _latom_obj_foreach_itr(lua_State *L)
 {
 	lobj_t *lobj = lua_touserdata(L, 1);
@@ -547,7 +524,7 @@ _latom_obj_foreach_itr(lua_State *L)
 	return 1;
 }
 
-static int
+int
 _latom_obj_foreach(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -556,9 +533,7 @@ _latom_obj_foreach(lua_State *L)
 	// reset iterator to beginning of object
 	lobj->itr = lv2_atom_object_begin(&lobj->obj->body);
 
-	lua_pushlightuserdata(L, moony);
-	_latom_new(L, NULL); // place-holder
-	lua_pushcclosure(L, _latom_obj_foreach_itr, 2); //TODO cache/reuse
+	_pushupclosure(L, moony, MOONY_UPCLOSURE_OBJECT_FOREACH);
 	lua_pushvalue(L, 1);
 
 	return 2;
@@ -569,7 +544,7 @@ const latom_driver_t latom_object_driver = {
 	.__indexk = _latom_obj__indexk,
 	.__len = _latom_obj__len,
 	.__tostring = _latom_obj__tostring,
-	.foreach = _latom_obj_foreach
+	.foreach = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_OBJECT_FOREACH
 };
 
 static int
@@ -612,7 +587,7 @@ _latom_seq__tostring(lua_State *L, latom_t *latom)
 	return 1;
 }
 
-static int
+int
 _latom_seq_foreach_itr(lua_State *L)
 {
 	lseq_t *lseq = lua_touserdata(L, 1);
@@ -637,7 +612,7 @@ _latom_seq_foreach_itr(lua_State *L)
 	return 1;
 }
 
-static int
+int
 _latom_seq_foreach(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -646,9 +621,7 @@ _latom_seq_foreach(lua_State *L)
 	// reset iterator to beginning of sequence
 	lseq->itr = lv2_atom_sequence_begin(&lseq->seq->body);
 
-	lua_pushlightuserdata(L, moony);
-	_latom_new(L, NULL); // place-holder
-	lua_pushcclosure(L, _latom_seq_foreach_itr, 2); //TODO cache/reuse
+	_pushupclosure(L, moony, MOONY_UPCLOSURE_SEQUENCE_FOREACH);
 	lua_pushvalue(L, 1);
 
 	return 2;
@@ -658,7 +631,7 @@ const latom_driver_t latom_sequence_driver = {
 	.__indexi = _latom_seq__indexi,
 	.__len = _latom_seq__len,
 	.__tostring = _latom_seq__tostring,
-	.foreach = _latom_seq_foreach
+	.foreach = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_SEQUENCE_FOREACH
 };
 
 static int
@@ -713,7 +686,7 @@ _latom_vec__tostring(lua_State *L, latom_t *latom)
 	return 1;
 }
 
-static int
+int
 _latom_vec_unpack(lua_State *L)
 {
 	lvec_t *lvec = lua_touserdata(L, 1);
@@ -754,7 +727,7 @@ _latom_vec_unpack(lua_State *L)
 	return max - min + 1;
 }
 
-static int
+int
 _latom_vec_foreach_itr(lua_State *L)
 {
 	lvec_t *lvec = lua_touserdata(L, 1);
@@ -781,7 +754,7 @@ _latom_vec_foreach_itr(lua_State *L)
 	return 1;
 }
 
-static int
+int
 _latom_vec_foreach(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -790,8 +763,7 @@ _latom_vec_foreach(lua_State *L)
 	// reset iterator to beginning of vector
 	lvec->pos = 0;
 
-	lua_pushlightuserdata(L, moony);
-	lua_pushcclosure(L, _latom_vec_foreach_itr, 1);
+	_pushupclosure(L, moony, MOONY_UPCLOSURE_VECTOR_FOREACH);
 	lua_pushvalue(L, 1);
 
 	return 2;
@@ -802,8 +774,8 @@ const latom_driver_t latom_vector_driver = {
 	.__indexk = _latom_vec__indexk,
 	.__len = _latom_vec__len,
 	.__tostring = _latom_vec__tostring,
-	.unpack = _latom_vec_unpack,
-	.foreach = _latom_vec_foreach
+	.unpack = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_VECTOR_UNPACK,
+	.foreach = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_VECTOR_FOREACH
 };
 
 static int
@@ -849,7 +821,7 @@ _latom_chunk_value(lua_State *L, latom_t *latom)
 	return 1;
 }
 
-static int
+int
 _latom_chunk_unpack(lua_State *L)
 {
 	latom_t *latom = lua_touserdata(L, 1);
@@ -890,7 +862,7 @@ const latom_driver_t latom_chunk_driver = {
 	.__len = _latom_chunk__len,
 	.__tostring = _latom_chunk__tostring,
 	.value = _latom_chunk_value,
-	.unpack = _latom_chunk_unpack,
+	.unpack = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_CHUNK_UNPACK,
 };
 
 static int
@@ -917,20 +889,17 @@ _latom__index(lua_State *L)
 			}
 			else if(driver->foreach && !strcmp(key, "foreach"))
 			{
-				lua_pushlightuserdata(L, moony);
-				lua_pushcclosure(L, driver->foreach, 1); //TODO cache/reuse
+				lua_rawgeti(L, LUA_REGISTRYINDEX, driver->foreach);
 				return 1;
 			}
 			else if(driver->unpack && !strcmp(key, "unpack"))
 			{
-				lua_pushlightuserdata(L, moony);
-				lua_pushcclosure(L, driver->unpack, 1); //TODO cache/reuse
+				lua_rawgeti(L, LUA_REGISTRYINDEX, driver->unpack);
 				return 1;
 			}
 			else if(!strcmp(key, "clone"))
 			{
-				lua_pushlightuserdata(L, moony);
-				lua_pushcclosure(L, _latom_clone, 1); //TODO cache/reuse
+				lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_CLONE);
 				return 1;
 			}
 			else if(driver->__indexk)

@@ -65,8 +65,26 @@ lua_alloc(void *ud, void *ptr, size_t osize, size_t nsize)
 #if 0
 	moony_t *moony = (void *)vm - offsetof(moony_t, vm);
 	if(moony->log)
-		lv2_log_trace(&moony->logger, "mem: %zu (used) %zu (old) %zu (new)",
-			vm->used, osize, nsize);
+	{
+		char suffix = ' ';
+		size_t used = vm->used;
+		if(used >= 1024)
+		{
+			suffix = 'K';
+			used >>= 10;
+		}
+		if(used >= 1024)
+		{
+			suffix = 'M';
+			used >>= 10;
+		}
+		if(!ptr)
+			lv2_log_trace(&moony->logger, "used: %4zu%c, old: %4zu, new: %4zu, type: '%s'",
+				used, suffix, osize, nsize, lua_typename(vm->L, osize));
+		else
+			lv2_log_trace(&moony->logger, "used: %4zu%c, old: %4zu, new: %4zu, data: %p",
+				used, suffix, osize, nsize, ptr);
+	}
 #endif
 
 	if(nsize == 0)

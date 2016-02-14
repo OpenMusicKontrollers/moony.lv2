@@ -81,8 +81,7 @@ _run(lua_State *L)
 	Handle *handle = lua_touserdata(L, lua_upvalueindex(1));
 
 	int top = lua_gettop(L);
-	lua_getglobal(L, "run");
-	if(lua_isfunction(L, -1))
+	if(lua_getglobal(L, "run") != LUA_TNIL)
 	{
 		lua_pushinteger(L, handle->sample_count);
 
@@ -97,11 +96,7 @@ _run(lua_State *L)
 			*handle->val_out[i] = luaL_optnumber(L, i+1, 0.f);
 		for(unsigned i=ret; i<handle->max_val; i++) // fill in missing returns with 0.f
 			*handle->val_out[i] = 0.f;
-
-		lua_pop(L, ret);
 	}
-	else
-		lua_pop(L, 1);
 
 	return 0;
 }

@@ -23,6 +23,12 @@
 int
 _ltimeresponder(lua_State *L);
 
+int
+_ltimeresponder_apply(lua_State *L);
+
+int
+_ltimeresponder_stash(lua_State *L);
+
 extern const luaL_Reg ltimeresponder_mt [];
 
 #endif

@@ -414,6 +414,340 @@ _lstash(lua_State *L)
 }
 */
 
+static int
+_stash(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	lua_getglobal(L, "stash");
+	if(lua_isfunction(L, -1))
+	{
+		lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
+		lframe->depth = 0;
+		lframe->last.frames = 0;
+		lframe->forge = &moony->stash_forge;
+
+		atom_ser_t ser = {
+			.tlsf = moony->vm.tlsf, // use tlsf_realloc
+			.size = 256,
+			.buf = tlsf_malloc(moony->vm.tlsf, 256)
+		};
+
+		if(ser.buf)
+		{
+			LV2_Atom *atom = (LV2_Atom *)ser.buf;
+			atom->type = 0;
+			atom->size = 0;
+
+			lv2_atom_forge_set_sink(lframe->forge, _sink, _deref, &ser);
+			lua_call(L, 1, 0);
+
+			if(moony->stash_atom)
+				tlsf_free(moony->vm.tlsf, moony->stash_atom);
+			moony->stash_atom = atom;
+		}
+	}
+	else
+		lua_pop(L, 1);
+
+	return 0;
+}
+
+static int
+_apply(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	lua_getglobal(L, "apply");
+	if(lua_isfunction(L, -1))
+	{
+		_latom_new(L, moony->stash_atom);
+		lua_call(L, 1, 0);
+	}
+	else
+		lua_pop(L, 1);
+
+	return 0;
+}
+
+static int
+_save(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	if(lua_getglobal(L, "save") == LUA_TFUNCTION)
+	{
+		lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
+		lframe->depth = 0;
+		lframe->last.frames = 0;
+		lframe->forge = &moony->state_forge;
+
+		lua_call(L, 1, 0);
+	}
+
+	return 0;
+}
+
+static LV2_State_Status
+_state_save(LV2_Handle instance, LV2_State_Store_Function store,
+	LV2_State_Handle state, uint32_t flags, const LV2_Feature *const *features)
+{
+	moony_t *moony = (moony_t *)instance;
+
+	LV2_State_Status status = LV2_STATE_SUCCESS;
+	char *chunk = NULL;
+
+	_spin_lock(&moony->lock.chunk);
+	chunk = strdup(moony->chunk);
+	_unlock(&moony->lock.chunk);
+
+	if(chunk)
+	{
+		status = store(
+			state,
+			moony->uris.moony_code,
+			chunk,
+			strlen(chunk) + 1,
+			moony->forge.String,
+			LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
+
+		free(chunk);
+	}
+
+	atom_ser_t ser = {
+		.tlsf = NULL,
+		.size = 256,
+		.buf = malloc(256)
+	};
+
+	if(ser.buf)
+	{
+		LV2_Atom *atom = (LV2_Atom *)ser.buf;
+		atom->type = 0;
+		atom->size = 0;
+
+		lv2_atom_forge_set_sink(&moony->state_forge, _sink, _deref, &ser);
+
+		// lock Lua state, so it cannot be accessed by realtime thread
+		_spin_lock(&moony->lock.state);
+
+		// restore Lua defined properties
+		lua_State *L = moony->vm.L;
+		lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_SAVE);
+		if(lua_pcall(L, 0, 0, 0))
+		{
+			if(moony->log) //TODO send to UI, too
+				lv2_log_error(&moony->logger, "%s", lua_tostring(L, -1));
+			lua_pop(L, 1);
+		}
+
+		_unlock(&moony->lock.state);
+
+		if( (atom->type) && (atom->size) )
+		{
+			status = store(
+				state,
+				moony->uris.moony_state,
+				LV2_ATOM_BODY(atom),
+				atom->size,
+				atom->type,
+				LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
+		}
+
+		if(moony->state_atom)
+			free(moony->state_atom);
+		moony->state_atom = atom;
+	}
+
+	return status;
+}
+
+static int
+_restore(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	if(lua_getglobal(L, "restore") == LUA_TFUNCTION)
+	{
+		_latom_new(L, moony->state_atom);
+		lua_call(L, 1, 0);
+	}
+
+	return 0;
+}
+
+static LV2_State_Status
+_state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_State_Handle state, uint32_t flags, const LV2_Feature *const *features)
+{
+	moony_t *moony = (moony_t *)instance;
+	lua_State *L = moony->vm.L;
+
+	size_t size;
+	uint32_t type;
+	uint32_t flags2;
+
+	const char *chunk = retrieve(
+		state,
+		moony->uris.moony_code,
+		&size,
+		&type,
+		&flags2
+	);
+
+	//TODO check type, flags2
+
+	if(chunk && size && type)
+	{
+		//_spin_lock(&moony->lock.chunk);
+		strncpy(moony->chunk, chunk, size);
+		//_unlock(&moony->lock.chunk);
+
+		if(luaL_dostring(L, moony->chunk))
+			moony_error(moony);
+		else
+			moony->error[0] = 0x0; // reset error flag
+
+		moony->dirty_out = 1;
+	}
+
+	const uint8_t *body = retrieve(
+		state,
+		moony->uris.moony_state,
+		&size,
+		&type,
+		&flags2
+	);
+
+	if(body && size && type)
+	{
+		if(moony->state_atom) // clear old state_atom
+			free(moony->state_atom);
+
+		// allocate new state_atom
+		moony->state_atom = malloc(sizeof(LV2_Atom) + size);
+		if(moony->state_atom) // fill new restore atom
+		{
+			moony->state_atom->size = size;
+			moony->state_atom->type = type;
+			memcpy(LV2_ATOM_BODY(moony->state_atom), body, size);
+
+			// restore Lua defined properties
+			lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_RESTORE);
+			if(lua_pcall(L, 0, 0, 0))
+			{
+				if(moony->log) //TODO send to UI, too
+					lv2_log_error(&moony->logger, "%s", lua_tostring(L, -1));
+				lua_pop(L, 1);
+			}
+			lua_gc(L, LUA_GCSTEP, 0);
+		}
+	}
+
+	return LV2_STATE_SUCCESS;
+}
+
+static const LV2_State_Interface state_iface = {
+	.save = _state_save,
+	.restore = _state_restore
+};
+
+// non-rt thread
+static LV2_Worker_Status
+_work(LV2_Handle instance,
+	LV2_Worker_Respond_Function respond,
+	LV2_Worker_Respond_Handle target,
+	uint32_t size,
+	const void *body)
+{
+	moony_t *moony = instance;
+
+	assert(size == sizeof(moony_mem_t));
+	const moony_mem_t *request = body;
+	uint32_t i = request->i;
+
+	if(request->mem) // request to free memory from _work_response
+	{
+		moony_vm_mem_free(request->mem, moony->vm.size[i]);
+	}
+	else // request to allocate memory from moony_vm_mem_extend
+	{
+		moony->vm.area[i] = moony_vm_mem_alloc(moony->vm.size[i]);
+	
+		respond(target, size, body); // signal to _work_response
+	}
+	
+	return LV2_WORKER_SUCCESS;
+}
+
+// rt-thread
+static LV2_Worker_Status
+_work_response(LV2_Handle instance, uint32_t size, const void *body)
+{
+	moony_t *moony = instance;
+
+	assert(size == sizeof(moony_mem_t));
+	const moony_mem_t *request = body;
+	uint32_t i = request->i;
+	
+	if(!moony->vm.area[i]) // allocation failed
+		return LV2_WORKER_ERR_UNKNOWN;
+
+	// tlsf add pool
+	moony->vm.pool[i] = tlsf_add_pool(moony->vm.tlsf,
+		moony->vm.area[i], moony->vm.size[i]);
+
+	if(!moony->vm.pool[i]) // pool addition failed
+	{
+		const moony_mem_t req = {
+			.i = i,
+			.mem = moony->vm.area[i]
+		};
+		moony->vm.area[i] = NULL;
+
+		// schedule freeing of memory to _work
+		LV2_Worker_Status status = moony->sched->schedule_work(
+			moony->sched->handle, sizeof(moony_mem_t), &req);
+		if( (status != LV2_WORKER_SUCCESS) && moony->log)
+			lv2_log_warning(&moony->logger, "moony: schedule_work failed");
+
+		return LV2_WORKER_ERR_UNKNOWN;
+	}
+		
+	moony->vm.space += moony->vm.size[i];
+	//printf("mem extended to %zu KB\n", moony->vm.space / 1024);
+
+	return LV2_WORKER_SUCCESS;
+}
+
+// rt-thread
+static LV2_Worker_Status
+_end_run(LV2_Handle instance)
+{
+	moony_t *moony = instance;
+
+	// do nothing
+	moony->working = 0;
+
+	return LV2_WORKER_SUCCESS;
+}
+
+static const LV2_Worker_Interface work_iface = {
+	.work = _work,
+	.work_response = _work_response,
+	.end_run = _end_run
+};
+
+const void*
+extension_data(const char* uri)
+{
+	if(!strcmp(uri, LV2_WORKER__interface))
+		return &work_iface;
+	else if(!strcmp(uri, LV2_STATE__interface))
+		return &state_iface;
+	else
+		return NULL;
+}
+
 int
 moony_init(moony_t *moony, const char *subject, double sample_rate,
 	const LV2_Feature *const *features)
@@ -594,6 +928,8 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	atomic_flag_clear_explicit(&moony->lock.chunk, memory_order_relaxed);
 	atomic_flag_clear_explicit(&moony->lock.error, memory_order_relaxed);
 	atomic_flag_clear_explicit(&moony->lock.state, memory_order_relaxed);
+
+	moony_freeuserdata(moony);
 
 	return 0;
 }
@@ -895,7 +1231,6 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	}
 	lua_setglobal(L, "Options");
 
-#define UDATA_OFFSET (LUA_RIDX_LAST + 1)
 	// create userdata caches
 	lua_newtable(L);
 		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_ATOM);
@@ -985,6 +1320,76 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	lua_setglobal(L, "Stash");
 	*/
 
+	// create cclosure caches
+	lua_pushlightuserdata(L, moony);
+	lua_pushcclosure(L, _save, 1);
+	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_SAVE);
+
+	lua_pushlightuserdata(L, moony);
+	lua_pushcclosure(L, _restore, 1);
+	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_RESTORE);
+
+	lua_pushlightuserdata(L, moony);
+	lua_pushcclosure(L, _stash, 1);
+	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_STASH);
+
+	lua_pushlightuserdata(L, moony);
+	lua_pushcclosure(L, _apply, 1);
+	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_APPLY);
+
+	lua_pushlightuserdata(L, moony);
+	lua_pushcclosure(L, _ltimeresponder_stash, 1);
+	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_TIME_STASH);
+
+	lua_pushlightuserdata(L, moony);
+	lua_pushcclosure(L, _ltimeresponder_apply, 1);
+	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_TIME_APPLY);
+
+	lua_pushlightuserdata(L, moony);
+	lua_pushcclosure(L, _latom_clone, 1);
+	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_CLONE);
+
+	lua_pushlightuserdata(L, moony);
+	lua_pushcclosure(L, _latom_literal_unpack, 1);
+	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_LIT_UNPACK);
+
+	lua_pushlightuserdata(L, moony);
+	lua_pushcclosure(L, _latom_tuple_unpack, 1);
+	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_TUPLE_UNPACK);
+
+	lua_pushlightuserdata(L, moony);
+	lua_pushcclosure(L, _latom_vec_unpack, 1);
+	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_VECTOR_UNPACK);
+
+	lua_pushlightuserdata(L, moony);
+	lua_pushcclosure(L, _latom_chunk_unpack, 1);
+	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_CHUNK_UNPACK);
+
+	lua_pushlightuserdata(L, moony);
+	lua_pushcclosure(L, _latom_tuple_foreach, 1);
+	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_TUPLE_FOREACH);
+
+	lua_pushlightuserdata(L, moony);
+	lua_pushcclosure(L, _latom_vec_foreach, 1);
+	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_VECTOR_FOREACH);
+
+	lua_pushlightuserdata(L, moony);
+	lua_pushcclosure(L, _latom_obj_foreach, 1);
+	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_OBJECT_FOREACH);
+
+	lua_pushlightuserdata(L, moony);
+	lua_pushcclosure(L, _latom_seq_foreach, 1);
+	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_SEQUENCE_FOREACH);
+
+	lua_newtable(L);
+		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_COUNT + MOONY_UPCLOSURE_TUPLE_FOREACH);
+	lua_newtable(L);
+		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_COUNT + MOONY_UPCLOSURE_VECTOR_FOREACH);
+	lua_newtable(L);
+		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_COUNT + MOONY_UPCLOSURE_OBJECT_FOREACH);
+	lua_newtable(L);
+		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_COUNT + MOONY_UPCLOSURE_SEQUENCE_FOREACH);
+
 #undef SET_MAP
 }
 
@@ -997,9 +1402,12 @@ moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type)
 	void *data = NULL;
 
 	lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + type); // ref
-	lua_rawgeti(L, -1, *itr); // udata?
-	if(lua_isnil(L, -1)) // no cached udata, create one!
+	if(lua_rawgeti(L, -1, *itr) == LUA_TNIL) // no cached udata, create one!
 	{
+#if 0
+		if(moony->log)
+			lv2_log_trace(&moony->logger, "moony_newuserdata: %s\n", moony_ref[type]);
+#endif
 		lua_pop(L, 1); // nil
 
 		data = lua_newuserdata(L, moony_sz[type]);
@@ -1017,344 +1425,6 @@ moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type)
 	*itr += 1;
 
 	return data;
-
-#undef UDATA_OFFSET
-}
-
-static int
-_stash(lua_State *L)
-{
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-
-	lua_getglobal(L, "stash");
-	if(lua_isfunction(L, -1))
-	{
-		lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
-		lframe->depth = 0;
-		lframe->last.frames = 0;
-		lframe->forge = &moony->stash_forge;
-
-		atom_ser_t ser = {
-			.tlsf = moony->vm.tlsf, // use tlsf_realloc
-			.size = 256,
-			.buf = tlsf_malloc(moony->vm.tlsf, 256)
-		};
-
-		if(ser.buf)
-		{
-			LV2_Atom *atom = (LV2_Atom *)ser.buf;
-			atom->type = 0;
-			atom->size = 0;
-
-			lv2_atom_forge_set_sink(lframe->forge, _sink, _deref, &ser);
-			lua_call(L, 1, 0);
-
-			if(moony->stash_atom)
-				tlsf_free(moony->vm.tlsf, moony->stash_atom);
-			moony->stash_atom = atom;
-		}
-	}
-	else
-		lua_pop(L, 1);
-
-	return 0;
-}
-
-static int
-_apply(lua_State *L)
-{
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-
-	lua_getglobal(L, "apply");
-	if(lua_isfunction(L, -1))
-	{
-		_latom_new(L, moony->stash_atom);
-		lua_call(L, 1, 0);
-	}
-	else
-		lua_pop(L, 1);
-
-	return 0;
-}
-
-static int
-_save(lua_State *L)
-{
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-
-	if(lua_getglobal(L, "save") == LUA_TFUNCTION)
-	{
-		lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
-		lframe->depth = 0;
-		lframe->last.frames = 0;
-		lframe->forge = &moony->state_forge;
-
-		lua_call(L, 1, 0);
-	}
-
-	return 0;
-}
-
-static LV2_State_Status
-_state_save(LV2_Handle instance, LV2_State_Store_Function store,
-	LV2_State_Handle state, uint32_t flags, const LV2_Feature *const *features)
-{
-	moony_t *moony = (moony_t *)instance;
-
-	LV2_State_Status status = LV2_STATE_SUCCESS;
-	char *chunk = NULL;
-
-	_spin_lock(&moony->lock.chunk);
-	chunk = strdup(moony->chunk);
-	_unlock(&moony->lock.chunk);
-
-	if(chunk)
-	{
-		status = store(
-			state,
-			moony->uris.moony_code,
-			chunk,
-			strlen(chunk) + 1,
-			moony->forge.String,
-			LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
-
-		free(chunk);
-	}
-
-	atom_ser_t ser = {
-		.tlsf = NULL,
-		.size = 256,
-		.buf = malloc(256)
-	};
-
-	if(ser.buf)
-	{
-		LV2_Atom *atom = (LV2_Atom *)ser.buf;
-		atom->type = 0;
-		atom->size = 0;
-
-		lv2_atom_forge_set_sink(&moony->state_forge, _sink, _deref, &ser);
-
-		// lock Lua state, so it cannot be accessed by realtime thread
-		_spin_lock(&moony->lock.state);
-
-		// restore Lua defined properties
-		lua_State *L = moony->vm.L;
-		lua_pushlightuserdata(L, moony);
-		lua_pushcclosure(L, _save, 1); //TODO cache/reuse
-		if(lua_pcall(L, 0, 0, 0))
-		{
-			if(moony->log) //TODO send to UI, too
-				lv2_log_error(&moony->logger, "%s", lua_tostring(L, -1));
-			lua_pop(L, 1);
-		}
-
-		_unlock(&moony->lock.state);
-
-		if( (atom->type) && (atom->size) )
-		{
-			status = store(
-				state,
-				moony->uris.moony_state,
-				LV2_ATOM_BODY(atom),
-				atom->size,
-				atom->type,
-				LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
-		}
-
-		if(moony->state_atom)
-			free(moony->state_atom);
-		moony->state_atom = atom;
-	}
-
-	return status;
-}
-
-static int
-_restore(lua_State *L)
-{
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-
-	if(lua_getglobal(L, "restore") == LUA_TFUNCTION)
-	{
-		_latom_new(L, moony->state_atom);
-		lua_call(L, 1, 0);
-	}
-
-	return 0;
-}
-
-static LV2_State_Status
-_state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_State_Handle state, uint32_t flags, const LV2_Feature *const *features)
-{
-	moony_t *moony = (moony_t *)instance;
-	lua_State *L = moony->vm.L;
-
-	size_t size;
-	uint32_t type;
-	uint32_t flags2;
-
-	const char *chunk = retrieve(
-		state,
-		moony->uris.moony_code,
-		&size,
-		&type,
-		&flags2
-	);
-
-	//TODO check type, flags2
-
-	if(chunk && size && type)
-	{
-		//_spin_lock(&moony->lock.chunk);
-		strncpy(moony->chunk, chunk, size);
-		//_unlock(&moony->lock.chunk);
-
-		if(luaL_dostring(L, moony->chunk))
-			moony_error(moony);
-		else
-			moony->error[0] = 0x0; // reset error flag
-
-		moony->dirty_out = 1;
-	}
-
-	const uint8_t *body = retrieve(
-		state,
-		moony->uris.moony_state,
-		&size,
-		&type,
-		&flags2
-	);
-
-	if(body && size && type)
-	{
-		if(moony->state_atom) // clear old state_atom
-			free(moony->state_atom);
-
-		// allocate new state_atom
-		moony->state_atom = malloc(sizeof(LV2_Atom) + size);
-		if(moony->state_atom) // fill new restore atom
-		{
-			moony->state_atom->size = size;
-			moony->state_atom->type = type;
-			memcpy(LV2_ATOM_BODY(moony->state_atom), body, size);
-
-			// restore Lua defined properties
-			lua_pushlightuserdata(L, moony);
-			lua_pushcclosure(L, _restore, 1); //TODO cache/reuse
-			if(lua_pcall(L, 0, 0, 0))
-			{
-				if(moony->log) //TODO send to UI, too
-					lv2_log_error(&moony->logger, "%s", lua_tostring(L, -1));
-				lua_pop(L, 1);
-			}
-			lua_gc(L, LUA_GCSTEP, 0);
-		}
-	}
-
-	return LV2_STATE_SUCCESS;
-}
-
-static const LV2_State_Interface state_iface = {
-	.save = _state_save,
-	.restore = _state_restore
-};
-
-// non-rt thread
-static LV2_Worker_Status
-_work(LV2_Handle instance,
-	LV2_Worker_Respond_Function respond,
-	LV2_Worker_Respond_Handle target,
-	uint32_t size,
-	const void *body)
-{
-	moony_t *moony = instance;
-
-	assert(size == sizeof(moony_mem_t));
-	const moony_mem_t *request = body;
-	uint32_t i = request->i;
-
-	if(request->mem) // request to free memory from _work_response
-	{
-		moony_vm_mem_free(request->mem, moony->vm.size[i]);
-	}
-	else // request to allocate memory from moony_vm_mem_extend
-	{
-		moony->vm.area[i] = moony_vm_mem_alloc(moony->vm.size[i]);
-	
-		respond(target, size, body); // signal to _work_response
-	}
-	
-	return LV2_WORKER_SUCCESS;
-}
-
-// rt-thread
-static LV2_Worker_Status
-_work_response(LV2_Handle instance, uint32_t size, const void *body)
-{
-	moony_t *moony = instance;
-
-	assert(size == sizeof(moony_mem_t));
-	const moony_mem_t *request = body;
-	uint32_t i = request->i;
-	
-	if(!moony->vm.area[i]) // allocation failed
-		return LV2_WORKER_ERR_UNKNOWN;
-
-	// tlsf add pool
-	moony->vm.pool[i] = tlsf_add_pool(moony->vm.tlsf,
-		moony->vm.area[i], moony->vm.size[i]);
-
-	if(!moony->vm.pool[i]) // pool addition failed
-	{
-		const moony_mem_t req = {
-			.i = i,
-			.mem = moony->vm.area[i]
-		};
-		moony->vm.area[i] = NULL;
-
-		// schedule freeing of memory to _work
-		LV2_Worker_Status status = moony->sched->schedule_work(
-			moony->sched->handle, sizeof(moony_mem_t), &req);
-		if( (status != LV2_WORKER_SUCCESS) && moony->log)
-			lv2_log_warning(&moony->logger, "moony: schedule_work failed");
-
-		return LV2_WORKER_ERR_UNKNOWN;
-	}
-		
-	moony->vm.space += moony->vm.size[i];
-	//printf("mem extended to %zu KB\n", moony->vm.space / 1024);
-
-	return LV2_WORKER_SUCCESS;
-}
-
-// rt-thread
-static LV2_Worker_Status
-_end_run(LV2_Handle instance)
-{
-	moony_t *moony = instance;
-
-	// do nothing
-	moony->working = 0;
-
-	return LV2_WORKER_SUCCESS;
-}
-
-static const LV2_Worker_Interface work_iface = {
-	.work = _work,
-	.work_response = _work_response,
-	.end_run = _end_run
-};
-
-const void*
-extension_data(const char* uri)
-{
-	if(!strcmp(uri, LV2_WORKER__interface))
-		return &work_iface;
-	else if(!strcmp(uri, LV2_STATE__interface))
-		return &state_iface;
-	else
-		return NULL;
 }
 
 void
@@ -1382,8 +1452,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *seq)
 			if(moony_code && moony_code->atom.size)
 			{
 				// stash
-				lua_pushlightuserdata(L, moony);
-				lua_pushcclosure(L, _stash, 1); //TODO cache/reuse
+				lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_STASH);
 				if(lua_pcall(L, 0, 0, 0))
 					moony_error(moony);
 
@@ -1404,8 +1473,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *seq)
 					if(moony->state_atom)
 					{
 						// restore Lua defined properties
-						lua_pushlightuserdata(L, moony);
-						lua_pushcclosure(L, _restore, 1); //TODO cache/reuse
+						lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_RESTORE);
 						if(lua_pcall(L, 0, 0, 0))
 							moony_error(moony);
 					}
@@ -1414,8 +1482,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *seq)
 				// apply stash
 				if(moony->stash_atom) // something has been stashed previously
 				{
-					lua_pushlightuserdata(L, moony);
-					lua_pushcclosure(L, _apply, 1); //TODO cache/reuse
+					lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_APPLY);
 					if(lua_pcall(L, 0, 0, 0))
 						moony_error(moony);
 

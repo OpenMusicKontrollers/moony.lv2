@@ -112,6 +112,39 @@ typedef enum _moony_udata_t {
 	MOONY_UDATA_COUNT
 } moony_udata_t;
 
+typedef enum _moony_cclosure_t {
+	MOONY_CCLOSURE_STASH,
+	MOONY_CCLOSURE_APPLY,
+	MOONY_CCLOSURE_SAVE,
+	MOONY_CCLOSURE_RESTORE,
+
+	MOONY_CCLOSURE_TIME_STASH,
+	MOONY_CCLOSURE_TIME_APPLY,
+
+	MOONY_CCLOSURE_LIT_UNPACK,
+	MOONY_CCLOSURE_TUPLE_UNPACK,
+	MOONY_CCLOSURE_VECTOR_UNPACK,
+	MOONY_CCLOSURE_CHUNK_UNPACK,
+
+	MOONY_CCLOSURE_TUPLE_FOREACH,
+	MOONY_CCLOSURE_VECTOR_FOREACH,
+	MOONY_CCLOSURE_OBJECT_FOREACH,
+	MOONY_CCLOSURE_SEQUENCE_FOREACH,
+
+	MOONY_CCLOSURE_CLONE,
+
+	MOONY_CCLOSURE_COUNT
+} moony_cclosure_t;
+
+typedef enum _moony_upclosure_t {
+	MOONY_UPCLOSURE_TUPLE_FOREACH,
+	MOONY_UPCLOSURE_VECTOR_FOREACH,
+	MOONY_UPCLOSURE_OBJECT_FOREACH,
+	MOONY_UPCLOSURE_SEQUENCE_FOREACH,
+
+	MOONY_UPCLOSURE_COUNT
+} moony_upclosure_t;
+
 // from api_atom.c
 typedef struct _latom_driver_t latom_driver_t;
 typedef struct _latom_driver_hash_t latom_driver_hash_t;
@@ -121,6 +154,7 @@ struct _latom_driver_hash_t {
 	const latom_driver_t *driver;
 };
 
+#define UDATA_OFFSET (LUA_RIDX_LAST + 1)
 #define DRIVER_HASH_MAX 16
 
 // from moony.c
@@ -205,6 +239,7 @@ struct _moony_t {
 
 	// udata cache
 	int itr [MOONY_UDATA_COUNT];
+	int upc [MOONY_UPCLOSURE_COUNT];
 
 	struct {
 		atomic_flag chunk;
@@ -232,7 +267,9 @@ static inline void
 moony_freeuserdata(moony_t *moony)
 {
 	for(unsigned i=0; i<MOONY_UDATA_COUNT; i++)
-		moony->itr[i] = 0; // reset iterator
+		moony->itr[i] = 1; // reset iterator
+	for(unsigned i=0; i<MOONY_UPCLOSURE_COUNT; i++)
+		moony->upc[i] = 1; // reset iterator
 }
 
 static inline int

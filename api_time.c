@@ -103,7 +103,7 @@ _ltimeresponder__call(lua_State *L)
 	return 1;
 }
 
-static int
+int
 _ltimeresponder_apply(lua_State *L)
 {
 	// 1: self
@@ -121,7 +121,7 @@ _ltimeresponder_apply(lua_State *L)
 	return _ltimeresponder__call(L);
 }
 
-static int
+int
 _ltimeresponder_stash(lua_State *L)
 {
 	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -184,15 +184,9 @@ _ltimeresponder__index(lua_State *L)
 		{
 			const char *key = lua_tostring(L, 2);
 			if(!strcmp(key, "stash"))
-			{
-				lua_pushlightuserdata(L, moony);
-				lua_pushcclosure(L, _ltimeresponder_stash, 1); //TODO cache/reuse
-			}
+				lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_TIME_STASH);
 			else if(!strcmp(key, "apply"))
-			{
-				lua_pushlightuserdata(L, moony);
-				lua_pushcclosure(L, _ltimeresponder_apply, 1); //TODO cache/reuse
-			}
+				lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_TIME_APPLY);
 			else
 				lua_pushnil(L);
 		}

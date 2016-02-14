@@ -37,8 +37,8 @@ struct _latom_driver_t {
 	latom_driver_function_t __call;
 
 	latom_driver_function_t value;
-	lua_CFunction unpack;
-	lua_CFunction foreach;
+	int unpack;
+	int foreach;
 };
 
 struct _lseq_t {
@@ -110,6 +110,36 @@ extern const latom_driver_t latom_sequence_driver;
 extern const latom_driver_t latom_chunk_driver;
 
 extern const luaL_Reg latom_mt [];
+
+int
+_latom_clone(lua_State *L);
+
+int
+_latom_literal_unpack(lua_State *L);
+int
+_latom_tuple_unpack(lua_State *L);
+int
+_latom_vec_unpack(lua_State *L);
+int
+_latom_chunk_unpack(lua_State *L);
+
+int
+_latom_tuple_foreach(lua_State *L);
+int
+_latom_obj_foreach(lua_State *L);
+int
+_latom_seq_foreach(lua_State *L);
+int
+_latom_vec_foreach(lua_State *L);
+
+int
+_latom_tuple_foreach_itr(lua_State *L);
+int
+_latom_obj_foreach_itr(lua_State *L);
+int
+_latom_seq_foreach_itr(lua_State *L);
+int
+_latom_vec_foreach_itr(lua_State *L);
 
 static inline void
 _latom_new(lua_State *L, const LV2_Atom *atom)
