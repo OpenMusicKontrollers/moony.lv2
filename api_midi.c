@@ -41,7 +41,7 @@ _lmidiresponder__call(lua_State *L)
 		return 1;
 	}
 
-	const uint8_t *midi = LV2_ATOM_BODY_CONST(lchunk->atom);
+	const uint8_t *midi = lchunk->body.raw;
 	const uint8_t status = midi[0];
 	const uint8_t command = status & 0xf0;
 	const bool is_system = command == 0xf0;

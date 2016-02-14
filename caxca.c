@@ -97,9 +97,9 @@ _run(lua_State *L)
 		lua_pushinteger(L, handle->sample_count);
 
 		// push sequence
-		lseq_t *lseq = moony_newuserdata(L, &handle->moony, MOONY_UDATA_ATOM);
-		lseq->seq = handle->event_in;
-		lseq->itr = NULL;
+		latom_t *latom = moony_newuserdata(L, &handle->moony, MOONY_UDATA_ATOM);
+		latom->atom = (const LV2_Atom *)handle->event_in;
+		latom->body.raw = LV2_ATOM_BODY_CONST(latom->atom);
 		
 		// push forge
 		lforge_t *lforge = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE);

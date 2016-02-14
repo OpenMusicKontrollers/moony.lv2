@@ -430,7 +430,7 @@ _lforge_to_timestamp(lua_State *L, moony_t *moony, lforge_t *lforge, int pos)
 		uint64_t t0 = moony->osc_sched->frames2osc(moony->osc_sched->handle, lforge->last.frames);
 		uint64_t dt = timestamp - t0;
 		double dd = dt * 0x1p-32;
-		printf("%lu %lf\n", dt, dd);
+		printf("%"PRIU64" %lf\n", dt, dd);
 		*/
 	}
 

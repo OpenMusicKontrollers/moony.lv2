@@ -17,6 +17,7 @@
 
 #include <limits.h> // INT_MAX
 #include <math.h> // INFINITY
+#include <inttypes.h>
 
 #include <api_atom.h>
 #include <api_forge.h>
@@ -188,7 +189,7 @@ _lnote__index(lua_State *L)
 			char name [8];
 			const unsigned octave = note / 12;
 			const unsigned key = note % 12;
-			snprintf(name, 8, "%s%u", note_keys[key], octave);
+			snprintf(name, 8, "%s%"PRIu32, note_keys[key], octave);
 
 			lua_pushstring(L, name);
 			return 1;
@@ -1054,7 +1055,7 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 		{
 			const unsigned octave = i / 12;
 			const unsigned key = i % 12;
-			snprintf(name, 8, "%s%u", keys[key], octave);
+			snprintf(name, 8, "%s%"PRIu32, keys[key], octave);
 
 			lua_pushinteger(L, i);
 			lua_setfield(L, -2, name);
@@ -1419,7 +1420,7 @@ moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type)
 	else // there is a cached udata, use it!
 	{
 		data = lua_touserdata(L, -1);
-		//printf("moony_newuserdata: %s %i %p\n", moony_ref[type], *itr, data);
+		//printf("moony_newuserdata: %s %"PRIi32" %p\n", moony_ref[type], *itr, data);
 	}
 	lua_remove(L, -2); // ref
 	*itr += 1;
@@ -1445,7 +1446,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *seq)
 			LV2_Atom_Object_Query q[] = {
 				{ moony->uris.moony_code, (const LV2_Atom **)&moony_code },
 				{ moony->uris.moony_selection, (const LV2_Atom **)&moony_selection },
-				{ 0, NULL}
+				{ 0, NULL }
 			};
 			lv2_atom_object_query(obj, q);
 

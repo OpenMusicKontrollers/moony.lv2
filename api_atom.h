@@ -41,12 +41,6 @@ struct _latom_driver_t {
 	int foreach;
 };
 
-struct _lseq_t {
-	const LV2_Atom_Sequence *seq;
-	const LV2_Atom_Event *itr;
-	LV2_Atom body [0];
-};
-
 struct _lforge_t {
 	LV2_Atom_Forge *forge;
 	int depth;
@@ -57,41 +51,47 @@ struct _lforge_t {
 	LV2_Atom_Forge_Frame frame [2];
 };
 
-struct _lobj_t {
-	const LV2_Atom_Object *obj;
-	const LV2_Atom_Property_Body *itr;
-};
-
-struct _ltuple_t {
-	const LV2_Atom_Tuple *tuple;
-	int pos;
-	const LV2_Atom *itr;
-};
-
-struct _lvec_t {
-	const LV2_Atom_Vector *vec;
-	int count;
-	int pos;
-};
-
 struct _latom_t {
+	const LV2_Atom *atom;
+
 	union {
-		const LV2_Atom *atom;
+		const void *raw;
 
-		const LV2_Atom_Int *i32;
-		const LV2_Atom_Long *i64;
-		const LV2_Atom_Float *f32;
-		const LV2_Atom_Double *f64;
-		const LV2_Atom_URID *u32;
-		const LV2_Atom_Literal *lit;
+		const int32_t *i32;
+		const int64_t *i64;
+		const float *f32;
+		const double *f64;
+		const uint32_t *u32;
+		const char *str;
+		const LV2_Atom_Literal_Body *lit;
 
-		lseq_t seq;
-		lobj_t obj;
-		ltuple_t tuple;
-		lvec_t vec;
-	};
+		const LV2_Atom_Sequence_Body *seq;
+		const LV2_Atom_Object_Body *obj;
+		const LV2_Atom *tuple;
+		const LV2_Atom_Vector_Body *vec;
+	} body;
 
-	LV2_Atom body [0];
+	union {
+		struct _lseq_t {
+			const LV2_Atom_Event *ev;
+		} seq;
+
+		struct _lobj_t {
+			const LV2_Atom_Property_Body *prop;
+		} obj;
+
+		struct _ltuple_t {
+			int pos;
+			const LV2_Atom *item;
+		} tuple;
+
+		struct _lvec_t {
+			int count;
+			int pos;
+		} vec;
+	} iter;
+
+	LV2_Atom payload [0];
 };
 
 // in api_atom.c
@@ -141,13 +141,19 @@ _latom_seq_foreach_itr(lua_State *L);
 int
 _latom_vec_foreach_itr(lua_State *L);
 
-static inline void
+static inline latom_t *
 _latom_new(lua_State *L, const LV2_Atom *atom)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 
 	latom_t *latom = moony_newuserdata(L, moony, MOONY_UDATA_ATOM);
-	latom->atom = atom;
+	if(atom)
+	{
+		latom->atom = atom;
+		latom->body.raw = LV2_ATOM_BODY_CONST(atom);
+	}
+
+	return latom;
 }
 
 static inline const latom_driver_t *
@@ -181,7 +187,8 @@ _latom_value(lua_State *L, const LV2_Atom *atom)
 
 	// dummy wrapping
 	latom_t latom = {
-		.atom = atom
+		.atom = atom,
+		.body.raw = LV2_ATOM_BODY_CONST(atom),
 	};
 
 	if(driver && driver->value)

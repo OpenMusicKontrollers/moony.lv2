@@ -17,17 +17,10 @@
 
 #include <api_atom.h>
 
-// there is a bug in LV2 <= 0.10
-#if defined(LV2_ATOM_TUPLE_FOREACH)
-#	undef LV2_ATOM_TUPLE_FOREACH
-#	define LV2_ATOM_TUPLE_FOREACH(tuple, iter) \
-	for (LV2_Atom* (iter) = lv2_atom_tuple_begin(tuple); \
-	     !lv2_atom_tuple_is_end(LV2_ATOM_BODY(tuple), (tuple)->atom.size, (iter)); \
-	     (iter) = lv2_atom_tuple_next(iter))
-#endif
+#include <inttypes.h>
 
-#define LV2_ATOM_VECTOR_ITEM_CONST(vec, i) \
-	(LV2_ATOM_CONTENTS_CONST(LV2_Atom_Vector, (vec)) + (i)*(vec)->body.child_size)
+#define LV2_ATOM_VECTOR_BODY_ITEM_CONST(body, i) \
+	(LV2_ATOM_CONTENTS_CONST(LV2_Atom_Vector_Body, (body)) + (i)*(body)->child_size)
 
 static const lua_CFunction upclosures [MOONY_UPCLOSURE_COUNT] = {
 	[MOONY_UPCLOSURE_TUPLE_FOREACH] = _latom_tuple_foreach_itr,
@@ -64,29 +57,21 @@ _pushupclosure(lua_State *L, moony_t *moony, moony_upclosure_t type)
 	*upc += 1;
 }
 
-static inline void
-_latom_body_new(lua_State *L, uint32_t size, LV2_URID type, const void *body)
-{
-	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	size_t atom_size = sizeof(LV2_Atom) + size;
-
-	latom_t *latom = lua_newuserdata(L, sizeof(latom_t) + atom_size);
-	latom->atom = (const LV2_Atom *)latom->body;
-	latom->body->size = size;
-	latom->body->type = type;
-	memcpy(LV2_ATOM_BODY(latom->body), body, size);
-
-	luaL_getmetatable(L, "latom");
-	lua_setmetatable(L, -2);
-}
-
 int
 _latom_clone(lua_State *L)
 {
 	latom_t *latom = lua_touserdata(L, 1);
-	const LV2_Atom *atom = latom->atom;
+	
+	latom_t *litem = lua_newuserdata(L, sizeof(latom_t) + lv2_atom_total_size(latom->atom));
+	litem->atom = (const LV2_Atom *)litem->payload;
+	litem->body.raw = LV2_ATOM_BODY_CONST(litem->atom);
 
-	_latom_body_new(L, atom->size, atom->type, LV2_ATOM_BODY_CONST(atom));
+	litem->payload->size = latom->atom->size;
+	litem->payload->type = latom->atom->type;
+	memcpy(LV2_ATOM_BODY(litem->payload), latom->body.raw, latom->atom->size);
+
+	luaL_getmetatable(L, "latom");
+	lua_setmetatable(L, -2);
 
 	return 1;
 }
@@ -102,14 +87,14 @@ _latom_int__len(lua_State *L, latom_t *latom)
 static int
 _latom_int__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushfstring(L, "%i", latom->i32->body);
+	lua_pushfstring(L, "%"PRIi32, *latom->body.i32);
 	return 1;
 }
 
 static inline int
 _latom_int_value(lua_State *L, latom_t *latom)
 {
-	lua_pushinteger(L, latom->i32->body);
+	lua_pushinteger(L, *latom->body.i32);
 	return 1;
 }
 
@@ -130,14 +115,14 @@ _latom_long__len(lua_State *L, latom_t *latom)
 static int
 _latom_long__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushfstring(L, "%li", latom->i64->body);
+	lua_pushfstring(L, "%"PRIi64, *latom->body.i64);
 	return 1;
 }
 
 static inline int
 _latom_long_value(lua_State *L, latom_t *latom)
 {
-	lua_pushinteger(L, latom->i64->body);
+	lua_pushinteger(L, *latom->body.i64);
 	return 1;
 }
 
@@ -158,14 +143,14 @@ _latom_float__len(lua_State *L, latom_t *latom)
 static int
 _latom_float__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushfstring(L, "%f", latom->f32->body);
+	lua_pushfstring(L, "%f", *latom->body.f32);
 	return 1;
 }
 
 static inline int
 _latom_float_value(lua_State *L, latom_t *latom)
 {
-	lua_pushnumber(L, latom->f32->body);
+	lua_pushnumber(L, *latom->body.f32);
 	return 1;
 }
 
@@ -186,14 +171,14 @@ _latom_double__len(lua_State *L, latom_t *latom)
 static int
 _latom_double__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushfstring(L, "%lf", latom->f64->body);
+	lua_pushfstring(L, "%lf", *latom->body.f64);
 	return 1;
 }
 
 static inline int
 _latom_double_value(lua_State *L, latom_t *latom)
 {
-	lua_pushnumber(L, latom->f64->body);
+	lua_pushnumber(L, *latom->body.f64);
 	return 1;
 }
 
@@ -214,14 +199,14 @@ _latom_bool__len(lua_State *L, latom_t *latom)
 static int
 _latom_bool__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushfstring(L, "%s", latom->i32->body ? "true" : "false");
+	lua_pushfstring(L, "%s", *latom->body.i32 ? "true" : "false");
 	return 1;
 }
 
 static inline int
 _latom_bool_value(lua_State *L, latom_t *latom)
 {
-	lua_pushboolean(L, latom->i32->body);
+	lua_pushboolean(L, *latom->body.i32);
 	return 1;
 }
 
@@ -242,14 +227,14 @@ _latom_urid__len(lua_State *L, latom_t *latom)
 static int
 _latom_urid__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushfstring(L, "%u", latom->u32->body);
+	lua_pushfstring(L, "%"PRIu32, *latom->body.u32);
 	return 1;
 }
 
 static inline int
 _latom_urid_value(lua_State *L, latom_t *latom)
 {
-	lua_pushinteger(L, latom->u32->body);
+	lua_pushinteger(L, *latom->body.u32);
 	return 1;
 }
 
@@ -270,7 +255,7 @@ _latom_string__len(lua_State *L, latom_t *latom)
 static inline int
 _latom_string_value(lua_State *L, latom_t *latom)
 {
-	lua_pushlstring(L, LV2_ATOM_BODY_CONST(latom->atom), latom->atom->size - 1);
+	lua_pushlstring(L, latom->body.str, latom->atom->size - 1);
 	return 1;
 }
 
@@ -286,9 +271,9 @@ _latom_literal__indexk(lua_State *L, latom_t *latom)
 {
 	const char *key = lua_tostring(L, 2);
 	if(!strcmp(key, "datatype"))
-		lua_pushinteger(L, latom->lit->body.datatype);
+		lua_pushinteger(L, latom->body.lit->datatype);
 	else if(!strcmp(key, "lang"))
-		lua_pushinteger(L, latom->lit->body.lang);
+		lua_pushinteger(L, latom->body.lit->lang);
 	else
 		lua_pushnil(L);
 	return 1;
@@ -297,7 +282,9 @@ _latom_literal__indexk(lua_State *L, latom_t *latom)
 static int
 _latom_literal_value(lua_State *L, latom_t *latom)
 {
-	lua_pushlstring(L, LV2_ATOM_CONTENTS_CONST(LV2_Atom_Literal, latom->atom), latom->atom->size - 1 - sizeof(LV2_Atom_Literal_Body));
+	lua_pushlstring(L,
+		LV2_ATOM_CONTENTS_CONST(LV2_Atom_Literal_Body, latom->body.lit),
+		latom->atom->size - 1 - sizeof(LV2_Atom_Literal_Body));
 	return 1;
 }
 
@@ -305,9 +292,11 @@ int
 _latom_literal_unpack(lua_State *L)
 {
 	latom_t *latom = lua_touserdata(L, 1);
-	lua_pushlstring(L, LV2_ATOM_CONTENTS_CONST(LV2_Atom_Literal, latom->atom), latom->atom->size - 1 - sizeof(LV2_Atom_Literal_Body));
-	lua_pushinteger(L, latom->lit->body.datatype);
-	lua_pushinteger(L, latom->lit->body.lang);
+	lua_pushlstring(L,
+		LV2_ATOM_CONTENTS_CONST(LV2_Atom_Literal_Body, latom->body.lit),
+		latom->atom->size - 1 - sizeof(LV2_Atom_Literal_Body));
+	lua_pushinteger(L, latom->body.lit->datatype);
+	lua_pushinteger(L, latom->body.lit->lang);
 	return 1;
 }
 
@@ -322,11 +311,10 @@ const latom_driver_t latom_literal_driver = {
 static int
 _latom_tuple__indexi(lua_State *L, latom_t *latom)
 {
-	ltuple_t *ltuple = &latom->tuple;
 	const int idx = lua_tointeger(L, 2);
 
 	int count = 0;
-	LV2_ATOM_TUPLE_FOREACH(ltuple->tuple, atom)
+	LV2_ATOM_TUPLE_BODY_FOREACH(latom->body.tuple, latom->atom->size, atom)
 	{
 		if(++count == idx)
 		{
@@ -342,10 +330,8 @@ _latom_tuple__indexi(lua_State *L, latom_t *latom)
 static int
 _latom_tuple__len(lua_State *L, latom_t *latom)
 {
-	ltuple_t *ltuple = &latom->tuple;
-
 	int count = 0;
-	LV2_ATOM_TUPLE_FOREACH(ltuple->tuple, atom)
+	LV2_ATOM_TUPLE_BODY_FOREACH(latom->body.tuple, latom->atom->size, atom)
 		++count;
 
 	lua_pushinteger(L, count);
@@ -362,7 +348,7 @@ _latom_tuple__tostring(lua_State *L, latom_t *latom)
 int
 _latom_tuple_unpack(lua_State *L)
 {
-	ltuple_t *ltuple = lua_touserdata(L, 1);
+	latom_t *latom = lua_touserdata(L, 1);
 
 	int n = lua_gettop(L);
 	int min = n > 1
@@ -374,7 +360,7 @@ _latom_tuple_unpack(lua_State *L)
 
 	int pos = 1;
 	int count = 0;
-	LV2_ATOM_TUPLE_FOREACH(ltuple->tuple, atom)
+	LV2_ATOM_TUPLE_BODY_FOREACH(latom->body.tuple, latom->atom->size, atom)
 	{
 		if(pos >= min)
 		{
@@ -396,20 +382,21 @@ _latom_tuple_unpack(lua_State *L)
 int
 _latom_tuple_foreach_itr(lua_State *L)
 {
-	ltuple_t *ltuple = lua_touserdata(L, 1);
+	latom_t *latom = lua_touserdata(L, 1);
 
-	if(!lv2_atom_tuple_is_end(LV2_ATOM_BODY(ltuple->tuple), ltuple->tuple->atom.size, ltuple->itr))
+	if(!lv2_atom_tuple_is_end(latom->body.tuple, latom->atom->size, latom->iter.tuple.item))
 	{
 		// push index
-		lua_pushinteger(L, ltuple->pos);
+		lua_pushinteger(L, latom->iter.tuple.pos);
 		// push atom
 		lua_pushvalue(L, lua_upvalueindex(2));
-		latom_t *latom = lua_touserdata(L, lua_upvalueindex(2));
-		latom->atom = ltuple->itr;
+		latom_t *litem = lua_touserdata(L, lua_upvalueindex(2));
+		litem->atom = latom->iter.tuple.item;
+		litem->body.raw = LV2_ATOM_BODY_CONST(litem->atom);
 	
 		// advance iterator
-		ltuple->pos += 1;
-		ltuple->itr = lv2_atom_tuple_next(ltuple->itr);
+		latom->iter.tuple.pos += 1;
+		latom->iter.tuple.item = lv2_atom_tuple_next(latom->iter.tuple.item);
 
 		return 2;
 	}
@@ -423,11 +410,11 @@ int
 _latom_tuple_foreach(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	ltuple_t *ltuple = lua_touserdata(L, 1);
+	latom_t *latom = lua_touserdata(L, 1);
 
 	// reset iterator to beginning of tuple
-	ltuple->pos = 1;
-	ltuple->itr = lv2_atom_tuple_begin(ltuple->tuple);
+	latom->iter.tuple.pos = 1;
+	latom->iter.tuple.item = latom->body.tuple;
 
 	_pushupclosure(L, moony, MOONY_UPCLOSURE_TUPLE_FOREACH);
 	lua_pushvalue(L, 1);
@@ -446,16 +433,10 @@ const latom_driver_t latom_tuple_driver = {
 static int
 _latom_obj__indexi(lua_State *L, latom_t *latom)
 {
-	lobj_t *lobj = &latom->obj;
 	const LV2_URID urid = lua_tointeger(L, 2);
 
-	// start a query for given URID
 	const LV2_Atom *atom = NULL;
-	LV2_Atom_Object_Query q [] = {
-		{ urid, &atom },
-		{	0, NULL }
-	};
-	lv2_atom_object_query(lobj->obj, q);
+	lv2_atom_object_body_get(latom->atom->size, latom->body.obj, urid, &atom, 0);
 
 	if(atom) // query returned a matching atom
 		_latom_new(L, atom);
@@ -470,9 +451,9 @@ _latom_obj__indexk(lua_State *L, latom_t *latom)
 {
 	const char *key = lua_tostring(L, 2);
 	if(!strcmp(key, "id"))
-		lua_pushinteger(L, latom->obj.obj->body.id);
+		lua_pushinteger(L, latom->body.obj->id);
 	else if(!strcmp(key, "otype"))
-		lua_pushinteger(L, latom->obj.obj->body.otype);
+		lua_pushinteger(L, latom->body.obj->otype);
 	else
 		lua_pushnil(L);
 	return 1;
@@ -481,10 +462,8 @@ _latom_obj__indexk(lua_State *L, latom_t *latom)
 static int
 _latom_obj__len(lua_State *L, latom_t *latom)
 {
-	lobj_t *lobj = &latom->obj;
-
 	int count = 0;
-	LV2_ATOM_OBJECT_FOREACH(lobj->obj, prop)
+	LV2_ATOM_OBJECT_BODY_FOREACH(latom->body.obj, latom->atom->size, prop)
 		++count;
 
 	lua_pushinteger(L, count);
@@ -501,20 +480,21 @@ _latom_obj__tostring(lua_State *L, latom_t *latom)
 int
 _latom_obj_foreach_itr(lua_State *L)
 {
-	lobj_t *lobj = lua_touserdata(L, 1);
+	latom_t *latom = lua_touserdata(L, 1);
 
-	if(!lv2_atom_object_is_end(&lobj->obj->body, lobj->obj->atom.size, lobj->itr))
+	if(!lv2_atom_object_is_end(latom->body.obj, latom->atom->size, latom->iter.obj.prop))
 	{
 		// push key/context
-		lua_pushinteger(L, lobj->itr->key);
-		lua_pushinteger(L, lobj->itr->context);
+		lua_pushinteger(L, latom->iter.obj.prop->key);
+		lua_pushinteger(L, latom->iter.obj.prop->context);
 		// push atom
 		lua_pushvalue(L, lua_upvalueindex(2));
-		latom_t *latom = lua_touserdata(L, lua_upvalueindex(2));
-		latom->atom = &lobj->itr->value;
+		latom_t *litem = lua_touserdata(L, lua_upvalueindex(2));
+		litem->atom = &latom->iter.obj.prop->value;
+		litem->body.raw = LV2_ATOM_BODY_CONST(litem->atom);
 	
 		// advance iterator
-		lobj->itr = lv2_atom_object_next(lobj->itr);
+		latom->iter.obj.prop = lv2_atom_object_next(latom->iter.obj.prop);
 
 		return 3;
 	}
@@ -528,10 +508,10 @@ int
 _latom_obj_foreach(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lobj_t *lobj = lua_touserdata(L, 1);
+	latom_t *latom = lua_touserdata(L, 1);
 
 	// reset iterator to beginning of object
-	lobj->itr = lv2_atom_object_begin(&lobj->obj->body);
+	latom->iter.obj.prop = lv2_atom_object_begin(latom->body.obj);
 
 	_pushupclosure(L, moony, MOONY_UPCLOSURE_OBJECT_FOREACH);
 	lua_pushvalue(L, 1);
@@ -550,11 +530,10 @@ const latom_driver_t latom_object_driver = {
 static int
 _latom_seq__indexi(lua_State *L, latom_t *latom)
 {
-	lseq_t *lseq = lua_touserdata(L, 1);
 	int index = lua_tointeger(L, 2); // indexing start from 1
 
 	int count = 0;
-	LV2_ATOM_SEQUENCE_FOREACH(lseq->seq, ev)
+	LV2_ATOM_SEQUENCE_BODY_FOREACH(latom->body.seq, latom->atom->size, ev)
 	{
 		if(++count == index) 
 		{
@@ -570,10 +549,8 @@ _latom_seq__indexi(lua_State *L, latom_t *latom)
 static int
 _latom_seq__len(lua_State *L, latom_t *latom)
 {
-	lseq_t *lseq = lua_touserdata(L, 1);
-
 	int count = 0;
-	LV2_ATOM_SEQUENCE_FOREACH(lseq->seq, ev)
+	LV2_ATOM_SEQUENCE_BODY_FOREACH(latom->body.seq, latom->atom->size, ev)
 		++count;
 
 	lua_pushinteger(L, count);
@@ -590,19 +567,20 @@ _latom_seq__tostring(lua_State *L, latom_t *latom)
 int
 _latom_seq_foreach_itr(lua_State *L)
 {
-	lseq_t *lseq = lua_touserdata(L, 1);
+	latom_t *latom = lua_touserdata(L, 1);
 
-	if(!lv2_atom_sequence_is_end(&lseq->seq->body, lseq->seq->atom.size, lseq->itr))
+	if(!lv2_atom_sequence_is_end(latom->body.seq, latom->atom->size, latom->iter.seq.ev))
 	{
 		// push frame time
-		lua_pushinteger(L, lseq->itr->time.frames);
+		lua_pushinteger(L, latom->iter.seq.ev->time.frames);
 		// push atom
 		lua_pushvalue(L, lua_upvalueindex(2));
-		latom_t *latom = lua_touserdata(L, lua_upvalueindex(2));
-		latom->atom = &lseq->itr->body;
+		latom_t *litem = lua_touserdata(L, lua_upvalueindex(2));
+		litem->atom = &latom->iter.seq.ev->body;
+		litem->body.raw = LV2_ATOM_BODY_CONST(litem->atom);
 	
 		// advance iterator
-		lseq->itr = lv2_atom_sequence_next(lseq->itr);
+		latom->iter.seq.ev = lv2_atom_sequence_next(latom->iter.seq.ev);
 
 		return 2;
 	}
@@ -616,10 +594,10 @@ int
 _latom_seq_foreach(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lseq_t *lseq = lua_touserdata(L, 1);
+	latom_t *latom = lua_touserdata(L, 1);
 
 	// reset iterator to beginning of sequence
-	lseq->itr = lv2_atom_sequence_begin(&lseq->seq->body);
+	latom->iter.seq.ev = lv2_atom_sequence_begin(latom->body.seq);
 
 	_pushupclosure(L, moony, MOONY_UPCLOSURE_SEQUENCE_FOREACH);
 	lua_pushvalue(L, 1);
@@ -637,16 +615,16 @@ const latom_driver_t latom_sequence_driver = {
 static int
 _latom_vec__indexi(lua_State *L, latom_t *latom)
 {
-	lvec_t *lvec = lua_touserdata(L, 1);
 	int index = lua_tointeger(L, 2); // indexing start from 1
 
-	lvec->count = (lvec->vec->atom.size - sizeof(LV2_Atom_Vector_Body))
-		/ lvec->vec->body.child_size;
+	const int count = (latom->atom->size - sizeof(LV2_Atom_Vector_Body))
+		/ latom->body.vec->child_size;
 
-	if( (index > 0) && (index <= lvec->count) )
+	if( (index > 0) && (index <= count) )
 	{
-		_latom_body_new(L, lvec->vec->body.child_size, lvec->vec->body.child_type,
-			LV2_ATOM_VECTOR_ITEM_CONST(lvec->vec, index - 1));
+		latom_t *litem = _latom_new(L, NULL);
+		litem->atom = (const LV2_Atom *)latom->body.vec;
+		litem->body.raw = LV2_ATOM_VECTOR_BODY_ITEM_CONST(latom->body.vec, index - 1);
 	}
 	else // index is out of bounds
 		lua_pushnil(L);
@@ -659,9 +637,9 @@ _latom_vec__indexk(lua_State *L, latom_t *latom)
 {
 	const char *key = lua_tostring(L, 2);
 	if(!strcmp(key, "child_type"))
-		lua_pushinteger(L, latom->vec.vec->body.child_type);
+		lua_pushinteger(L, latom->body.vec->child_type);
 	else if(!strcmp(key, "child_size"))
-		lua_pushinteger(L, latom->vec.vec->body.child_size);
+		lua_pushinteger(L, latom->body.vec->child_size);
 	else
 		lua_pushnil(L);
 	return 1;
@@ -670,12 +648,10 @@ _latom_vec__indexk(lua_State *L, latom_t *latom)
 static int
 _latom_vec__len(lua_State *L, latom_t *latom)
 {
-	lvec_t *lvec = lua_touserdata(L, 1);
+	const int count = (latom->atom->size - sizeof(LV2_Atom_Vector_Body))
+		/ latom->body.vec->child_size;
 
-	lvec->count = (lvec->vec->atom.size - sizeof(LV2_Atom_Vector_Body))
-		/ lvec->vec->body.child_size;
-
-	lua_pushinteger(L, lvec->count);
+	lua_pushinteger(L, count);
 	return 1;
 }
 
@@ -689,22 +665,22 @@ _latom_vec__tostring(lua_State *L, latom_t *latom)
 int
 _latom_vec_unpack(lua_State *L)
 {
-	lvec_t *lvec = lua_touserdata(L, 1);
+	latom_t *latom = lua_touserdata(L, 1);
 
-	lvec->count = (lvec->vec->atom.size - sizeof(LV2_Atom_Vector_Body))
-		/ lvec->vec->body.child_size;
+	const int count = (latom->atom->size - sizeof(LV2_Atom_Vector_Body))
+		/ latom->body.vec->child_size;
 
 	int n = lua_gettop(L);
 	int min = 1;
-	int max = lvec->count;
+	int max = count;
 
 	if(n > 1) // check provided index ranges
 	{
 		min = luaL_checkinteger(L, 2);
 		min = min < 1
 			? 1
-			: (min > lvec->count
-				? lvec->count
+			: (min > count
+				? count
 				: min);
 
 		if(n > 2)
@@ -712,16 +688,17 @@ _latom_vec_unpack(lua_State *L)
 			max = luaL_checkinteger(L, 3);
 			max = max < 1
 				? 1
-				: (max > lvec->count
-					? lvec->count
+				: (max > count
+					? count
 					: max);
 		}
 	}
 
 	for(int i=min; i<=max; i++)
 	{
-		_latom_body_new(L, lvec->vec->body.child_size, lvec->vec->body.child_type,
-			LV2_ATOM_VECTOR_ITEM_CONST(lvec->vec, i-1));
+		latom_t *litem = _latom_new(L, NULL);
+		litem->atom = (const LV2_Atom *)latom->body.vec;
+		litem->body.raw = LV2_ATOM_VECTOR_BODY_ITEM_CONST(latom->body.vec, i - 1);
 	}
 
 	return max - min + 1;
@@ -730,21 +707,20 @@ _latom_vec_unpack(lua_State *L)
 int
 _latom_vec_foreach_itr(lua_State *L)
 {
-	lvec_t *lvec = lua_touserdata(L, 1);
+	latom_t *latom = lua_touserdata(L, 1);
 
-	lvec->count = (lvec->vec->atom.size - sizeof(LV2_Atom_Vector_Body))
-		/ lvec->vec->body.child_size;
-
-	if(lvec->pos < lvec->count)
+	if(latom->iter.vec.pos < latom->iter.vec.count)
 	{
 		// push index
-		lua_pushinteger(L, lvec->pos + 1);
-		// push atom TODO try to recycle
-		_latom_body_new(L, lvec->vec->body.child_size, lvec->vec->body.child_type,
-			LV2_ATOM_VECTOR_ITEM_CONST(lvec->vec, lvec->pos));
+		lua_pushinteger(L, latom->iter.vec.pos + 1);
+		// push atom
+		lua_pushvalue(L, lua_upvalueindex(2));
+		latom_t *litem = lua_touserdata(L, lua_upvalueindex(2));
+		litem->atom = (const LV2_Atom *)latom->body.vec;
+		litem->body.raw = LV2_ATOM_VECTOR_BODY_ITEM_CONST(latom->body.vec, latom->iter.vec.pos);
 
 		// advance iterator
-		lvec->pos += 1;
+		latom->iter.vec.pos += 1;
 
 		return 2;
 	}
@@ -758,10 +734,12 @@ int
 _latom_vec_foreach(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lvec_t *lvec = lua_touserdata(L, 1);
+	latom_t *latom = lua_touserdata(L, 1);
 
 	// reset iterator to beginning of vector
-	lvec->pos = 0;
+	latom->iter.vec.count = (latom->atom->size - sizeof(LV2_Atom_Vector_Body))
+		/ latom->body.vec->child_size;
+	latom->iter.vec.pos = 0;
 
 	_pushupclosure(L, moony, MOONY_UPCLOSURE_VECTOR_FOREACH);
 	lua_pushvalue(L, 1);
@@ -781,7 +759,7 @@ const latom_driver_t latom_vector_driver = {
 static int
 _latom_chunk__indexi(lua_State *L, latom_t *latom)
 {
-	const uint8_t *payload = LV2_ATOM_BODY_CONST(latom->atom);
+	const uint8_t *payload = latom->body.raw;
 	int index = lua_tointeger(L, 2); // indexing start from 1
 
 	if( (index > 0) && (index <= (int)latom->atom->size) )
@@ -809,7 +787,7 @@ _latom_chunk__tostring(lua_State *L, latom_t *latom)
 static int
 _latom_chunk_value(lua_State *L, latom_t *latom)
 {
-	const uint8_t *payload = LV2_ATOM_BODY_CONST(latom->atom);
+	const uint8_t *payload = latom->body.raw;
 
 	lua_newtable(L);
 	for(unsigned i=0; i<latom->atom->size; i++)
@@ -825,7 +803,7 @@ int
 _latom_chunk_unpack(lua_State *L)
 {
 	latom_t *latom = lua_touserdata(L, 1);
-	const uint8_t *payload = LV2_ATOM_BODY_CONST(latom->atom);
+	const uint8_t *payload = latom->body.raw;
 
 	int n = lua_gettop(L);
 	int min = 1;

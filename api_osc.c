@@ -215,14 +215,14 @@ _loscresponder__call(lua_State *L)
 	// 3: data
 	// 4: atom
 	
-	lobj_t *lobj = NULL;
+	latom_t *latom = NULL;
 	if(luaL_testudata(L, 4, "latom"))
-		lobj = lua_touserdata(L, 4);
+		latom = lua_touserdata(L, 4);
 	lua_pop(L, 1); // atom
 
 	// check for valid atom and event type
-	if(!lobj || !(osc_atom_is_bundle(&moony->oforge, lobj->obj)
-		|| osc_atom_is_message(&moony->oforge, lobj->obj)))
+	if(!latom || !(osc_atom_is_bundle(&moony->oforge, (const LV2_Atom_Object *)latom->atom) //FIXME use body
+		|| osc_atom_is_message(&moony->oforge, (const LV2_Atom_Object *)latom->atom))) //FIXME use body
 	{
 		lua_pushboolean(L, 0); // not handled
 		return 1;
@@ -232,7 +232,7 @@ _loscresponder__call(lua_State *L)
 	lua_getuservalue(L, 1);
 	lua_replace(L, 1);
 
-	osc_atom_event_unroll(&moony->oforge, lobj->obj, NULL, NULL, _loscresponder_msg, moony);
+	osc_atom_event_unroll(&moony->oforge, (const LV2_Atom_Object *)latom->atom, NULL, NULL, _loscresponder_msg, moony); //FIXME use body
 
 	lua_pushboolean(L, 1); // handled
 	return 1;

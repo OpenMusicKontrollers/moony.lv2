@@ -133,7 +133,7 @@ _compile(UI *ui)
 	else
 	{
 		char buf [64];
-		sprintf(buf, "script too long by %i", size - MOONY_MAX_CHUNK_LEN);
+		sprintf(buf, "script too long by %"PRIi32, size - MOONY_MAX_CHUNK_LEN);
 		elm_object_text_set(ui->error, buf);
 		evas_object_show(ui->message);
 	}
@@ -519,7 +519,7 @@ _cursor(void *data, Evas_Object *obj, void *event_info)
 	}
 
 	char buf [64];
-	sprintf(buf, "%i / %i", l + 1, c + 1);
+	sprintf(buf, "%"PRIi32" / %"PRIi32, l + 1, c + 1);
 
 	elm_object_text_set(ui->status, buf);
 }

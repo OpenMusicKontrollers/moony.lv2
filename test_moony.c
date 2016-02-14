@@ -83,9 +83,9 @@ _test(lua_State *L)
 	{
 		lua_pushvalue(L, 2); // consumer
 
-		lseq_t *lseq = moony_newuserdata(L, &handle->moony, MOONY_UDATA_ATOM);
-		lseq->seq = (const LV2_Atom_Sequence *)handle->buf;
-		lseq->itr = NULL;
+		latom_t *latom = moony_newuserdata(L, &handle->moony, MOONY_UDATA_ATOM);
+		latom->atom = (const LV2_Atom *)handle->buf;
+		latom->body.raw = LV2_ATOM_BODY_CONST(latom->atom);
 		
 		lforge_t *lframe = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE);
 		lframe->depth = 0;

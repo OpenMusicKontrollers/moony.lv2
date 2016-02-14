@@ -260,12 +260,12 @@ _lstateresponder__call(lua_State *L)
 
 	int64_t frames = luaL_checkinteger(L, 2);
 	lforge_t *lforge = luaL_checkudata(L, 3, "lforge");
-	lobj_t *lobj = NULL;
+	latom_t *latom = NULL;
 	if(luaL_testudata(L, 4, "latom"))
-		lobj = lua_touserdata(L, 4);
+		latom = lua_touserdata(L, 4);
 	lua_pop(L, 1); // atom
 
-	if(!lobj) // not a valid atom, abort
+	if(!latom) // not a valid atom, abort
 	{
 		lua_pushboolean(L, 0);
 		return 1;
@@ -275,17 +275,15 @@ _lstateresponder__call(lua_State *L)
 	lua_getuservalue(L, 1);
 	lua_replace(L, 1);
 
-	if(lobj->obj->body.otype == moony->uris.patch_get)
+	if(latom->body.obj->otype == moony->uris.patch_get)
 	{
 		const LV2_Atom_URID *subject = NULL;
 		const LV2_Atom_URID *property = NULL;
 
-		LV2_Atom_Object_Query q [] = {
-			{ moony->uris.patch_subject, (const LV2_Atom **)&subject },
-			{ moony->uris.patch_property, (const LV2_Atom **)&property },
-			{ 0, NULL }
-		};
-		lv2_atom_object_query(lobj->obj, q);
+		lv2_atom_object_body_get(latom->atom->size, latom->body.obj,
+			moony->uris.patch_subject, &subject,
+			moony->uris.patch_property, &property,
+			0);
 
 		if(!subject || ((subject->atom.type == moony->forge.URID) && (subject->body == moony->uris.subject)) )
 		{
@@ -378,19 +376,17 @@ _lstateresponder__call(lua_State *L)
 			}
 		}
 	}
-	else if(lobj->obj->body.otype == moony->uris.patch_set)
+	else if(latom->body.obj->otype == moony->uris.patch_set)
 	{
 		const LV2_Atom_URID *subject = NULL;
 		const LV2_Atom_URID *property = NULL;
 		const LV2_Atom *value = NULL;
 
-		LV2_Atom_Object_Query q [] = {
-			{ moony->uris.patch_subject, (const LV2_Atom **)&subject },
-			{ moony->uris.patch_property, (const LV2_Atom **)&property },
-			{ moony->uris.patch_value, &value },
-			{ 0, NULL }
-		};
-		lv2_atom_object_query(lobj->obj, q);
+		lv2_atom_object_body_get(latom->atom->size, latom->body.obj,
+			moony->uris.patch_subject, &subject,
+			moony->uris.patch_property, &property,
+			moony->uris.patch_value, &value,
+			0);
 
 		if(!subject || ((subject->atom.type == moony->forge.URID) && (subject->body == moony->uris.subject)) )
 		{
@@ -523,13 +519,13 @@ _lstateresponder_apply(lua_State *L)
 	lua_getuservalue(L, 1);
 	lua_replace(L, 1);
 	
-	lobj_t *lobj = luaL_checkudata(L, 2, "latom");
+	latom_t *latom = luaL_checkudata(L, 2, "latom");
 
 	// ignore patch:readable's
 	if(lua_geti(L, 1, moony->uris.patch_writable) == LUA_TNIL)
 		return 0;
 
-	LV2_ATOM_OBJECT_FOREACH(lobj->obj, prop)
+	LV2_ATOM_OBJECT_BODY_FOREACH(latom->body.obj, latom->atom->size, prop)
 	{
 		if(lua_geti(L, -1, prop->key) != LUA_TNIL)
 		{

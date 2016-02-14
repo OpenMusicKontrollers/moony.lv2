@@ -597,7 +597,7 @@ _after_write(uv_write_t *req, int status)
 		uv_close((uv_handle_t *)handle, _on_client_close);
 }
 
-static const char *content_length = "Content-Length: %u\r\n\r\n";
+static const char *content_length = "Content-Length: %zu\r\n\r\n";
 
 static inline void
 _keepalive(server_t *server)
@@ -686,7 +686,7 @@ _read_file(UI *ui, const char *bundle_path, const char *file_path, size_t *size)
 	if(f)
 	{
 		fseek(f, 0, SEEK_END);
-		long fsize = ftell(f);
+		size_t fsize = ftell(f);
 		fseek(f, 0, SEEK_SET);
 
 		char *str = malloc(128 + fsize);

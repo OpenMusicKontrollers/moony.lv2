@@ -91,13 +91,13 @@ _ltimeresponder__call(lua_State *L)
 	timely_t *timely = lua_touserdata(L, 1);
 	int64_t from = luaL_checkinteger(L, 2);
 	int64_t to = luaL_checkinteger(L, 3);
-	lobj_t *lobj = NULL;
+	latom_t *latom = NULL;
 	if(luaL_testudata(L, 5, "latom"))
-		lobj = lua_touserdata(L, 5);
+		latom = lua_touserdata(L, 5);
 	lua_pop(L, 1); // atom
 
 	lua_getuservalue(L, 1); // 5: uservalue
-	const int handled = timely_advance(timely, lobj ? lobj->obj : NULL, from, to);
+	const int handled = timely_advance(timely, latom ? (const LV2_Atom_Object *)latom->atom : NULL, from, to); //FIXME use body
 
 	lua_pushboolean(L, handled); // handled vs not handled
 	return 1;
