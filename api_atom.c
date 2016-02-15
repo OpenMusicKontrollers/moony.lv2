@@ -923,10 +923,26 @@ _latom__tostring(lua_State *L)
 	return 1;
 }
 
+static int
+_latom__eq(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	latom_t *latom1 = luaL_checkudata(L, 1, "latom");
+	latom_t *latom2 = luaL_checkudata(L, 2, "latom");
+
+	lua_pushboolean(L,
+		(latom1->atom->type == latom2->atom->type)
+		&& (latom1->atom->size == latom2->atom->size)
+		&& (memcmp(latom1->body.raw, latom2->body.raw, latom1->atom->size) == 0) );
+
+	return 1;
+}
+
 const luaL_Reg latom_mt [] = {
 	{"__index", _latom__index},
 	{"__len", _latom__len},
 	{"__tostring", _latom__tostring},
+	{"__eq", _latom__eq},
 
 	{NULL, NULL}
 };

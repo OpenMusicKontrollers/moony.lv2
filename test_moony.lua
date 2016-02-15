@@ -1418,22 +1418,47 @@ print('[test] Stash')
 do
 	local stash = Stash()
 
-	local function producer(forge)
-		local f = stash:write()
-		f:int(12)
-	end
+	local f = stash:write()
+	f:int(12)
 
-	local function consumer(seq)
-		local atom = stash:read()
-		assert(#atom == 4)
-		assert(atom.type == Atom.Int)
-		assert(atom.value == 12)
-	end
-
-	test(producer, consumer)
+	local atom = stash:read()
+	assert(#atom == 4)
+	assert(atom.type == Atom.Int)
+	assert(atom.value == 12)
 
 	local f = stash:write()
 	local atom = stash:read()
 	assert(#atom == 0)
 	assert(atom.type == nil)
+end
+
+-- Equal
+print('[test] Equal')
+do
+	local stash1 = Stash()
+	local stash2 = Stash()
+	local stash3 = Stash()
+	local stash4 = Stash()
+
+	local forge1 = stash1:write()
+	local forge2 = stash2:write()
+	local forge3 = stash3:write()
+	local forge4 = stash4:write()
+
+	forge1:int(11)
+	forge2:int(11)
+	forge3:int(12)
+	forge4:long(11)
+
+	local atom1 = stash1:read()
+	local atom2 = stash2:read()
+	local atom3 = stash3:read()
+	local atom4 = stash4:read()
+
+	assert(atom1 == atom2)
+	assert(atom1 ~= atom3)
+	assert(atom1 ~= atom4)
+	assert(atom2 ~= atom3)
+	assert(atom2 ~= atom4)
+	assert(atom3 ~= atom4)
 end
