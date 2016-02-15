@@ -787,14 +787,7 @@ _latom_chunk__tostring(lua_State *L, latom_t *latom)
 static int
 _latom_chunk_value(lua_State *L, latom_t *latom)
 {
-	const uint8_t *payload = latom->body.raw;
-
-	lua_newtable(L);
-	for(unsigned i=0; i<latom->atom->size; i++)
-	{
-		lua_pushinteger(L, payload[i]);
-		lua_rawseti(L, -2, i+1);
-	}
+	lua_pushlstring(L, latom->body.raw, latom->atom->size);
 
 	return 1;
 }

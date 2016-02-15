@@ -333,7 +333,8 @@ static int
 _lforge_bytes(lua_State *L, moony_t *moony, LV2_URID type)
 {
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
-	if(lua_istable(L, 2))
+	int ltype = lua_type(L, 2);
+	if(ltype == LUA_TTABLE)
 	{
 		int size = lua_rawlen(L, 2);
 		if(!lv2_atom_forge_atom(lforge->forge, size, type))
@@ -346,6 +347,16 @@ _lforge_bytes(lua_State *L, moony_t *moony, LV2_URID type)
 			if(!lv2_atom_forge_raw(lforge->forge, &byte, 1))
 				luaL_error(L, forge_buffer_overflow);
 		}
+		lv2_atom_forge_pad(lforge->forge, size);
+	}
+	else if(ltype == LUA_TSTRING)
+	{
+		size_t size;
+		const char *str = lua_tolstring(L, 2, &size);
+		if(!lv2_atom_forge_atom(lforge->forge, size, type))
+			luaL_error(L, forge_buffer_overflow);
+		if(!lv2_atom_forge_raw(lforge->forge, str, size))
+			luaL_error(L, forge_buffer_overflow);
 		lv2_atom_forge_pad(lforge->forge, size);
 	}
 	else if(luaL_testudata(L, 2, "latom")) //to convert between chunk <-> midi

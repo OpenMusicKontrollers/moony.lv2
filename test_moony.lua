@@ -290,14 +290,12 @@ do
 		assert(#seq == 2)
 		local atom = seq[1]
 		assert(atom.type == MIDI.MidiEvent)
-		assert(type(atom.value) == 'table')
+		assert(type(atom.value) == 'string')
 		assert(#atom == #m)
 		assert(#atom.value == #m)
-		assert(atom.value[0] == nil)
-		assert(atom.value[1] == 0x90)
-		assert(atom.value[2] == 0x2a)
-		assert(atom.value[3] == 0x7f)
-		assert(atom.value[4] == nil)
+		assert(atom.value:byte(0, 0) == nil)
+		assert(atom.value:byte(1, 3) == 0x90, 0x2a, 0x7f)
+		assert(atom.value:byte(4, 4) == nil)
 
 		atom = seq[2]
 		assert(atom.type == MIDI.MidiEvent)
@@ -420,17 +418,12 @@ do
 		assert(#seq == 2)
 		local atom = seq[1]
 		assert(atom.type == Atom.Chunk)
-		assert(type(atom.value) == 'table')
+		assert(type(atom.value) == 'string')
 		assert(#atom == #c)
 		assert(#atom.value == #c)
-		assert(atom.value[0] == nil)
-		assert(atom.value[1] == 0x01)
-		assert(atom.value[2] == 0x02)
-		assert(atom.value[3] == 0x03)
-		assert(atom.value[4] == 0x04)
-		assert(atom.value[5] == 0x05)
-		assert(atom.value[6] == 0x06)
-		assert(atom.value[7] == nil)
+		assert(atom.value:byte(0) == nil)
+		assert(atom.value:byte(1, 6) == 0x01, 0x02, 0x03, 0x04, 0x05, 0x06)
+		assert(atom.value:byte(7) == nil)
 
 		atom = seq[2]
 		assert(atom.type == Atom.Chunk)
@@ -1461,4 +1454,38 @@ do
 	assert(atom2 ~= atom3)
 	assert(atom2 ~= atom4)
 	assert(atom3 ~= atom4)
+end
+
+-- Byte Code
+print('[test] Byte Code')
+do
+	local env = {
+		foo = 'foo'
+	}
+
+	local function bar()
+		foo = 'bar'
+	end
+
+	local function producer(forge)
+		local chunk = string.dump(bar) -- dump byte code of function bar
+		forge:time(1):chunk(chunk)
+	end
+
+	local function consumer(seq)
+		for frames, atom in seq:foreach() do
+			if atom.type == Atom.Chunk then
+				local f = load(atom.value, 'rt-chunk', 'b', env)
+				if f then
+					foo = f()
+				end
+			end
+		end
+	end
+
+	assert(env.foo == 'foo')
+
+	test(producer, consumer)
+
+	assert(env.foo == 'bar')
 end
