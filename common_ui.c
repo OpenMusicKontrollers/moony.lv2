@@ -909,27 +909,6 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 
 	if( (port_index == ui->notify_port) && (format == ui->uris.event_transfer) )
 	{
-		/*FIXME
-		const moony_message_t *msg = buffer;
-
-		if(  (msg->obj.atom.type == ui->forge.Object)
-			&& (msg->obj.body.otype == ui->uris.moony_message) )
-		{
-			if(msg->prop.key == ui->uris.moony_code)
-			{
-				const char *chunk = msg->body;
-
-				enc.data = ui;
-				lua_to_markup(chunk, NULL);
-				elm_entry_cursor_pos_set(ui->entry, 0);
-			}
-			else if(msg->prop.key == ui->uris.moony_error)
-			{
-				elm_object_text_set(ui->error, msg->body);
-				evas_object_show(ui->message);
-			}
-		}
-		*/
 		const LV2_Atom_Object *obj = buffer;
 
 		if(  lv2_atom_forge_is_object_type(&ui->forge, obj->atom.type)
