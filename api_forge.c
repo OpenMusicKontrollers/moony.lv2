@@ -1020,32 +1020,6 @@ _lforge_pop(lua_State *L)
 	return 0;
 }
 
-/* FIXME
-static int
-_lstash_clear(lua_State *L)
-{
-	lstash_t *lstash = luaL_checkudata(L, 1, "lforge");
-
-	LV2_Atom *atom = (LV2_Atom *)lstash->ser.buf;
-	atom->type = 0;
-	atom->size = 0;
-	lstash->ser.offset = 0;
-
-	return 1;
-}
-
-static int
-_lstash_handle(lua_State *L)
-{
-	lstash_t *lstash = luaL_checkudata(L, 1, "lforge");
-
-	const LV2_Atom *atom = (const LV2_Atom *)lstash->ser.buf;
-	_latom_new(L, atom);
-
-	return 1;
-}
-*/
-
 const luaL_Reg lforge_mt [] = {
 	{"frame_time", _lforge_frame_time},
 	{"beat_time", _lforge_beat_time},
@@ -1085,11 +1059,6 @@ const luaL_Reg lforge_mt [] = {
 	{"add", _lforge_add},
 
 	{"pop", _lforge_pop},
-
-	/* FIXME
-	{"handle", _lstash_handle},
-	{"clear", _lstash_clear},
-	*/
 
 	{NULL, NULL}
 };

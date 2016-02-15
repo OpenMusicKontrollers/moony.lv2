@@ -905,7 +905,7 @@ _latom__len(lua_State *L)
 	if(driver && driver->__len)
 		return driver->__len(L, latom);
 
-	lua_pushnil(L);
+	lua_pushinteger(L, latom->atom->size);
 	return 1;
 }
 

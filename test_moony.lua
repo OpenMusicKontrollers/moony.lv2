@@ -1413,27 +1413,27 @@ do
 	assert(references[2].value == 2)
 end
 
---[[ FIXME
 -- Stash
 print('[test] Stash')
 do
 	local stash = Stash()
 
 	local function producer(forge)
-		stash:int(12)
+		local f = stash:write()
+		f:int(12)
 	end
 
 	local function consumer(seq)
-		local atom = stash:handle()
+		local atom = stash:read()
 		assert(#atom == 4)
 		assert(atom.type == Atom.Int)
 		assert(atom.value == 12)
-		
-		stash:clear()
-		atom = stash:handle()
-		assert(atom == nil)
 	end
 
 	test(producer, consumer)
+
+	local f = stash:write()
+	local atom = stash:read()
+	assert(#atom == 0)
+	assert(atom.type == nil)
 end
---]]

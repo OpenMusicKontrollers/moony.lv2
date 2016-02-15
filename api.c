@@ -21,6 +21,7 @@
 
 #include <api_atom.h>
 #include <api_forge.h>
+#include <api_stash.h>
 #include <api_midi.h>
 #include <api_osc.h>
 #include <api_time.h>
@@ -34,26 +35,10 @@
 #define RDFS__range RDFS_PREFIX"range"
 #define RDFS__comment RDFS_PREFIX"comment"
 
-typedef struct _atom_ser_t atom_ser_t;
-typedef struct _lstash_t lstash_t;
-
-struct _atom_ser_t {
-	tlsf_t tlsf;
-	uint32_t size;
-	uint8_t *buf;
-	uint32_t offset;
-};
-
-struct _lstash_t {
-	lforge_t lforge;
-	LV2_Atom_Forge forge;
-	atom_ser_t ser;
-};
-
 static const char *moony_ref [MOONY_UDATA_COUNT] = {
 	[MOONY_UDATA_ATOM]	= "latom",
 	[MOONY_UDATA_FORGE]	= "lforge",
-	[MOONY_UDATA_STASH]	= "lforge"
+	[MOONY_UDATA_STASH]	= "lstash"
 };
 
 static const size_t moony_sz [MOONY_UDATA_COUNT] = {
@@ -336,7 +321,7 @@ _log(lua_State *L)
 	return 0;
 }
 
-static inline LV2_Atom_Forge_Ref
+LV2_Atom_Forge_Ref
 _sink(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
 {
 	atom_ser_t *ser = handle;
@@ -366,7 +351,7 @@ _sink(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
 	return ref;
 }
 
-static inline LV2_Atom *
+LV2_Atom *
 _deref(LV2_Atom_Forge_Sink_Handle handle, LV2_Atom_Forge_Ref ref)
 {
 	atom_ser_t *ser = handle;
@@ -375,45 +360,6 @@ _deref(LV2_Atom_Forge_Sink_Handle handle, LV2_Atom_Forge_Ref ref)
 
 	return (LV2_Atom *)(ser->buf + offset);
 }
-
-/*FIXME
-static int
-_lstash(lua_State *L)
-{
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-
-	lstash_t *lstash = moony_newuserdata(L, moony, MOONY_UDATA_STASH);
-	lforge_t *lforge = &lstash->lforge;
-	LV2_Atom_Forge *forge = &lstash->forge;
-	atom_ser_t *ser = &lstash->ser;
-
-	lforge->depth = 0;
-	lforge->last.frames = 0;
-	lforge->forge = forge;
-
-	ser->tlsf = moony->vm.tlsf;
-	ser->size = 256;
-	ser->buf = tlsf_malloc(moony->vm.tlsf, 256);
-	ser->offset = 0;
-
-	if(ser->buf)
-	{
-		LV2_Atom *atom = (LV2_Atom *)ser->buf;
-		atom->size = 0;
-		atom->type = 0;
-
-		// initialize forge (URIDs)
-		memcpy(forge, &moony->forge, sizeof(LV2_Atom_Forge));
-		lv2_atom_forge_set_sink(forge, _sink, _deref, ser);
-
-		//FIXME needs __gc
-	}
-	else
-		lua_pushnil(L); // failed to allocate memory
-
-	return 1;
-}
-*/
 
 static int
 _stash(lua_State *L)
@@ -963,6 +909,13 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -2, "__index");
 	lua_pop(L, 1);
+	
+	luaL_newmetatable(L, "lstash");
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	luaL_setfuncs (L, lstash_mt, 1);
+	lua_pushvalue(L, -1);
+	lua_setfield(L, -2, "__index");
+	lua_pop(L, 1);
 
 	// lv2.map
 	lua_newtable(L);
@@ -1314,12 +1267,10 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	lua_pushcclosure(L, _lstateresponder, 1);
 	lua_setglobal(L, "StateResponder");
 
-	/*FIXME
 	// Stash factory
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	lua_pushcclosure(L, _lstash, 1);
 	lua_setglobal(L, "Stash");
-	*/
 
 	// create cclosure caches
 	lua_pushlightuserdata(L, moony);

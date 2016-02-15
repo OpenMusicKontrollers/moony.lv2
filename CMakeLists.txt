@@ -188,6 +188,7 @@ add_library(api OBJECT
 	api.c
 	api_atom.c
 	api_forge.c
+	api_stash.c
 	api_midi.c
 	api_osc.c
 	api_time.c

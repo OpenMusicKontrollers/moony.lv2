@@ -329,4 +329,10 @@ _moony_message_forge(LV2_Atom_Forge *forge, LV2_URID otype, LV2_URID key,
 	return ref;
 }
 
+LV2_Atom_Forge_Ref
+_sink(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size);
+
+LV2_Atom *
+_deref(LV2_Atom_Forge_Sink_Handle handle, LV2_Atom_Forge_Ref ref);
+
 #endif // _MOONY_H
