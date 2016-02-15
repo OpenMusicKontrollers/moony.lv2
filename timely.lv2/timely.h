@@ -45,6 +45,9 @@ enum _timely_mask_t {
 struct _timely_t {
 	struct {
 		LV2_URID atom_object;
+		LV2_URID atom_blank;
+		LV2_URID atom_resource;
+
 		LV2_URID time_position;
 		LV2_URID time_barBeat;
 		LV2_URID time_bar;
@@ -112,7 +115,8 @@ struct _timely_t {
 #define TIMELY_FRAMES_PER_BAR(timely)					((timely)->frames_per_bar)
 
 static inline void
-_timely_deatomize(timely_t *timely, int64_t frames, const LV2_Atom_Object *obj)
+_timely_deatomize_body(timely_t *timely, int64_t frames, uint32_t size,
+	const LV2_Atom_Object_Body *body)
 {
 	const LV2_Atom_Float *bar_beat = NULL;
 	const LV2_Atom_Long *bar = NULL;
@@ -123,19 +127,16 @@ _timely_deatomize(timely_t *timely, int64_t frames, const LV2_Atom_Object *obj)
 	const LV2_Atom_Float *frames_per_second = NULL;
 	const LV2_Atom_Float *speed = NULL;
 
-	LV2_Atom_Object_Query q [] = {
-		{ timely->urid.time_barBeat, (const LV2_Atom **)&bar_beat },
-		{ timely->urid.time_bar, (const LV2_Atom **)&bar },
-		{ timely->urid.time_beatUnit, (const LV2_Atom **)&beat_unit },
-		{ timely->urid.time_beatsPerBar, (const LV2_Atom **)&beats_per_bar },
-		{ timely->urid.time_beatsPerMinute, (const LV2_Atom **)&beats_per_minute },
-		{ timely->urid.time_frame, (const LV2_Atom **)&frame },
-		{ timely->urid.time_framesPerSecond, (const LV2_Atom **)&frames_per_second },
-		{ timely->urid.time_speed, (const LV2_Atom **)&speed },
-		LV2_ATOM_OBJECT_QUERY_END
-	};
-
-	lv2_atom_object_query(obj, q);
+	lv2_atom_object_body_get(size, body,
+		timely->urid.time_barBeat, &bar_beat,
+		timely->urid.time_bar, &bar,
+		timely->urid.time_beatUnit, &beat_unit,
+		timely->urid.time_beatsPerBar, &beats_per_bar,
+		timely->urid.time_beatsPerMinute, &beats_per_minute,
+		timely->urid.time_frame, &frame,
+		timely->urid.time_framesPerSecond, &frames_per_second,
+		timely->urid.time_speed, &speed,
+		0);
 
 	// send speed first upon transport stop
 	if(speed && (speed->body != timely->pos.speed) && (speed->body == 0.f) )
@@ -222,7 +223,7 @@ _timely_refresh(timely_t *timely)
 	timely->offset.beat = beat_beat * timely->frames_per_beat;
 }
 
-static void
+static inline void
 timely_init(timely_t *timely, LV2_URID_Map *map, double rate,
 	timely_mask_t mask, timely_cb_t cb, void *data)
 {
@@ -233,6 +234,8 @@ timely_init(timely_t *timely, LV2_URID_Map *map, double rate,
 	timely->data = data;
 
 	timely->urid.atom_object = map->map(map->handle, LV2_ATOM__Object);
+	timely->urid.atom_blank = map->map(map->handle, LV2_ATOM__Blank);
+	timely->urid.atom_resource = map->map(map->handle, LV2_ATOM__Resource);
 	timely->urid.time_position = map->map(map->handle, LV2_TIME__Position);
 	timely->urid.time_barBeat = map->map(map->handle, LV2_TIME__barBeat);
 	timely->urid.time_bar = map->map(map->handle, LV2_TIME__bar);
@@ -257,9 +260,9 @@ timely_init(timely_t *timely, LV2_URID_Map *map, double rate,
 	timely->first = true;
 }
 
-static int
-timely_advance(timely_t *timely, const LV2_Atom_Object *obj,
-	uint32_t from, uint32_t to)
+static inline int
+timely_advance_body(timely_t *timely, uint32_t size, uint32_t type,
+	const LV2_Atom_Object_Body *body, uint32_t from, uint32_t to)
 {
 	if(timely->first)
 	{
@@ -346,17 +349,28 @@ timely_advance(timely_t *timely, const LV2_Atom_Object *obj,
 	}
 
 	// is this a time position event?
-	if(  obj
-		&& (obj->atom.type == timely->urid.atom_object)
-		&& (obj->body.otype == timely->urid.time_position) )
+	if(  ( (type == timely->urid.atom_object)
+			|| (type == timely->urid.atom_blank)
+			|| (type == timely->urid.atom_resource) )
+		&& body && (body->otype == timely->urid.time_position) )
 	{
-		_timely_deatomize(timely, to, obj);
+		_timely_deatomize_body(timely, to, size, body);
 		_timely_refresh(timely);
 
 		return 1; // handled a time position event
 	}
 
 	return 0; // did not handle a time position event
+}
+
+static inline int
+timely_advance(timely_t *timely, const LV2_Atom_Object *obj,
+	uint32_t from, uint32_t to)
+{
+	if(obj)
+		return timely_advance_body(timely, obj->atom.size, obj->atom.type, &obj->body, from, to);
+
+	return timely_advance_body(timely, 0, 0, NULL, from, to);
 }
 
 #endif // _LV2_TIMELY_H_

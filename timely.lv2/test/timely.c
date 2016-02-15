@@ -160,6 +160,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 		const LV2_Atom_Object *obj = (const LV2_Atom_Object *)&ev->body;
 
 		const int handled = timely_advance(&handle->timely, obj, from, to);
+		(void)handled;
 		from = to;
 	}
 
