@@ -97,7 +97,9 @@ _ltimeresponder__call(lua_State *L)
 	lua_pop(L, 1); // atom
 
 	lua_getuservalue(L, 1); // 5: uservalue
-	const int handled = timely_advance(timely, latom ? (const LV2_Atom_Object *)latom->atom : NULL, from, to); //FIXME use body
+	const int handled = latom
+		?  timely_advance_body(timely, latom->atom->size, latom->atom->type, latom->body.obj, from, to)
+		:  timely_advance_body(timely, 0, 0, NULL, from, to);
 
 	lua_pushboolean(L, handled); // handled vs not handled
 	return 1;
