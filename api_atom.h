@@ -21,7 +21,6 @@
 #include <moony.h>
 
 typedef struct _lseq_t lseq_t;
-typedef struct _lforge_t lforge_t;
 typedef struct _latom_t latom_t;
 typedef struct _lobj_t lobj_t;
 typedef struct _ltuple_t ltuple_t;
@@ -39,16 +38,6 @@ struct _latom_driver_t {
 	latom_driver_function_t value;
 	int unpack;
 	int foreach;
-};
-
-struct _lforge_t {
-	LV2_Atom_Forge *forge;
-	int depth;
-	union {
-		int64_t frames;	// Time in audio frames
-		double  beats; // Time in beats
-	} last;
-	LV2_Atom_Forge_Frame frame [2];
 };
 
 struct _latom_t {

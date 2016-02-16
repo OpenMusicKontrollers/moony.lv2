@@ -20,6 +20,18 @@
 
 #include <moony.h>
 
+typedef struct _lforge_t lforge_t;
+
+struct _lforge_t {
+	LV2_Atom_Forge *forge;
+	int depth;
+	union {
+		int64_t frames;	// Time in audio frames
+		double  beats; // Time in beats
+	} last;
+	LV2_Atom_Forge_Frame frame [2];
+};
+
 LV2_Atom_Forge_Ref
 _lforge_basic(lua_State *L, int pos, LV2_Atom_Forge *forge, LV2_URID range);
 

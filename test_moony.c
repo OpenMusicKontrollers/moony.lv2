@@ -17,6 +17,7 @@
 
 #include <moony.h>
 #include <api_atom.h>
+#include <api_forge.h>
 
 #include <lauxlib.h>
 
