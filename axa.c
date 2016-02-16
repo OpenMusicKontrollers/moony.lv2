@@ -91,24 +91,32 @@ _run(lua_State *L)
 	{
 		lua_pushinteger(L, handle->sample_count);
 
-		// push sequence
+		// push sequence / forge pair(s)
 		for(unsigned i=0; i<handle->max_val; i++)
 		{
 			latom_t *latom = moony_newuserdata(L, &handle->moony, MOONY_UDATA_ATOM);
 			latom->atom = (const LV2_Atom *)handle->event_in[i];
 			latom->body.raw = LV2_ATOM_BODY_CONST(latom->atom);
-		}
 
-		// push forge
-		for(unsigned i=0; i<handle->max_val; i++)
-		{
 			lforge_t *lforge = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE);
 			lforge->depth = 0;
 			lforge->last.frames = 0;
 			lforge->forge = &handle->forge[i];
 		}
+
+		// push control / notify pair
+		{
+			latom_t *latom = moony_newuserdata(L, &handle->moony, MOONY_UDATA_ATOM);
+			latom->atom = (const LV2_Atom *)handle->control;
+			latom->body.raw = LV2_ATOM_BODY_CONST(latom->atom);
+
+			lforge_t *lforge = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE);
+			lforge->depth = 0;
+			lforge->last.frames = 0;
+			lforge->forge = &handle->moony.notify_forge;
+		}
 			
-		lua_call(L, 1 + 2*handle->max_val, 0);
+		lua_call(L, 1 + 2*handle->max_val + 2, 0);
 	}
 
 	return 0;
@@ -123,7 +131,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 	handle->sample_count = nsamples;
 
 	// handle UI comm
-	moony_in(&handle->moony, handle->control);
+	moony_in(&handle->moony, handle->control, handle->notify);
 
 	// prepare event_out sequence
 	LV2_Atom_Forge_Frame frame [4];

@@ -66,47 +66,38 @@ moony:ui5_common_ui
 		ui:plugin moony:c1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c2xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c4xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a2xa2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a4xa4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c1a1xc1a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c2a1xc2a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c4a1xc4a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] ;
 	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map ;
   lv2:extensionData ui:idleInterface, ui:showInterface .
@@ -116,47 +107,38 @@ moony:ui6_common_kx
 		ui:plugin moony:c1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c2xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c4xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a2xa2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a4xa4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c1a1xc1a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c2a1xc2a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c4a1xc4a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] ;
 	lv2:requiredFeature kx:Host, ui:portMap, urid:map .
 moony:ui7_common_x11
@@ -165,47 +147,38 @@ moony:ui7_common_x11
 		ui:plugin moony:c1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c2xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c4xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a2xa2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a4xa4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c1a1xc1a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c2a1xc2a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c4a1xc4a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] ;
 	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map ;
 	lv2:optionalFeature ui:resize ;
@@ -216,47 +189,38 @@ moony:ui8_common_eo
 		ui:plugin moony:c1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c2xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c4xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a2xa2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a4xa4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c1a1xc1a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c2a1xc2a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c4a1xc4a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] ;
 	lv2:extensionData ui:resize ;
 	lv2:optionalFeature ui:resize ;
@@ -269,47 +233,38 @@ moony:ui3_simple_ui
 		ui:plugin moony:c1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c2xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c4xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a2xa2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a4xa4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c1a1xc1a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c2a1xc2a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c4a1xc4a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] ;
 	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map ;
   lv2:extensionData ui:idleInterface, ui:showInterface .
@@ -319,47 +274,38 @@ moony:ui4_simple_kx
 		ui:plugin moony:c1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c2xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c4xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a2xa2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a4xa4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c1a1xc1a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c2a1xc2a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c4a1xc4a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] ;
 	lv2:requiredFeature kx:Host, ui:portMap, urid:map .
 
@@ -370,47 +316,38 @@ moony:ui1_web_ui
 		ui:plugin moony:c1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c2xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c4xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a2xa2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a4xa4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c1a1xc1a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c2a1xc2a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c4a1xc4a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] ;
 	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map ;
   lv2:extensionData ui:idleInterface, ui:showInterface .
@@ -420,47 +357,38 @@ moony:ui2_web_kx
 		ui:plugin moony:c1xc1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c2xc2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c4xc4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a1xa1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a2xa2 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:a4xa4 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c1a1xc1a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c2a1xc2a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] , [
 		ui:plugin moony:c4a1xc4a1 ;
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
-		ui:notifyType atom:Object ;
 	] ;
 	lv2:requiredFeature kx:Host, ui:portMap, urid:map .
 
@@ -497,6 +425,7 @@ moony:c1xc1
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports atom:Object ;
+		atom:supports patch:Message ;
 		lv2:index 2 ;
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
@@ -507,6 +436,7 @@ moony:c1xc1
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports atom:Object ;
+		atom:supports patch:Message ;
 		lv2:index 3 ;
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
@@ -514,7 +444,7 @@ moony:c1xc1
 	] ;
 	
 	state:state [
-		moony:code """function run(n, c1)
+		moony:code """function run(n, c1, control, notify)
 	return c1
 end"""
 	] .
@@ -565,6 +495,7 @@ moony:c2xc2
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports atom:Object ;
+		atom:supports patch:Message ;
 		lv2:index 4 ;
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
@@ -575,6 +506,7 @@ moony:c2xc2
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports atom:Object ;
+		atom:supports patch:Message ;
 		lv2:index 5 ;
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
@@ -582,7 +514,7 @@ moony:c2xc2
 	] ;
 	
 	state:state [
-		moony:code """function run(n, c1, c2)
+		moony:code """function run(n, c1, c2, control, notify)
 	return c1, c2
 end"""
 	] .
@@ -659,6 +591,7 @@ moony:c4xc4
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports atom:Object ;
+		atom:supports patch:Message ;
 		lv2:index 8 ;
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
@@ -669,6 +602,7 @@ moony:c4xc4
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports atom:Object ;
+		atom:supports patch:Message ;
 		lv2:index 9 ;
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
@@ -676,7 +610,7 @@ moony:c4xc4
 	] ;
 	
 	state:state [
-		moony:code """function run(n, c1, c2, c3, c4)
+		moony:code """function run(n, c1, c2, c3, c4, control, notify)
 	return c1, c2, c3, c4
 end"""
 	] .
@@ -701,7 +635,6 @@ moony:a1xa1
 		atom:supports midi:MidiEvent ;
 		atom:supports osc:Event ;
 		atom:supports time:Position ;
-		atom:supports patch:Message ;
 		lv2:index 0 ;
 		lv2:symbol "event_in_1" ;
 		lv2:name "Event In 1" ;
@@ -714,7 +647,6 @@ moony:a1xa1
 		atom:supports midi:MidiEvent ;
 		atom:supports osc:Event ;
 		atom:supports time:Position ;
-		atom:supports patch:Message ;
 		lv2:index 1 ;
 		lv2:symbol "event_out_1" ;
 		lv2:name "Event Out 1" ;
@@ -725,6 +657,7 @@ moony:a1xa1
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports atom:Object ;
+		atom:supports patch:Message ;
 		lv2:index 2 ;
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
@@ -735,6 +668,7 @@ moony:a1xa1
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports atom:Object ;
+		atom:supports patch:Message ;
 		lv2:index 3 ;
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
@@ -742,7 +676,7 @@ moony:a1xa1
 	] ;
 
 	state:state [
-		moony:code """function run(n, seq, forge)
+		moony:code """function run(n, seq, forge, control, notify)
 	for frames, atom in seq:foreach() do
 		forge:time(frames):atom(atom)
 	end
@@ -769,7 +703,6 @@ moony:a2xa2
 		atom:supports midi:MidiEvent ;
 		atom:supports osc:Event ;
 		atom:supports time:Position ;
-		atom:supports patch:Message ;
 		lv2:index 0 ;
 		lv2:symbol "event_in_1" ;
 		lv2:name "Event In 1" ;
@@ -781,7 +714,6 @@ moony:a2xa2
 		atom:supports midi:MidiEvent ;
 		atom:supports osc:Event ;
 		atom:supports time:Position ;
-		atom:supports patch:Message ;
 		lv2:index 1 ;
 		lv2:symbol "event_in_2" ;
 		lv2:name "Event In 2" ;
@@ -793,7 +725,6 @@ moony:a2xa2
 		atom:supports midi:MidiEvent ;
 		atom:supports osc:Event ;
 		atom:supports time:Position ;
-		atom:supports patch:Message ;
 		lv2:index 2 ;
 		lv2:symbol "event_out_1" ;
 		lv2:name "Event Out 1" ;
@@ -805,7 +736,6 @@ moony:a2xa2
 		atom:supports midi:MidiEvent ;
 		atom:supports osc:Event ;
 		atom:supports time:Position ;
-		atom:supports patch:Message ;
 		lv2:index 3 ;
 		lv2:symbol "event_out_2" ;
 		lv2:name "Event Out 2" ;
@@ -815,6 +745,7 @@ moony:a2xa2
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports atom:Object ;
+		atom:supports patch:Message ;
 		lv2:index 4 ;
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
@@ -825,6 +756,7 @@ moony:a2xa2
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports atom:Object ;
+		atom:supports patch:Message ;
 		lv2:index 5 ;
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
@@ -832,7 +764,7 @@ moony:a2xa2
 	] ;
 
 	state:state [
-		moony:code """function run(n, seq1, seq2, forge1, forge2)
+		moony:code """function run(n, seq1, forge1, seq2, forge2, control, notify)
 	for frames, atom in seq1:foreach() do
 		forge1:time(frames):atom(atom)
 	end
@@ -863,7 +795,6 @@ moony:a4xa4
 		atom:supports midi:MidiEvent ;
 		atom:supports osc:Event ;
 		atom:supports time:Position ;
-		atom:supports patch:Message ;
 		lv2:index 0 ;
 		lv2:symbol "event_in_1" ;
 		lv2:name "Event In 1" ;
@@ -875,7 +806,6 @@ moony:a4xa4
 		atom:supports midi:MidiEvent ;
 		atom:supports osc:Event ;
 		atom:supports time:Position ;
-		atom:supports patch:Message ;
 		lv2:index 1 ;
 		lv2:symbol "event_in_2" ;
 		lv2:name "Event In 2" ;
@@ -886,7 +816,6 @@ moony:a4xa4
 		atom:supports midi:MidiEvent ;
 		atom:supports osc:Event ;
 		atom:supports time:Position ;
-		atom:supports patch:Message ;
 		lv2:index 2 ;
 		lv2:symbol "event_in_3" ;
 		lv2:name "Event In 3" ;
@@ -897,7 +826,6 @@ moony:a4xa4
 		atom:supports midi:MidiEvent ;
 		atom:supports osc:Event ;
 		atom:supports time:Position ;
-		atom:supports patch:Message ;
 		lv2:index 3 ;
 		lv2:symbol "event_in_4" ;
 		lv2:name "Event In 4" ;
@@ -909,7 +837,6 @@ moony:a4xa4
 		atom:supports midi:MidiEvent ;
 		atom:supports osc:Event ;
 		atom:supports time:Position ;
-		atom:supports patch:Message ;
 		lv2:index 4 ;
 		lv2:symbol "event_out_1" ;
 		lv2:name "Event Out 1" ;
@@ -921,7 +848,6 @@ moony:a4xa4
 		atom:supports midi:MidiEvent ;
 		atom:supports osc:Event ;
 		atom:supports time:Position ;
-		atom:supports patch:Message ;
 		lv2:index 5 ;
 		lv2:symbol "event_out_2" ;
 		lv2:name "Event Out 2" ;
@@ -932,7 +858,6 @@ moony:a4xa4
 		atom:supports midi:MidiEvent ;
 		atom:supports osc:Event ;
 		atom:supports time:Position ;
-		atom:supports patch:Message ;
 		lv2:index 6 ;
 		lv2:symbol "event_out_3" ;
 		lv2:name "Event Out 3" ;
@@ -943,7 +868,6 @@ moony:a4xa4
 		atom:supports midi:MidiEvent ;
 		atom:supports osc:Event ;
 		atom:supports time:Position ;
-		atom:supports patch:Message ;
 		lv2:index 7 ;
 		lv2:symbol "event_out_4" ;
 		lv2:name "Event Out 4" ;
@@ -953,6 +877,7 @@ moony:a4xa4
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports atom:Object ;
+		atom:supports patch:Message ;
 		lv2:index 8 ;
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
@@ -963,6 +888,7 @@ moony:a4xa4
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports atom:Object ;
+		atom:supports patch:Message ;
 		lv2:index 9 ;
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
@@ -970,7 +896,7 @@ moony:a4xa4
 	] ;
 
 	state:state [
-		moony:code """function run(n, seq1, seq2, seq3, seq4, forge1, forge2, forge3, forge4)
+		moony:code """function run(n, seq1, forge1, seq2, forge2, seq3, forge3, seq4, forge4, control, notify)
 	for frames, atom in seq1:foreach() do
 		forge1:time(frames):atom(atom)
 	end
@@ -1009,7 +935,6 @@ moony:c1a1xc1a1
 		atom:supports midi:MidiEvent ;
 		atom:supports osc:Event ;
 		atom:supports time:Position ;
-		atom:supports patch:Message ;
 		lv2:index 0 ;
 		lv2:symbol "event_in_1" ;
 		lv2:name "Event In 1" ;
@@ -1022,7 +947,6 @@ moony:c1a1xc1a1
 		atom:supports midi:MidiEvent ;
 		atom:supports osc:Event ;
 		atom:supports time:Position ;
-		atom:supports patch:Message ;
 		lv2:index 1 ;
 		lv2:symbol "event_out_1" ;
 		lv2:name "Event Out 1" ;
@@ -1047,6 +971,7 @@ moony:c1a1xc1a1
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports atom:Object ;
+		atom:supports patch:Message ;
 		lv2:index 4 ;
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
@@ -1057,6 +982,7 @@ moony:c1a1xc1a1
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports atom:Object ;
+		atom:supports patch:Message ;
 		lv2:index 5 ;
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
@@ -1064,7 +990,7 @@ moony:c1a1xc1a1
 	] ;
 
 	state:state [
-		moony:code """function run(n, seq, forge, c1)
+		moony:code """function run(n, seq, forge, c1, control, notify)
 	for frames, atom in seq:foreach() do
 		forge:time(frames):atom(atom)
 	end
@@ -1093,7 +1019,6 @@ moony:c2a1xc2a1
 		atom:supports midi:MidiEvent ;
 		atom:supports osc:Event ;
 		atom:supports time:Position ;
-		atom:supports patch:Message ;
 		lv2:index 0 ;
 		lv2:symbol "event_in_1" ;
 		lv2:name "Event In 1" ;
@@ -1106,7 +1031,6 @@ moony:c2a1xc2a1
 		atom:supports midi:MidiEvent ;
 		atom:supports osc:Event ;
 		atom:supports time:Position ;
-		atom:supports patch:Message ;
 		lv2:index 1 ;
 		lv2:symbol "event_out_1" ;
 		lv2:name "Event Out 1" ;
@@ -1143,6 +1067,7 @@ moony:c2a1xc2a1
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports atom:Object ;
+		atom:supports patch:Message ;
 		lv2:index 6 ;
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
@@ -1153,6 +1078,7 @@ moony:c2a1xc2a1
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports atom:Object ;
+		atom:supports patch:Message ;
 		lv2:index 7 ;
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
@@ -1160,7 +1086,7 @@ moony:c2a1xc2a1
 	] ;
 
 	state:state [
-		moony:code """function run(n, seq, forge, c1, c2)
+		moony:code """function run(n, seq, forge, c1, c2, control, notify)
 	for frames, atom in seq:foreach() do
 		forge:time(frames):atom(atom)
 	end
@@ -1189,7 +1115,6 @@ moony:c4a1xc4a1
 		atom:supports midi:MidiEvent ;
 		atom:supports osc:Event ;
 		atom:supports time:Position ;
-		atom:supports patch:Message ;
 		lv2:index 0 ;
 		lv2:symbol "event_in_1" ;
 		lv2:name "Event In 1" ;
@@ -1202,7 +1127,6 @@ moony:c4a1xc4a1
 		atom:supports midi:MidiEvent ;
 		atom:supports osc:Event ;
 		atom:supports time:Position ;
-		atom:supports patch:Message ;
 		lv2:index 1 ;
 		lv2:symbol "event_out_1" ;
 		lv2:name "Event Out 1" ;
@@ -1263,6 +1187,7 @@ moony:c4a1xc4a1
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports atom:Object ;
+		atom:supports patch:Message ;
 		lv2:index 10 ;
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
@@ -1273,6 +1198,7 @@ moony:c4a1xc4a1
 			atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports atom:Object ;
+		atom:supports patch:Message ;
 		lv2:index 11 ;
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
@@ -1280,7 +1206,7 @@ moony:c4a1xc4a1
 	] ;
 
 	state:state [
-		moony:code """function run(n, seq, forge, c1, c2, c3, c4)
+		moony:code """function run(n, seq, forge, c1, c2, c3, c4, control, notify)
 	for frames, atom in seq:foreach() do
 		forge:time(frames):atom(atom)
 	end

@@ -16,6 +16,8 @@
  */
 
 #include <moony.h>
+#include <api_atom.h>
+#include <api_forge.h>
 
 #include <lauxlib.h>
 
@@ -88,7 +90,19 @@ _run(lua_State *L)
 		for(unsigned i=0; i<handle->max_val; i++)
 			lua_pushnumber(L, *handle->val_in[i]);
 
-		lua_call(L, 1 + handle->max_val, LUA_MULTRET);
+		// push control / notify pair
+		{
+			latom_t *latom = moony_newuserdata(L, &handle->moony, MOONY_UDATA_ATOM);
+			latom->atom = (const LV2_Atom *)handle->control;
+			latom->body.raw = LV2_ATOM_BODY_CONST(latom->atom);
+
+			lforge_t *lforge = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE);
+			lforge->depth = 0;
+			lforge->last.frames = 0;
+			lforge->forge = &handle->moony.notify_forge;
+		}
+
+		lua_call(L, 1 + handle->max_val + 2, LUA_MULTRET);
 
 		unsigned ret = lua_gettop(L) - top;
 		unsigned max = ret > handle->max_val ? handle->max_val : ret; // discard superfluous returns
@@ -110,7 +124,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 	handle->sample_count = nsamples;
 
 	// handle UI comm
-	moony_in(&handle->moony, handle->control);
+	moony_in(&handle->moony, handle->control, handle->notify);
 
 	// run
 	if(!moony_bypass(&handle->moony) && _try_lock(&handle->moony.lock.state))

@@ -166,6 +166,10 @@ struct _moony_t {
 	LV2_Atom_Forge forge;
 	LV2_Atom_Forge state_forge;
 	LV2_Atom_Forge stash_forge;
+	LV2_Atom_Forge notify_forge;
+
+	LV2_Atom_Forge_Frame notify_frame;
+	LV2_Atom_Forge_Ref notify_ref;
 
 	struct {
 		LV2_URID subject;
@@ -258,8 +262,8 @@ int moony_init(moony_t *moony, const char *subject, double sample_rate,
 	const LV2_Feature *const *features);
 void moony_deinit(moony_t *moony);
 void moony_open(moony_t *moony, lua_State *L, bool use_assert);
-void moony_in(moony_t *moony, const LV2_Atom_Sequence *seq);
-void moony_out(moony_t *moony, LV2_Atom_Sequence *seq, uint32_t frames);
+void moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *notify);
+void moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames);
 const void* extension_data(const char* uri);
 void *moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type);
 

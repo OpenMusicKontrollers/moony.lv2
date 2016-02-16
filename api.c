@@ -745,7 +745,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	{
 		strcpy(moony->chunk,
 			"-- host does not support state:loadDefaultState feature\n\n"
-			"function run(...)\n"
+			"function run(n, ...)\n"
 			"end");
 	}
 
@@ -797,6 +797,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	lv2_atom_forge_init(&moony->forge, moony->map);
 	lv2_atom_forge_init(&moony->state_forge, moony->map);
 	lv2_atom_forge_init(&moony->stash_forge, moony->map);
+	lv2_atom_forge_init(&moony->notify_forge, moony->map);
 	if(moony->log)
 		lv2_log_logger_init(&moony->logger, moony->map, moony->log);
 
@@ -1380,11 +1381,17 @@ moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type)
 }
 
 void
-moony_in(moony_t *moony, const LV2_Atom_Sequence *seq)
+moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *notify)
 {
 	lua_State *L = moony->vm.L;
 
-	LV2_ATOM_SEQUENCE_FOREACH(seq, ev)
+	// initialize notify forge
+	const uint32_t capacity = notify->atom.size;
+	lv2_atom_forge_set_buffer(&moony->notify_forge, (uint8_t *)notify, capacity);
+	moony->notify_ref = lv2_atom_forge_sequence_head(&moony->notify_forge, &moony->notify_frame, 0);
+
+	// read control sequence
+	LV2_ATOM_SEQUENCE_FOREACH(control, ev)
 	{
 		const LV2_Atom_Object *obj = (const LV2_Atom_Object *)&ev->body;
 
@@ -1464,16 +1471,10 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *seq)
 }
 
 void
-moony_out(moony_t *moony, LV2_Atom_Sequence *seq, uint32_t frames)
+moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 {
-	// prepare notify atom forge
-	LV2_Atom_Forge *forge = &moony->forge;
-	LV2_Atom_Forge_Frame notify_frame;
-	LV2_Atom_Forge_Ref ref;
-	
-	uint32_t capacity = seq->atom.size;
-	lv2_atom_forge_set_buffer(forge, (uint8_t *)seq, capacity);
-	ref = lv2_atom_forge_sequence_head(forge, &notify_frame, 0);
+	LV2_Atom_Forge *forge = &moony->notify_forge;
+	LV2_Atom_Forge_Ref ref = moony->notify_ref;
 
 	if(moony->dirty_out)
 	{
@@ -1526,7 +1527,7 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *seq, uint32_t frames)
 	}
 
 	if(ref)
-		lv2_atom_forge_pop(forge, &notify_frame);
+		lv2_atom_forge_pop(forge, &moony->notify_frame);
 	else
-		lv2_atom_sequence_clear(seq);
+		lv2_atom_sequence_clear(notify);
 }
