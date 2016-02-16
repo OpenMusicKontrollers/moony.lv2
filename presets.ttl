@@ -304,7 +304,7 @@ end
 
 function restore(atom)
   state:apply(atom)
-  alpha_stringify(alpha[RDF.value])
+  beta[RDF.value] = alpha_stringify(alpha[RDF.value])
 end
 
 function run(n, seq, forge, control, notify)
