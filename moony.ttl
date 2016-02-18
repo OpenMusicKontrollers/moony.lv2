@@ -349,7 +349,7 @@ moony:ui1_web_ui
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 	] ;
-	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map ;
+	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map, urid:unmap ;
   lv2:extensionData ui:idleInterface, ui:showInterface .
 moony:ui2_web_kx
 	a kx:Widget ;
@@ -390,7 +390,7 @@ moony:ui2_web_kx
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 	] ;
-	lv2:requiredFeature kx:Host, ui:portMap, urid:map .
+	lv2:requiredFeature kx:Host, ui:portMap, urid:map, urid:unmap .
 
 # C1XC1 Plugin
 moony:c1xc1

@@ -868,18 +868,18 @@ _lforge_get(lua_State *L)
 
 	LV2_Atom_Forge_Frame frame;
 
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.patch_get))
+	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.patch.get))
 		luaL_error(L, forge_buffer_overflow);
 
 	if(subject) // is optional
 	{
-		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch_subject))
+		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.subject))
 			luaL_error(L, forge_buffer_overflow);
 		if(!lv2_atom_forge_urid(lforge->forge, subject))
 			luaL_error(L, forge_buffer_overflow);
 	}
 
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch_property))
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.property))
 		luaL_error(L, forge_buffer_overflow);
 	if(!lv2_atom_forge_urid(lforge->forge, property))
 		luaL_error(L, forge_buffer_overflow);
@@ -902,23 +902,23 @@ _lforge_set(lua_State *L)
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
 
-	if(!lv2_atom_forge_object(lforge->forge, lframe->frame, 0, moony->uris.patch_set))
+	if(!lv2_atom_forge_object(lforge->forge, lframe->frame, 0, moony->uris.patch.set))
 		luaL_error(L, forge_buffer_overflow);
 
 	if(subject) // is optional
 	{
-		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch_subject))
+		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.subject))
 			luaL_error(L, forge_buffer_overflow);
 		if(!lv2_atom_forge_urid(lforge->forge, subject))
 			luaL_error(L, forge_buffer_overflow);
 	}
 
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch_property))
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.property))
 		luaL_error(L, forge_buffer_overflow);
 	if(!lv2_atom_forge_urid(lforge->forge, property))
 		luaL_error(L, forge_buffer_overflow);
 
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch_value))
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.value))
 		luaL_error(L, forge_buffer_overflow);
 
 	return 1; // derived forge
@@ -935,18 +935,18 @@ _lforge_put(lua_State *L)
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
 
-	if(!lv2_atom_forge_object(lforge->forge, &lframe->frame[0], 0, moony->uris.patch_put))
+	if(!lv2_atom_forge_object(lforge->forge, &lframe->frame[0], 0, moony->uris.patch.put))
 		luaL_error(L, forge_buffer_overflow);
 
 	if(subject) // is optional
 	{
-		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch_subject))
+		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.subject))
 			luaL_error(L, forge_buffer_overflow);
 		if(!lv2_atom_forge_urid(lforge->forge, subject))
 			luaL_error(L, forge_buffer_overflow);
 	}
 
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch_body))
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.body))
 		luaL_error(L, forge_buffer_overflow);
 	if(!lv2_atom_forge_object(lforge->forge, &lframe->frame[1], 0, 0))
 		luaL_error(L, forge_buffer_overflow);
@@ -965,12 +965,12 @@ _lforge_patch(lua_State *L)
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
 
-	if(!lv2_atom_forge_object(lforge->forge, lframe->frame, 0, moony->uris.patch_patch))
+	if(!lv2_atom_forge_object(lforge->forge, lframe->frame, 0, moony->uris.patch.patch))
 		luaL_error(L, forge_buffer_overflow);
 
 	if(subject) // is optional
 	{
-		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch_subject))
+		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.subject))
 			luaL_error(L, forge_buffer_overflow);
 		if(!lv2_atom_forge_urid(lforge->forge, subject))
 			luaL_error(L, forge_buffer_overflow);
@@ -989,7 +989,7 @@ _lforge_remove(lua_State *L)
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
 
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch_remove))
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.remove))
 		luaL_error(L, forge_buffer_overflow);
 	if(!lv2_atom_forge_object(lforge->forge, lframe->frame, 0, 0))
 		luaL_error(L, forge_buffer_overflow);
@@ -1007,7 +1007,7 @@ _lforge_add(lua_State *L)
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
 
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch_add))
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.add))
 		luaL_error(L, forge_buffer_overflow);
 	if(!lv2_atom_forge_object(lforge->forge, lframe->frame, 0, 0))
 		luaL_error(L, forge_buffer_overflow);

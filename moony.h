@@ -51,7 +51,6 @@
 
 #define MOONY_URI							"http://open-music-kontrollers.ch/lv2/moony"
 
-#define MOONY_MESSAGE_URI			MOONY_URI"#message"
 #define MOONY_CODE_URI				MOONY_URI"#code"
 #define MOONY_SELECTION_URI		MOONY_URI"#selection"
 #define MOONY_ERROR_URI				MOONY_URI"#error"
@@ -158,7 +157,26 @@ struct _latom_driver_hash_t {
 #define DRIVER_HASH_MAX 16
 
 // from moony.c
+typedef struct _patch_t patch_t;
 typedef struct _moony_t moony_t;
+
+struct _patch_t {
+	LV2_URID self;
+
+	LV2_URID get;
+	LV2_URID set;
+	LV2_URID put;
+	LV2_URID patch;
+	LV2_URID body;
+	LV2_URID subject;
+	LV2_URID property;
+	LV2_URID value;
+	LV2_URID add;
+	LV2_URID remove;
+	LV2_URID wildcard;
+	LV2_URID writable;
+	LV2_URID readable;
+};
 
 struct _moony_t {
 	LV2_URID_Map *map;
@@ -172,9 +190,6 @@ struct _moony_t {
 	LV2_Atom_Forge_Ref notify_ref;
 
 	struct {
-		LV2_URID subject;
-
-		LV2_URID moony_message;
 		LV2_URID moony_code;
 		LV2_URID moony_selection;
 		LV2_URID moony_error;
@@ -187,19 +202,7 @@ struct _moony_t {
 		LV2_URID bufsz_min_block_length;
 		LV2_URID bufsz_sequence_size;
 
-		LV2_URID patch_get;
-		LV2_URID patch_set;
-		LV2_URID patch_put;
-		LV2_URID patch_patch;
-		LV2_URID patch_body;
-		LV2_URID patch_subject;
-		LV2_URID patch_property;
-		LV2_URID patch_value;
-		LV2_URID patch_add;
-		LV2_URID patch_remove;
-		LV2_URID patch_wildcard;
-		LV2_URID patch_writable;
-		LV2_URID patch_readable;
+		patch_t patch;
 
 		LV2_URID rdfs_label;
 		LV2_URID rdfs_range;
@@ -315,22 +318,30 @@ moony_error(moony_t *moony)
 #define _unlock(FLAG) atomic_flag_clear_explicit((FLAG), memory_order_release)
 
 static inline LV2_Atom_Forge_Ref
-_moony_message_forge(LV2_Atom_Forge *forge, LV2_URID otype, LV2_URID key,
-	uint32_t size, const char *str)
+_moony_patch(patch_t *patch, LV2_Atom_Forge *forge, LV2_URID key,
+	const char *str, uint32_t size)
 {
 	LV2_Atom_Forge_Frame frame;
+	
+	LV2_Atom_Forge_Ref ref = lv2_atom_forge_object(forge, &frame, 0, str ? patch->set : patch->get)
+		&& lv2_atom_forge_key(forge, patch->subject)
+		&& lv2_atom_forge_urid(forge, patch->self)
+		&& lv2_atom_forge_key(forge, patch->property)
+		&& lv2_atom_forge_urid(forge, key);
 
-	LV2_Atom_Forge_Ref ref = lv2_atom_forge_object(forge, &frame, 0, otype);
-	if(str)
+	if(ref && str)
 	{
-		if(ref)
-			ref = lv2_atom_forge_key(forge, key);
-		if(ref)
-			ref = lv2_atom_forge_string(forge, str, size);
+		ref = lv2_atom_forge_key(forge, patch->value)
+			&& lv2_atom_forge_string(forge, str, size);
 	}
+
 	if(ref)
+	{
 		lv2_atom_forge_pop(forge, &frame);
-	return ref;
+		return 1; // success
+	}
+
+	return 0; // overflow
 }
 
 LV2_Atom_Forge_Ref

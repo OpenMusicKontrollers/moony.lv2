@@ -28,10 +28,10 @@ typedef struct _UI UI;
 
 struct _UI {
 	struct {
-		LV2_URID moony_message;
 		LV2_URID moony_code;
 		LV2_URID moony_error;
 		LV2_URID event_transfer;
+		patch_t patch;
 	} uris;
 
 	LV2_Log_Log *log;
@@ -88,14 +88,13 @@ _err(UI *ui, const char *from, int ret)
 }
 
 static void
-_moony_message_send(UI *ui, LV2_URID otype, LV2_URID key,
-	uint32_t size, const char *str)
+_moony_message_send(UI *ui, LV2_URID key, const char *str, uint32_t size)
 {
 	LV2_Atom_Forge_Frame frame;
 	LV2_Atom_Object *obj = (LV2_Atom_Object *)ui->buf;
 
 	lv2_atom_forge_set_buffer(&ui->forge, ui->buf, 0x10000);
-	if(_moony_message_forge(&ui->forge, otype, key, size, str))
+	if(_moony_patch(&ui->uris.patch, &ui->forge, key, str, size))
 	{
 		// trigger update
 		ui->write_function(ui->controller, ui->control_port, lv2_atom_total_size(&obj->atom),
@@ -127,7 +126,7 @@ _load_chosen(UI *ui, const char *path)
 			if(fread(str, fsize, 1, f) == 1)
 			{
 				str[fsize] = 0;
-				_moony_message_send(ui, ui->uris.moony_message, ui->uris.moony_code, fsize, str);
+				_moony_message_send(ui, ui->uris.moony_code, str, fsize);
 			}
 
 			free(str);
@@ -263,7 +262,7 @@ _on_fs_poll(uv_fs_poll_t *pol, int status, const uv_stat_t* prev, const uv_stat_
 static inline char **
 _parse_env(char *env, char *path)
 {
-	unsigned n = 1;
+	unsigned n = 0;
 	char **args = malloc((n+1) * sizeof(char *));
 	char **oldargs = NULL;
 	if(!args)
@@ -317,9 +316,9 @@ _show(UI *ui)
 	// get default editor from environment
 	const char *moony_editor = getenv("MOONY_EDITOR");
 	if(!moony_editor)
-		moony_editor = command;
-	if(!moony_editor)
 		moony_editor = getenv("EDITOR");
+	if(!moony_editor)
+		moony_editor = command;
 	char *dup = strdup(moony_editor);
 	char **args = dup ? _parse_env(dup, ui->path) : NULL;
 	
@@ -491,10 +490,24 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	ui->control_port = ui->port_map->port_index(ui->port_map->handle, "control");
 	ui->notify_port = ui->port_map->port_index(ui->port_map->handle, "notify");
 
-	ui->uris.moony_message = ui->map->map(ui->map->handle, MOONY_MESSAGE_URI);
 	ui->uris.moony_code = ui->map->map(ui->map->handle, MOONY_CODE_URI);
 	ui->uris.moony_error = ui->map->map(ui->map->handle, MOONY_ERROR_URI);
 	ui->uris.event_transfer = ui->map->map(ui->map->handle, LV2_ATOM__eventTransfer);
+
+	ui->uris.patch.self = ui->map->map(ui->map->handle, plugin_uri);
+	ui->uris.patch.get = ui->map->map(ui->map->handle, LV2_PATCH__Get);
+	ui->uris.patch.set = ui->map->map(ui->map->handle, LV2_PATCH__Set);
+	ui->uris.patch.put = ui->map->map(ui->map->handle, LV2_PATCH__Put);
+	ui->uris.patch.patch = ui->map->map(ui->map->handle, LV2_PATCH__Patch);
+	ui->uris.patch.body = ui->map->map(ui->map->handle, LV2_PATCH__body);
+	ui->uris.patch.subject = ui->map->map(ui->map->handle, LV2_PATCH__subject);
+	ui->uris.patch.property = ui->map->map(ui->map->handle, LV2_PATCH__property);
+	ui->uris.patch.value = ui->map->map(ui->map->handle, LV2_PATCH__value);
+	ui->uris.patch.add = ui->map->map(ui->map->handle, LV2_PATCH__add);
+	ui->uris.patch.remove = ui->map->map(ui->map->handle, LV2_PATCH__remove);
+	ui->uris.patch.wildcard = ui->map->map(ui->map->handle, LV2_PATCH__wildcard);
+	ui->uris.patch.writable = ui->map->map(ui->map->handle, LV2_PATCH__writable);
+	ui->uris.patch.readable = ui->map->map(ui->map->handle, LV2_PATCH__readable);
 
 	lv2_atom_forge_init(&ui->forge, ui->map);
 	if(ui->log)
@@ -555,7 +568,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		lv2_log_note(&ui->logger, "path: %s", ui->path);
 	}
 
-	_moony_message_send(ui, ui->uris.moony_message, ui->uris.moony_code, 0, NULL);
+	_moony_message_send(ui, ui->uris.moony_code, NULL, 0);
 
 #if USE_FS_EVENT
 	if((ret = uv_fs_event_init(&ui->loop, &ui->fs)))
@@ -594,49 +607,56 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 		const LV2_Atom_Object *obj = buffer;
 
 		if(  lv2_atom_forge_is_object_type(&ui->forge, obj->atom.type)
-			&& (obj->body.otype == ui->uris.moony_message) )
+			&& (obj->body.otype == ui->uris.patch.set) )
 		{
-			const LV2_Atom_String *moony_error = NULL;
-			const LV2_Atom_String *moony_code = NULL;
+			const LV2_Atom_URID *subject = NULL;
+			const LV2_Atom_URID *property = NULL;
+			const LV2_Atom_String *value = NULL;
 			
 			LV2_Atom_Object_Query q[] = {
-				{ ui->uris.moony_error, (const LV2_Atom **)&moony_error },
-				{ ui->uris.moony_code, (const LV2_Atom **)&moony_code },
+				{ ui->uris.patch.subject, (const LV2_Atom **)&subject },
+				{ ui->uris.patch.property, (const LV2_Atom **)&property },
+				{ ui->uris.patch.value, (const LV2_Atom **)&value },
 				{ 0, NULL }
 			};
 			lv2_atom_object_query(obj, q);
 
-			if(moony_code)
+			//FIXME check subject
+
+			if(  property && value
+				&& (property->atom.type == ui->forge.URID)
+				&& (value->atom.type == ui->forge.String) )
 			{
-				const char *str = LV2_ATOM_BODY_CONST(&moony_code->atom);
+				const char *str = LV2_ATOM_BODY_CONST(value);
 
-				FILE *f = fopen(ui->path, "wb");
-				if(f)
+				if(property->body == ui->uris.moony_code)
 				{
-					if(fwrite(str, moony_code->atom.size-1, 1, f) != 1)
-						_err2(ui, "fwrite");
+					FILE *f = fopen(ui->path, "wb");
+					if(f)
+					{
+						if(fwrite(str, value->atom.size-1, 1, f) != 1)
+							_err2(ui, "fwrite");
 
-					fclose(f);
+						fclose(f);
 
-					ui->ignore = 1; // ignore next fs change event
+						ui->ignore = 1; // ignore next fs change event
+					}
+					else
+						_err2(ui, "fopen");
 				}
-				else
-					_err2(ui, "fopen");
-			}
-			else if(moony_error)
-			{
-				const char *str = LV2_ATOM_BODY_CONST(&moony_error->atom);
-
-				FILE *f = fopen(ui->path, "ab");
-				if(f)
+				else if(property->body == ui->uris.moony_error)
 				{
-					const char *pre =
-						"\n-- FIXME ----------------------------------------------------------------------\n-- ";
-					fwrite(pre, strlen(pre), 1, f); //TODO check
-					fwrite(str, moony_error->atom.size-1, 1, f); //TODO check
-					fclose(f);
+					FILE *f = fopen(ui->path, "ab");
+					if(f)
+					{
+						const char *pre =
+							"\n-- FIXME ----------------------------------------------------------------------\n-- ";
+						fwrite(pre, strlen(pre), 1, f); //TODO check
+						fwrite(str, value->atom.size-1, 1, f); //TODO check
+						fclose(f);
 
-					ui->ignore = 1; // ignore net fs change event
+						ui->ignore = 1; // ignore net fs change event
+					}
 				}
 			}
 		}

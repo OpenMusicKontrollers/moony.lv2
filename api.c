@@ -749,9 +749,6 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 			"end");
 	}
 
-	moony->uris.subject = moony->map->map(moony->map->handle, subject);
-
-	moony->uris.moony_message = moony->map->map(moony->map->handle, MOONY_MESSAGE_URI);
 	moony->uris.moony_code = moony->map->map(moony->map->handle, MOONY_CODE_URI);
 	moony->uris.moony_selection = moony->map->map(moony->map->handle, MOONY_SELECTION_URI);
 	moony->uris.moony_error = moony->map->map(moony->map->handle, MOONY_ERROR_URI);
@@ -767,19 +764,21 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->uris.bufsz_sequence_size = moony->map->map(moony->map->handle,
 		LV2_BUF_SIZE__sequenceSize);
 
-	moony->uris.patch_get = moony->map->map(moony->map->handle, LV2_PATCH__Get);
-	moony->uris.patch_set = moony->map->map(moony->map->handle, LV2_PATCH__Set);
-	moony->uris.patch_put = moony->map->map(moony->map->handle, LV2_PATCH__Put);
-	moony->uris.patch_patch = moony->map->map(moony->map->handle, LV2_PATCH__Patch);
-	moony->uris.patch_body = moony->map->map(moony->map->handle, LV2_PATCH__body);
-	moony->uris.patch_subject = moony->map->map(moony->map->handle, LV2_PATCH__subject);
-	moony->uris.patch_property = moony->map->map(moony->map->handle, LV2_PATCH__property);
-	moony->uris.patch_value = moony->map->map(moony->map->handle, LV2_PATCH__value);
-	moony->uris.patch_add = moony->map->map(moony->map->handle, LV2_PATCH__add);
-	moony->uris.patch_remove = moony->map->map(moony->map->handle, LV2_PATCH__remove);
-	moony->uris.patch_wildcard = moony->map->map(moony->map->handle, LV2_PATCH__wildcard);
-	moony->uris.patch_writable = moony->map->map(moony->map->handle, LV2_PATCH__writable);
-	moony->uris.patch_readable = moony->map->map(moony->map->handle, LV2_PATCH__readable);
+	moony->uris.patch.self = moony->map->map(moony->map->handle, subject);
+
+	moony->uris.patch.get = moony->map->map(moony->map->handle, LV2_PATCH__Get);
+	moony->uris.patch.set = moony->map->map(moony->map->handle, LV2_PATCH__Set);
+	moony->uris.patch.put = moony->map->map(moony->map->handle, LV2_PATCH__Put);
+	moony->uris.patch.patch = moony->map->map(moony->map->handle, LV2_PATCH__Patch);
+	moony->uris.patch.body = moony->map->map(moony->map->handle, LV2_PATCH__body);
+	moony->uris.patch.subject = moony->map->map(moony->map->handle, LV2_PATCH__subject);
+	moony->uris.patch.property = moony->map->map(moony->map->handle, LV2_PATCH__property);
+	moony->uris.patch.value = moony->map->map(moony->map->handle, LV2_PATCH__value);
+	moony->uris.patch.add = moony->map->map(moony->map->handle, LV2_PATCH__add);
+	moony->uris.patch.remove = moony->map->map(moony->map->handle, LV2_PATCH__remove);
+	moony->uris.patch.wildcard = moony->map->map(moony->map->handle, LV2_PATCH__wildcard);
+	moony->uris.patch.writable = moony->map->map(moony->map->handle, LV2_PATCH__writable);
+	moony->uris.patch.readable = moony->map->map(moony->map->handle, LV2_PATCH__readable);
 
 	moony->uris.rdfs_label = moony->map->map(moony->map->handle, RDFS__label);
 	moony->uris.rdfs_range = moony->map->map(moony->map->handle, RDFS__range);
@@ -1395,77 +1394,123 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 	{
 		const LV2_Atom_Object *obj = (const LV2_Atom_Object *)&ev->body;
 
-		if(  lv2_atom_forge_is_object_type(&moony->forge, obj->atom.type)
-			&& (obj->body.otype == moony->uris.moony_message) )
+		if(!lv2_atom_forge_is_object_type(&moony->forge, obj->atom.type))
+			continue;
+
+		if(obj->body.otype == moony->uris.patch.get)
 		{
-			const LV2_Atom_String *moony_code = NULL;
-			const LV2_Atom_String *moony_selection = NULL;
-			
+			const LV2_Atom_URID *subject = NULL;
+			const LV2_Atom_URID *property = NULL;
+
 			LV2_Atom_Object_Query q[] = {
-				{ moony->uris.moony_code, (const LV2_Atom **)&moony_code },
-				{ moony->uris.moony_selection, (const LV2_Atom **)&moony_selection },
+				{ moony->uris.patch.subject, (const LV2_Atom **)&subject },
+				{ moony->uris.patch.property, (const LV2_Atom **)&property },
 				{ 0, NULL }
 			};
 			lv2_atom_object_query(obj, q);
 
-			if(moony_code && moony_code->atom.size)
+			/* FIXME
+			if(  subject
+				&& (subject->atom.type == moony->forge.URID)
+				&& (subject->body != moony->uris.patch.self) )
+				continue; // subject does not match
+			*/
+
+			if(property && (property->atom.type == moony->forge.URID) ) 
 			{
-				// stash
-				lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_STASH);
-				if(lua_pcall(L, 0, 0, 0))
-					moony_error(moony);
-
-				// load chunk
-				const char *str = LV2_ATOM_BODY_CONST(&moony_code->atom);
-				if(luaL_dostring(L, str)) // failed loading chunk
+				if(property->body == moony->uris.moony_code)
 				{
-					moony_error(moony);
+					moony->dirty_out = 1; // sends moony_code in moony_out
 				}
-				else // succeeded loading chunk
+				else if(property->body == moony->uris.moony_error)
 				{
-					_spin_lock(&moony->lock.chunk);
-					strncpy(moony->chunk, str, moony_code->atom.size);
-					_unlock(&moony->lock.chunk);
-
-					moony->error[0] = 0x0; // reset error flag
-
-					if(moony->state_atom)
-					{
-						// restore Lua defined properties
-						lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_RESTORE);
-						if(lua_pcall(L, 0, 0, 0))
-							moony_error(moony);
-					}
+					if(strlen(moony->error) > 0)
+						moony->error_out = 1; // sends moony_error in moony_out
 				}
+			}
+		}
+		else if(obj->body.otype == moony->uris.patch.set)
+		{
+			const LV2_Atom_URID *subject = NULL;
+			const LV2_Atom_URID *property = NULL;
+			const LV2_Atom *value = NULL;
 
-				// apply stash
-				if(moony->stash_atom) // something has been stashed previously
+			LV2_Atom_Object_Query q[] = {
+				{ moony->uris.patch.subject, (const LV2_Atom **)&subject },
+				{ moony->uris.patch.property, (const LV2_Atom **)&property },
+				{ moony->uris.patch.value, &value },
+				{ 0, NULL }
+			};
+			lv2_atom_object_query(obj, q);
+
+			/* FIXME
+			if(  subject
+				&& (subject->atom.type == moony->forge.URID)
+				&& (subject->body != moony->uris.patch.self) )
+				continue; // subject does not match
+			*/
+
+			if(  property && value
+				&& (property->atom.type == moony->forge.URID)
+				&& (value->type == moony->forge.String) )
+			{
+				if(property->body == moony->uris.moony_code)
 				{
-					lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_APPLY);
+					// stash
+					lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_STASH);
 					if(lua_pcall(L, 0, 0, 0))
 						moony_error(moony);
 
-					tlsf_free(moony->vm.tlsf, moony->stash_atom);
-					moony->stash_atom = NULL;
-				}
-			}
-			else if(moony_selection && moony_selection->atom.size)
-			{
-				// we do not do any stash, apply and restore for selections
+					// load chunk
+					const char *str = LV2_ATOM_BODY_CONST(value);
+					if(luaL_dostring(L, str)) // failed loading chunk
+					{
+						moony_error(moony);
+					}
+					else // succeeded loading chunk
+					{
+						_spin_lock(&moony->lock.chunk);
+						strncpy(moony->chunk, str, value->size);
+						_unlock(&moony->lock.chunk);
 
-				// load chunk
-				const char *str = LV2_ATOM_BODY_CONST(&moony_selection->atom);
-				if(luaL_dostring(L, str)) // failed loading chunk
-				{
-					moony_error(moony);
+						moony->error[0] = 0x0; // reset error flag
+
+						if(moony->state_atom)
+						{
+							// restore Lua defined properties
+							lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_RESTORE);
+							if(lua_pcall(L, 0, 0, 0))
+								moony_error(moony);
+						}
+					}
+
+					// apply stash
+					if(moony->stash_atom) // something has been stashed previously
+					{
+						lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_APPLY);
+						if(lua_pcall(L, 0, 0, 0))
+							moony_error(moony);
+
+						tlsf_free(moony->vm.tlsf, moony->stash_atom);
+						moony->stash_atom = NULL;
+					}
 				}
-				else // succeeded loading chunk
+				else if(property->body == moony->uris.moony_selection)
 				{
-					moony->error[0] = 0x0; // reset error flag
+					// we do not do any stash, apply and restore for selections
+
+					// load chunk
+					const char *str = LV2_ATOM_BODY_CONST(value);
+					if(luaL_dostring(L, str)) // failed loading chunk
+					{
+						moony_error(moony);
+					}
+					else // succeeded loading chunk
+					{
+						moony->error[0] = 0x0; // reset error flag
+					}
 				}
 			}
-			else
-				moony->dirty_out = 1;
 		}
 	}
 }
@@ -1481,12 +1526,10 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 		_spin_lock(&moony->lock.chunk);
 
 		uint32_t len = strlen(moony->chunk);
-		LV2_Atom_Forge_Frame obj_frame;
 		if(ref)
 			ref = lv2_atom_forge_frame_time(forge, frames);
 		if(ref)
-			ref = _moony_message_forge(forge, moony->uris.moony_message,
-				moony->uris.moony_code, len, moony->chunk);
+			ref = _moony_patch(&moony->uris.patch, forge, moony->uris.moony_code, moony->chunk, len);
 
 		_unlock(&moony->lock.chunk);
 
@@ -1496,12 +1539,10 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 	if(moony->error_out)
 	{
 		uint32_t len = strlen(moony->error);
-		LV2_Atom_Forge_Frame obj_frame;
 		if(ref)
 			ref = lv2_atom_forge_frame_time(forge, frames);
 		if(ref)
-			ref = _moony_message_forge(forge, moony->uris.moony_message,
-				moony->uris.moony_error, len, moony->error);
+			ref = _moony_patch(&moony->uris.patch, forge, moony->uris.moony_error, moony->error, len);
 
 		moony->error_out = 0; // reset flag
 	}
@@ -1512,12 +1553,10 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 		while(pch)
 		{
 			uint32_t len = strlen(pch);
-			LV2_Atom_Forge_Frame obj_frame;
 			if(ref)
 				ref = lv2_atom_forge_frame_time(forge, frames);
 			if(ref)
-				ref = _moony_message_forge(forge, moony->uris.moony_message,
-					moony->uris.moony_trace, len, pch);
+				ref = _moony_patch(&moony->uris.patch, forge, moony->uris.moony_trace, pch, len);
 
 			pch = strtok(NULL, "\n");
 		}
