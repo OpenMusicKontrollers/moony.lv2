@@ -17,6 +17,7 @@
 
 var editor = null;
 
+var LV2_CORE_PREFIX = "http://lv2plug.in/ns/lv2core#";
 var LV2_ATOM_PREFIX = "http://lv2plug.in/ns/ext/atom#";
 var LV2_PATCH_PREFIX= "http://lv2plug.in/ns/ext/patch#";
 var LV2_UI_PREFIX   = "http://lv2plug.in/ns/extensions/ui#";
@@ -24,7 +25,7 @@ var RDF_PREFIX      = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 var RDFS_PREFIX     = "http://www.w3.org/2000/01/rdf-schema#";
 var MOONY_PREFIX    = "http://open-music-kontrollers.ch/lv2/moony#";
 
-var SUBJECT         = "http://open-music-kontrollers.ch/lv2/moony"
+var SUBJECT         = "http://open-music-kontrollers.ch/lv2/moony#a1xa1"; //FIXME
 
 var RDF = {
 	value             : RDF_PREFIX + "value",
@@ -78,7 +79,16 @@ var LV2 = {
 		Set               : LV2_PATCH_PREFIX + "Set",
 		subject           : LV2_PATCH_PREFIX + "subject",
 		property          : LV2_PATCH_PREFIX + "property",
-		value             : LV2_PATCH_PREFIX + "value"
+		value             : LV2_PATCH_PREFIX + "value",
+		remove            : LV2_PATCH_PREFIX + "remove",
+		add               : LV2_PATCH_PREFIX + "add",
+		wildcard          : LV2_PATCH_PREFIX + "wildcard",
+		writable          : LV2_PATCH_PREFIX + "writable",
+		readable          : LV2_PATCH_PREFIX + "readable"
+	},
+	CORE : {
+		minimum           : LV2_CORE_PREFIX + "minimum",
+		maximum           : LV2_CORE_PREFIX + "maximum"
 	}
 };
 
@@ -88,6 +98,79 @@ var MOONY = {
 	error             : MOONY_PREFIX + "error",
 	trace             : MOONY_PREFIX + "trace"
 };
+
+var trim = /[^a-zA-Z0-9_]+/g;
+
+function lv2_ui(o) {
+	lv2_write('/lv2/ui', o);
+}
+
+function lv2_dsp(o) {
+	lv2_write('/lv2/dsp', o);
+}
+
+function lv2_get(func, property) {
+	func({
+		[LV2.UI.protocol] : LV2.ATOM.eventTransfer,
+		[LV2.UI.portIndex] : 'control',
+		[RDF.value] : {
+			[RDFS.range] : LV2.ATOM.Object,
+			[RDF.type] : LV2.PATCH.Get,
+			[RDF.value] : {
+				[LV2.PATCH.subject] : {
+					[RDFS.range] : LV2.ATOM.URID,
+					[RDF.value] : SUBJECT
+				},
+				[LV2.PATCH.property] : {
+					[RDFS.range] : LV2.ATOM.URID,
+					[RDF.value] : property
+				}
+			}
+		}
+	});
+}
+
+function lv2_get_all(func) {
+	func({
+		[LV2.UI.protocol] : LV2.ATOM.eventTransfer,
+		[LV2.UI.portIndex] : 'control',
+		[RDF.value] : {
+			[RDFS.range] : LV2.ATOM.Object,
+			[RDF.type] : LV2.PATCH.Get,
+			[RDF.value] : {
+				[LV2.PATCH.subject] : {
+					[RDFS.range] : LV2.ATOM.URID,
+					[RDF.value] : SUBJECT
+				}
+			}
+		}
+	});
+}
+
+function lv2_set(func, property, range, value) {
+	func({
+		[LV2.UI.protocol] : LV2.ATOM.eventTransfer,
+		[LV2.UI.portIndex] : 'control',
+		[RDF.value] : {
+			[RDFS.range] : LV2.ATOM.Object,
+			[RDF.type] : LV2.PATCH.Set,
+			[RDF.value] : {
+				[LV2.PATCH.subject] : {
+					[RDFS.range] : LV2.ATOM.URID,
+					[RDF.value] : SUBJECT
+				},
+				[LV2.PATCH.property] : {
+					[RDFS.range] : LV2.ATOM.URID,
+					[RDF.value] : property
+				},
+				[LV2.PATCH.value] : {
+					[RDFS.range] : range,
+					[RDF.value] : value
+				}
+			}
+		}
+	});
+}
 
 function lv2_read_float(idx, value) {
 	cosole.log(idx, value);
@@ -112,7 +195,64 @@ function lv2_read_event(idx, obj) {
 
 	if(type == LV2.PATCH.Patch)
 	{
-		//TODO handle dynamic properties
+		var subject = atom[LV2.PATCH.subject];
+		var remove = atom[LV2.PATCH.remove];
+		var add = atom[LV2.PATCH.add];
+
+		if(remove && add) {
+			if(remove[RDFS.range] == LV2.ATOM.Object) {
+				for(var key in remove[RDF.value]) {
+					var prop = remove[RDF.value][key];
+					//console.log('remove', key, prop[RDF.value]);
+					if(key == LV2.PATCH.writable) {
+						if(prop[RDF.value] == LV2.PATCH.wildcard)
+							$('#writable').empty();
+						//TODO
+					} else if(key == LV2.PATCH.readable) {
+						if(prop[RDF.value] == LV2.PATCH.wildcard)
+							$('#readable').empty();
+						//TODO
+					}
+					else {
+						//TODO
+					}
+				}
+			}
+			if(add[RDFS.range] == LV2.ATOM.Object) {
+				for(var key in add[RDF.value]) {
+					var prop = add[RDF.value][key];
+					if(key == LV2.PATCH.writable) {
+						console.log('add writable', prop[RDF.value]);
+						$('#writable').append('<input id="' + prop[RDF.value].replace(trim, '')
+							+ '" name="' + prop[RDF.value] + '" type="range" /><br />');
+						$('#' + prop[RDF.value].replace(trim, '')).on('input', function() {
+							console.log('changed', $(this).val());
+							//FIXME
+							lv2_set(lv2_dsp, prop[RDF.value], LV2.ATOM.Int, Number($(this).val()));
+						});
+					} else if(key == LV2.PATCH.readable) {
+						console.log('add readable', prop[RDF.value]);
+						$('#readable').append('<input id="' + prop[RDF.value].replace(trim, '')
+							+ '" name="' + prop[RDF.value] + '" type="range" /><br />');
+					} else {
+						var item = $('#' + subject[RDF.value].replace(trim, ''));
+						if(key == RDFS.label) {
+							//TODO
+						} else if(key == RDFS.comment) {
+							//TODO
+						} else if(key == RDFS.range) {
+							if(prop[RDF.value] == LV2.ATOM.Int)
+								item.attr('step', 1);
+							//TODO bool, etc.
+						} else if(key == LV2.CORE.minimum) {
+							item.attr('min', prop[RDF.value]);
+						} else if(key == LV2.CORE.maximum) {
+							item.attr('max', prop[RDF.value]);
+						}
+					}
+				}
+			}
+		}
 	}
 	else if(type == LV2.PATCH.Set)
 	{
@@ -134,7 +274,8 @@ function lv2_read_event(idx, obj) {
 				var tracemsg = $('#tracemsg');
 				tracemsg.append(value[RDF.value] + '<br />').scrollTop(tracemsg.prop('scrollHeight'));
 			} else {
-				//TODO handle dynamic properties
+				var item = $('#' + property[RDF.value].replace(trim, ''));
+				item.val(value[RDF.value]);
 			}
 		}
 	}
@@ -201,60 +342,6 @@ function lv2_write(url, o) {
 		error: function(request, status, err) {
 			if(status == 'timeout') {
 				alert('timeout');
-			}
-		}
-	});
-}
-
-function lv2_ui(o) {
-	lv2_write('/lv2/ui', o);
-}
-
-function lv2_dsp(o) {
-	lv2_write('/lv2/dsp', o);
-}
-
-function lv2_get(func, property) {
-	func({
-		[LV2.UI.protocol] : LV2.ATOM.eventTransfer,
-		[LV2.UI.portIndex] : 'control',
-		[RDF.value] : {
-			[RDFS.range] : LV2.ATOM.Object,
-			[RDF.type] : LV2.PATCH.Get,
-			[RDF.value] : {
-				[LV2.PATCH.subject] : {
-					[RDFS.range] : LV2.ATOM.URID,
-					[RDF.value] : SUBJECT
-				},
-				[LV2.PATCH.property] : {
-					[RDFS.range] : LV2.ATOM.URID,
-					[RDF.value] : property
-				}
-			}
-		}
-	});
-}
-
-function lv2_set(func, property, range, value) {
-	func({
-		[LV2.UI.protocol] : LV2.ATOM.eventTransfer,
-		[LV2.UI.portIndex] : 'control',
-		[RDF.value] : {
-			[RDFS.range] : LV2.ATOM.Object,
-			[RDF.type] : LV2.PATCH.Set,
-			[RDF.value] : {
-				[LV2.PATCH.subject] : {
-					[RDFS.range] : LV2.ATOM.URID,
-					[RDF.value] : SUBJECT
-				},
-				[LV2.PATCH.property] : {
-					[RDFS.range] : LV2.ATOM.URID,
-					[RDF.value] : property
-				},
-				[LV2.PATCH.value] : {
-					[RDFS.range] : range,
-					[RDF.value] : value
-				}
 			}
 		}
 	});
@@ -354,4 +441,5 @@ $(document).ready(function() {
 	lv2_get(lv2_ui, LV2.UI.windowTitle);
 	lv2_get(lv2_dsp, MOONY.code);
 	lv2_get(lv2_dsp, MOONY.error);
+	lv2_get_all(lv2_dsp);
 });

@@ -242,7 +242,7 @@ moony:bank-state_state-responder
 urid = {
   alpha = Map[prefix .. '#alpha'],
   beta = Map[prefix .. '#beta'],
-  gamma = Map[prefix .. '#gamm']
+  gamma = Map[prefix .. '#gamma']
 }
 
 function alpha_stringify(value)
