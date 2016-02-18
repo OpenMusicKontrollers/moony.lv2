@@ -18,6 +18,7 @@
 #include <limits.h> // INT_MAX
 #include <math.h> // INFINITY
 #include <inttypes.h>
+#include <stdatomic.h>
 
 #include <api_atom.h>
 #include <api_forge.h>
@@ -27,9 +28,11 @@
 #include <api_time.h>
 #include <api_state.h>
 
+#define XPRESS_PREFIX "http://open-music-kontrollers.ch/lv2/xpress#"
 #define RDF_PREFIX "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 #define RDFS_PREFIX "http://www.w3.org/2000/01/rdf-schema#"
 
+#define XPRESS_VOICE_MAP XPRESS_PREFIX"voiceMap"
 #define RDF__value RDF_PREFIX"value"
 #define RDFS__label RDFS_PREFIX"label"
 #define RDFS__range RDFS_PREFIX"range"
@@ -45,6 +48,20 @@ static const size_t moony_sz [MOONY_UDATA_COUNT] = {
 	[MOONY_UDATA_ATOM]	= sizeof(latom_t),
 	[MOONY_UDATA_FORGE]	= sizeof(lforge_t),
 	[MOONY_UDATA_STASH]	= sizeof(lstash_t)
+};
+
+static _Atomic uint32_t voice_id = ATOMIC_VAR_INIT(UINT32_MAX);
+
+static uint32_t
+_voice_map_new_id(void *handle)
+{
+	(void) handle;
+	return atomic_fetch_sub_explicit(&voice_id, 1, memory_order_relaxed);
+}
+
+static xpress_map_t voice_map_fallback = {
+	.handle = NULL,
+	.new_id = _voice_map_new_id
 };
 
 static int
@@ -146,6 +163,15 @@ static const luaL_Reg lunmap_mt [] = {
 	{"__call", _lunmap__index},
 	{NULL, NULL}
 };
+
+static int
+_lvoice_map(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	lua_pushinteger(L, moony->voice_map->new_id(moony->voice_map->handle));
+	return 1;
+}
 
 static const char *note_keys [12] = {
 	"C", "C#",
@@ -724,6 +750,8 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 			moony->osc_sched = (osc_schedule_t *)features[i]->data;
 		else if(!strcmp(features[i]->URI, LV2_STATE__loadDefaultState))
 			load_default_state = true;
+		else if(!strcmp(features[i]->URI, XPRESS_VOICE_MAP))
+			moony->voice_map = features[i]->data;
 	}
 
 	if(!moony->map)
@@ -748,6 +776,8 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 			"function run(n, ...)\n"
 			"end");
 	}
+	if(!moony->voice_map)
+		moony->voice_map = &voice_map_fallback;
 
 	moony->uris.moony_code = moony->map->map(moony->map->handle, MOONY_CODE_URI);
 	moony->uris.moony_selection = moony->map->map(moony->map->handle, MOONY_SELECTION_URI);
@@ -932,6 +962,11 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	luaL_setfuncs(L, lunmap_mt, 1);
 	lua_setmetatable(L, -2);
 	lua_setglobal(L, "Unmap");
+
+	// lv2.voiceMap
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	lua_pushcclosure(L, _lvoice_map, 1);
+	lua_setglobal(L, "VoiceMap");
 
 #define SET_MAP(L, PREFIX, PROPERTY) \
 ({ \

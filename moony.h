@@ -103,6 +103,15 @@ extern const LV2UI_Descriptor simple_kx;
 extern const LV2UI_Descriptor web_ui;
 extern const LV2UI_Descriptor web_kx;
 
+// xpress:voiceMap
+typedef struct _xpress_map_t xpress_map_t;
+typedef uint32_t (*xpress_map_new_id_t)(void *handle);
+
+struct _xpress_map_t {
+	void *handle;
+	xpress_map_new_id_t new_id;
+};
+
 typedef enum _moony_udata_t {
 	MOONY_UDATA_ATOM,
 	MOONY_UDATA_FORGE,
@@ -258,6 +267,8 @@ struct _moony_t {
 	LV2_Atom *stash_atom;
 
 	latom_driver_hash_t atom_driver_hash [DRIVER_HASH_MAX];
+
+	xpress_map_t *voice_map;
 };
 
 // in api.c

@@ -1489,3 +1489,14 @@ do
 
 	assert(env.foo == 'bar')
 end
+
+-- voiceMap
+print('[test] VoiceMap')
+do
+	local ids = {}
+	for i=1, 1000 do
+		local id = VoiceMap()
+		assert(ids[id] == nil)
+		ids[id] = true
+	end
+end

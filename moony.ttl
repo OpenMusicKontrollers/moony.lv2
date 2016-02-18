@@ -32,11 +32,15 @@
 @prefix urid: <http://lv2plug.in/ns/ext/urid#> .
 @prefix kx:		<http://kxstudio.sf.net/ns/lv2ext/external-ui#> .
 
+@prefix xpress: <http://open-music-kontrollers.ch/lv2/xpress#> .
 @prefix osc:  <http://open-music-kontrollers.ch/lv2/osc#> .
 @prefix lic:	<http://opensource.org/licenses/> .
 @prefix omk:	<http://open-music-kontrollers.ch/ventosus#> .
 @prefix proj:	<http://open-music-kontrollers.ch/lv2/> .
 @prefix moony:	<http://open-music-kontrollers.ch/lv2/moony#> .
+
+xpress:voiceMap
+	a lv2:Feature .
 
 osc:schedule
 	a lv2:Feature .
@@ -400,7 +404,7 @@ moony:c1xc1
 	doap:license lic:Artistic-2.0 ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 
@@ -457,7 +461,7 @@ moony:c2xc2
 	doap:license lic:Artistic-2.0 ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 
@@ -527,7 +531,7 @@ moony:c4xc4
 	doap:license lic:Artistic-2.0 ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 
@@ -623,7 +627,7 @@ moony:a1xa1
 	doap:license lic:Artistic-2.0 ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 
@@ -691,7 +695,7 @@ moony:a2xa2
 	doap:license lic:Artistic-2.0 ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 
@@ -783,7 +787,7 @@ moony:a4xa4
 	doap:license lic:Artistic-2.0 ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 
@@ -923,7 +927,7 @@ moony:c1a1xc1a1
 	doap:license lic:Artistic-2.0 ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 
@@ -1007,7 +1011,7 @@ moony:c2a1xc2a1
 	doap:license lic:Artistic-2.0 ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 
@@ -1103,7 +1107,7 @@ moony:c4a1xc4a1
 	doap:license lic:Artistic-2.0 ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 
