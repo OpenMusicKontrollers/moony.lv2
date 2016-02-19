@@ -572,6 +572,9 @@ checkKw(char*s)
 			CHECK(Units.symbol, NUMBER);
 			CHECK(Units.unit, NUMBER);
 			break;
+		case 'V':
+			CHECK(VoiceMap, CALLER);
+			break;
 		case 'w':
 			CHECK(while, WHILE);
 			break;
