@@ -40,20 +40,13 @@
 typedef struct _UI UI;
 typedef struct _server_t server_t;
 typedef struct _client_t client_t;
-typedef struct _job_t job_t;
-
-struct _job_t {
-	job_t *next;
-	char content_length [128];
-	uv_buf_t msg [4];
-};
 
 struct _server_t {
 	uv_tcp_t http_server;
 	client_t *clients;
 	http_parser_settings http_settings;
 	uv_timer_t timer;
-	job_t *jobs;
+	cJSON *root;
 };
 
 struct _client_t {
@@ -149,7 +142,7 @@ static const char *http_content [] = {
 	[CONTENT_IMAGE_PNG] = "Content-Type: image/png\r\n"
 };
 
-static const char *content_length = "Content-Length: %zu\r\n\r\n";
+static const char *content_length = "Content-Length: %zu\r\n\r\n%s";
 
 static inline client_t *
 _client_append(client_t *list, client_t *child)
@@ -203,20 +196,6 @@ _server_clients_keepalive_count(server_t *server)
 			count++;
 
 	return count;
-}
-
-static inline job_t *
-_job_append(job_t *list, job_t *job)
-{
-	if(list)
-	{
-		job_t *l;
-		for(l=list; l->next; l=l->next) {}
-		l->next = job;
-		return list;
-	}
-
-	return job;
 }
 
 static inline void
@@ -576,69 +555,78 @@ _after_write(uv_write_t *req, int status)
 static inline void
 _keepalive(server_t *server)
 {
-	job_t *job = server->jobs;
+	const char *stat = http_status[STATUS_OK];
+	const char *cont = http_content[CONTENT_TEXT_JSON];
 
-	if(job && (_server_clients_keepalive_count(server) > 0) )
+	if(server->root && (_server_clients_keepalive_count(server) > 0) )
 	{
 		SERVER_CLIENT_FOREACH(server, client)
 		{
 			if(!client->keepalive)
 				continue;
 
-			char *json = job->msg[3].base;
-			char *dup = strdup(json);
-			if(dup)
+			char *json = cJSON_PrintUnformatted(server->root);
+			if(json)
 			{
-				client->req.data = dup;
-				job->msg[3].base = dup;
+				char *chunk = NULL;
+				if(asprintf(&chunk, content_length, strlen(json), json) != -1)
+				{
+					client->req.data = chunk;
 
-				uv_write(&client->req, (uv_stream_t *)&client->handle, job->msg, 4, _after_write);
+					uv_buf_t msg [3] = {
+						[0] = {
+							.base = (char *)stat,
+							.len = stat ? strlen(stat) : 0
+						},
+						[1] = {
+							.base = (char *)cont,
+							.len = cont ? strlen(cont) : 0
+						},
+						[2] = {
+							.base = client->req.data,
+							.len = strlen(chunk) 
+						}
+					};
 
-				job->msg[3].base = json;
+					uv_write(&client->req, (uv_stream_t *)&client->handle, msg, 3, _after_write);
+				}
+				free(json);
 			}
 
 			client->keepalive = false;
 		}
 
-		// remove job
-		server->jobs = job->next;
-		free(job->msg[3].base);
-		free(job);
+		cJSON_Delete(server->root);
+		server->root = NULL;
 	}
 }
 
 static inline void
-_schedule(UI *ui, char *json)
+_schedule(UI *ui, cJSON *job)
 {
 	server_t *server = &ui->server;
 
-	job_t *job = calloc(1, sizeof(job_t));
-	if(job)
+	if(!server->root)
 	{
-		const char *stat = http_status[STATUS_OK];
-		const char *cont = http_content[CONTENT_TEXT_JSON];
-
-		job->msg[0].base = (char *)stat;
-		job->msg[0].len = stat ? strlen(stat) : 0;
-
-		job->msg[1].base = (char *)cont;
-		job->msg[1].len = cont ? strlen(cont) : 0;
-
-		job->msg[3].base = json;
-		job->msg[3].len = json ? strlen(json) : 0;
-
-		sprintf(job->content_length, content_length, job->msg[3].len);
-		job->msg[2].base = job->content_length;
-		job->msg[2].len = strlen(job->content_length);
-
-		server->jobs = _job_append(server->jobs, job);
-		_keepalive(server);
+		// create root object
+		server->root = cJSON_CreateObject();
+		cJSON *jobs = cJSON_CreateArray();
+		if(server->root && jobs)
+			cJSON_AddItemToObject(server->root, "jobs", jobs);
 	}
-	else
-		free(json);
+
+	if(server->root)
+	{
+		// add job to jobs array
+		cJSON *jobs = cJSON_GetObjectItem(server->root, "jobs");
+		if(jobs)
+			cJSON_AddItemToArray(jobs, job);
+	}
+
+	_keepalive(server); // answer keep alives
 }
 
-static inline char *
+static inline cJSON * 
 _moony_send(UI *ui, uint32_t idx, uint32_t size, uint32_t prot, const void *buf)
 {
 	cJSON *protocol = NULL;
@@ -690,9 +678,7 @@ _moony_send(UI *ui, uint32_t idx, uint32_t size, uint32_t prot, const void *buf)
 	cJSON_AddItemToObject(root, LV2_UI__protocol, protocol);
 	cJSON_AddItemToObject(root, RDF__value, value);
 
-	char *json = cJSON_PrintUnformatted(root);
-	cJSON_Delete(root);
-	return json;
+	return root;
 }
 
 static inline void
@@ -733,10 +719,10 @@ _moony_ui(UI *ui, const char *json)
 										ui->title, strlen(ui->title));
 									if(obj_out)
 									{
-										char *json_out = _moony_send(ui, ui->control_port,
+										cJSON *job = _moony_send(ui, ui->control_port,
 											lv2_atom_total_size(&obj_out->atom), ui->uris.atom_event_transfer, obj_out);
-										if(json_out)
-											_schedule(ui, json_out);
+										if(job)
+											_schedule(ui, job);
 									}
 								}
 							}
@@ -1118,7 +1104,7 @@ _read_file(UI *ui, const char *bundle_path, const char *file_path, size_t *size)
 		char *str = malloc(128 + fsize);
 		if(str)
 		{
-			sprintf(str, content_length, fsize);
+			sprintf(str, content_length, fsize, "");
 			size_t len = strlen(str);
 			char *ptr = str + len;
 			if(fread(ptr, fsize, 1, f) == 1)
@@ -1474,9 +1460,9 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 {
 	UI *ui = handle;
 
-	char *json = _moony_send(ui, port_index, buffer_size, format, buffer);
-	if(json)
-		_schedule(ui, json);
+	cJSON *job = _moony_send(ui, port_index, buffer_size, format, buffer);
+	if(job)
+		_schedule(ui, job);
 }
 
 static const void *

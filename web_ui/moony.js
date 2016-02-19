@@ -309,7 +309,11 @@ function keepalive() {
 		dataType: 'json',
 		timeout: 60000, // 1min
 		success: function(data) {
-			lv2_success(data);
+			if(data && data.jobs) {
+				for(i in data.jobs) {
+					lv2_success(data.jobs[i]);
+				}
+			}
 
 			$('#status').html('connected');
 			$('.clip').show();
