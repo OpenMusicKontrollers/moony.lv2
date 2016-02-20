@@ -43,7 +43,9 @@ var LuaHighlightRules = function() {
 				"chunk|midi|bundle|message|tuple|object|key|property|vector|sequence|"+
 				"typed|get|set|put|patch|remove|add|pop|"+
 				// moony sequence
-				"foreach|unpack|new|stash|apply|register");
+				"foreach|unpack|new|stash|apply|register|"+
+				// moony stash
+				"write|read");
 
 		var field_constants = (
 				// Lua math
@@ -78,7 +80,7 @@ var LuaHighlightRules = function() {
 				"coroutine|string|utf8|table|math|"+
 				// moony
 				"Atom|MIDI|Time|OSC|Core|Buf_Size|Patch|RDF|RDFS|Units|Options|"+
-				"MIDIResponder|OSCResponder|TimeResponder|StateResponder|Map|Unmap|VoiceMap");
+				"MIDIResponder|OSCResponder|TimeResponder|StateResponder|Map|Unmap|VoiceMap|Stash");
 
     var keywordMapper = this.createKeywordMapper({
         "keyword": keywords,

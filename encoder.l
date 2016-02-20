@@ -461,6 +461,7 @@ checkKw(char*s)
 			CHECK(rawequal, CALLER);
 			CHECK(require, CALLER);
 			
+			CHECK(read, CALLER); // lua.lv2 specific
 			CHECK(run, CALLER); // lua.lv2 specific
 			CHECK(restore, CALLER); // lua.lv2 specific
 			break;
@@ -496,6 +497,7 @@ checkKw(char*s)
 			break;
 		case 'S':
 			CHECK(StateResponder, CALLER);
+			CHECK(Stash, CALLER);
 			break;
 		case 't':
 			CHECK(then, THEN);
@@ -576,6 +578,7 @@ checkKw(char*s)
 			CHECK(VoiceMap, CALLER);
 			break;
 		case 'w':
+			CHECK(write, CALLER); // lua.lv2 specific
 			CHECK(while, WHILE);
 			break;
 		case 'x':
