@@ -17,26 +17,24 @@
 
 #include <api_stash.h>
 
-static int
+int
 _lstash__gc(lua_State *L)
 {
-	lstash_t *lstash = luaL_checkudata(L, 1, "lstash");
-
-	if(lstash->ser.buf)
-		tlsf_free(lstash->ser.tlsf, lstash->ser.buf);
-
-	return 1;
-}
-
-static int
-_lstash_write(lua_State *L)
-{
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lstash_t *lstash = luaL_checkudata(L, 1, "lstash");
+	lstash_t *lstash = lua_touserdata(L, 1);
 	atom_ser_t *ser = &lstash->ser;
 
-	lforge_t *lforge = lua_newuserdata(L, sizeof(lstash_t));
-	luaL_setmetatable(L, "lforge");
+	if(ser->buf)
+		tlsf_free(ser->tlsf, ser->buf);
+
+	return 0;
+}
+
+int
+_lstash_write(lua_State *L)
+{
+	lstash_t *lstash = lua_touserdata(L, 1);
+	atom_ser_t *ser = &lstash->ser;
+	lforge_t *lforge = &lstash->lforge;
 
 	lforge->depth = 0;
 	lforge->last.frames = 0;
@@ -49,24 +47,24 @@ _lstash_write(lua_State *L)
 	atom->type = 0;
 	atom->size = 0;
 
-	lstash->mode = LSTASH_MODE_WRITE;
+	luaL_getmetatable(L, "lforge");
+	lua_setmetatable(L, 1);
 
 	return 1;
 }
 
-static int
+int
 _lstash_read(lua_State *L)
 {
-	lstash_t *lstash = luaL_checkudata(L, 1, "lstash");
+	lstash_t *lstash = lua_touserdata(L, 1);
 	atom_ser_t *ser = &lstash->ser;
-
-	latom_t *latom = lua_newuserdata(L, sizeof(latom_t));
-	luaL_setmetatable(L, "latom");
+	latom_t *latom = &lstash->latom;
 
 	latom->atom = (const LV2_Atom *)ser->buf;
 	latom->body.raw = LV2_ATOM_BODY_CONST(latom->atom);
 
-	lstash->mode = LSTASH_MODE_READ;
+	luaL_getmetatable(L, "latom");
+	lua_setmetatable(L, 1);
 
 	return 1;
 }
@@ -91,18 +89,12 @@ _lstash(lua_State *L)
 	if(!ser->buf)
 		lua_pushnil(L); // memory allocation failed
 
-	// clear buffer
-	LV2_Atom *atom = (LV2_Atom *)ser->buf;
-	atom->type = 0;
-	atom->size = 0;
+	// start off as forge
+	_lstash_write(L);
 
 	return 1;
 }
 
 const luaL_Reg lstash_mt [] = {
-	{"__gc", _lstash__gc},
-	{"write", _lstash_write},
-	{"read", _lstash_read},
-
 	{NULL, NULL}
 };

@@ -41,6 +41,8 @@ struct _latom_driver_t {
 };
 
 struct _latom_t {
+	moony_udata_t type;
+
 	const LV2_Atom *atom;
 
 	union {

@@ -1411,18 +1411,17 @@ print('[test] Stash')
 do
 	local stash = Stash()
 
-	local f = stash:write()
-	f:int(12)
+	stash:int(12)
 
-	local atom = stash:read()
-	assert(#atom == 4)
-	assert(atom.type == Atom.Int)
-	assert(atom.value == 12)
+	stash:read()
+	assert(#stash == 4)
+	assert(stash.type == Atom.Int)
+	assert(stash.value == 12)
 
-	local f = stash:write()
-	local atom = stash:read()
-	assert(#atom == 0)
-	assert(atom.type == nil)
+	stash:write()
+	stash:read()
+	assert(#stash == 0)
+	assert(stash.type == nil)
 end
 
 -- Equal
@@ -1433,15 +1432,10 @@ do
 	local stash3 = Stash()
 	local stash4 = Stash()
 
-	local forge1 = stash1:write()
-	local forge2 = stash2:write()
-	local forge3 = stash3:write()
-	local forge4 = stash4:write()
-
-	forge1:int(11)
-	forge2:int(11)
-	forge3:int(12)
-	forge4:long(11)
+	stash1:int(11)
+	stash2:int(11)
+	stash3:int(12)
+	stash4:long(11)
 
 	local atom1 = stash1:read()
 	local atom2 = stash2:read()

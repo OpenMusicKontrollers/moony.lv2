@@ -140,6 +140,7 @@ typedef enum _moony_cclosure_t {
 	MOONY_CCLOSURE_SEQUENCE_FOREACH,
 
 	MOONY_CCLOSURE_CLONE,
+	MOONY_CCLOSURE_WRITE,
 
 	MOONY_CCLOSURE_COUNT
 } moony_cclosure_t;

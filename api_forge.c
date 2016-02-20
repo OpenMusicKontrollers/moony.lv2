@@ -17,6 +17,7 @@
 
 #include <api_atom.h>
 #include <api_forge.h>
+#include <api_stash.h>
 
 static inline int
 _lforge_frame_time_inlined(lua_State *L, lforge_t *lforge, int64_t frames)
@@ -1031,6 +1032,28 @@ _lforge_pop(lua_State *L)
 	return 0;
 }
 
+static int
+_lforge_read(lua_State *L)
+{
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+
+	if(lforge->type != MOONY_UDATA_STASH)
+		luaL_error(L, "not a stash object");
+
+	return _lstash_read(L);
+}
+
+static int
+_lforge__gc(lua_State *L)
+{
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+
+	if(lforge->type == MOONY_UDATA_STASH)
+		return _lstash__gc(L);
+
+	return 0;
+}
+
 const luaL_Reg lforge_mt [] = {
 	{"frame_time", _lforge_frame_time},
 	{"beat_time", _lforge_beat_time},
@@ -1070,6 +1093,10 @@ const luaL_Reg lforge_mt [] = {
 	{"add", _lforge_add},
 
 	{"pop", _lforge_pop},
+
+	{"read", _lforge_read},
+
+	{"__gc", _lforge__gc},
 
 	{NULL, NULL}
 };

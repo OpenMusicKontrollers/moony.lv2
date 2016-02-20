@@ -16,6 +16,7 @@
  */
 
 #include <api_atom.h>
+#include <api_stash.h>
 
 #include <inttypes.h>
 
@@ -63,6 +64,7 @@ _latom_clone(lua_State *L)
 	latom_t *latom = lua_touserdata(L, 1);
 	
 	latom_t *litem = lua_newuserdata(L, sizeof(latom_t) + lv2_atom_total_size(latom->atom));
+	litem->type = MOONY_UDATA_ATOM;
 	litem->atom = (const LV2_Atom *)litem->payload;
 	litem->body.raw = LV2_ATOM_BODY_CONST(litem->atom);
 
@@ -74,6 +76,17 @@ _latom_clone(lua_State *L)
 	lua_setmetatable(L, -2);
 
 	return 1;
+}
+
+static int
+_latom__gc(lua_State *L)
+{
+	latom_t *latom = lua_touserdata(L, 1);
+
+	if(latom->type == MOONY_UDATA_STASH)
+		return _lstash__gc(L);
+
+	return 0;
 }
 
 // Int driver
@@ -873,6 +886,11 @@ _latom__index(lua_State *L)
 				lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_CLONE);
 				return 1;
 			}
+			else if(!strcmp(key, "write") && (latom->type == MOONY_UDATA_STASH) )
+			{
+				lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_WRITE);
+				return 1;
+			}
 			else if(driver->__indexk)
 			{
 				return driver->__indexk(L, latom);
@@ -936,6 +954,7 @@ const luaL_Reg latom_mt [] = {
 	{"__len", _latom__len},
 	{"__tostring", _latom__tostring},
 	{"__eq", _latom__eq},
+	{"__gc", _latom__gc},
 
 	{NULL, NULL}
 };

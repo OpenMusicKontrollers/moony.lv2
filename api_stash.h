@@ -25,12 +25,6 @@
 
 typedef struct _atom_ser_t atom_ser_t;
 typedef struct _lstash_t lstash_t;
-typedef enum _lstash_mode_t lstash_mode_t;
-
-enum _lstash_mode_t {
-	LSTASH_MODE_READ,
-	LSTASH_MODE_WRITE
-};
 
 struct _atom_ser_t {
 	tlsf_t tlsf;
@@ -40,13 +34,23 @@ struct _atom_ser_t {
 };
 
 struct _lstash_t {
-	lstash_mode_t mode;
+	union {
+		latom_t latom;
+		lforge_t lforge;
+	};
+
 	atom_ser_t ser;
 	LV2_Atom_Forge forge;
 };
 
 int
 _lstash(lua_State *L);
+int
+_lstash__gc(lua_State *L);
+int
+_lstash_write(lua_State *L);
+int
+_lstash_read(lua_State *L);
 
 extern const luaL_Reg lstash_mt [];
 
