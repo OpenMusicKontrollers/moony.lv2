@@ -49,7 +49,7 @@ _lstash_write(lua_State *L)
 	atom->type = 0;
 	atom->size = 0;
 
-	lstash->mode = LSTASH_MODE_READ;
+	lstash->mode = LSTASH_MODE_WRITE;
 
 	return 1;
 }
@@ -66,7 +66,7 @@ _lstash_read(lua_State *L)
 	latom->atom = (const LV2_Atom *)ser->buf;
 	latom->body.raw = LV2_ATOM_BODY_CONST(latom->atom);
 
-	lstash->mode = LSTASH_MODE_WRITE;
+	lstash->mode = LSTASH_MODE_READ;
 
 	return 1;
 }
@@ -86,9 +86,15 @@ _lstash(lua_State *L)
 	ser->tlsf = moony->vm.tlsf;
 	ser->size = 256;
 	ser->buf = tlsf_malloc(moony->vm.tlsf, ser->size);
+	ser->offset = 0; // reset stash pointer
 
 	if(!ser->buf)
 		lua_pushnil(L); // memory allocation failed
+
+	// clear buffer
+	LV2_Atom *atom = (LV2_Atom *)ser->buf;
+	atom->type = 0;
+	atom->size = 0;
 
 	return 1;
 }
