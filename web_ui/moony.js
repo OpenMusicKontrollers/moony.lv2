@@ -21,6 +21,7 @@ var LV2_CORE_PREFIX = "http://lv2plug.in/ns/lv2core#";
 var LV2_ATOM_PREFIX = "http://lv2plug.in/ns/ext/atom#";
 var LV2_PATCH_PREFIX= "http://lv2plug.in/ns/ext/patch#";
 var LV2_UI_PREFIX   = "http://lv2plug.in/ns/extensions/ui#";
+var LV2_UNITS_PREFIX= "http://lv2plug.in/ns/extensions/units#";
 var RDF_PREFIX      = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 var RDFS_PREFIX     = "http://www.w3.org/2000/01/rdf-schema#";
 var MOONY_PREFIX    = "http://open-music-kontrollers.ch/lv2/moony#";
@@ -88,16 +89,71 @@ var LV2 = {
 	},
 	CORE : {
 		minimum           : LV2_CORE_PREFIX + "minimum",
-		maximum           : LV2_CORE_PREFIX + "maximum"
+		maximum           : LV2_CORE_PREFIX + "maximum",
+		scalePoint        : LV2_CORE_PREFIX + "scalePoint"
+	},
+	UNITS : {
+		unit              : LV2_UNITS_PREFIX + "unit",
+		s                 : LV2_UNITS_PREFIX + "s",
+		ms                : LV2_UNITS_PREFIX + "ms",
+		min               : LV2_UNITS_PREFIX + "min",
+		bar               : LV2_UNITS_PREFIX + "bar",
+		beat              : LV2_UNITS_PREFIX + "beat",
+		frame             : LV2_UNITS_PREFIX + "frame",
+		m                 : LV2_UNITS_PREFIX + "m",
+		cm                : LV2_UNITS_PREFIX + "cm",
+		mm                : LV2_UNITS_PREFIX + "mm",
+		km                : LV2_UNITS_PREFIX + "km",
+		inch              : LV2_UNITS_PREFIX + "inch",
+		mile              : LV2_UNITS_PREFIX + "mile",
+		dB                : LV2_UNITS_PREFIX + "dB",
+		pc                : LV2_UNITS_PREFIX + "pc",
+		coef              : LV2_UNITS_PREFIX + "coef",
+		hz                : LV2_UNITS_PREFIX + "hz",
+		khz               : LV2_UNITS_PREFIX + "khz",
+		mhz               : LV2_UNITS_PREFIX + "mhz",
+		bpm               : LV2_UNITS_PREFIX + "bpm",
+		oct               : LV2_UNITS_PREFIX + "oct",
+		cent              : LV2_UNITS_PREFIX + "cent",
+		semitone12TET     : LV2_UNITS_PREFIX + "semitone12TET",
+		degree            : LV2_UNITS_PREFIX + "degree",
+		midiNote          : LV2_UNITS_PREFIX + "midiNote"
 	}
 };
 
 var MOONY = {
-	code              : MOONY_PREFIX + "code",
-	selection         : MOONY_PREFIX + "selection",
-	error             : MOONY_PREFIX + "error",
-	trace             : MOONY_PREFIX + "trace"
+	code                : MOONY_PREFIX + "code",
+	selection           : MOONY_PREFIX + "selection",
+	error               : MOONY_PREFIX + "error",
+	trace               : MOONY_PREFIX + "trace"
 };
+
+var format = {
+	[LV2.UNITS.s] : 's',
+	[LV2.UNITS.ms] : 'ms',
+	[LV2.UNITS.min] : 'min',
+	[LV2.UNITS.bar] : 'bars',
+	[LV2.UNITS.beat] : 'beats',
+	[LV2.UNITS.frame] : 'frames',
+	[LV2.UNITS.m] : 'm',
+	[LV2.UNITS.cm] : 'cm',
+	[LV2.UNITS.mm] : 'mm',
+	[LV2.UNITS.km] : 'km',
+	[LV2.UNITS.inch] : 'in',
+	[LV2.UNITS.mile] : 'mi',
+	[LV2.UNITS.dB] : 'dB',
+	[LV2.UNITS.pc] : '%',
+	[LV2.UNITS.coef] : '',
+	[LV2.UNITS.hz] : 'Hz',
+	[LV2.UNITS.khz] : 'kHz',
+	[LV2.UNITS.mhz] : 'MHz',
+	[LV2.UNITS.bpm] : 'BPM',
+	[LV2.UNITS.oct] : 'oct',
+	[LV2.UNITS.cent] : 'ct',
+	[LV2.UNITS.semitone12TET] : 'semi',
+	[LV2.UNITS.degree] : 'deg',
+	[LV2.UNITS.midiNote] : 'note'
+}
 
 var trim = /[^a-zA-Z0-9_]+/g;
 
@@ -222,18 +278,33 @@ function lv2_read_event(idx, obj) {
 				for(var key in add[RDF.value]) {
 					var prop = add[RDF.value][key];
 					if(key == LV2.PATCH.writable) {
+						var id = prop[RDF.value].replace(trim, '');
 						console.log('add writable', prop[RDF.value]);
-						$('#writable').append('<input id="' + prop[RDF.value].replace(trim, '')
-							+ '" name="' + prop[RDF.value] + '" type="range" /><br />');
-						$('#' + prop[RDF.value].replace(trim, '')).on('input', function() {
-							console.log('changed', $(this).val());
-							//FIXME
-							lv2_set(lv2_dsp, prop[RDF.value], LV2.ATOM.Int, Number($(this).val()));
+						$('#writable').append('<input id="' + id 
+							+ '" name="' + prop[RDF.value] + '" type="text" data-angleOffset="195" data-angleArc="330" data-fgColor="#b00" data-width="75" data-height="75" class="knob" />');
+						$('#' + id).knob({
+							change : function(v) {
+								lv2_set(lv2_dsp, prop[RDF.value], LV2.ATOM.Int, v);
+								//FIXME
+							},
+							release : function(v) {
+								lv2_set(lv2_dsp, prop[RDF.value], LV2.ATOM.Int, v);
+								//FIXME
+							}
 						});
 					} else if(key == LV2.PATCH.readable) {
+						var id = prop[RDF.value].replace(trim, '');
 						console.log('add readable', prop[RDF.value]);
-						$('#readable').append('<input id="' + prop[RDF.value].replace(trim, '')
+						$('#readable').append('<input id="' + id
 							+ '" name="' + prop[RDF.value] + '" type="range" /><br />');
+						$('#' + id).bind('wheel', function(e) {
+							var item = $(this);
+							var step = e.originalEvent.deltaY;
+							if(step < 0) step = -1; else step = 1;
+							console.log(step);
+							item.val(item.val() + step);
+							e.preventDefault();
+						});
 					} else {
 						var item = $('#' + subject[RDF.value].replace(trim, ''));
 						if(key == RDFS.label) {
@@ -241,13 +312,26 @@ function lv2_read_event(idx, obj) {
 						} else if(key == RDFS.comment) {
 							//TODO
 						} else if(key == RDFS.range) {
-							if(prop[RDF.value] == LV2.ATOM.Int)
-								item.attr('step', 1);
+							if(  (prop[RDF.value] == LV2.ATOM.Int)
+								|| (prop[RDF.value] == LV2.ATOM.Long) )
+								item.trigger('configure', { step : 1 }).trigger('change');
+							else if( (prop[RDF.value] == LV2.ATOM.Float)
+								|| (prop[RDF.value] == LV2.ATOM.Double) )
+								item.trigger('configure', { step : 0.001 }).trigger('change');
 							//TODO bool, etc.
 						} else if(key == LV2.CORE.minimum) {
-							item.attr('min', prop[RDF.value]);
+							item.trigger('configure', { min : prop[RDF.value] }).trigger('change');
 						} else if(key == LV2.CORE.maximum) {
-							item.attr('max', prop[RDF.value]);
+							item.trigger('configure', { max : prop[RDF.value] }).trigger('change');
+						} else if(key == LV2.CORE.scalePoint) {
+							//TODO
+							//item.trigger('configure', { cursor : 100 }).trigger('change');
+						} else if(key == LV2.UNITS.unit) {
+							var fmt = format[prop[RDF.value]];
+							if(fmt)
+								item.trigger('configure', { format : function(v) {
+									return v + fmt;
+								}}).trigger('change');
 						}
 					}
 				}
@@ -275,7 +359,7 @@ function lv2_read_event(idx, obj) {
 				tracemsg.append(value[RDF.value] + '<br />').scrollTop(tracemsg.prop('scrollHeight'));
 			} else {
 				var item = $('#' + property[RDF.value].replace(trim, ''));
-				item.val(value[RDF.value]);
+				item.val(value[RDF.value]).trigger('change');
 			}
 		}
 	}
@@ -351,6 +435,13 @@ function lv2_write(url, o) {
 	});
 }
 
+function discover(query) {
+	$('#writable').empty();
+	$('#readable').empty();
+	if(query)
+		lv2_get_all(lv2_dsp);
+}
+
 function compile(editor) {
 	var sel_range = editor.getSelectionRange();
 	if(sel_range.isEmpty()) {
@@ -367,7 +458,8 @@ function compile(editor) {
 		editor.clearSelection();
 	}
 	$('#errmsg').html('<br />').fadeOut(100);
-	$("#compile").parent().fadeOut(100).fadeIn(300);
+	$('#compile').parent().fadeOut(100).fadeIn(300);
+	discover(false);
 }
 
 function compile_line(editor) {

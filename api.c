@@ -1517,6 +1517,26 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 							if(lua_pcall(L, 0, 0, 0))
 								moony_error(moony);
 						}
+
+						/* FIXME FIXME FIXME do we want this?
+						// clear all properties in UI
+						LV2_Atom_Forge_Frame obj_frame, add_frame, rem_frame;
+						lv2_atom_forge_frame_time(&moony->notify_forge, 0);
+						lv2_atom_forge_object(&moony->notify_forge, &obj_frame, 0, moony->uris.patch.patch);
+							//lv2_atom_forge_key(&moony->notify_forge, moony->uris.patch.subject);
+							//lv2_atom_forge_urid(&moony->notify_forge, moony->uris.patch.self);
+							lv2_atom_forge_key(&moony->notify_forge, moony->uris.patch.remove);
+							lv2_atom_forge_object(&moony->notify_forge, &rem_frame, 0, 0);
+								lv2_atom_forge_key(&moony->notify_forge, moony->uris.patch.writable);
+								lv2_atom_forge_urid(&moony->notify_forge, moony->uris.patch.wildcard);
+								lv2_atom_forge_key(&moony->notify_forge, moony->uris.patch.readable);
+								lv2_atom_forge_urid(&moony->notify_forge, moony->uris.patch.wildcard);
+							lv2_atom_forge_pop(&moony->notify_forge, &rem_frame);
+							lv2_atom_forge_key(&moony->notify_forge, moony->uris.patch.add);
+							lv2_atom_forge_object(&moony->notify_forge, &add_frame, 0, 0);
+							lv2_atom_forge_pop(&moony->notify_forge, &add_frame);
+						lv2_atom_forge_pop(&moony->notify_forge, &obj_frame);
+						*/
 					}
 
 					// apply stash

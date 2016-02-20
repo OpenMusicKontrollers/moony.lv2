@@ -1152,6 +1152,12 @@ _on_message_complete(http_parser *parser)
 		cont = http_content[CONTENT_TEXT_JS];
 		chunk = _read_file(ui, ui->bundle_path, client->url, &size);
 	}
+	else if(strstr(client->url, "/jquery.knob.js") == client->url)
+	{
+		stat = http_status[STATUS_OK];
+		cont = http_content[CONTENT_TEXT_JS];
+		chunk = _read_file(ui, ui->bundle_path, client->url, &size);
+	}
 	else if(strstr(client->url, "/style.css") == client->url)
 	{
 		stat = http_status[STATUS_OK];

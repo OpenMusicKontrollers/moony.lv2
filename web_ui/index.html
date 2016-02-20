@@ -8,6 +8,7 @@
 		<link rel="icon" type="image/png" href="/favicon.png" />
 		<link rel="stylesheet" type="text/css" href="/style.css" />
 		<script type="text/javascript" src="/jquery-2.2.0.min.js" charset="utf-8"></script>
+		<script type="text/javascript" src="/jquery.knob.js" charset="utf-8"></script>
 		<script type="text/javascript" src="/moony.js" charset="utf-8"></script>
 		<script type="text/javascript" src="/ace.js" charset="utf-8"></script>
 		<script type="text/javascript" src="/keybinding-vim.js" charset="utf-8"></script>
@@ -48,8 +49,6 @@
 					<tr>
 				</table>
 			</div>
-
-			<div id="tracemsg" class="trace"></div>
 		</div>
 
 		<div>
@@ -60,17 +59,18 @@
 		</div>
 		
 		<div class="clip" hidden>
-			<div id="properties">
-				<h2>Properties</h2>
-				<h3>Writable</h3>
-				<form id="writable"></form>
-				<h3>Readable</h3>
-				<form id="readable"></form>
-			</div>
-
 			<div id="editor"></div>
 
-			<div id="errmsg" class="sticky-bottom" hidden><br /></div>
+			<div class="sticky-bottom">
+				<div id="tracemsg" class="trace"></div>
+
+				<div id="properties">
+					<form id="writable"></form>
+					<form id="readable"></form>
+				</div>
+
+				<div id="errmsg" class="error" hidden><br /></div>
+			</div>
 
 			<div class="box">
 				<div class="button"><a id="compile" href="#">chunk</a></div>
