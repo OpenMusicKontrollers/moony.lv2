@@ -1054,6 +1054,14 @@ _lforge__gc(lua_State *L)
 	return 0;
 }
 
+static int
+_lforge__tostring(lua_State *L)
+{
+	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lua_pushfstring(L, "(forge: %p)", lforge);
+	return 1;
+}
+
 const luaL_Reg lforge_mt [] = {
 	{"frame_time", _lforge_frame_time},
 	{"beat_time", _lforge_beat_time},
@@ -1096,6 +1104,7 @@ const luaL_Reg lforge_mt [] = {
 
 	{"read", _lforge_read},
 
+	{"__tostring", _lforge__tostring},
 	{"__gc", _lforge__gc},
 
 	{NULL, NULL}

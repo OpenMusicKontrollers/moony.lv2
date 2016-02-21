@@ -282,51 +282,19 @@ _log(lua_State *L)
 	luaL_Buffer buf;
 	luaL_buffinit(L, &buf);
 
-	for(int i=1; i<=n; i++)
+  lua_getglobal(L, "tostring");
+  for(int i=1; i<=n; i++)
 	{
-		const char *str = NULL;
-		switch(lua_type(L, i))
-		{
-			case LUA_TNIL:
-				str = "(nil)";
-				break;
-			case LUA_TBOOLEAN:
-				str = lua_toboolean(L, i) ? "true" : "false";
-				break;
-			case LUA_TLIGHTUSERDATA:
-				str = lua_tostring(L, i);
-				if(!str)
-					str = "(lightuserdata)";
-				break;
-			case LUA_TNUMBER:
-				str = lua_tostring(L, i);
-				break;
-			case LUA_TSTRING:
-				str = lua_tostring(L, i);
-				break;
-			case LUA_TTABLE:
-				str = lua_tostring(L, i);
-				if(!str)
-					str = "(table)";
-				break;
-			case LUA_TFUNCTION:
-				str = "(function)";
-				break;
-			case LUA_TUSERDATA:
-				str = lua_tostring(L, i);
-				if(!str)
-					str = "(userdata)";
-				break;
-			case LUA_TTHREAD:
-				str = "(thread)";
-				break;
-		};
-		if(!str)
-			continue;
-		luaL_addstring(&buf, str);
-		if(i < n)
-			luaL_addchar(&buf, '\t');
-	}
+    lua_pushvalue(L, -1);  // function to be called
+    lua_pushvalue(L, i);   // value to print
+    lua_call(L, 1, 1);
+    if(i>1)
+			luaL_addlstring(&buf, "\t", 1);
+		size_t len;
+		const char *s = lua_tolstring(L, -1, &len);
+		luaL_addlstring(&buf, s, len);
+    lua_pop(L, 1);  // pop result
+  }
 
 	luaL_pushresult(&buf);
 
@@ -832,6 +800,9 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 
 	latom_driver_hash_t *latom_driver_hash = moony->atom_driver_hash;
 	unsigned pos = 0;
+
+	latom_driver_hash[pos].type = 0;
+	latom_driver_hash[pos++].driver = &latom_nil_driver;
 
 	latom_driver_hash[pos].type = moony->forge.Int;
 	latom_driver_hash[pos++].driver = &latom_int_driver;

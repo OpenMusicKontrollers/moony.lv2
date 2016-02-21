@@ -86,6 +86,7 @@ struct _latom_t {
 };
 
 // in api_atom.c
+extern const latom_driver_t latom_nil_driver;
 extern const latom_driver_t latom_int_driver;
 extern const latom_driver_t latom_long_driver;
 extern const latom_driver_t latom_float_driver;

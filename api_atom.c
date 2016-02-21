@@ -89,6 +89,34 @@ _latom__gc(lua_State *L)
 	return 0;
 }
 
+// Nil driver
+static int
+_latom_nil__len(lua_State *L, latom_t *latom)
+{
+	lua_pushinteger(L, latom->atom->size);
+	return 1;
+}
+
+static int
+_latom_nil__tostring(lua_State *L, latom_t *latom)
+{
+	lua_pushfstring(L, "(nil: %p)", latom);
+	return 1;
+}
+
+static inline int
+_latom_nil_value(lua_State *L, latom_t *latom)
+{
+	lua_pushnil(L);
+	return 1;
+}
+
+const latom_driver_t latom_nil_driver = {
+	.__len = _latom_nil__len,
+	.__tostring = _latom_nil__tostring,
+	.value = _latom_nil_value
+};
+
 // Int driver
 static int
 _latom_int__len(lua_State *L, latom_t *latom)
@@ -100,7 +128,7 @@ _latom_int__len(lua_State *L, latom_t *latom)
 static int
 _latom_int__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushfstring(L, "%"PRIi32, *latom->body.i32);
+	lua_pushfstring(L, "(int: %p, %"PRIi32")", latom, *latom->body.i32);
 	return 1;
 }
 
@@ -128,7 +156,7 @@ _latom_long__len(lua_State *L, latom_t *latom)
 static int
 _latom_long__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushfstring(L, "%"PRIi64, *latom->body.i64);
+	lua_pushfstring(L, "(long: %p, %"PRIi64")", latom, *latom->body.i64);
 	return 1;
 }
 
@@ -156,7 +184,7 @@ _latom_float__len(lua_State *L, latom_t *latom)
 static int
 _latom_float__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushfstring(L, "%f", *latom->body.f32);
+	lua_pushfstring(L, "(float: %p, %f)", latom, *latom->body.f32);
 	return 1;
 }
 
@@ -184,7 +212,7 @@ _latom_double__len(lua_State *L, latom_t *latom)
 static int
 _latom_double__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushfstring(L, "%lf", *latom->body.f64);
+	lua_pushfstring(L, "(double: %p, %lf)", latom, *latom->body.f64);
 	return 1;
 }
 
@@ -212,7 +240,7 @@ _latom_bool__len(lua_State *L, latom_t *latom)
 static int
 _latom_bool__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushfstring(L, "%s", *latom->body.i32 ? "true" : "false");
+	lua_pushfstring(L, "(bool: %p, %s)", latom, *latom->body.i32 ? "true" : "false");
 	return 1;
 }
 
@@ -240,7 +268,7 @@ _latom_urid__len(lua_State *L, latom_t *latom)
 static int
 _latom_urid__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushfstring(L, "%"PRIu32, *latom->body.u32);
+	lua_pushfstring(L, "(URID: %p, %"PRIu32")", latom, *latom->body.u32);
 	return 1;
 }
 
@@ -272,9 +300,17 @@ _latom_string_value(lua_State *L, latom_t *latom)
 	return 1;
 }
 
+static int
+_latom_string__tostring(lua_State *L, latom_t *latom)
+{
+	//FIXME URI, Path
+	lua_pushfstring(L, "(string: %p, %s)", latom, latom->body.str);
+	return 1;
+}
+
 const latom_driver_t latom_string_driver = {
 	.__len = _latom_string__len,
-	.__tostring = _latom_string_value,
+	.__tostring = _latom_string__tostring,
 	.value = _latom_string_value
 };
 
@@ -301,6 +337,14 @@ _latom_literal_value(lua_State *L, latom_t *latom)
 	return 1;
 }
 
+static int
+_latom_literal__tostring(lua_State *L, latom_t *latom)
+{
+	lua_pushfstring(L, "(literal: %p, %s)", latom, 
+		LV2_ATOM_CONTENTS_CONST(LV2_Atom_Literal_Body, latom->body.lit));
+	return 1;
+}
+
 int
 _latom_literal_unpack(lua_State *L)
 {
@@ -316,7 +360,7 @@ _latom_literal_unpack(lua_State *L)
 const latom_driver_t latom_literal_driver = {
 	.__indexk = _latom_literal__indexk,
 	.__len = _latom_string__len,
-	.__tostring = _latom_literal_value,
+	.__tostring = _latom_literal__tostring,
 	.value = _latom_literal_value,
 	.unpack = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_LIT_UNPACK
 };
@@ -354,7 +398,7 @@ _latom_tuple__len(lua_State *L, latom_t *latom)
 static int
 _latom_tuple__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushstring(L, "(tuple)");
+	lua_pushfstring(L, "(tuple: %p)", latom);
 	return 1;
 }
 
@@ -486,7 +530,7 @@ _latom_obj__len(lua_State *L, latom_t *latom)
 static int
 _latom_obj__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushstring(L, "(object)");
+	lua_pushfstring(L, "(object: %p)", latom);
 	return 1;
 }
 
@@ -573,7 +617,7 @@ _latom_seq__len(lua_State *L, latom_t *latom)
 static int
 _latom_seq__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushstring(L, "(sequence)");
+	lua_pushfstring(L, "(sequence: %p)", latom);
 	return 1;
 }
 
@@ -671,7 +715,7 @@ _latom_vec__len(lua_State *L, latom_t *latom)
 static int
 _latom_vec__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushstring(L, "(vector)");
+	lua_pushfstring(L, "(vector: %p)", latom);
 	return 1;
 }
 
@@ -793,7 +837,7 @@ _latom_chunk__len(lua_State *L, latom_t *latom)
 static int
 _latom_chunk__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushstring(L, "(chunk)");
+	lua_pushfstring(L, "(chunk: %p)", latom);
 	return 1;
 }
 
