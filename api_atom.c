@@ -31,7 +31,7 @@ static const lua_CFunction upclosures [MOONY_UPCLOSURE_COUNT] = {
 };
 
 static inline void
-_pushupclosure(lua_State *L, moony_t *moony, moony_upclosure_t type)
+_pushupclosure(lua_State *L, moony_t *moony, moony_upclosure_t type, bool cache)
 {
 	assert( (type >= MOONY_UPCLOSURE_TUPLE_FOREACH) && (type < MOONY_UPCLOSURE_COUNT) );
 
@@ -48,7 +48,7 @@ _pushupclosure(lua_State *L, moony_t *moony, moony_upclosure_t type)
 		lua_pop(L, 1); // nil
 
 		lua_pushlightuserdata(L, moony);
-		_latom_new(L, NULL); // place-holder
+		_latom_new(L, NULL, cache); // place-holder
 		lua_pushcclosure(L, upclosures[type], 2);
 
 		lua_pushvalue(L, -1);
@@ -64,7 +64,8 @@ _latom_clone(lua_State *L)
 	latom_t *latom = lua_touserdata(L, 1);
 	
 	latom_t *litem = lua_newuserdata(L, sizeof(latom_t) + lv2_atom_total_size(latom->atom));
-	litem->type = MOONY_UDATA_ATOM;
+	litem->lheader.type = MOONY_UDATA_ATOM;
+	litem->lheader.cache = false;
 	litem->atom = (const LV2_Atom *)litem->payload;
 	litem->body.raw = LV2_ATOM_BODY_CONST(litem->atom);
 
@@ -83,7 +84,7 @@ _latom__gc(lua_State *L)
 {
 	latom_t *latom = lua_touserdata(L, 1);
 
-	if(latom->type == MOONY_UDATA_STASH)
+	if(latom->lheader.type == MOONY_UDATA_STASH)
 		return _lstash__gc(L);
 
 	return 0;
@@ -375,7 +376,7 @@ _latom_tuple__indexi(lua_State *L, latom_t *latom)
 	{
 		if(++count == idx)
 		{
-			_latom_new(L, atom);
+			_latom_new(L, atom, latom->lheader.cache);
 			return 1;
 		}
 	}
@@ -423,7 +424,7 @@ _latom_tuple_unpack(lua_State *L)
 		{
 			if(pos <= max)
 			{
-				_latom_new(L, atom);
+				_latom_new(L, atom, latom->lheader.cache);
 				count += 1;
 			}
 			else
@@ -473,7 +474,7 @@ _latom_tuple_foreach(lua_State *L)
 	latom->iter.tuple.pos = 1;
 	latom->iter.tuple.item = latom->body.tuple;
 
-	_pushupclosure(L, moony, MOONY_UPCLOSURE_TUPLE_FOREACH);
+	_pushupclosure(L, moony, MOONY_UPCLOSURE_TUPLE_FOREACH, latom->lheader.cache);
 	lua_pushvalue(L, 1);
 
 	return 2;
@@ -496,7 +497,7 @@ _latom_obj__indexi(lua_State *L, latom_t *latom)
 	lv2_atom_object_body_get(latom->atom->size, latom->body.obj, urid, &atom, 0);
 
 	if(atom) // query returned a matching atom
-		_latom_new(L, atom);
+		_latom_new(L, atom, latom->lheader.cache);
 	else // query returned no matching atom
 		lua_pushnil(L);
 
@@ -570,7 +571,7 @@ _latom_obj_foreach(lua_State *L)
 	// reset iterator to beginning of object
 	latom->iter.obj.prop = lv2_atom_object_begin(latom->body.obj);
 
-	_pushupclosure(L, moony, MOONY_UPCLOSURE_OBJECT_FOREACH);
+	_pushupclosure(L, moony, MOONY_UPCLOSURE_OBJECT_FOREACH, latom->lheader.cache);
 	lua_pushvalue(L, 1);
 
 	return 2;
@@ -594,7 +595,7 @@ _latom_seq__indexi(lua_State *L, latom_t *latom)
 	{
 		if(++count == index) 
 		{
-			_latom_new(L, &ev->body);
+			_latom_new(L, &ev->body, latom->lheader.cache);
 			return 1;
 		}
 	}
@@ -656,7 +657,7 @@ _latom_seq_foreach(lua_State *L)
 	// reset iterator to beginning of sequence
 	latom->iter.seq.ev = lv2_atom_sequence_begin(latom->body.seq);
 
-	_pushupclosure(L, moony, MOONY_UPCLOSURE_SEQUENCE_FOREACH);
+	_pushupclosure(L, moony, MOONY_UPCLOSURE_SEQUENCE_FOREACH, latom->lheader.cache);
 	lua_pushvalue(L, 1);
 
 	return 2;
@@ -679,7 +680,7 @@ _latom_vec__indexi(lua_State *L, latom_t *latom)
 
 	if( (index > 0) && (index <= count) )
 	{
-		latom_t *litem = _latom_new(L, NULL);
+		latom_t *litem = _latom_new(L, NULL, latom->lheader.cache);
 		litem->atom = (const LV2_Atom *)latom->body.vec;
 		litem->body.raw = LV2_ATOM_VECTOR_BODY_ITEM_CONST(latom->body.vec, index - 1);
 	}
@@ -753,7 +754,7 @@ _latom_vec_unpack(lua_State *L)
 
 	for(int i=min; i<=max; i++)
 	{
-		latom_t *litem = _latom_new(L, NULL);
+		latom_t *litem = _latom_new(L, NULL, latom->lheader.cache);
 		litem->atom = (const LV2_Atom *)latom->body.vec;
 		litem->body.raw = LV2_ATOM_VECTOR_BODY_ITEM_CONST(latom->body.vec, i - 1);
 	}
@@ -798,7 +799,7 @@ _latom_vec_foreach(lua_State *L)
 		/ latom->body.vec->child_size;
 	latom->iter.vec.pos = 0;
 
-	_pushupclosure(L, moony, MOONY_UPCLOSURE_VECTOR_FOREACH);
+	_pushupclosure(L, moony, MOONY_UPCLOSURE_VECTOR_FOREACH, latom->lheader.cache);
 	lua_pushvalue(L, 1);
 
 	return 2;
@@ -930,7 +931,7 @@ _latom__index(lua_State *L)
 				lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_CLONE);
 				return 1;
 			}
-			else if(!strcmp(key, "write") && (latom->type == MOONY_UDATA_STASH) )
+			else if(!strcmp(key, "write") && (latom->lheader.type == MOONY_UDATA_STASH) )
 			{
 				lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_WRITE);
 				return 1;

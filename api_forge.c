@@ -96,8 +96,10 @@ _lforge_atom(lua_State *L)
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	latom_t *latom = luaL_checkudata(L, 2, "latom");
 
-	if(!lv2_atom_forge_raw(lforge->forge, latom->atom, sizeof(LV2_Atom) + latom->atom->size))
+	if(  !lv2_atom_forge_atom(lforge->forge, latom->atom->size, latom->atom->type)
+		&& !lv2_atom_forge_raw(lforge->forge, latom->body.raw, latom->atom->size) )
 		luaL_error(L, forge_buffer_overflow);
+
 	lv2_atom_forge_pad(lforge->forge, latom->atom->size);
 
 	lua_settop(L, 1);
@@ -460,7 +462,7 @@ _lforge_osc_bundle(lua_State *L)
 
 	uint64_t timestamp = _lforge_to_timestamp(L, moony, lforge, 2);
 
-	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
+	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
 	lframe->depth = 2;
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
@@ -611,7 +613,7 @@ _lforge_tuple(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
-	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
+	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
 	lframe->depth = 1;
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
@@ -629,7 +631,7 @@ _lforge_object(lua_State *L)
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	LV2_URID id = luaL_optinteger(L, 2, 0);
 	LV2_URID otype = luaL_optinteger(L, 3, 0);
-	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
+	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
 	lframe->depth = 1;
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
@@ -790,7 +792,7 @@ _lforge_sequence(lua_State *L)
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	LV2_URID unit = luaL_optinteger(L, 2, 0); //TODO use proper unit
-	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
+	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
 	lframe->depth = 1;
 	lframe->last.frames = 0;
 	lframe->forge = lforge->forge;
@@ -898,7 +900,7 @@ _lforge_set(lua_State *L)
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	LV2_URID subject = luaL_optinteger(L, 2, 0);
 	LV2_URID property = luaL_checkinteger(L, 3);
-	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
+	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
 	lframe->depth = 1;
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
@@ -931,7 +933,7 @@ _lforge_put(lua_State *L)
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	LV2_URID subject = luaL_optinteger(L, 2, 0);
-	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
+	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
 	lframe->depth = 2;
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
@@ -961,7 +963,7 @@ _lforge_patch(lua_State *L)
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	LV2_URID subject = luaL_optinteger(L, 2, 0);
-	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
+	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
 	lframe->depth = 1;
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
@@ -985,7 +987,7 @@ _lforge_remove(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
-	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
+	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
 	lframe->depth = 1;
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
@@ -1003,7 +1005,7 @@ _lforge_add(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
-	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
+	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
 	lframe->depth = 1;
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
@@ -1037,7 +1039,7 @@ _lforge_read(lua_State *L)
 {
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 
-	if(lforge->type != MOONY_UDATA_STASH)
+	if(lforge->lheader.type != MOONY_UDATA_STASH)
 		luaL_error(L, "not a stash object");
 
 	return _lstash_read(L);
@@ -1048,7 +1050,7 @@ _lforge__gc(lua_State *L)
 {
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 
-	if(lforge->type == MOONY_UDATA_STASH)
+	if(lforge->lheader.type == MOONY_UDATA_STASH)
 		return _lstash__gc(L);
 
 	return 0;

@@ -41,7 +41,7 @@ struct _latom_driver_t {
 };
 
 struct _latom_t {
-	moony_udata_t type;
+	lheader_t lheader;
 
 	const LV2_Atom *atom;
 
@@ -134,11 +134,11 @@ int
 _latom_vec_foreach_itr(lua_State *L);
 
 static inline latom_t *
-_latom_new(lua_State *L, const LV2_Atom *atom)
+_latom_new(lua_State *L, const LV2_Atom *atom, bool cache)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 
-	latom_t *latom = moony_newuserdata(L, moony, MOONY_UDATA_ATOM);
+	latom_t *latom = moony_newuserdata(L, moony, MOONY_UDATA_ATOM, cache);
 	if(atom)
 	{
 		latom->atom = atom;

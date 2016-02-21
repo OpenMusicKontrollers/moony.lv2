@@ -155,8 +155,14 @@ typedef enum _moony_upclosure_t {
 } moony_upclosure_t;
 
 // from api_atom.c
+typedef struct _lheader_t lheader_t;
 typedef struct _latom_driver_t latom_driver_t;
 typedef struct _latom_driver_hash_t latom_driver_hash_t;
+
+struct _lheader_t {
+	moony_udata_t type;
+	bool cache;
+};
 
 struct _latom_driver_hash_t {
 	LV2_URID type;
@@ -280,7 +286,7 @@ void moony_open(moony_t *moony, lua_State *L, bool use_assert);
 void moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *notify);
 void moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames);
 const void* extension_data(const char* uri);
-void *moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type);
+void *moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type, bool cache);
 
 static inline void
 moony_freeuserdata(moony_t *moony)

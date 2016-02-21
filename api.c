@@ -363,16 +363,17 @@ _stash(lua_State *L)
 	lua_getglobal(L, "stash");
 	if(lua_isfunction(L, -1))
 	{
-		lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
+		lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, true);
 		lframe->depth = 0;
 		lframe->last.frames = 0;
 		lframe->forge = &moony->stash_forge;
 
 		atom_ser_t ser = {
 			.tlsf = moony->vm.tlsf, // use tlsf_realloc
-			.size = 256,
-			.buf = tlsf_malloc(moony->vm.tlsf, 256)
+			.size = 1024,
+			.offset = 0
 		};
+		ser.buf = tlsf_malloc(moony->vm.tlsf, ser.size);
 
 		if(ser.buf)
 		{
@@ -402,7 +403,7 @@ _apply(lua_State *L)
 	lua_getglobal(L, "apply");
 	if(lua_isfunction(L, -1))
 	{
-		_latom_new(L, moony->stash_atom);
+		_latom_new(L, moony->stash_atom, false);
 		lua_call(L, 1, 0);
 	}
 	else
@@ -418,7 +419,7 @@ _save(lua_State *L)
 
 	if(lua_getglobal(L, "save") == LUA_TFUNCTION)
 	{
-		lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE);
+		lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, true);
 		lframe->depth = 0;
 		lframe->last.frames = 0;
 		lframe->forge = &moony->state_forge;
@@ -457,9 +458,10 @@ _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 
 	atom_ser_t ser = {
 		.tlsf = NULL,
-		.size = 256,
-		.buf = malloc(256)
+		.size = 1024,
+		.offset = 0
 	};
+	ser.buf = malloc(ser.size);
 
 	if(ser.buf)
 	{
@@ -481,6 +483,7 @@ _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 				lv2_log_error(&moony->logger, "%s", lua_tostring(L, -1));
 			lua_pop(L, 1);
 		}
+		lua_gc(L, LUA_GCSTEP, 0);
 
 		_unlock(&moony->lock.state);
 
@@ -510,7 +513,7 @@ _restore(lua_State *L)
 
 	if(lua_getglobal(L, "restore") == LUA_TFUNCTION)
 	{
-		_latom_new(L, moony->state_atom);
+		_latom_new(L, moony->state_atom, false);
 		lua_call(L, 1, 0);
 	}
 
@@ -1356,36 +1359,50 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 }
 
 void *
-moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type)
+moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type, bool cache)
 {
 	assert( (type >= MOONY_UDATA_ATOM) && (type < MOONY_UDATA_COUNT) );
 
 	int *itr = &moony->itr[type];
 	void *data = NULL;
 
-	lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + type); // ref
-	if(lua_rawgeti(L, -1, *itr) == LUA_TNIL) // no cached udata, create one!
+	if(cache) // do cash this!
 	{
+		lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + type); // ref
+		if(lua_rawgeti(L, -1, *itr) == LUA_TNIL) // no cached udata, create one!
+		{
 #if 0
-		if(moony->log)
-			lv2_log_trace(&moony->logger, "moony_newuserdata: %s\n", moony_ref[type]);
+			if(moony->log)
+				lv2_log_trace(&moony->logger, "moony_newuserdata: %s\n", moony_ref[type]);
 #endif
-		lua_pop(L, 1); // nil
+			lua_pop(L, 1); // nil
 
+			data = lua_newuserdata(L, moony_sz[type]);
+			lheader_t *lheader = data;
+			lheader->type = type;
+			lheader->cache = cache;
+			luaL_getmetatable(L, moony_ref[type]);
+			lua_setmetatable(L, -2);
+			lua_pushvalue(L, -1);
+			lua_rawseti(L, -3, *itr); // store in cache
+		}
+		else // there is a cached udata, use it!
+		{
+			data = lua_touserdata(L, -1);
+			//printf("moony_newuserdata: %s %"PRIi32" %p\n", moony_ref[type], *itr, data);
+		}
+		lua_remove(L, -2); // ref
+		*itr += 1;
+	}
+	else // do not cash this!
+	{
 		data = lua_newuserdata(L, moony_sz[type]);
-		*(moony_udata_t *)data = type;
+		lheader_t *lheader = data;
+		lheader->type = type;
+		lheader->cache = cache;
 		luaL_getmetatable(L, moony_ref[type]);
 		lua_setmetatable(L, -2);
-		lua_pushvalue(L, -1);
-		lua_rawseti(L, -3, *itr); // store in cache
 	}
-	else // there is a cached udata, use it!
-	{
-		data = lua_touserdata(L, -1);
-		//printf("moony_newuserdata: %s %"PRIi32" %p\n", moony_ref[type], *itr, data);
-	}
-	lua_remove(L, -2); // ref
-	*itr += 1;
 
 	return data;
 }
@@ -1471,6 +1488,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 					lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_STASH);
 					if(lua_pcall(L, 0, 0, 0))
 						moony_error(moony);
+					lua_gc(L, LUA_GCSTEP, 0);
 
 					// load chunk
 					const char *str = LV2_ATOM_BODY_CONST(value);
@@ -1492,6 +1510,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 							lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_RESTORE);
 							if(lua_pcall(L, 0, 0, 0))
 								moony_error(moony);
+							lua_gc(L, LUA_GCSTEP, 0);
 						}
 
 						/* FIXME FIXME FIXME do we want this?
@@ -1521,6 +1540,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 						lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_APPLY);
 						if(lua_pcall(L, 0, 0, 0))
 							moony_error(moony);
+						lua_gc(L, LUA_GCSTEP, 0);
 
 						tlsf_free(moony->vm.tlsf, moony->stash_atom);
 						moony->stash_atom = NULL;

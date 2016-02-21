@@ -94,11 +94,11 @@ _run(lua_State *L)
 		// push sequence / forge pair(s)
 		for(unsigned i=0; i<handle->max_val; i++)
 		{
-			latom_t *latom = moony_newuserdata(L, &handle->moony, MOONY_UDATA_ATOM);
+			latom_t *latom = moony_newuserdata(L, &handle->moony, MOONY_UDATA_ATOM, true);
 			latom->atom = (const LV2_Atom *)handle->event_in[i];
 			latom->body.raw = LV2_ATOM_BODY_CONST(latom->atom);
 
-			lforge_t *lforge = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE);
+			lforge_t *lforge = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE, true);
 			lforge->depth = 0;
 			lforge->last.frames = 0;
 			lforge->forge = &handle->forge[i];
@@ -106,11 +106,11 @@ _run(lua_State *L)
 
 		// push control / notify pair
 		{
-			latom_t *latom = moony_newuserdata(L, &handle->moony, MOONY_UDATA_ATOM);
+			latom_t *latom = moony_newuserdata(L, &handle->moony, MOONY_UDATA_ATOM, true);
 			latom->atom = (const LV2_Atom *)handle->control;
 			latom->body.raw = LV2_ATOM_BODY_CONST(latom->atom);
 
-			lforge_t *lforge = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE);
+			lforge_t *lforge = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE, true);
 			lforge->depth = 0;
 			lforge->last.frames = 0;
 			lforge->forge = &handle->moony.notify_forge;

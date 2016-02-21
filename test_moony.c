@@ -39,8 +39,8 @@ struct _handle_t {
 
 	LV2_Atom_Forge forge;
 
-	uint8_t buf [8192] __attribute__((aligned(8)));
-	uint8_t buf2 [8192] __attribute__((aligned(8)));
+	uint8_t buf [BUF_SIZE] __attribute__((aligned(8)));
+	uint8_t buf2 [BUF_SIZE] __attribute__((aligned(8)));
 
 	urid_t urids [MAX_URIDS];
 	LV2_URID urid;
@@ -66,7 +66,7 @@ _test(lua_State *L)
 	{
 		lua_pushvalue(L, 1); // producer
 
-		lforge_t *lforge = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE);
+		lforge_t *lforge = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE, true);
 		lforge->depth = 0;
 		lforge->last.frames = 0;
 		lforge->forge = forge;
@@ -84,11 +84,11 @@ _test(lua_State *L)
 	{
 		lua_pushvalue(L, 2); // consumer
 
-		latom_t *latom = moony_newuserdata(L, &handle->moony, MOONY_UDATA_ATOM);
+		latom_t *latom = moony_newuserdata(L, &handle->moony, MOONY_UDATA_ATOM, true);
 		latom->atom = (const LV2_Atom *)handle->buf;
 		latom->body.raw = LV2_ATOM_BODY_CONST(latom->atom);
 		
-		lforge_t *lframe = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE);
+		lforge_t *lframe = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE, true);
 		lframe->depth = 0;
 		lframe->last.frames = 0;
 		lframe->forge = forge;

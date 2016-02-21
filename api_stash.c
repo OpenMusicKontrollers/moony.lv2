@@ -74,7 +74,7 @@ _lstash(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 
-	lstash_t *lstash = moony_newuserdata(L, moony, MOONY_UDATA_STASH);
+	lstash_t *lstash = moony_newuserdata(L, moony, MOONY_UDATA_STASH, false);
 
 	// initialize forge (URIDs)
 	memcpy(&lstash->forge, &moony->forge, sizeof(LV2_Atom_Forge));
@@ -82,9 +82,9 @@ _lstash(lua_State *L)
 	// initialize memory pool
 	atom_ser_t *ser = &lstash->ser;
 	ser->tlsf = moony->vm.tlsf;
-	ser->size = 256;
-	ser->buf = tlsf_malloc(moony->vm.tlsf, ser->size);
+	ser->size = 1024;
 	ser->offset = 0; // reset stash pointer
+	ser->buf = tlsf_malloc(moony->vm.tlsf, ser->size);
 
 	if(!ser->buf)
 		lua_pushnil(L); // memory allocation failed

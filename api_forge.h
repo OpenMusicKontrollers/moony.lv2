@@ -23,7 +23,7 @@
 typedef struct _lforge_t lforge_t;
 
 struct _lforge_t {
-	moony_udata_t type;
+	lheader_t lheader;
 
 	LV2_Atom_Forge *forge;
 	int depth;
