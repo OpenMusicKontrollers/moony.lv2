@@ -1421,7 +1421,7 @@ do
 	stash:write()
 	stash:read()
 	assert(#stash == 0)
-	assert(stash.type == nil)
+	assert(stash.type == 0)
 end
 
 -- Equal
