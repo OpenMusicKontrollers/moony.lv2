@@ -272,6 +272,7 @@ struct _moony_t {
 
 	LV2_Atom *state_atom;
 	LV2_Atom *stash_atom;
+	uint32_t stash_size;
 
 	latom_driver_hash_t atom_driver_hash [DRIVER_HASH_MAX];
 
@@ -361,6 +362,15 @@ _moony_patch(patch_t *patch, LV2_Atom_Forge *forge, LV2_URID key,
 
 	return 0; // overflow
 }
+
+void *
+moony_alloc(moony_t *moony, size_t nsize);
+
+void *
+moony_realloc(moony_t *moony, void *buf, size_t osize, size_t nsize);
+
+void
+moony_free(moony_t *moony, void *buf, size_t osize);
 
 LV2_Atom_Forge_Ref
 _sink(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size);

@@ -325,9 +325,9 @@ _sink(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
 	if(ser->offset + size > ser->size)
 	{
 		const uint32_t new_size = ser->size * 2;
-		if(ser->tlsf)
+		if(ser->moony)
 		{
-			if(!(ser->buf = tlsf_realloc(ser->tlsf, ser->buf, new_size)))
+			if(!(ser->buf = moony_realloc(ser->moony, ser->buf, ser->size, new_size)))
 				return 0; // realloc failed
 		}
 		else
@@ -369,11 +369,11 @@ _stash(lua_State *L)
 		lframe->forge = &moony->stash_forge;
 
 		atom_ser_t ser = {
-			.tlsf = moony->vm.tlsf, // use tlsf_realloc
+			.moony = moony,
 			.size = 1024,
 			.offset = 0
 		};
-		ser.buf = tlsf_malloc(moony->vm.tlsf, ser.size);
+		ser.buf = moony_alloc(moony, ser.size);
 
 		if(ser.buf)
 		{
@@ -385,8 +385,9 @@ _stash(lua_State *L)
 			lua_call(L, 1, 0);
 
 			if(moony->stash_atom)
-				tlsf_free(moony->vm.tlsf, moony->stash_atom);
+				moony_free(moony, moony->stash_atom, moony->stash_size);
 			moony->stash_atom = atom;
+			moony->stash_size = ser.size;
 		}
 	}
 	else
@@ -457,7 +458,7 @@ _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 	}
 
 	atom_ser_t ser = {
-		.tlsf = NULL,
+		.moony = NULL,
 		.size = 1024,
 		.offset = 0
 	};
@@ -893,8 +894,9 @@ moony_deinit(moony_t *moony)
 	moony->state_atom = NULL;
 
 	if(moony->stash_atom)
-		tlsf_free(moony->vm.tlsf, moony->stash_atom);
+		moony_free(moony, moony->stash_atom, moony->stash_size);
 	moony->stash_atom = NULL;
+	moony->stash_size = 0;
 
 	moony_vm_deinit(&moony->vm);
 }
@@ -1542,8 +1544,9 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 							moony_error(moony);
 						lua_gc(L, LUA_GCSTEP, 0);
 
-						tlsf_free(moony->vm.tlsf, moony->stash_atom);
+						moony_free(moony, moony->stash_atom, moony->stash_size);
 						moony->stash_atom = NULL;
+						moony->stash_size = 0;
 					}
 				}
 				else if(property->body == moony->uris.moony_selection)

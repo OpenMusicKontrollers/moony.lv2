@@ -30,40 +30,12 @@
 
 #define MEM_SIZE 0x40000UL // 256KB
 
-// rt
-static inline void *
-rt_alloc(moony_vm_t *vm, size_t len)
-{
-	return tlsf_malloc(vm->tlsf, len);
-}
-
-// rt
-static inline void *
-rt_realloc(moony_vm_t *vm, size_t len, void *buf)
-{
-	return tlsf_realloc(vm->tlsf, buf, len);
-}
-
-// rt
+//#define MOONY_LOG_MEM
+#ifdef MOONY_LOG_MEM
 static inline void
-rt_free(moony_vm_t *vm, void *buf)
+_log_mem(moony_t *moony, void *ptr, size_t osize, size_t nsize)
 {
-	tlsf_free(vm->tlsf, buf);
-}
-
-// rt
-static void *
-lua_alloc(void *ud, void *ptr, size_t osize, size_t nsize)
-{
-	moony_vm_t *vm = ud;
-	(void)osize;
-
-	vm->used += nsize - (ptr ? osize : 0);
-	if(vm->used > (vm->space >> 1))
-		moony_vm_mem_extend(vm);
-
-#if 0
-	moony_t *moony = (void *)vm - offsetof(moony_t, vm);
+	moony_vm_t *vm = &moony->vm;
 	if(moony->log)
 	{
 		char suffix = ' ';
@@ -78,27 +50,77 @@ lua_alloc(void *ud, void *ptr, size_t osize, size_t nsize)
 			suffix = 'M';
 			used >>= 10;
 		}
-		if(!ptr)
-			lv2_log_trace(&moony->logger, "used: %4zu%c, old: %4zu, new: %4zu, type: '%s'",
-				used, suffix, osize, nsize, lua_typename(vm->L, osize));
-		else
-			lv2_log_trace(&moony->logger, "used: %4zu%c, old: %4zu, new: %4zu, data: %p",
-				used, suffix, osize, nsize, ptr);
+		lv2_log_trace(&moony->logger, "used: %4zu%c, old: %4zu, new: %4zu, data: %p",
+			used, suffix, osize, nsize, ptr);
 	}
+}
 #endif
+
+inline void *
+moony_alloc(moony_t *moony, size_t nsize)
+{
+	moony_vm_t *vm = &moony->vm;
+	vm->used += nsize;
+	if(vm->used > (vm->space >> 1))
+		moony_vm_mem_extend(vm);
+
+#ifdef MOONY_LOG_MEM
+	_log_mem(moony, NULL, 0, nsize);
+#endif
+
+	return tlsf_malloc(vm->tlsf, nsize);
+}
+
+inline void *
+moony_realloc(moony_t *moony, void *buf, size_t osize, size_t nsize)
+{
+	moony_vm_t *vm = &moony->vm;
+	vm->used -= osize;
+	vm->used += nsize;
+	if(vm->used > (vm->space >> 1))
+		moony_vm_mem_extend(vm);
+
+#ifdef MOONY_LOG_MEM
+	_log_mem(moony, buf, osize, nsize);
+#endif
+
+	return tlsf_realloc(vm->tlsf, buf, nsize);
+}
+
+inline void
+moony_free(moony_t *moony, void *buf, size_t osize)
+{
+	moony_vm_t *vm = &moony->vm;
+	vm->used -= osize;
+	if(vm->used > (vm->space >> 1))
+		moony_vm_mem_extend(vm);
+
+#ifdef MOONY_LOG_MEM
+	_log_mem(moony, buf, osize, 0);
+#endif
+
+	tlsf_free(vm->tlsf, buf);
+}
+
+// rt
+static void *
+lua_alloc(void *ud, void *ptr, size_t osize, size_t nsize)
+{
+	moony_t *moony = ud;
+	moony_vm_t *vm = &moony->vm;
 
 	if(nsize == 0)
 	{
 		if(ptr)
-			rt_free(vm, ptr);
+			moony_free(moony, ptr, osize);
 		return NULL;
 	}
 	else
 	{
 		if(ptr)
-			return rt_realloc(vm, nsize, ptr);
+			return moony_realloc(moony, ptr, osize, nsize);
 		else
-			return rt_alloc(vm, nsize);
+			return moony_alloc(moony, nsize);
 	}
 }
 
@@ -106,6 +128,7 @@ lua_alloc(void *ud, void *ptr, size_t osize, size_t nsize)
 int
 moony_vm_init(moony_vm_t *vm)
 {
+	moony_t *moony = (void *)vm - offsetof(moony_t, vm);
 	memset(vm, 0x0, sizeof(moony_vm_t));
 
 	// initialize array of increasing pool sizes
@@ -124,7 +147,7 @@ moony_vm_init(moony_vm_t *vm)
 	vm->pool[0] = tlsf_get_pool(vm->tlsf);
 	vm->space += vm->size[0];
 	
-	vm->L = lua_newstate(lua_alloc, vm);
+	vm->L = lua_newstate(lua_alloc, moony);
 	if(!vm->L)
 		return -1;
 

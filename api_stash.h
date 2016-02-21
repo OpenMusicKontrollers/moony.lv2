@@ -27,7 +27,7 @@ typedef struct _atom_ser_t atom_ser_t;
 typedef struct _lstash_t lstash_t;
 
 struct _atom_ser_t {
-	tlsf_t tlsf;
+	moony_t *moony; // use rt-memory pool?
 	uint32_t size;
 	uint8_t *buf;
 	uint32_t offset;
