@@ -95,12 +95,13 @@ _lforge_atom(lua_State *L)
 {
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
 	latom_t *latom = luaL_checkudata(L, 2, "latom");
+	const uint32_t size = latom->atom->size;
 
-	if(  !lv2_atom_forge_atom(lforge->forge, latom->atom->size, latom->atom->type)
-		&& !lv2_atom_forge_raw(lforge->forge, latom->body.raw, latom->atom->size) )
+	if(!lv2_atom_forge_atom(lforge->forge, size, latom->atom->type))
 		luaL_error(L, forge_buffer_overflow);
-
-	lv2_atom_forge_pad(lforge->forge, latom->atom->size);
+	if(!lv2_atom_forge_raw(lforge->forge, latom->body.raw, size))
+		luaL_error(L, forge_buffer_overflow);
+	lv2_atom_forge_pad(lforge->forge, size);
 
 	lua_settop(L, 1);
 	return 1;
