@@ -129,7 +129,7 @@ _latom_int__len(lua_State *L, latom_t *latom)
 static int
 _latom_int__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushfstring(L, "(int: %p, %"PRIi32")", latom, *latom->body.i32);
+	lua_pushfstring(L, "(int: %p, %I)", latom, *latom->body.i32);
 	return 1;
 }
 
@@ -157,7 +157,7 @@ _latom_long__len(lua_State *L, latom_t *latom)
 static int
 _latom_long__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushfstring(L, "(long: %p, %"PRIi64")", latom, *latom->body.i64);
+	lua_pushfstring(L, "(long: %p, %I)", latom, *latom->body.i64);
 	return 1;
 }
 
@@ -213,7 +213,7 @@ _latom_double__len(lua_State *L, latom_t *latom)
 static int
 _latom_double__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushfstring(L, "(double: %p, %lf)", latom, *latom->body.f64);
+	lua_pushfstring(L, "(double: %p, %f)", latom, *latom->body.f64);
 	return 1;
 }
 
@@ -269,7 +269,7 @@ _latom_urid__len(lua_State *L, latom_t *latom)
 static int
 _latom_urid__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushfstring(L, "(URID: %p, %"PRIu32")", latom, *latom->body.u32);
+	lua_pushfstring(L, "(URID: %p, %I)", latom, *latom->body.u32);
 	return 1;
 }
 
