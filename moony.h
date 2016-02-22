@@ -254,6 +254,7 @@ struct _moony_t {
 	moony_vm_t vm;
 
 	char chunk [MOONY_MAX_CHUNK_LEN];
+	volatile int props_out;
 	volatile int dirty_out;
 	volatile int error_out;
 	volatile int trace_out;

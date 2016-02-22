@@ -284,11 +284,11 @@ function lv2_read_event(idx, obj) {
 							+ '" name="' + prop[RDF.value] + '" type="text" data-angleOffset="195" data-angleArc="330" data-fgColor="#b00" data-width="75" data-height="75" class="knob" />');
 						$('#' + id).knob({
 							change : function(v) {
-								lv2_set(lv2_dsp, prop[RDF.value], LV2.ATOM.Int, v);
+								//lv2_set(lv2_dsp, prop[RDF.value], LV2.ATOM.Int, v);
 								//FIXME
 							},
 							release : function(v) {
-								lv2_set(lv2_dsp, prop[RDF.value], LV2.ATOM.Int, v);
+								//lv2_set(lv2_dsp, prop[RDF.value], LV2.ATOM.Int, v);
 								//FIXME
 							}
 						});
@@ -351,6 +351,7 @@ function lv2_read_event(idx, obj) {
 				document.title = (value[RDF.value]);
 			} else if( (property[RDF.value] == MOONY.code) && (value[RDFS.range] == LV2.ATOM.String) ) {
 				editor.setValue(value[RDF.value], 1);
+				lv2_get_all(lv2_dsp); // update properties
 			} else if( (property[RDF.value] == MOONY.error) && (value[RDFS.range] == LV2.ATOM.String) ) {
 				var errmsg = $('#errmsg');
 				errmsg.html(value[RDF.value]).fadeIn(300);
@@ -435,13 +436,6 @@ function lv2_write(url, o) {
 	});
 }
 
-function discover(query) {
-	$('#writable').empty();
-	$('#readable').empty();
-	if(query)
-		lv2_get_all(lv2_dsp);
-}
-
 function compile(editor) {
 	var sel_range = editor.getSelectionRange();
 	if(sel_range.isEmpty()) {
@@ -459,7 +453,6 @@ function compile(editor) {
 	}
 	$('#errmsg').html('<br />').fadeOut(100);
 	$('#compile').parent().fadeOut(100).fadeIn(300);
-	discover(false);
 }
 
 function compile_line(editor) {
