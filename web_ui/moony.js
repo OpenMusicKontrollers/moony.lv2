@@ -261,13 +261,19 @@ function lv2_read_event(idx, obj) {
 					var prop = remove[RDF.value][key];
 					//console.log('remove', key, prop[RDF.value]);
 					if(key == LV2.PATCH.writable) {
-						if(prop[RDF.value] == LV2.PATCH.wildcard)
+						if(prop[RDF.value] == LV2.PATCH.wildcard) {
 							$('#writable').empty();
-						//TODO
+						} else {
+							var id = prop[RDF.value].replace(trim, '');
+							$('#' + id).remove();
+						}
 					} else if(key == LV2.PATCH.readable) {
-						if(prop[RDF.value] == LV2.PATCH.wildcard)
+						if(prop[RDF.value] == LV2.PATCH.wildcard) {
 							$('#readable').empty();
-						//TODO
+						} else {
+							var id = prop[RDF.value].replace(trim, '');
+							$('#' + id).remove();
+						}
 					}
 					else {
 						//TODO
@@ -280,58 +286,73 @@ function lv2_read_event(idx, obj) {
 					if(key == LV2.PATCH.writable) {
 						var id = prop[RDF.value].replace(trim, '');
 						console.log('add writable', prop[RDF.value]);
-						$('#writable').append('<input id="' + id 
-							+ '" name="' + prop[RDF.value] + '" type="text" data-angleOffset="195" data-angleArc="330" data-fgColor="#b00" data-width="75" data-height="75" class="knob" />');
-						$('#' + id).knob({
-							change : function(v) {
-								//lv2_set(lv2_dsp, prop[RDF.value], LV2.ATOM.Int, v);
-								//FIXME
-							},
-							release : function(v) {
-								//lv2_set(lv2_dsp, prop[RDF.value], LV2.ATOM.Int, v);
-								//FIXME
-							}
+						$('#writable').append('<div><span class="label">Unkown</span><input id="' + id + '" name="' + prop[RDF.value] + '" /><span class="unit"></span><datalist id="'+ id +'POINTS"></datalist></div><br />');
+						$('#' + id).bind('wheel', function(e) { //FIXME
+							var item = $(this);
+							var delta = e.originalEvent.deltaY;
+							var step = Number(item.attr('step'));
+							var newval = Number(item.val());
+							console.log(newval, step, delta);
+							if(delta < 0)
+								newval = newval - step;
+							else if(delta > 0)
+								newval = newval + step;
+							item.val(newval);
+							e.preventDefault();
+
+							lv2_set(lv2_dsp, item.attr('name'), item.attr('data-range'), newval);
+						}).change(function(e) {
+							var item = $(this);
+							var newval = Number(item.val());
+							console.log(newval);
+
+							lv2_set(lv2_dsp, item.attr('name'), item.attr('data-range'), newval);
 						});
 					} else if(key == LV2.PATCH.readable) {
 						var id = prop[RDF.value].replace(trim, '');
 						console.log('add readable', prop[RDF.value]);
-						$('#readable').append('<input id="' + id
-							+ '" name="' + prop[RDF.value] + '" type="range" /><br />');
-						$('#' + id).bind('wheel', function(e) {
-							var item = $(this);
-							var step = e.originalEvent.deltaY;
-							if(step < 0) step = -1; else step = 1;
-							console.log(step);
-							item.val(item.val() + step);
-							e.preventDefault();
-						});
+						$('#readable').append('<div><span class="label">Unknown</span><input id="' + id + '" name="' + prop[RDF.value] + '" disabled /><span class="unit"></span></div><br />');
 					} else {
-						var item = $('#' + subject[RDF.value].replace(trim, ''));
+						var id = subject[RDF.value].replace(trim, '');
+						var item = $('#' + id);
 						if(key == RDFS.label) {
-							//TODO
+							item.parent().children('.label').html(prop[RDF.value]);
 						} else if(key == RDFS.comment) {
-							//TODO
+							item.attr('title', prop[RDF.value]).attr('alt', prop[RDF.value])
 						} else if(key == RDFS.range) {
+							item.attr('data-range', prop[RDF.value]);
 							if(  (prop[RDF.value] == LV2.ATOM.Int)
-								|| (prop[RDF.value] == LV2.ATOM.Long) )
-								item.trigger('configure', { step : 1 }).trigger('change');
-							else if( (prop[RDF.value] == LV2.ATOM.Float)
-								|| (prop[RDF.value] == LV2.ATOM.Double) )
-								item.trigger('configure', { step : 0.001 }).trigger('change');
-							//TODO bool, etc.
+								|| (prop[RDF.value] == LV2.ATOM.Long) ) {
+								item.attr('type', 'number').attr('step', 1);
+							} else if( (prop[RDF.value] == LV2.ATOM.Float)
+								|| (prop[RDF.value] == LV2.ATOM.Double) ) {
+								item.attr('type', 'number').attr('step', 'any');
+							} else if(prop[RDF.value] == LV2.ATOM.Bool) {
+								item.attr('type', 'checkbox');
+							} else if(prop[RDF.value] == LV2.ATOM.Path) {
+								item.attr('type', 'file');
+							} else if( (prop[RDF.value] == LV2.ATOM.URI)
+								|| (prop[RDF.value] == LV2.ATOM.URID) ) {
+								item.attr('type', 'url');
+							} else if( (prop[RDF.value] == LV2.ATOM.String)
+								|| (prop[RDF.value] == LV2.ATOM.Literal) ) {
+								item.attr('type', 'text');
+							}
 						} else if(key == LV2.CORE.minimum) {
-							item.trigger('configure', { min : prop[RDF.value] }).trigger('change');
+							item.attr('min', prop[RDF.value]);
 						} else if(key == LV2.CORE.maximum) {
-							item.trigger('configure', { max : prop[RDF.value] }).trigger('change');
+							item.attr('max', prop[RDF.value]);
 						} else if(key == LV2.CORE.scalePoint) {
-							//TODO
-							//item.trigger('configure', { cursor : 100 }).trigger('change');
+							var point = prop[RDF.value];
+							var label = point[RDFS.label];
+							var value = point[RDF.value];
+
+							item.attr('type', 'text'); //FIXME is this necessary?
+							item.attr('list', id + 'POINTS');
+							$('#' + id + 'POINTS').append('<option label="' + label[RDF.value] + '" value="' + value[RDF.value] + '">');
+							console.log('<option label="' + label[RDF.value] + '" value="' + value[RDF.value] + '">');
 						} else if(key == LV2.UNITS.unit) {
-							var fmt = format[prop[RDF.value]];
-							if(fmt)
-								item.trigger('configure', { format : function(v) {
-									return v + fmt;
-								}}).trigger('change');
+							item.parent().children('.unit').html(format[prop[RDF.value]]);
 						}
 					}
 				}
@@ -360,7 +381,7 @@ function lv2_read_event(idx, obj) {
 				tracemsg.append(value[RDF.value] + '<br />').scrollTop(tracemsg.prop('scrollHeight'));
 			} else {
 				var item = $('#' + property[RDF.value].replace(trim, ''));
-				item.val(value[RDF.value]).trigger('change');
+				item.val(value[RDF.value]);
 			}
 		}
 	}
