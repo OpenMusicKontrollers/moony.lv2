@@ -8,7 +8,7 @@ var LuaHighlightRules = function() {
 
     var keywords = (
 				"while|do|end|repeat|until|if|then|elseif|else|for|goto|break|return|"+
-				"local|function");
+				"local|function|in");
 
 		var booleanOps = ("and|or|not");
 
