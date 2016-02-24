@@ -300,7 +300,7 @@ _json_to_atom(UI *ui, cJSON *root, LV2_Atom_Forge *forge)
 			lv2_atom_forge_pop(forge, &frame);
 		return ref;
 	}
-	else if(!strcmp(range->valuestring, LV2_ATOM__Object) && (value->type == cJSON_Object) )
+	else if(!strcmp(range->valuestring, LV2_ATOM__Object) && (value->type == cJSON_Array) )
 	{
 		cJSON *type = cJSON_GetObjectItem(root, RDF__type);
 		const LV2_URID otype = type && (type->type == cJSON_String)
@@ -309,11 +309,17 @@ _json_to_atom(UI *ui, cJSON *root, LV2_Atom_Forge *forge)
 
 		LV2_Atom_Forge_Frame frame;
 		LV2_Atom_Forge_Ref ref = lv2_atom_forge_object(forge, &frame, 0, otype);
-		for(cJSON *child = value->child; ref && child; child = child->next)
+		for(cJSON *item = value->child; ref && item; item = item->next)
 		{
-			const LV2_URID key = ui->map->map(ui->map->handle, child->string);
-			ref = lv2_atom_forge_key(forge, key)
-				&& _json_to_atom(ui, child, forge);
+			cJSON *_key = cJSON_GetObjectItem(item, LV2_ATOM__Property);
+			cJSON *child = cJSON_GetObjectItem(item, RDF__value);
+
+			if(_key && child)
+			{
+				const LV2_URID key = ui->map->map(ui->map->handle, _key->valuestring);
+				ref = lv2_atom_forge_key(forge, key)
+					&& _json_to_atom(ui, child, forge);
+			}
 		}
 		if(ref)
 			lv2_atom_forge_pop(forge, &frame);
@@ -424,13 +430,24 @@ _atom_to_json(UI *ui, const LV2_Atom *atom)
 		const char *otype = ui->unmap->unmap(ui->unmap->handle, obj->body.otype);
 		if(otype)
 			type = cJSON_CreateString(otype);
-		value = cJSON_CreateObject();
-		LV2_ATOM_OBJECT_FOREACH(obj, prop)
+		value = cJSON_CreateArray();
+		if(value)
 		{
-			const char *key = ui->unmap->unmap(ui->unmap->handle, prop->key);
-			cJSON *child = _atom_to_json(ui, &prop->value);
-			if(value && key && child)
-				cJSON_AddItemToObject(value, key, child);
+			LV2_ATOM_OBJECT_FOREACH(obj, prop)
+			{
+				cJSON *item = cJSON_CreateObject();
+				if(item)
+				{
+					const char *key = ui->unmap->unmap(ui->unmap->handle, prop->key);
+					cJSON *_key = key ? cJSON_CreateString(key) : NULL;
+					cJSON *child = _atom_to_json(ui, &prop->value);
+					if(_key)
+						cJSON_AddItemToObject(item, LV2_ATOM__Property, _key);
+					if(child)
+						cJSON_AddItemToObject(item, RDF__value, child);
+					cJSON_AddItemToArray(value, item);
+				}
+			}
 		}
 	}
 	else if(atom->type == ui->forge.Sequence)

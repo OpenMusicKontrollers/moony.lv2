@@ -50,6 +50,7 @@ var LV2 = {
 		String          : LV2_ATOM_PREFIX + "String",
 		URI             : LV2_ATOM_PREFIX + "URI",
 		Path            : LV2_ATOM_PREFIX + "Path",
+		Property        : LV2_ATOM_PREFIX + "Property",
 		Literal         : LV2_ATOM_PREFIX + "Literal",
 		Chunk           : LV2_ATOM_PREFIX + "Chunk",
 		Tuple           : LV2_ATOM_PREFIX + "Tuple",
@@ -172,16 +173,21 @@ function lv2_get(func, property) {
 		[RDF.value] : {
 			[RDFS.range] : LV2.ATOM.Object,
 			[RDF.type] : LV2.PATCH.Get,
-			[RDF.value] : {
-				[LV2.PATCH.subject] : {
-					[RDFS.range] : LV2.ATOM.URID,
-					[RDF.value] : SUBJECT
-				},
-				[LV2.PATCH.property] : {
-					[RDFS.range] : LV2.ATOM.URID,
-					[RDF.value] : property
+			[RDF.value] : [
+				{
+					[LV2.ATOM.Property] : LV2.PATCH.subject,
+					[RDF.value] : {
+						[RDFS.range] : LV2.ATOM.URID,
+						[RDF.value] : SUBJECT
+					}
+				}, {
+					[LV2.ATOM.Property] : LV2.PATCH.property,
+					[RDF.value] : {
+						[RDFS.range] : LV2.ATOM.URID,
+						[RDF.value] : property
+					}
 				}
-			}
+			]
 		}
 	});
 }
@@ -193,12 +199,15 @@ function lv2_get_all(func) {
 		[RDF.value] : {
 			[RDFS.range] : LV2.ATOM.Object,
 			[RDF.type] : LV2.PATCH.Get,
-			[RDF.value] : {
-				[LV2.PATCH.subject] : {
-					[RDFS.range] : LV2.ATOM.URID,
-					[RDF.value] : SUBJECT
+			[RDF.value] : [
+				{
+					[LV2.ATOM.Property] : LV2.PATCH.subject,
+					[RDF.value] : {
+						[RDFS.range] : LV2.ATOM.URID,
+						[RDF.value] : SUBJECT
+					}
 				}
-			}
+			]
 		}
 	});
 }
@@ -210,22 +219,38 @@ function lv2_set(func, property, range, value) {
 		[RDF.value] : {
 			[RDFS.range] : LV2.ATOM.Object,
 			[RDF.type] : LV2.PATCH.Set,
-			[RDF.value] : {
-				[LV2.PATCH.subject] : {
-					[RDFS.range] : LV2.ATOM.URID,
-					[RDF.value] : SUBJECT
-				},
-				[LV2.PATCH.property] : {
-					[RDFS.range] : LV2.ATOM.URID,
-					[RDF.value] : property
-				},
-				[LV2.PATCH.value] : {
-					[RDFS.range] : range,
-					[RDF.value] : value
+			[RDF.value] : [
+				{
+					[LV2.ATOM.Property] : LV2.PATCH.subject,
+					[RDF.value] : {
+						[RDFS.range] : LV2.ATOM.URID,
+						[RDF.value] : SUBJECT
+					}
+				}, {
+					[LV2.ATOM.Property] : LV2.PATCH.property,
+					[RDF.value] : {
+						[RDFS.range] : LV2.ATOM.URID,
+						[RDF.value] : property
+					}
+				}, {
+					[LV2.ATOM.Property] : LV2.PATCH.value,
+					[RDF.value] : {
+						[RDFS.range] : range,
+						[RDF.value] : value
+					}
 				}
-			}
+			]
 		}
 	});
+}
+
+function lv2_object_get(atom, key) {
+	for(i in atom) {
+		if(atom[i][LV2.ATOM.Property] == key) {
+			return atom[i][RDF.value];
+		}
+	}
+	return undefined;
 }
 
 function lv2_read_float(idx, value) {
@@ -243,145 +268,152 @@ function lv2_read_atom(idx, value) {
 }
 
 function lv2_read_event(idx, obj) {
+	var range = obj[RDFS.range];
 	var type = obj[RDF.type];
 	var atom = obj[RDF.value];
 
 	//TODO check idx == 'notify'
-	//TODO check obj[RDFS.range] == LV2.ATOM.Object
 
-	if(type == LV2.PATCH.Patch)
+	if(range == LV2.ATOM.Object)
 	{
-		var subject = atom[LV2.PATCH.subject];
-		var remove = atom[LV2.PATCH.remove];
-		var add = atom[LV2.PATCH.add];
+		if(type == LV2.PATCH.Patch)
+		{
+			var subject = lv2_object_get(atom, LV2.PATCH.subject);
+			var remove = lv2_object_get(atom, LV2.PATCH.remove);
+			var add = lv2_object_get(atom, LV2.PATCH.add);
 
-		if(remove && add) {
-			if(remove[RDFS.range] == LV2.ATOM.Object) {
-				for(var key in remove[RDF.value]) {
-					var prop = remove[RDF.value][key];
-					//console.log('remove', key, prop[RDF.value]);
-					if(key == LV2.PATCH.writable) {
-						if(prop[RDF.value] == LV2.PATCH.wildcard) {
-							$('#writable').empty();
-						} else {
-							var id = prop[RDF.value].replace(trim, '');
-							$('#' + id).remove();
+			if(remove && add) {
+				if(remove[RDFS.range] == LV2.ATOM.Object) {
+					for(var i in remove[RDF.value]) {
+						var item = remove[RDF.value][i];
+						var key = item[LV2.ATOM.Property];
+						var prop = item[RDF.value];
+
+						if(key == LV2.PATCH.writable) {
+							if(prop[RDF.value] == LV2.PATCH.wildcard) {
+								$('#writable').empty();
+							} else {
+								var id = prop[RDF.value].replace(trim, '');
+								$('#' + id).remove();
+							}
+						} else if(key == LV2.PATCH.readable) {
+							if(prop[RDF.value] == LV2.PATCH.wildcard) {
+								$('#readable').empty();
+							} else {
+								var id = prop[RDF.value].replace(trim, '');
+								$('#' + id).remove();
+							}
 						}
-					} else if(key == LV2.PATCH.readable) {
-						if(prop[RDF.value] == LV2.PATCH.wildcard) {
-							$('#readable').empty();
-						} else {
-							var id = prop[RDF.value].replace(trim, '');
-							$('#' + id).remove();
+						else {
+							//TODO
 						}
-					}
-					else {
-						//TODO
 					}
 				}
-			}
-			if(add[RDFS.range] == LV2.ATOM.Object) {
-				for(var key in add[RDF.value]) {
-					var prop = add[RDF.value][key];
-					if(key == LV2.PATCH.writable) {
-						var id = prop[RDF.value].replace(trim, '');
-						console.log('add writable', prop[RDF.value]);
-						$('#writable').append('<div><span class="label">Unkown</span><input id="' + id + '" name="' + prop[RDF.value] + '" /><span class="unit"></span><datalist id="'+ id +'POINTS"></datalist></div><br />');
-						$('#' + id).bind('wheel', function(e) { //FIXME
-							var item = $(this);
-							var delta = e.originalEvent.deltaY;
-							var step = Number(item.attr('step'));
-							var newval = Number(item.val());
-							console.log(newval, step, delta);
-							if(delta < 0)
-								newval = newval - step;
-							else if(delta > 0)
-								newval = newval + step;
-							item.val(newval);
-							e.preventDefault();
+				if(add[RDFS.range] == LV2.ATOM.Object) {
+					for(var i in add[RDF.value]) {
+						var item = add[RDF.value][i];
+						var key = item[LV2.ATOM.Property];
+						var prop = item[RDF.value];
 
-							lv2_set(lv2_dsp, item.attr('name'), item.attr('data-range'), newval);
-						}).change(function(e) {
-							var item = $(this);
-							var newval = Number(item.val());
-							console.log(newval);
+						if(key == LV2.PATCH.writable) {
+							var id = prop[RDF.value].replace(trim, '');
+							$('#writable').append('<div><span class="label">Unkown</span><input id="'+id+'" name="'+prop[RDF.value]+'" /><span class="unit"></span><datalist id="'+id+'POINTS"></datalist></div><br />');
+							$('#' + id).bind('wheel', function(e) { //FIXME only add for number properties
+								var item = $(this);
+								var delta = e.originalEvent.deltaY;
+								var min = Number(item.attr('min'));
+								var max = Number(item.attr('max'));
+								var step = Number(item.attr('step'));
+								var newval = Number(item.val());
+								if(delta < 0)
+									newval = newval - step;
+								else if(delta > 0)
+									newval = newval + step;
+								if( (newval >= min) && (newval <= max) )
+								{
+									item.val(newval);
+									lv2_set(lv2_dsp, item.attr('name'), item.attr('data-range'), newval);
+								}
+								e.preventDefault();
+							}).change(function(e) {
+								var item = $(this);
+								var newval = Number(item.val());
 
-							lv2_set(lv2_dsp, item.attr('name'), item.attr('data-range'), newval);
-						});
-					} else if(key == LV2.PATCH.readable) {
-						var id = prop[RDF.value].replace(trim, '');
-						console.log('add readable', prop[RDF.value]);
-						$('#readable').append('<div><span class="label">Unknown</span><input id="' + id + '" name="' + prop[RDF.value] + '" disabled /><span class="unit"></span></div><br />');
-					} else {
-						var id = subject[RDF.value].replace(trim, '');
-						var item = $('#' + id);
-						if(key == RDFS.label) {
-							item.parent().children('.label').html(prop[RDF.value]);
-						} else if(key == RDFS.comment) {
-							item.attr('title', prop[RDF.value]).attr('alt', prop[RDF.value])
-						} else if(key == RDFS.range) {
-							item.attr('data-range', prop[RDF.value]);
-							if(  (prop[RDF.value] == LV2.ATOM.Int)
-								|| (prop[RDF.value] == LV2.ATOM.Long) ) {
-								item.attr('type', 'number').attr('step', 1);
-							} else if( (prop[RDF.value] == LV2.ATOM.Float)
-								|| (prop[RDF.value] == LV2.ATOM.Double) ) {
-								item.attr('type', 'number').attr('step', 'any');
-							} else if(prop[RDF.value] == LV2.ATOM.Bool) {
-								item.attr('type', 'checkbox');
-							} else if(prop[RDF.value] == LV2.ATOM.Path) {
-								item.attr('type', 'file');
-							} else if( (prop[RDF.value] == LV2.ATOM.URI)
-								|| (prop[RDF.value] == LV2.ATOM.URID) ) {
-								item.attr('type', 'url');
-							} else if( (prop[RDF.value] == LV2.ATOM.String)
-								|| (prop[RDF.value] == LV2.ATOM.Literal) ) {
-								item.attr('type', 'text');
+								lv2_set(lv2_dsp, item.attr('name'), item.attr('data-range'), newval);
+							});
+						} else if(key == LV2.PATCH.readable) {
+							var id = prop[RDF.value].replace(trim, '');
+							$('#readable').append('<div><span class="label">Unknown</span><input id="'+id+'" name="'+prop[RDF.value]+'" disabled /><span class="unit"></span><datalist id="'+id+'POINTS"></datalist></div><br />');
+						} else {
+							var id = subject[RDF.value].replace(trim, '');
+							var item = $('#' + id);
+							if(key == RDFS.label) {
+								item.parent().children('.label').html(prop[RDF.value]);
+							} else if(key == RDFS.comment) {
+								item.attr('title', prop[RDF.value]).attr('alt', prop[RDF.value])
+							} else if(key == RDFS.range) {
+								item.attr('data-range', prop[RDF.value]);
+								if(  (prop[RDF.value] == LV2.ATOM.Int)
+									|| (prop[RDF.value] == LV2.ATOM.Long) ) {
+									item.attr('type', 'number').attr('step', 1);
+								} else if( (prop[RDF.value] == LV2.ATOM.Float)
+									|| (prop[RDF.value] == LV2.ATOM.Double) ) {
+									item.attr('type', 'number').attr('step', 'any');
+								} else if(prop[RDF.value] == LV2.ATOM.Bool) {
+									item.attr('type', 'checkbox');
+								} else if(prop[RDF.value] == LV2.ATOM.Path) {
+									item.attr('type', 'file');
+								} else if( (prop[RDF.value] == LV2.ATOM.URI)
+									|| (prop[RDF.value] == LV2.ATOM.URID) ) {
+									item.attr('type', 'url');
+								} else if( (prop[RDF.value] == LV2.ATOM.String)
+									|| (prop[RDF.value] == LV2.ATOM.Literal) ) {
+									item.attr('type', 'text');
+								}
+							} else if(key == LV2.CORE.minimum) {
+								item.attr('min', prop[RDF.value]);
+							} else if(key == LV2.CORE.maximum) {
+								item.attr('max', prop[RDF.value]);
+							} else if(key == LV2.CORE.scalePoint) {
+								var point = prop[RDF.value];
+								var label = lv2_object_get(point, RDFS.label);
+								var value = lv2_object_get(point, RDF.value);
+
+								item.attr('type', 'text'); // datalist only seems to work with 'text' input
+								item.attr('list', id + 'POINTS');
+								$('#' + id + 'POINTS').append('<option label="' + label[RDF.value] + '" value="' + value[RDF.value] + '">');
+							} else if(key == LV2.UNITS.unit) {
+								item.parent().children('.unit').html(format[prop[RDF.value]]);
 							}
-						} else if(key == LV2.CORE.minimum) {
-							item.attr('min', prop[RDF.value]);
-						} else if(key == LV2.CORE.maximum) {
-							item.attr('max', prop[RDF.value]);
-						} else if(key == LV2.CORE.scalePoint) {
-							var point = prop[RDF.value];
-							var label = point[RDFS.label];
-							var value = point[RDF.value];
-
-							item.attr('type', 'text'); //FIXME is this necessary?
-							item.attr('list', id + 'POINTS');
-							$('#' + id + 'POINTS').append('<option label="' + label[RDF.value] + '" value="' + value[RDF.value] + '">');
-							console.log('<option label="' + label[RDF.value] + '" value="' + value[RDF.value] + '">');
-						} else if(key == LV2.UNITS.unit) {
-							item.parent().children('.unit').html(format[prop[RDF.value]]);
 						}
 					}
 				}
 			}
 		}
-	}
-	else if(type == LV2.PATCH.Set)
-	{
-		var subject = atom[LV2.PATCH.subject];
-		var property = atom[LV2.PATCH.property];
-		var value = atom[LV2.PATCH.value];
+		else if(type == LV2.PATCH.Set)
+		{
+			var subject = lv2_object_get(atom, LV2.PATCH.subject);
+			var property = lv2_object_get(atom, LV2.PATCH.property);
+			var value = lv2_object_get(atom, LV2.PATCH.value);
 
-		//TODO check for matching subject
+			//TODO check for matching subject
 
-		if(property && (property[RDFS.range] == LV2.ATOM.URID) && value) {
-			if( (property[RDF.value] == LV2.UI.windowTitle) && (value[RDFS.range] == LV2.ATOM.String) ) {
-				document.title = (value[RDF.value]);
-			} else if( (property[RDF.value] == MOONY.code) && (value[RDFS.range] == LV2.ATOM.String) ) {
-				editor.setValue(value[RDF.value], 1);
-				lv2_get_all(lv2_dsp); // update properties
-			} else if( (property[RDF.value] == MOONY.error) && (value[RDFS.range] == LV2.ATOM.String) ) {
-				var errmsg = $('#errmsg');
-				errmsg.html(value[RDF.value]).fadeIn(300);
-			} else if( (property[RDF.value] == MOONY.trace) && (value[RDFS.range] == LV2.ATOM.String) ) {
-				var tracemsg = $('#tracemsg');
-				tracemsg.append(value[RDF.value] + '<br />').scrollTop(tracemsg.prop('scrollHeight'));
-			} else {
-				var item = $('#' + property[RDF.value].replace(trim, ''));
-				item.val(value[RDF.value]);
+			if(property && (property[RDFS.range] == LV2.ATOM.URID) && value) {
+				if( (property[RDF.value] == LV2.UI.windowTitle) && (value[RDFS.range] == LV2.ATOM.String) ) {
+					document.title = (value[RDF.value]);
+				} else if( (property[RDF.value] == MOONY.code) && (value[RDFS.range] == LV2.ATOM.String) ) {
+					editor.setValue(value[RDF.value], 1);
+					lv2_get_all(lv2_dsp); // update properties
+				} else if( (property[RDF.value] == MOONY.error) && (value[RDFS.range] == LV2.ATOM.String) ) {
+					var errmsg = $('#errmsg');
+					errmsg.html(value[RDF.value]).fadeIn(300);
+				} else if( (property[RDF.value] == MOONY.trace) && (value[RDFS.range] == LV2.ATOM.String) ) {
+					var tracemsg = $('#tracemsg');
+					tracemsg.append(value[RDF.value] + '<br />').scrollTop(tracemsg.prop('scrollHeight'));
+				} else {
+					var item = $('#' + property[RDF.value].replace(trim, ''));
+					item.val(value[RDF.value]);
+				}
 			}
 		}
 	}
