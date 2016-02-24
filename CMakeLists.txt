@@ -10,6 +10,9 @@ include_directories(${PROJECT_SOURCE_DIR}/timely.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/lua-5.3.1)
 include_directories(${PROJECT_SOURCE_DIR}/http-parser)
 include_directories(${PROJECT_SOURCE_DIR}/cJSON)
+include_directories(${PROJECT_SOURCE_DIR}/api)
+include_directories(${PROJECT_SOURCE_DIR}/ui)
+include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_BINARY_DIR})
 
 # check for visibility support in compiler on Unices
@@ -72,17 +75,17 @@ if(BUILD_COMMON_UI)
 		set(X11_UI_WRAP "#")
 	endif()
 
-	flex_target(encoder encoder.l ${PROJECT_BINARY_DIR}/encoder.c
+	flex_target(encoder ${PROJECT_SOURCE_DIR}/ui/encoder.l ${PROJECT_BINARY_DIR}/encoder.c
 		COMPILE_FLAGS	"--header-file=${PROJECT_BINARY_DIR}/encoder.h --prefix=enc")
 
 	add_library(moony_ui MODULE
-		moony_ui.c
-		common_ui.c
+		ui/moony_ui.c
+		ui/common_ui.c
 		${FLEX_encoder_OUTPUTS})
 	target_link_libraries(moony_ui ${LIBS_UI})
 	set_target_properties(moony_ui PROPERTIES PREFIX "")
 	install(TARGETS moony_ui DESTINATION ${PLUGIN_DEST})
-	install(FILES ${PROJECT_SOURCE_DIR}/omk_logo_256x256.png DESTINATION ${PLUGIN_DEST})
+	install(FILES ${PROJECT_SOURCE_DIR}/ui/omk_logo_256x256.png DESTINATION ${PLUGIN_DEST})
 else()
 	set(EO_UI_WRAP "#")
 	set(UI_UI_WRAP "#")
@@ -104,8 +107,8 @@ if(BUILD_SIMPLE_UI)
 	endif()
 
 	add_library(moony_simple MODULE
-		moony_simple.c
-		simple_ui.c)
+		ui/moony_simple.c
+		ui/simple_ui.c)
 	target_link_libraries(moony_simple ${LIBS_SIMPLE})
 	set_target_properties(moony_simple PROPERTIES PREFIX "")
 	install(TARGETS moony_simple DESTINATION ${PLUGIN_DEST})
@@ -124,10 +127,10 @@ if(BUILD_WEB_UI)
 	endif()
 
 	add_library(moony_web MODULE
-		moony_web.c
 		http-parser/http_parser.c
 		cJSON/cJSON.c
-		web_ui.c)
+		ui/moony_web.c
+		ui/web_ui.c)
 	target_link_libraries(moony_web ${LIBS_WEB})
 	set_target_properties(moony_web PROPERTIES PREFIX "")
 	install(TARGETS moony_web DESTINATION ${PLUGIN_DEST})
@@ -186,23 +189,23 @@ add_library(lua OBJECT
 set_target_properties(lua PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
 
 add_library(api OBJECT
-	api.c
-	api_atom.c
-	api_forge.c
-	api_stash.c
-	api_midi.c
-	api_osc.c
-	api_time.c
-	api_state.c
-	api_vm.c
+	api/api.c
+	api/api_atom.c
+	api/api_forge.c
+	api/api_stash.c
+	api/api_midi.c
+	api/api_osc.c
+	api/api_time.c
+	api/api_state.c
+	api/api_vm.c
 	tlsf-3.0/tlsf.c)
 set_target_properties(api PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
 
 add_library(moony MODULE
-	moony.c
-	cxc.c
-	axa.c
-	caxca.c
+	plugin/moony.c
+	plugin/cxc.c
+	plugin/axa.c
+	plugin/caxca.c
 	$<TARGET_OBJECTS:api>
 	$<TARGET_OBJECTS:lua>)
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
@@ -217,16 +220,16 @@ set_target_properties(moony PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flt
 set_target_properties(moony PROPERTIES PREFIX "")
 install(TARGETS moony DESTINATION ${PLUGIN_DEST})
 
-configure_file(${PROJECT_SOURCE_DIR}/manifest.ttl.in ${PROJECT_BINARY_DIR}/manifest.ttl)
+configure_file(${PROJECT_SOURCE_DIR}/plugin/manifest.ttl.in ${PROJECT_BINARY_DIR}/manifest.ttl)
 install(FILES ${PROJECT_BINARY_DIR}/manifest.ttl DESTINATION ${PLUGIN_DEST})
-install(FILES ${PROJECT_SOURCE_DIR}/moony.ttl DESTINATION ${PLUGIN_DEST})
-install(FILES ${PROJECT_SOURCE_DIR}/presets.ttl DESTINATION ${PLUGIN_DEST})
+install(FILES ${PROJECT_SOURCE_DIR}/plugin/moony.ttl DESTINATION ${PLUGIN_DEST})
+install(FILES ${PROJECT_SOURCE_DIR}/plugin/presets.ttl DESTINATION ${PLUGIN_DEST})
 
 include(CTest)
 
 if(${BUILD_TESTING})
 	add_executable(test_moony
-		test_moony.c
+		test/test_moony.c
 		$<TARGET_OBJECTS:api>
 		$<TARGET_OBJECTS:lua>)
 	if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
