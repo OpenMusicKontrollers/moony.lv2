@@ -40,6 +40,7 @@
 typedef struct _UI UI;
 typedef struct _server_t server_t;
 typedef struct _client_t client_t;
+typedef struct _url_t url_t;
 
 struct _server_t {
 	uv_tcp_t http_server;
@@ -112,6 +113,12 @@ struct _UI {
 	server_t server;
 };
 
+struct _url_t {
+	const char *alias;
+	const char *url;
+	int content_type;
+};
+
 enum {
 	STATUS_NOT_FOUND,
 	STATUS_OK
@@ -143,6 +150,24 @@ static const char *http_content [] = {
 };
 
 static const char *content_length = "Content-Length: %zu\r\n\r\n%s";
+
+//TODO keep updated
+static const url_t valid_urls [] = {
+	{ .alias = NULL, .url = "/favicon.png",         .content_type = CONTENT_IMAGE_PNG },
+	{ .alias = NULL, .url = "/jquery-2.2.0.min.js", .content_type = CONTENT_TEXT_JS },
+	{ .alias = NULL, .url = "/moony.js",            .content_type = CONTENT_TEXT_JS },
+	{ .alias = NULL, .url = "/jquery.knob.js",      .content_type = CONTENT_TEXT_JS },
+	{ .alias = NULL, .url = "/style.css",           .content_type = CONTENT_TEXT_CSS },
+	{ .alias = NULL, .url = "/Chango-Regular.ttf",  .content_type = CONTENT_APPLICATION_OCTET_STREAM },
+	{ .alias = NULL, .url = "/ace.js",              .content_type = CONTENT_TEXT_JS },
+	{ .alias = NULL, .url = "/mode-lua.js",         .content_type = CONTENT_TEXT_JS },
+	{ .alias = NULL, .url = "/theme-chaos.js",      .content_type = CONTENT_TEXT_JS },
+	{ .alias = NULL, .url = "/keybinding-vim.js",   .content_type = CONTENT_TEXT_JS },
+	{ .alias = NULL, .url = "/keybinding-emacs.js", .content_type = CONTENT_TEXT_JS },
+	{ .alias = "/",  .url = "/index.html",          .content_type = CONTENT_TEXT_HTML },
+
+	{ .url = NULL } // sentinel
+};
 
 static inline client_t *
 _client_append(client_t *list, client_t *child)
@@ -1129,78 +1154,12 @@ _on_message_complete(http_parser *parser)
 	server_t *server = client->server;
 	UI *ui = (void *)server - offsetof(UI, server);
 
-	const char *stat = NULL;
+	const char *stat = http_status[STATUS_NOT_FOUND];
 	const char *cont = NULL;
 	char *chunk = NULL;
+	size_t size = 0;
 
-	size_t size;
-	if(strstr(client->url, "/favicon.png") == client->url)
-	{
-		stat = http_status[STATUS_OK];
-		cont = http_content[CONTENT_IMAGE_PNG];
-		chunk = _read_file(ui, ui->bundle_path, client->url, &size);
-	}
-	else if(strstr(client->url, "/jquery-2.2.0.min.js") == client->url)
-	{
-		stat = http_status[STATUS_OK];
-		cont = http_content[CONTENT_TEXT_JS];
-		chunk = _read_file(ui, ui->bundle_path, client->url, &size);
-	}
-	else if(strstr(client->url, "/moony.js") == client->url)
-	{
-		stat = http_status[STATUS_OK];
-		cont = http_content[CONTENT_TEXT_JS];
-		chunk = _read_file(ui, ui->bundle_path, client->url, &size);
-	}
-	else if(strstr(client->url, "/jquery.knob.js") == client->url)
-	{
-		stat = http_status[STATUS_OK];
-		cont = http_content[CONTENT_TEXT_JS];
-		chunk = _read_file(ui, ui->bundle_path, client->url, &size);
-	}
-	else if(strstr(client->url, "/style.css") == client->url)
-	{
-		stat = http_status[STATUS_OK];
-		cont = http_content[CONTENT_TEXT_CSS];
-		chunk = _read_file(ui, ui->bundle_path, client->url, &size);
-	}
-	else if(strstr(client->url, "/Chango-Regular.ttf") == client->url)
-	{
-		stat = http_status[STATUS_OK];
-		cont = http_content[CONTENT_APPLICATION_OCTET_STREAM];
-		chunk = _read_file(ui, ui->bundle_path, client->url, &size);
-	}
-	else if(strstr(client->url, "/ace.js") == client->url)
-	{
-		stat = http_status[STATUS_OK];
-		cont = http_content[CONTENT_TEXT_JS];
-		chunk = _read_file(ui, ui->bundle_path, client->url, &size);
-	}
-	else if(strstr(client->url, "/mode-lua.js") == client->url)
-	{
-		stat = http_status[STATUS_OK];
-		cont = http_content[CONTENT_TEXT_JS];
-		chunk = _read_file(ui, ui->bundle_path, client->url, &size);
-	}
-	else if(strstr(client->url, "/keybinding-vim.js") == client->url)
-	{
-		stat = http_status[STATUS_OK];
-		cont = http_content[CONTENT_TEXT_JS];
-		chunk = _read_file(ui, ui->bundle_path, client->url, &size);
-	}
-	else if(strstr(client->url, "/keybinding-emacs.js") == client->url)
-	{
-		stat = http_status[STATUS_OK];
-		cont = http_content[CONTENT_TEXT_JS];
-		chunk = _read_file(ui, ui->bundle_path, client->url, &size);
-	}
-	else if(strstr(client->url, "/theme-chaos.js") == client->url)
-	{
-		stat = http_status[STATUS_OK];
-		cont = http_content[CONTENT_TEXT_JS];
-		chunk = _read_file(ui, ui->bundle_path, client->url, &size);
-	}
-	else if(strstr(client->url, "/keepalive") == client->url)
+	if(strstr(client->url, "/keepalive") == client->url)
 	{
 		stat = http_status[STATUS_OK];
 		cont = http_content[CONTENT_TEXT_JSON];
@@ -1214,6 +1173,7 @@ _on_message_complete(http_parser *parser)
 		stat = http_status[STATUS_OK];
 		cont = http_content[CONTENT_TEXT_JSON];
 		chunk = strdup("Content-Length: 2\r\n\r\n{}");
+		size = strlen(chunk);
 	}
 	else if(strstr(client->url, "/lv2/dsp") == client->url)
 	{
@@ -1222,17 +1182,21 @@ _on_message_complete(http_parser *parser)
 		stat = http_status[STATUS_OK];
 		cont = http_content[CONTENT_TEXT_JSON];
 		chunk = strdup("Content-Length: 2\r\n\r\n{}");
-	}
-	else if(  (strstr(client->url, "/") == client->url)
-		|| (strstr(client->url, "/index.html") == client->url) )
-	{
-		stat = http_status[STATUS_OK];
-		cont = http_content[CONTENT_TEXT_HTML];
-		chunk = _read_file(ui, ui->bundle_path, "/index.html", &size);
+		size = strlen(chunk);
 	}
 	else
 	{
-		stat = http_status[STATUS_NOT_FOUND];
+		for(const url_t *valid = valid_urls; valid->url; valid++)
+		{
+			if(  (strstr(client->url, valid->url) == client->url)
+				|| (valid->alias && (strstr(client->url, valid->alias) == client->url)) )
+			{
+				stat = http_status[STATUS_OK];
+				cont = http_content[valid->content_type];
+				chunk = _read_file(ui, ui->bundle_path, valid->url, &size);
+				break;
+			}
+		}
 	}
 
 	client->req.data = chunk;
