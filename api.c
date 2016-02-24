@@ -322,9 +322,13 @@ _sink(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
 
 	const LV2_Atom_Forge_Ref ref = ser->offset + 1;
 
-	if(ser->offset + size > ser->size)
+	const uint32_t new_offset = ser->offset + size;
+	if(new_offset > ser->size)
 	{
-		const uint32_t new_size = ser->size * 2;
+		uint32_t new_size = ser->size << 1;
+		while(new_offset > new_size)
+			new_size <<= 1;
+
 		if(ser->moony)
 		{
 			if(!(ser->buf = moony_realloc(ser->moony, ser->buf, ser->size, new_size)))
@@ -340,7 +344,7 @@ _sink(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
 	}
 
 	memcpy(ser->buf + ser->offset, buf, size);
-	ser->offset += size;
+	ser->offset = new_offset;
 
 	return ref;
 }
