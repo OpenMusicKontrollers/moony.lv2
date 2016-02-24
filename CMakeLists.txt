@@ -243,9 +243,9 @@ if(${BUILD_TESTING})
 	target_link_libraries(test_moony "-lm")
 
 	if(NOT WIN32)
-		add_test(NAME API-Test COMMAND test_moony ${PROJECT_SOURCE_DIR}/test_moony.lua)
+		add_test(NAME API-Test COMMAND test_moony ${PROJECT_SOURCE_DIR}/test/test_moony.lua)
 	else()
-		add_test(NAME API-Test COMMAND wine test_moony ${PROJECT_SOURCE_DIR}/test_moony.lua)
+		add_test(NAME API-Test COMMAND wine test_moony ${PROJECT_SOURCE_DIR}/test/test_moony.lua)
 	endif()
 endif()
 
