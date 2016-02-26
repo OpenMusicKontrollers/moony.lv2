@@ -189,6 +189,8 @@ _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 		}
 		lv2_atom_forge_pop(lforge->forge, &obj_frame); // patch:patch
 
+		//FIXME also send patch:set ?
+
 		// removes 'value'; keeps 'key' for next iteration
 		lua_pop(L, 1);
 	}

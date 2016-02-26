@@ -415,15 +415,21 @@ function lv2_read_event(idx, obj) {
 						if(key == LV2.PATCH.writable) {
 							var id = prop[RDF.value].replace(trim, '');
 							var props = $('#properties');
+
 							props.append('<tr class="writable" data-id="'+id+'"><td class="label"></td><td><input id="'+id+'" name="'+prop[RDF.value]+'" /></td><td class="unit"></td></tr>');
 							sort_properties();
 
 							$('#' + id).bind('wheel', property_wheel).change(property_change);
+							
+							lv2_get(lv2_dsp, prop[RDF.value]);
 						} else if(key == LV2.PATCH.readable) {
 							var id = prop[RDF.value].replace(trim, '');
 							var props = $('#properties');
+
 							props.append('<tr class="readable" data-id="'+id+'"><td class="label"></td><td><input id="'+id+'" name="'+prop[RDF.value]+'" disabled /></td><td class="unit"></td></tr>');
 							sort_properties();
+
+							lv2_get(lv2_dsp, prop[RDF.value]);
 						} else {
 							var id = subject[RDF.value].replace(trim, '');
 							var item = $('#' + id);
