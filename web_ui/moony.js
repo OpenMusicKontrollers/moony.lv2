@@ -107,7 +107,7 @@ var LV2 = {
 		km                : LV2_UNITS_PREFIX + "km",
 		inch              : LV2_UNITS_PREFIX + "inch",
 		mile              : LV2_UNITS_PREFIX + "mile",
-		dB                : LV2_UNITS_PREFIX + "dB",
+		dB                : LV2_UNITS_PREFIX + "db",
 		pc                : LV2_UNITS_PREFIX + "pc",
 		coef              : LV2_UNITS_PREFIX + "coef",
 		hz                : LV2_UNITS_PREFIX + "hz",
@@ -267,6 +267,20 @@ function lv2_read_atom(idx, value) {
 	//TODO
 }
 
+function sort_properties()
+{
+	var props = $('#properties');
+	var childs = props.children();
+
+	childs.sort(function(a, b) {
+		var id_a = a.getAttribute('data-id');
+		var id_b = b.getAttribute('data-id');
+		return id_a.localeCompare(id_b);
+	});
+
+	childs.detach().appendTo(props);
+}
+
 function lv2_read_event(idx, obj) {
 	var range = obj[RDFS.range];
 	var type = obj[RDF.type];
@@ -291,14 +305,14 @@ function lv2_read_event(idx, obj) {
 
 						if(key == LV2.PATCH.writable) {
 							if(prop[RDF.value] == LV2.PATCH.wildcard) {
-								$('#writable').empty();
+								$('.writable').remove();
 							} else {
 								var id = prop[RDF.value].replace(trim, '');
 								$('#' + id).remove();
 							}
 						} else if(key == LV2.PATCH.readable) {
 							if(prop[RDF.value] == LV2.PATCH.wildcard) {
-								$('#readable').empty();
+								$('.readable').remove();
 							} else {
 								var id = prop[RDF.value].replace(trim, '');
 								$('#' + id).remove();
@@ -317,7 +331,10 @@ function lv2_read_event(idx, obj) {
 
 						if(key == LV2.PATCH.writable) {
 							var id = prop[RDF.value].replace(trim, '');
-							$('#writable').append('<div><span class="label">Unkown</span><input id="'+id+'" name="'+prop[RDF.value]+'" /><span class="unit"></span><datalist id="'+id+'POINTS"></datalist></div><br />');
+							var props = $('#properties');
+							props.append('<tr class="writable" data-id="'+id+'"><td class="label"></td><td><input id="'+id+'" name="'+prop[RDF.value]+'" /></td><td class="unit"></td><datalist id="'+id+'POINTS"></datalist></tr>');
+							sort_properties();
+
 							$('#' + id).bind('wheel', function(e) { //FIXME only add for number properties
 								var item = $(this);
 								var delta = e.originalEvent.deltaY;
@@ -337,18 +354,20 @@ function lv2_read_event(idx, obj) {
 								e.preventDefault();
 							}).change(function(e) {
 								var item = $(this);
-								var newval = Number(item.val());
+								var newval = Number(item.val()); //FIXME only do for number properties
 
 								lv2_set(lv2_dsp, item.attr('name'), item.attr('data-range'), newval);
 							});
 						} else if(key == LV2.PATCH.readable) {
 							var id = prop[RDF.value].replace(trim, '');
-							$('#readable').append('<div><span class="label">Unknown</span><input id="'+id+'" name="'+prop[RDF.value]+'" disabled /><span class="unit"></span><datalist id="'+id+'POINTS"></datalist></div><br />');
+							var props = $('#properties');
+							props.append('<tr class="readable" data-id="'+id+'"><td class="label"></td><td><input id="'+id+'" name="'+prop[RDF.value]+'" disabled /></td><td class="unit"></td><datalist id="'+id+'POINTS"></datalist></tr>');
+							sort_properties();
 						} else {
 							var id = subject[RDF.value].replace(trim, '');
 							var item = $('#' + id);
 							if(key == RDFS.label) {
-								item.parent().children('.label').html(prop[RDF.value]);
+								item.parent().parent().children('.label').html(prop[RDF.value]);
 							} else if(key == RDFS.comment) {
 								item.attr('title', prop[RDF.value]).attr('alt', prop[RDF.value])
 							} else if(key == RDFS.range) {
@@ -383,7 +402,7 @@ function lv2_read_event(idx, obj) {
 								item.attr('list', id + 'POINTS');
 								$('#' + id + 'POINTS').append('<option label="' + label[RDF.value] + '" value="' + value[RDF.value] + '">');
 							} else if(key == LV2.UNITS.unit) {
-								item.parent().children('.unit').html(format[prop[RDF.value]]);
+								item.parent().parent().children('.unit').html(format[prop[RDF.value]]);
 							}
 						}
 					}
