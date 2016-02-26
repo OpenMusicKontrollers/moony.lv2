@@ -242,7 +242,8 @@ moony:bank-state_state-responder
 urid = {
   alpha = Map[prefix .. '#alpha'],
   beta = Map[prefix .. '#beta'],
-  gamma = Map[prefix .. '#gamma']
+  gamma = Map[prefix .. '#gamma'],
+  delta = Map[prefix .. '#delta']
 }
 
 function alpha_stringify(value)
@@ -288,10 +289,18 @@ gamma = {
   [RDF.value] = 1.0
 }
 
+delta = {
+  [RDFS.label] = 'Delta',
+  [RDFS.comment] = 'This is Delta',
+  [RDFS.range] = Atom.Bool,
+  [RDF.value] = true 
+}
+
 state = StateResponder({
   [Patch.writable] = {
     [urid.alpha] = alpha,
-    [urid.gamma] = gamma
+    [urid.gamma] = gamma,
+    [urid.delta] = delta
   },
   [Patch.readable] = {
     [urid.beta] = beta,
