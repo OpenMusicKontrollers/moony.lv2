@@ -228,24 +228,24 @@ install(FILES ${PROJECT_SOURCE_DIR}/plugin/presets.ttl DESTINATION ${PLUGIN_DEST
 include(CTest)
 
 if(${BUILD_TESTING})
-	add_executable(test_moony
-		test/test_moony.c
+	add_executable(moony_test
+		test/moony_test.c
 		$<TARGET_OBJECTS:api>
 		$<TARGET_OBJECTS:lua>)
 	if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-		target_compile_definitions(test_moony PUBLIC -DLUA_USE_LINUX)
+		target_compile_definitions(moony_test PUBLIC -DLUA_USE_LINUX)
 	elseif(WIN32)
-		target_compile_definitions(test_moony PUBLIC)
+		target_compile_definitions(moony_test PUBLIC)
 	elseif(APPLE)
-		target_compile_definitions(test_moony PUBLIC -DLUA_USE_MACOSX)
+		target_compile_definitions(moony_test PUBLIC -DLUA_USE_MACOSX)
 	endif()
-	set_target_properties(test_moony PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
-	target_link_libraries(test_moony "-lm")
+	set_target_properties(moony_test PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
+	target_link_libraries(moony_test "-lm")
 
 	if(NOT WIN32)
-		add_test(NAME API-Test COMMAND test_moony ${PROJECT_SOURCE_DIR}/test/test_moony.lua)
+		add_test(NAME API-Test COMMAND moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
 	else()
-		add_test(NAME API-Test COMMAND wine test_moony ${PROJECT_SOURCE_DIR}/test/test_moony.lua)
+		add_test(NAME API-Test COMMAND wine moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
 	endif()
 endif()
 
