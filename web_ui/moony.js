@@ -267,8 +267,7 @@ function lv2_read_atom(idx, value) {
 	//TODO
 }
 
-function sort_properties()
-{
+function sort_properties() {
 	var props = $('#properties');
 	var childs = props.children();
 
@@ -279,6 +278,90 @@ function sort_properties()
 	});
 
 	childs.detach().appendTo(props);
+}
+
+function sort_options(item) {
+	var childs = item.children();
+
+	childs.sort(function(a, b) {
+		var val_a = Number(a.getAttribute('value'));
+		var val_b = Number(b.getAttribute('value'));
+		if(val_a < val_b) return -1;
+		else if(val_a > val_b) return 1;
+		else return 0;
+	});
+
+	childs.detach().appendTo(item);
+}
+
+function property_wheel(e) {
+	var item = $(this);
+	var delta = e.originalEvent.deltaY;
+	var name = item.attr('name');
+	var range = item.attr('data-range');
+
+	if(item.is('input')) {
+		if(range == LV2.ATOM.Bool) {
+			var newval = !item.prop('checked');
+			item.prop('checked', newval);
+			lv2_set(lv2_dsp, name, range, newval);
+		} else {
+			var min = Number(item.attr('min'));
+			var max = Number(item.attr('max'));
+			var step = Number(item.attr('step'));
+			var newval = Number(item.val());
+			if(delta < 0)
+				newval = newval - step;
+			else if(delta > 0)
+				newval = newval + step;
+			if( (newval >= min) && (newval <= max) )
+			{
+				item.val(newval);
+				lv2_set(lv2_dsp, name, range, newval);
+			}
+		}
+	} else if(item.is('select')) {
+		var selected = item.find(':selected');
+		var newval;
+		selected.prop('selected', false);
+		if(delta < 0)
+			selected.prev().prop('selected', true);
+		else if(delta > 0)
+			selected.next().prop('selected', true);
+		newval = Number(item.val());
+		lv2_set(lv2_dsp, name, range, newval);
+	}
+
+	e.preventDefault();
+}
+
+function property_change(e) {
+	var item = $(this);
+	var name = item.attr('name');
+	var range = item.attr('data-range');
+	var newval;
+	if(  (range == LV2.ATOM.Int)
+		|| (range == LV2.ATOM.Long)
+		|| (range == LV2.ATOM.Float)
+		|| (range == LV2.ATOM.Double) ) {
+		newval = Number(item.val());
+	} else if(range == LV2.ATOM.Bool) {
+		newval = item.prop('checked');
+	} else {
+		newval = item.val();
+	}
+
+	lv2_set(lv2_dsp, name, range, newval);
+}
+
+function update_property_step(item) {
+	var range = item.attr('data-range');
+	var min = item.attr('min');
+	var max = item.attr('max');
+	if(range && min && max) {
+		if( (range == LV2.ATOM.Float) || (range == LV2.ATOM.Double) )
+			item.attr('step', (Number(max) - Number(min)) / 100.0);
+	}
 }
 
 function lv2_read_event(idx, obj) {
@@ -332,36 +415,14 @@ function lv2_read_event(idx, obj) {
 						if(key == LV2.PATCH.writable) {
 							var id = prop[RDF.value].replace(trim, '');
 							var props = $('#properties');
-							props.append('<tr class="writable" data-id="'+id+'"><td class="label"></td><td><input id="'+id+'" name="'+prop[RDF.value]+'" /></td><td class="unit"></td><datalist id="'+id+'POINTS"></datalist></tr>');
+							props.append('<tr class="writable" data-id="'+id+'"><td class="label"></td><td><input id="'+id+'" name="'+prop[RDF.value]+'" /></td><td class="unit"></td></tr>');
 							sort_properties();
 
-							$('#' + id).bind('wheel', function(e) { //FIXME only add for number properties
-								var item = $(this);
-								var delta = e.originalEvent.deltaY;
-								var min = Number(item.attr('min'));
-								var max = Number(item.attr('max'));
-								var step = Number(item.attr('step'));
-								var newval = Number(item.val());
-								if(delta < 0)
-									newval = newval - step;
-								else if(delta > 0)
-									newval = newval + step;
-								if( (newval >= min) && (newval <= max) )
-								{
-									item.val(newval);
-									lv2_set(lv2_dsp, item.attr('name'), item.attr('data-range'), newval);
-								}
-								e.preventDefault();
-							}).change(function(e) {
-								var item = $(this);
-								var newval = Number(item.val()); //FIXME only do for number properties
-
-								lv2_set(lv2_dsp, item.attr('name'), item.attr('data-range'), newval);
-							});
+							$('#' + id).bind('wheel', property_wheel).change(property_change);
 						} else if(key == LV2.PATCH.readable) {
 							var id = prop[RDF.value].replace(trim, '');
 							var props = $('#properties');
-							props.append('<tr class="readable" data-id="'+id+'"><td class="label"></td><td><input id="'+id+'" name="'+prop[RDF.value]+'" disabled /></td><td class="unit"></td><datalist id="'+id+'POINTS"></datalist></tr>');
+							props.append('<tr class="readable" data-id="'+id+'"><td class="label"></td><td><input id="'+id+'" name="'+prop[RDF.value]+'" disabled /></td><td class="unit"></td></tr>');
 							sort_properties();
 						} else {
 							var id = subject[RDF.value].replace(trim, '');
@@ -391,16 +452,37 @@ function lv2_read_event(idx, obj) {
 								}
 							} else if(key == LV2.CORE.minimum) {
 								item.attr('min', prop[RDF.value]);
+								update_property_step(item);
 							} else if(key == LV2.CORE.maximum) {
 								item.attr('max', prop[RDF.value]);
+								update_property_step(item);
 							} else if(key == LV2.CORE.scalePoint) {
 								var point = prop[RDF.value];
 								var label = lv2_object_get(point, RDFS.label);
 								var value = lv2_object_get(point, RDF.value);
+					
+								if(item.is('input')) { // change type from input -> select
+									var name = item.attr('name');
+									var id = item.attr('id');
+									var title = item.attr('title');
+									var alt = item.attr('alt');
+									var range = item.attr('data-range');
+									var min = item.attr('min');
+									var max = item.attr('max');
+									var step = item.attr('step');
+									item.replaceWith('<select id="'+id+'" />');
+									item = $('#' + id);
+									item.attr('name', name).attr('title', title).attr('alt', alt);
+									item.attr('min', min).attr('max', max).attr('step', step).attr('data-range', range);
+									item.bind('wheel', property_wheel).change(property_change);
+								}
 
-								item.attr('type', 'text'); // datalist only seems to work with 'text' input
-								item.attr('list', id + 'POINTS');
-								$('#' + id + 'POINTS').append('<option label="' + label[RDF.value] + '" value="' + value[RDF.value] + '">');
+								item.append('<option value="'+value[RDF.value]+'">'+label[RDF.value]+'</option>');
+								sort_options(item);
+								if(Number(item.attr('min')) > value[RDF.value])
+									item.attr('min', value[RDF.value]);
+								if(Number(item.attr('max')) < value[RDF.value])
+									item.attr('max', value[RDF.value]);
 							} else if(key == LV2.UNITS.unit) {
 								item.parent().parent().children('.unit').html(format[prop[RDF.value]]);
 							}
@@ -431,7 +513,12 @@ function lv2_read_event(idx, obj) {
 					tracemsg.append(value[RDF.value] + '<br />').scrollTop(tracemsg.prop('scrollHeight'));
 				} else {
 					var item = $('#' + property[RDF.value].replace(trim, ''));
-					item.val(value[RDF.value]);
+					var range = item.attr('data-range');
+					if(range == LV2.ATOM.Bool) {
+						item.prop('checked', value[RDF.value]);
+					} else {
+						item.val(value[RDF.value]);
+					}
 				}
 			}
 		}

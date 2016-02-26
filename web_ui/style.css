@@ -37,6 +37,10 @@ input {
 	width:100px;
 }
 
+select {
+	width:100px;
+}
+
 .heading-table {
 	width:100%;
 }
