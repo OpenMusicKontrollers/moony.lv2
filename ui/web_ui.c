@@ -1190,7 +1190,7 @@ _on_message_complete(http_parser *parser)
 		stat = http_status[STATUS_OK];
 		cont = http_content[CONTENT_TEXT_JSON];
 		chunk = strdup("Content-Length: 2\r\n\r\n{}");
-		size = strlen(chunk);
+		size = chunk ? strlen(chunk) : 0;
 	}
 	else if(strstr(client->url, "/lv2/dsp") == client->url)
 	{
@@ -1199,7 +1199,7 @@ _on_message_complete(http_parser *parser)
 		stat = http_status[STATUS_OK];
 		cont = http_content[CONTENT_TEXT_JSON];
 		chunk = strdup("Content-Length: 2\r\n\r\n{}");
-		size = strlen(chunk);
+		size = chunk ? strlen(chunk) : 0;
 	}
 	else
 	{

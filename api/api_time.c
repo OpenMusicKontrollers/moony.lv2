@@ -171,7 +171,7 @@ _ltimeresponder_stash(lua_State *L)
 static int
 _ltimeresponder__index(lua_State *L)
 {
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 
 	lua_settop(L, 2); // discard superfluous arguments
 	// 1: self

@@ -186,7 +186,7 @@ static const char *note_keys [12] = {
 static int
 _lnote__index(lua_State *L)
 {
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 
 	lua_settop(L, 2); // ignore superfluous arguments
 
@@ -1425,7 +1425,8 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 	// initialize notify forge
 	const uint32_t capacity = notify->atom.size;
 	lv2_atom_forge_set_buffer(&moony->notify_forge, (uint8_t *)notify, capacity);
-	ref = lv2_atom_forge_sequence_head(&moony->notify_forge, &moony->notify_frame, 0);
+	if(ref)
+		ref = lv2_atom_forge_sequence_head(&moony->notify_forge, &moony->notify_frame, 0);
 
 	// read control sequence
 	LV2_ATOM_SEQUENCE_FOREACH(control, ev)

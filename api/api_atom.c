@@ -982,7 +982,7 @@ _latom__tostring(lua_State *L)
 static int
 _latom__eq(lua_State *L)
 {
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	latom_t *latom1 = luaL_checkudata(L, 1, "latom");
 	latom_t *latom2 = luaL_checkudata(L, 2, "latom");
 

@@ -107,7 +107,6 @@ static void *
 lua_alloc(void *ud, void *ptr, size_t osize, size_t nsize)
 {
 	moony_t *moony = ud;
-	moony_vm_t *vm = &moony->vm;
 
 	if(nsize == 0)
 	{
