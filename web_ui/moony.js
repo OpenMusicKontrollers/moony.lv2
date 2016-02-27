@@ -275,7 +275,13 @@ function sort_properties() {
 	childs.sort(function(a, b) {
 		var id_a = a.getAttribute('data-id');
 		var id_b = b.getAttribute('data-id');
-		return id_a.localeCompare(id_b);
+		var class_a = a.getAttribute('class');
+		var class_b = b.getAttribute('class');
+		var cmp = class_b.localeCompare(class_a);
+		if(cmp)
+			return cmp;
+		else
+			return id_a.localeCompare(id_b);
 	});
 
 	childs.detach().appendTo(props);
