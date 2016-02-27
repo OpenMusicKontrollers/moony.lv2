@@ -16,6 +16,7 @@
  */
 
 var editor = null;
+var tracecnt = 0;
 
 var LV2_CORE_PREFIX = "http://lv2plug.in/ns/lv2core#";
 var LV2_ATOM_PREFIX = "http://lv2plug.in/ns/ext/atom#";
@@ -516,7 +517,8 @@ function lv2_read_event(idx, obj) {
 					errmsg.html(value[RDF.value]).fadeIn(300);
 				} else if( (property[RDF.value] == MOONY.trace) && (value[RDFS.range] == LV2.ATOM.String) ) {
 					var tracemsg = $('#tracemsg');
-					tracemsg.append(value[RDF.value] + '<br />').scrollTop(tracemsg.prop('scrollHeight'));
+					tracemsg.append(tracecnt + ': ' + value[RDF.value] + '<br />').scrollTop(tracemsg.prop('scrollHeight'));
+					tracecnt += 1;
 				} else {
 					var item = $('#' + property[RDF.value].replace(trim, ''));
 					var range = item.attr('data-range');
@@ -579,6 +581,7 @@ function keepalive() {
 				$('#status').html('disconnected');
 				$('.clip').hide();
 				$('#tracemsg').empty();
+				tracecnt = 0;
 			}
 		}
 	});
@@ -685,6 +688,7 @@ $(document).ready(function() {
 	});
 	$('#clear').click(function(e) {
 		$('#tracemsg').empty();
+		tracecnt = 0;
 		e.preventDefault();
 	});
 
