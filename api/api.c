@@ -1420,13 +1420,12 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 {
 	lua_State *L = moony->vm.L;
 	LV2_Atom_Forge *forge = &moony->notify_forge;
-	LV2_Atom_Forge_Ref ref = moony->notify_ref;
+	LV2_Atom_Forge_Ref ref;
 
 	// initialize notify forge
 	const uint32_t capacity = notify->atom.size;
 	lv2_atom_forge_set_buffer(&moony->notify_forge, (uint8_t *)notify, capacity);
-	if(ref)
-		ref = lv2_atom_forge_sequence_head(&moony->notify_forge, &moony->notify_frame, 0);
+	ref = lv2_atom_forge_sequence_head(&moony->notify_forge, &moony->notify_frame, 0);
 
 	// read control sequence
 	LV2_ATOM_SEQUENCE_FOREACH(control, ev)
