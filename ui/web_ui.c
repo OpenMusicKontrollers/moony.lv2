@@ -156,7 +156,6 @@ static const url_t valid_urls [] = {
 	{ .alias = NULL, .url = "/favicon.png",         .content_type = CONTENT_IMAGE_PNG },
 	{ .alias = NULL, .url = "/jquery-2.2.0.min.js", .content_type = CONTENT_TEXT_JS },
 	{ .alias = NULL, .url = "/moony.js",            .content_type = CONTENT_TEXT_JS },
-	{ .alias = NULL, .url = "/jquery.knob.js",      .content_type = CONTENT_TEXT_JS },
 	{ .alias = NULL, .url = "/style.css",           .content_type = CONTENT_TEXT_CSS },
 	{ .alias = NULL, .url = "/Chango-Regular.ttf",  .content_type = CONTENT_APPLICATION_OCTET_STREAM },
 	{ .alias = NULL, .url = "/ace.js",              .content_type = CONTENT_TEXT_JS },
