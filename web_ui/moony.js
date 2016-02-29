@@ -27,7 +27,7 @@ var RDF_PREFIX      = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 var RDFS_PREFIX     = "http://www.w3.org/2000/01/rdf-schema#";
 var MOONY_PREFIX    = "http://open-music-kontrollers.ch/lv2/moony#";
 
-var SUBJECT         = "http://open-music-kontrollers.ch/lv2/moony#a1xa1"; //FIXME
+var SUBJECT         = undefined;
 
 var RDF = {
 	value             : RDF_PREFIX + "value",
@@ -168,89 +168,102 @@ function lv2_dsp(o) {
 }
 
 function lv2_get(func, property) {
-	func({
+	var props = [];
+	props.push({
+		[LV2.ATOM.Property] : LV2.PATCH.property,
+		[RDF.value] : {
+			[RDFS.range] : LV2.ATOM.URID,
+			[RDF.value] : property
+		}
+	});
+	if(SUBJECT) {
+		props.push({
+			[LV2.ATOM.Property] : LV2.PATCH.subject,
+			[RDF.value] : {
+				[RDFS.range] : LV2.ATOM.URID,
+				[RDF.value] : SUBJECT
+			}
+		});
+	}
+	var req = {
 		[LV2.UI.protocol] : LV2.ATOM.eventTransfer,
 		[LV2.CORE.symbol] : 'control',
 		[RDF.value] : {
 			[RDFS.range] : LV2.ATOM.Object,
 			[RDF.type] : LV2.PATCH.Get,
-			[RDF.value] : [
-				{
-					[LV2.ATOM.Property] : LV2.PATCH.subject,
-					[RDF.value] : {
-						[RDFS.range] : LV2.ATOM.URID,
-						[RDF.value] : SUBJECT
-					}
-				}, {
-					[LV2.ATOM.Property] : LV2.PATCH.property,
-					[RDF.value] : {
-						[RDFS.range] : LV2.ATOM.URID,
-						[RDF.value] : property
-					}
-				}
-			]
+			[RDF.value] : props
 		}
-	});
+	};
+	func(req);
 }
 
 function lv2_get_all(func) {
-	func({
+	var props = [];
+	if(SUBJECT) {
+		props.push({
+			[LV2.ATOM.Property] : LV2.PATCH.subject,
+			[RDF.value] : {
+				[RDFS.range] : LV2.ATOM.URID,
+				[RDF.value] : SUBJECT
+			}
+		});
+	}
+	var req = {
 		[LV2.UI.protocol] : LV2.ATOM.eventTransfer,
 		[LV2.CORE.symbol] : 'control',
 		[RDF.value] : {
 			[RDFS.range] : LV2.ATOM.Object,
 			[RDF.type] : LV2.PATCH.Get,
-			[RDF.value] : [
-				{
-					[LV2.ATOM.Property] : LV2.PATCH.subject,
-					[RDF.value] : {
-						[RDFS.range] : LV2.ATOM.URID,
-						[RDF.value] : SUBJECT
-					}
-				}
-			]
+			[RDF.value] : props
 		}
-	});
+	};
+	func(req);
 }
 
 function lv2_set(func, property, range, value) {
-	func({
+	var props = [];
+	props.push({
+		[LV2.ATOM.Property] : LV2.PATCH.property,
+		[RDF.value] : {
+			[RDFS.range] : LV2.ATOM.URID,
+			[RDF.value] : property
+		}
+	});
+	props.push({
+		[LV2.ATOM.Property] : LV2.PATCH.value,
+		[RDF.value] : {
+			[RDFS.range] : range,
+			[RDF.value] : value
+		}
+	})
+	if(SUBJECT) {
+		props.push({
+			[LV2.ATOM.Property] : LV2.PATCH.subject,
+			[RDF.value] : {
+				[RDFS.range] : LV2.ATOM.URID,
+				[RDF.value] : SUBJECT
+			}
+		});
+	}
+	var req = {
 		[LV2.UI.protocol] : LV2.ATOM.eventTransfer,
 		[LV2.CORE.symbol] : 'control',
 		[RDF.value] : {
 			[RDFS.range] : LV2.ATOM.Object,
 			[RDF.type] : LV2.PATCH.Set,
-			[RDF.value] : [
-				{
-					[LV2.ATOM.Property] : LV2.PATCH.subject,
-					[RDF.value] : {
-						[RDFS.range] : LV2.ATOM.URID,
-						[RDF.value] : SUBJECT
-					}
-				}, {
-					[LV2.ATOM.Property] : LV2.PATCH.property,
-					[RDF.value] : {
-						[RDFS.range] : LV2.ATOM.URID,
-						[RDF.value] : property
-					}
-				}, {
-					[LV2.ATOM.Property] : LV2.PATCH.value,
-					[RDF.value] : {
-						[RDFS.range] : range,
-						[RDF.value] : value
-					}
-				}
-			]
+			[RDF.value] : props
 		}
-	});
+	};
+	func(req);
 }
 
 function lv2_control(func, symbol, value) {
-	func({
+	var req = {
 		[LV2.UI.protocol] : LV2.UI.floatProtocol,
 		[LV2.CORE.symbol] : symbol,
 		[RDF.value] : value
-	});
+	};
+	func(req);
 }
 
 function lv2_object_get(atom, key) {
@@ -262,13 +275,55 @@ function lv2_object_get(atom, key) {
 	return undefined;
 }
 
+function float_wheel(e) {
+	var item = $(this);
+	var delta = e.originalEvent.deltaY;
+	var symbol = item.attr('id');
+
+	var min = Number(item.attr('min'));
+	var max = Number(item.attr('max'));
+	var step = Number(item.attr('step'));
+	var newval = Number(item.val());
+	if(delta < 0)
+		newval = newval - step;
+	else if(delta > 0)
+		newval = newval + step;
+	if( (newval >= min) && (newval <= max) )
+	{
+		item.val(newval);
+		lv2_control(lv2_dsp, symbol, newval);
+	}
+
+	e.preventDefault();
+}
+
+function float_change(e) {
+	var item = $(this);
+	var symbol = item.attr('id');
+	var newval = Number(item.val());
+
+	lv2_control(lv2_dsp, symbol, newval);
+}
+
 function lv2_read_float(symbol, value) {
-	cosole.log(symbol, value);
-	//TODO
+	var props = $('#properties');
+	var control = $('#' + symbol);
+	if(control.length !== 0) {
+		control.val(value);
+	} else {
+		props.append('<tr class="control" data-id="'+symbol+'"><td class="label">'+symbol+'</td><td><input id="'+symbol+'" min="0" max="1" step="0.001" type="number" /></td></tr>');
+		control = $('#' + symbol);
+		if(symbol.indexOf('output') !== -1)
+			control.prop('disabled', true);
+		control.bind('wheel', float_wheel).change(float_change);
+		control.val(value);
+
+		sort_properties();
+	}
 }
 
 function lv2_read_peak(symbol, value) {
-	cosole.log(symbol, value[LV2.UI.periodStart], value[LV2.UI.periodSize], value[LV2.UI2.peak]);
+	console.log(symbol, value[LV2.UI.periodStart], value[LV2.UI.periodSize], value[LV2.UI2.peak]);
 	//TODO
 }
 
@@ -384,7 +439,8 @@ function lv2_read_event(symbol, obj) {
 	var type = obj[RDF.type];
 	var atom = obj[RDF.value];
 
-	if( (symbol == 'notify') && (range == LV2.ATOM.Object) )
+	if( ( (symbol == 'notify') || (symbol == 'control') )
+	  && (range == LV2.ATOM.Object) )
 	{
 		if(type == LV2.PATCH.Patch)
 		{
@@ -400,6 +456,7 @@ function lv2_read_event(symbol, obj) {
 						var prop = item[RDF.value];
 
 						if(key == LV2.PATCH.writable) {
+							//TODO check subject
 							if(prop[RDF.value] == LV2.PATCH.wildcard) {
 								$('.writable').remove();
 							} else {
@@ -407,6 +464,7 @@ function lv2_read_event(symbol, obj) {
 								$('#' + id).remove();
 							}
 						} else if(key == LV2.PATCH.readable) {
+							//TODO check subject
 							if(prop[RDF.value] == LV2.PATCH.wildcard) {
 								$('.readable').remove();
 							} else {
@@ -426,6 +484,7 @@ function lv2_read_event(symbol, obj) {
 						var prop = item[RDF.value];
 
 						if(key == LV2.PATCH.writable) {
+							//TODO check subject
 							var id = prop[RDF.value].replace(trim, '');
 							var props = $('#properties');
 
@@ -436,6 +495,7 @@ function lv2_read_event(symbol, obj) {
 							
 							lv2_get(lv2_dsp, prop[RDF.value]);
 						} else if(key == LV2.PATCH.readable) {
+							//TODO check subject
 							var id = prop[RDF.value].replace(trim, '');
 							var props = $('#properties');
 
@@ -520,7 +580,9 @@ function lv2_read_event(symbol, obj) {
 
 			if(property && (property[RDFS.range] == LV2.ATOM.URID) && value) {
 				if( (property[RDF.value] == LV2.UI.windowTitle) && (value[RDFS.range] == LV2.ATOM.String) ) {
-					document.title = (value[RDF.value]);
+					document.title = value[RDF.value];
+				} else if( (property[RDF.value] == LV2.PATCH.subject) && (value[RDFS.range] == LV2.ATOM.String) ) { //FIXME URI
+					SUBJECT = value[RDF.value];
 				} else if( (property[RDF.value] == MOONY.code) && (value[RDFS.range] == LV2.ATOM.String) ) {
 					editor.setValue(value[RDF.value], 1);
 					lv2_get_all(lv2_dsp); // update properties
@@ -709,6 +771,7 @@ $(document).ready(function() {
 
 	// query initial props
 	lv2_get(lv2_ui, LV2.UI.windowTitle);
+	lv2_get(lv2_ui, LV2.PATCH.subject);
 	lv2_get(lv2_dsp, MOONY.code);
 	lv2_get(lv2_dsp, MOONY.error);
 	lv2_get_all(lv2_dsp);

@@ -37,6 +37,8 @@
 #define RDFS__range RDFS_PREFIX"range"
 #define RDFS__comment RDFS_PREFIX"comment"
 
+#define MAX_PORTS 18
+
 typedef struct _UI UI;
 typedef struct _server_t server_t;
 typedef struct _client_t client_t;
@@ -46,6 +48,7 @@ typedef struct _pmap_t pmap_t;
 struct _pmap_t {
 	uint32_t index;
 	const char *symbol;
+	float val;
 };
 
 struct _server_t {
@@ -99,8 +102,7 @@ struct _UI {
 
 	LV2UI_Port_Map *port_map;
 	uint32_t control_port;
-	uint32_t notify_port;
-	pmap_t pmap [18];
+	pmap_t pmap [MAX_PORTS];
 
 	uv_loop_t loop;
 	uv_process_t req;
@@ -495,6 +497,27 @@ _atom_to_json(UI *ui, const LV2_Atom *atom)
 	return root;
 }
 
+static int
+_pmap_cmp(const void *data1, const void *data2)
+{
+	const pmap_t *pmap1 = data1;
+	const pmap_t *pmap2 = data2;
+
+	if(pmap1->index > pmap2->index)
+		return 1;
+	else if(pmap1->index < pmap2->index)
+		return -1;
+	return 0;
+}
+
+static inline pmap_t *
+_pmap_get(UI *ui, uint32_t idx)
+{
+	const pmap_t tar = { .index = idx };
+	pmap_t *pmap = bsearch(&tar, ui->pmap, MAX_PORTS, sizeof(pmap_t), _pmap_cmp);
+	return pmap;
+}
+
 static inline void
 _moony_dsp(UI *ui, const char *json)
 {
@@ -516,6 +539,11 @@ _moony_dsp(UI *ui, const char *json)
 				const float val = value->valuedouble;
 				ui->write_function(ui->controller, idx, sizeof(float),
 					0, &val);
+
+				// intercept control port changes
+				pmap_t *pmap = _pmap_get(ui, idx);
+				if(pmap)
+					pmap->val = val;
 			}
 			else if(!strcmp(protocol->valuestring, LV2_ATOM__eventTransfer)
 				&& (value->type == cJSON_Object) )
@@ -674,19 +702,6 @@ _schedule(UI *ui, cJSON *job)
 	_keepalive(server); // answer keep alives
 }
 
-static int
-_pmap_cmp(const void *data1, const void *data2)
-{
-	const pmap_t *pmap1 = data1;
-	const pmap_t *pmap2 = data2;
-
-	if(pmap1->index > pmap2->index)
-		return 1;
-	else if(pmap1->index < pmap2->index)
-		return -1;
-	return 0;
-}
-
 static inline cJSON * 
 _moony_send(UI *ui, uint32_t idx, uint32_t size, uint32_t prot, const void *buf)
 {
@@ -737,8 +752,7 @@ _moony_send(UI *ui, uint32_t idx, uint32_t size, uint32_t prot, const void *buf)
 	{
 		cJSON *symbol = NULL;
 
-		const pmap_t tar = { .index = idx };
-		pmap_t *pmap = bsearch(&tar, ui->pmap, 18, sizeof(pmap_t), _pmap_cmp);
+		pmap_t *pmap = _pmap_get(ui, idx);
 		if(pmap)
 			symbol = cJSON_CreateString(pmap->symbol);
 
@@ -788,6 +802,32 @@ _moony_ui(UI *ui, const char *json)
 								{
 									LV2_Atom_Object *obj_out = _moony_message_forge(ui, ui->uris.window_title,
 										ui->title, strlen(ui->title));
+									if(obj_out)
+									{
+										cJSON *job = _moony_send(ui, ui->control_port,
+											lv2_atom_total_size(&obj_out->atom), ui->uris.atom_event_transfer, obj_out);
+										if(job)
+											_schedule(ui, job);
+									}
+
+									// resend control port values
+									for(unsigned i=0; i<MAX_PORTS; i++) // iterate over all ports
+									{
+										if(  (ui->pmap[i].index != LV2UI_INVALID_PORT_INDEX )
+											&& (ui->pmap[i].val != HUGE_VAL) ) // skip invalid ports
+										{
+											cJSON *job = _moony_send(ui, ui->pmap[i].index, sizeof(float),
+												ui->uris.ui_float_protocol, &ui->pmap[i].val);
+											if(job)
+												_schedule(ui, job);
+										}
+									}
+								}
+								if(property->body == ui->uris.patch.subject) //FIXME rename property?
+								{
+									const char *self = ui->unmap->unmap(ui->unmap->handle, ui->uris.patch.self);
+									LV2_Atom_Object *obj_out = _moony_message_forge(ui, ui->uris.patch.subject,
+										self, strlen(self)); //FIXME URI
 									if(obj_out)
 									{
 										cJSON *job = _moony_send(ui, ui->control_port,
@@ -1375,28 +1415,47 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 
 	// query port index of "control" port
 	ui->pmap[0].symbol = "input_1";
+		ui->pmap[0].val = 0.f;
 	ui->pmap[1].symbol = "input_2";
+		ui->pmap[1].val = 0.f;
 	ui->pmap[2].symbol = "input_3";
+		ui->pmap[2].val = 0.f;
 	ui->pmap[3].symbol = "input_4";
+		ui->pmap[3].val = 0.f;
 	ui->pmap[4].symbol = "output_1";
+		ui->pmap[4].val = 0.f;
 	ui->pmap[5].symbol = "output_2";
+		ui->pmap[5].val = 0.f;
 	ui->pmap[6].symbol = "output_3";
+		ui->pmap[6].val = 0.f;
 	ui->pmap[7].symbol = "output_4";
+		ui->pmap[7].val = 0.f;
 	ui->pmap[8].symbol = "event_in_1";
+		ui->pmap[8].val = HUGE_VAL;
 	ui->pmap[9].symbol = "event_in_2";
+		ui->pmap[9].val = HUGE_VAL;
 	ui->pmap[10].symbol = "event_in_3";
+		ui->pmap[10].val = HUGE_VAL;
 	ui->pmap[11].symbol = "event_in_4";
+		ui->pmap[11].val = HUGE_VAL;
 	ui->pmap[12].symbol = "event_out_1";
+		ui->pmap[12].val = HUGE_VAL;
 	ui->pmap[13].symbol = "event_out_2";
+		ui->pmap[13].val = HUGE_VAL;
 	ui->pmap[14].symbol = "event_out_3";
+		ui->pmap[14].val = HUGE_VAL;
 	ui->pmap[15].symbol = "event_out_4";
+		ui->pmap[15].val = HUGE_VAL;
 	ui->pmap[16].symbol = "control";
+		ui->pmap[16].val = HUGE_VAL;
 	ui->pmap[17].symbol = "notify";
+		ui->pmap[17].val = HUGE_VAL;
 
-	for(unsigned i=0; i<18; i++)
+	for(unsigned i=0; i<MAX_PORTS; i++)
 		ui->pmap[i].index = ui->port_map->port_index(ui->port_map->handle, ui->pmap[i].symbol);
+	ui->control_port = ui->pmap[16].index;
 
-	qsort(ui->pmap, 18, sizeof(pmap_t), _pmap_cmp);
+	qsort(ui->pmap, MAX_PORTS, sizeof(pmap_t), _pmap_cmp);
 
 	ui->uris.moony_code = ui->map->map(ui->map->handle, MOONY_CODE_URI);
 	ui->uris.moony_selection = ui->map->map(ui->map->handle, MOONY_SELECTION_URI);
@@ -1496,6 +1555,17 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 	uint32_t format, const void *buffer)
 {
 	UI *ui = handle;
+
+	if(format == 0)
+		format = ui->uris.ui_float_protocol;
+
+	// intercept control port notifications
+	if(format == ui->uris.ui_float_protocol)
+	{
+		pmap_t *pmap = _pmap_get(ui, port_index);
+		if(pmap)
+			pmap->val = *(const float *)buffer;
+	}
 
 	cJSON *job = _moony_send(ui, port_index, buffer_size, format, buffer);
 	if(job)

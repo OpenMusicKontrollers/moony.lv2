@@ -1447,12 +1447,10 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 			};
 			lv2_atom_object_query(obj, q);
 
-			/* FIXME
 			if(  subject
 				&& (subject->atom.type == moony->forge.URID)
 				&& (subject->body != moony->uris.patch.self) )
 				continue; // subject does not match
-			*/
 
 			if(property && (property->atom.type == moony->forge.URID) ) 
 			{
@@ -1485,12 +1483,10 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 			};
 			lv2_atom_object_query(obj, q);
 
-			/* FIXME
 			if(  subject
 				&& (subject->atom.type == moony->forge.URID)
 				&& (subject->body != moony->uris.patch.self) )
 				continue; // subject does not match
-			*/
 
 			if(  property && value
 				&& (property->atom.type == moony->forge.URID)
@@ -1569,12 +1565,10 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 			ref = lv2_atom_forge_frame_time(&moony->notify_forge, 0);
 		if(ref)
 			ref = lv2_atom_forge_object(&moony->notify_forge, &obj_frame, 0, moony->uris.patch.patch);
-		/* FIXME
 		if(ref)
 			ref = lv2_atom_forge_key(&moony->notify_forge, moony->uris.patch.subject);
 		if(ref)
 			ref = lv2_atom_forge_urid(&moony->notify_forge, moony->uris.patch.self);
-		*/
 		if(ref)
 			ref = lv2_atom_forge_key(&moony->notify_forge, moony->uris.patch.remove);
 		if(ref)
