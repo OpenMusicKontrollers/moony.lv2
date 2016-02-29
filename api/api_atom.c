@@ -36,7 +36,6 @@ _pushupclosure(lua_State *L, moony_t *moony, moony_upclosure_t type, bool cache)
 	assert( (type >= MOONY_UPCLOSURE_TUPLE_FOREACH) && (type < MOONY_UPCLOSURE_COUNT) );
 
 	int *upc = &moony->upc[type];
-	void *data = NULL;
 
 	lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_COUNT + type); // ref
 	if(lua_rawgeti(L, -1, *upc) == LUA_TNIL) // no cached udata, create one!
@@ -48,7 +47,7 @@ _pushupclosure(lua_State *L, moony_t *moony, moony_upclosure_t type, bool cache)
 		lua_pop(L, 1); // nil
 
 		lua_pushlightuserdata(L, moony);
-		_latom_new(L, NULL, cache); // place-holder
+		_latom_new(L, NULL, false); // place-holder
 		lua_pushcclosure(L, upclosures[type], 2);
 
 		lua_pushvalue(L, -1);
