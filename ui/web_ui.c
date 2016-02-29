@@ -41,6 +41,12 @@ typedef struct _UI UI;
 typedef struct _server_t server_t;
 typedef struct _client_t client_t;
 typedef struct _url_t url_t;
+typedef struct _pmap_t pmap_t;
+
+struct _pmap_t {
+	uint32_t index;
+	const char *symbol;
+};
 
 struct _server_t {
 	uv_tcp_t http_server;
@@ -94,6 +100,7 @@ struct _UI {
 	LV2UI_Port_Map *port_map;
 	uint32_t control_port;
 	uint32_t notify_port;
+	pmap_t pmap [18];
 
 	uv_loop_t loop;
 	uv_process_t req;
@@ -495,17 +502,17 @@ _moony_dsp(UI *ui, const char *json)
 	if(root)
 	{
 		cJSON *protocol = cJSON_GetObjectItem(root, LV2_UI__protocol);
-		cJSON *index = cJSON_GetObjectItem(root, LV2_UI__portIndex);
+		cJSON *symbol = cJSON_GetObjectItem(root, LV2_CORE__symbol);
 		cJSON *value = cJSON_GetObjectItem(root, RDF__value);
 
-		if(  protocol && index && value
+		if(  protocol && symbol && value
 			&& (protocol->type == cJSON_String)
-			&& (index->type == cJSON_String) )
+			&& (symbol->type == cJSON_String) )
 		{
 			if(!strcmp(protocol->valuestring, LV2_UI__floatProtocol)
 				&& (value->type == cJSON_Number) )
 			{
-				uint32_t idx = ui->port_map->port_index(ui->port_map->handle, index->valuestring);
+				uint32_t idx = ui->port_map->port_index(ui->port_map->handle, symbol->valuestring);
 				const float val = value->valuedouble;
 				ui->write_function(ui->controller, idx, sizeof(float),
 					0, &val);
@@ -513,7 +520,7 @@ _moony_dsp(UI *ui, const char *json)
 			else if(!strcmp(protocol->valuestring, LV2_ATOM__eventTransfer)
 				&& (value->type == cJSON_Object) )
 			{
-				uint32_t idx = ui->port_map->port_index(ui->port_map->handle, index->valuestring);
+				uint32_t idx = ui->port_map->port_index(ui->port_map->handle, symbol->valuestring);
 				lv2_atom_forge_set_buffer(&ui->forge, ui->buf, 0x10000);
 				if(_json_to_atom(ui, value, &ui->forge))
 				{
@@ -531,7 +538,7 @@ _moony_dsp(UI *ui, const char *json)
 			}
 		}
 		else if(ui->log)
-			lv2_log_error(&ui->logger, "_moony_dsp: missing protocol, index or value");
+			lv2_log_error(&ui->logger, "_moony_dsp: missing protocol, symbol or value");
 		cJSON_Delete(root);
 	}
 }
@@ -667,6 +674,19 @@ _schedule(UI *ui, cJSON *job)
 	_keepalive(server); // answer keep alives
 }
 
+static int
+_pmap_cmp(const void *data1, const void *data2)
+{
+	const pmap_t *pmap1 = data1;
+	const pmap_t *pmap2 = data2;
+
+	if(pmap1->index > pmap2->index)
+		return 1;
+	else if(pmap1->index < pmap2->index)
+		return -1;
+	return 0;
+}
+
 static inline cJSON * 
 _moony_send(UI *ui, uint32_t idx, uint32_t size, uint32_t prot, const void *buf)
 {
@@ -713,11 +733,21 @@ _moony_send(UI *ui, uint32_t idx, uint32_t size, uint32_t prot, const void *buf)
 		return NULL;
 
 	cJSON *root = cJSON_CreateObject();
-	cJSON *index = cJSON_CreateNumber(idx); //FIXME send symbol here
+	if(root)
+	{
+		cJSON *symbol = NULL;
 
-	cJSON_AddItemToObject(root, LV2_UI__portIndex, index);
-	cJSON_AddItemToObject(root, LV2_UI__protocol, protocol);
-	cJSON_AddItemToObject(root, RDF__value, value);
+		const pmap_t tar = { .index = idx };
+		pmap_t *pmap = bsearch(&tar, ui->pmap, 18, sizeof(pmap_t), _pmap_cmp);
+		if(pmap)
+			symbol = cJSON_CreateString(pmap->symbol);
+
+		if(symbol)
+			cJSON_AddItemToObject(root, LV2_CORE__symbol, symbol);
+
+		cJSON_AddItemToObject(root, LV2_UI__protocol, protocol);
+		cJSON_AddItemToObject(root, RDF__value, value);
+	}
 
 	return root;
 }
@@ -775,7 +805,7 @@ _moony_ui(UI *ui, const char *json)
 			}
 		}
 		else if(ui->log)
-			lv2_log_error(&ui->logger, "_moony_ui: missing protocol, index or value");
+			lv2_log_error(&ui->logger, "_moony_ui: missing protocol or value");
 		cJSON_Delete(root);
 	}
 }
@@ -1344,8 +1374,29 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	}
 
 	// query port index of "control" port
-	ui->control_port = ui->port_map->port_index(ui->port_map->handle, "control");
-	ui->notify_port = ui->port_map->port_index(ui->port_map->handle, "notify");
+	ui->pmap[0].symbol = "input_1";
+	ui->pmap[1].symbol = "input_2";
+	ui->pmap[2].symbol = "input_3";
+	ui->pmap[3].symbol = "input_4";
+	ui->pmap[4].symbol = "output_1";
+	ui->pmap[5].symbol = "output_2";
+	ui->pmap[6].symbol = "output_3";
+	ui->pmap[7].symbol = "output_4";
+	ui->pmap[8].symbol = "event_in_1";
+	ui->pmap[9].symbol = "event_in_2";
+	ui->pmap[10].symbol = "event_in_3";
+	ui->pmap[11].symbol = "event_in_4";
+	ui->pmap[12].symbol = "event_out_1";
+	ui->pmap[13].symbol = "event_out_2";
+	ui->pmap[14].symbol = "event_out_3";
+	ui->pmap[15].symbol = "event_out_4";
+	ui->pmap[16].symbol = "control";
+	ui->pmap[17].symbol = "notify";
+
+	for(unsigned i=0; i<18; i++)
+		ui->pmap[i].index = ui->port_map->port_index(ui->port_map->handle, ui->pmap[i].symbol);
+
+	qsort(ui->pmap, 18, sizeof(pmap_t), _pmap_cmp);
 
 	ui->uris.moony_code = ui->map->map(ui->map->handle, MOONY_CODE_URI);
 	ui->uris.moony_selection = ui->map->map(ui->map->handle, MOONY_SELECTION_URI);

@@ -70,7 +70,6 @@ var LV2 = {
 		protocol        : LV2_UI_PREFIX + "protocol",
 		floatProtocol   : LV2_UI_PREFIX + "floatProtocol",
 		peakProtocol    : LV2_UI_PREFIX + "peakProtocol",
-		portIndex       : LV2_UI_PREFIX + "portIndex",
 		periodStart     : LV2_UI_PREFIX + "periodStart",
 		periodSize      : LV2_UI_PREFIX + "periodSize",
 		peak            : LV2_UI_PREFIX + "peak",
@@ -92,7 +91,8 @@ var LV2 = {
 	CORE : {
 		minimum           : LV2_CORE_PREFIX + "minimum",
 		maximum           : LV2_CORE_PREFIX + "maximum",
-		scalePoint        : LV2_CORE_PREFIX + "scalePoint"
+		scalePoint        : LV2_CORE_PREFIX + "scalePoint",
+		symbol            : LV2_CORE_PREFIX + "symbol"
 	},
 	UNITS : {
 		unit              : LV2_UNITS_PREFIX + "unit",
@@ -170,7 +170,7 @@ function lv2_dsp(o) {
 function lv2_get(func, property) {
 	func({
 		[LV2.UI.protocol] : LV2.ATOM.eventTransfer,
-		[LV2.UI.portIndex] : 'control',
+		[LV2.CORE.symbol] : 'control',
 		[RDF.value] : {
 			[RDFS.range] : LV2.ATOM.Object,
 			[RDF.type] : LV2.PATCH.Get,
@@ -196,7 +196,7 @@ function lv2_get(func, property) {
 function lv2_get_all(func) {
 	func({
 		[LV2.UI.protocol] : LV2.ATOM.eventTransfer,
-		[LV2.UI.portIndex] : 'control',
+		[LV2.CORE.symbol] : 'control',
 		[RDF.value] : {
 			[RDFS.range] : LV2.ATOM.Object,
 			[RDF.type] : LV2.PATCH.Get,
@@ -216,7 +216,7 @@ function lv2_get_all(func) {
 function lv2_set(func, property, range, value) {
 	func({
 		[LV2.UI.protocol] : LV2.ATOM.eventTransfer,
-		[LV2.UI.portIndex] : 'control',
+		[LV2.CORE.symbol] : 'control',
 		[RDF.value] : {
 			[RDFS.range] : LV2.ATOM.Object,
 			[RDF.type] : LV2.PATCH.Set,
@@ -245,6 +245,14 @@ function lv2_set(func, property, range, value) {
 	});
 }
 
+function lv2_control(func, symbol, value) {
+	func({
+		[LV2.UI.protocol] : LV2.UI.floatProtocol,
+		[LV2.CORE.symbol] : symbol,
+		[RDF.value] : value
+	});
+}
+
 function lv2_object_get(atom, key) {
 	for(i in atom) {
 		if(atom[i][LV2.ATOM.Property] == key) {
@@ -254,17 +262,17 @@ function lv2_object_get(atom, key) {
 	return undefined;
 }
 
-function lv2_read_float(idx, value) {
-	cosole.log(idx, value);
+function lv2_read_float(symbol, value) {
+	cosole.log(symbol, value);
 	//TODO
 }
 
-function lv2_read_peak(idx, value) {
-	cosole.log(idx, value[LV2.UI.periodStart], value[LV2.UI.periodSize], value[LV2.UI2.peak]);
+function lv2_read_peak(symbol, value) {
+	cosole.log(symbol, value[LV2.UI.periodStart], value[LV2.UI.periodSize], value[LV2.UI2.peak]);
 	//TODO
 }
 
-function lv2_read_atom(idx, value) {
+function lv2_read_atom(symbol, value) {
 	//TODO
 }
 
@@ -371,14 +379,12 @@ function update_property_step(item) {
 	}
 }
 
-function lv2_read_event(idx, obj) {
+function lv2_read_event(symbol, obj) {
 	var range = obj[RDFS.range];
 	var type = obj[RDF.type];
 	var atom = obj[RDF.value];
 
-	//TODO check idx == 'notify'
-
-	if(range == LV2.ATOM.Object)
+	if( (symbol == 'notify') && (range == LV2.ATOM.Object) )
 	{
 		if(type == LV2.PATCH.Patch)
 		{
@@ -547,15 +553,15 @@ var lv2_read = {
 };
 
 function lv2_success(data) {
-	var idx = data[LV2.UI.portIndex];
+	var symbol = data[LV2.CORE.symbol];
 	var prot = data[LV2.UI.protocol];
 	var value = data[RDF.value];
 
-	if(idx && prot && value)
+	if(symbol && prot && value)
 	{
 		var callback = lv2_read[prot];
 		if(callback)
-			callback(idx, value);
+			callback(symbol, value);
 	}
 }
 
