@@ -117,8 +117,11 @@ _compile(UI *ui)
 {
 	// clear error
 	elm_object_text_set(ui->error, "");
-	evas_object_hide(ui->message);
+	if(evas_object_visible_get(ui->message))
+		evas_object_hide(ui->message);
 
+	if(evas_object_visible_get(ui->notify))
+		evas_object_hide(ui->notify);
 	evas_object_show(ui->notify);
 
 	// get code from entry
@@ -956,6 +959,8 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 				else if(property->body == ui->uris.moony_error)
 				{
 					elm_object_text_set(ui->error, str);
+					if(evas_object_visible_get(ui->message))
+						evas_object_hide(ui->message);
 					evas_object_show(ui->message);
 				}
 			}
