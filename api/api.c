@@ -799,6 +799,9 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 
 	moony->uris.units_unit = moony->map->map(moony->map->handle, LV2_UNITS__unit);
 
+	moony->uris.atom_frame_time = moony->map->map(moony->map->handle, LV2_ATOM__frameTime);
+	moony->uris.atom_beat_time = moony->map->map(moony->map->handle, LV2_ATOM__beatTime);
+
 	osc_forge_init(&moony->oforge, moony->map);
 	lv2_atom_forge_init(&moony->forge, moony->map);
 	lv2_atom_forge_init(&moony->state_forge, moony->map);
@@ -988,6 +991,8 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 		SET_MAP(L, LV2_ATOM__, URI);
 		SET_MAP(L, LV2_ATOM__, URID);
 		SET_MAP(L, LV2_ATOM__, Vector);
+		SET_MAP(L, LV2_ATOM__, beatTime);
+		SET_MAP(L, LV2_ATOM__, frameTime);
 	}
 	lua_setglobal(L, "Atom");
 

@@ -991,11 +991,11 @@ do
 
 	local function producer(forge)
 		forge:frame_time(0)
-		local subseq = forge:sequence()
+		local subseq = forge:sequence(Atom.beatTime)
 		assert(subseq ~= forge)
 
-		subseq:frame_time(1):int(1)
-		subseq:frame_time(2):int(2)
+		subseq:time(1.1):int(1)
+		subseq:beat_time(2.2):int(1)
 
 		assert(subseq:pop() == nil)
 
@@ -1009,8 +1009,9 @@ do
 		assert(#subseq == 2)
 
 		for frames, atom in subseq:foreach() do
+			assert(not math.tointeger(frames)) -- beatTime is double
 			assert(atom.type == Atom.Int)
-			assert(atom.value == frames)
+			assert(atom.value == 1)
 		end
 
 		subseq = seq[2]

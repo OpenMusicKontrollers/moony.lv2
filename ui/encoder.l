@@ -191,6 +191,8 @@ checkKw(char*s)
 			CHECK(Atom.URI, NUMBER);
 			CHECK(Atom.URID, NUMBER);
 			CHECK(Atom.Vector, NUMBER);
+			CHECK(Atom.frameTime, NUMBER);
+			CHECK(Atom.beatTime, NUMBER);
 			break;
 		case 'b':
 			CHECK(break, BREAK);

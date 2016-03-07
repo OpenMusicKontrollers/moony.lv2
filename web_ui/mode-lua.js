@@ -51,7 +51,7 @@ var LuaHighlightRules = function() {
 				// Lua math
 				"huge|maxinteger|mininteger|pi|"+
 				// moony Atom
-				"Bool|Chunk|Double|Float|Int|Long|Literal|Object|Path|Property|Sequence|String|Tuple|URI|URID|Vector|"+
+				"Bool|Chunk|Double|Float|Int|Long|Literal|Object|Path|Property|Sequence|String|Tuple|URI|URID|Vector|frameTime|beatTime|"+
 				// moony MIDI
 				"MidiEvent|"+
 				"NoteOff|NoteOn|NotePressure|Controller|ProgramChange|ChannelPressure|Bender|SystemExclusive|QuarterFrame|SongPosition|SongSelect|TuneRequest|Clock|Start|Continue|Stop|ActiveSense|Reset|"+

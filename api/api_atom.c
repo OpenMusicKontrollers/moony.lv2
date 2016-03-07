@@ -624,12 +624,16 @@ _latom_seq__tostring(lua_State *L, latom_t *latom)
 int
 _latom_seq_foreach_itr(lua_State *L)
 {
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	latom_t *latom = lua_touserdata(L, 1);
 
 	if(!lv2_atom_sequence_is_end(latom->body.seq, latom->atom->size, latom->iter.seq.ev))
 	{
-		// push frame time
-		lua_pushinteger(L, latom->iter.seq.ev->time.frames);
+		if(latom->body.seq->unit == moony->uris.atom_beat_time)
+			lua_pushnumber(L, latom->iter.seq.ev->time.beats);
+		else
+			lua_pushinteger(L, latom->iter.seq.ev->time.frames);
+
 		// push atom
 		lua_pushvalue(L, lua_upvalueindex(2));
 		latom_t *litem = lua_touserdata(L, lua_upvalueindex(2));

@@ -792,7 +792,7 @@ _lforge_sequence(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
-	LV2_URID unit = luaL_optinteger(L, 2, 0); //TODO use proper unit
+	LV2_URID unit = luaL_optinteger(L, 2, 0);
 	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
 	lframe->depth = 1;
 	lframe->last.frames = 0;
