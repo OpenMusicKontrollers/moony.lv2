@@ -82,7 +82,7 @@ _lforge_time(lua_State *L)
 	}
 	else if(lua_isnumber(L, 2))
 	{
-		double beats = lua_tointeger(L, 2);
+		double beats = lua_tonumber(L, 2);
 
 		return _lforge_beat_time_inlined(L, lforge, beats);
 	}
