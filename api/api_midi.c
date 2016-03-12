@@ -17,25 +17,25 @@
 
 #include <api_midi.h>
 #include <api_atom.h>
+#include <api_forge.h>
 
 static int
 _lmidiresponder__call(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	const bool *through = lua_touserdata(L, 1);
 
 	lua_settop(L, 4); // discard superfluous arguments
 	// 1: self
 	// 2: frames
-	// 3: data
+	// 3: forge
 	// 4: atom
 	
-	latom_t *lchunk = NULL;
-	if(luaL_testudata(L, 4, "latom"))
-		lchunk = lua_touserdata(L, 4);
+	latom_t *lchunk = luaL_checkudata(L, 4, "latom");
 	lua_pop(L, 1); // atom
 
 	// check for valid atom and event type
-	if(!lchunk || (lchunk->atom->type != moony->uris.midi_event))
+	if(lchunk->atom->type != moony->uris.midi_event)
 	{
 		lua_pushboolean(L, 0); // not handled
 		return 1;
@@ -63,6 +63,20 @@ _lmidiresponder__call(lua_State *L)
 
 		lua_call(L, 4 + lchunk->atom->size - 1, 0);
 	}
+	else if(*through) // through
+	{
+		const int64_t frames = luaL_checkinteger(L, 2);
+		lforge_t *lforge = luaL_checkudata(L, 3, "lforge");
+
+		if(frames < lforge->last.frames)
+			luaL_error(L, "invalid frame time, must not decrease");
+		lforge->last.frames = frames;
+
+		if(  !lv2_atom_forge_frame_time(lforge->forge, frames)
+			|| !lv2_atom_forge_atom(lforge->forge, lchunk->atom->size, lchunk->atom->type)
+			|| !lv2_atom_forge_write(lforge->forge, lchunk->body.raw, lchunk->atom->size) )
+			luaL_error(L, forge_buffer_overflow);
+	}
 
 	lua_pushboolean(L, 1); // handled
 	return 1;
@@ -73,11 +87,14 @@ _lmidiresponder(lua_State *L)
 {
 	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	
-	lua_settop(L, 1); // discard superfluous arguments
+	lua_settop(L, 2); // discard superfluous arguments
+
+	const bool _through = lua_toboolean(L, 2);
+	lua_pop(L, 1); // bool
 
 	// o = new
-	int32_t *dummy = lua_newuserdata(L, sizeof(int32_t));
-	(void)dummy;
+	bool *through = lua_newuserdata(L, sizeof(bool));
+	*through= _through;
 
 	// o.uservalue = uservalue
 	lua_insert(L, 1);
