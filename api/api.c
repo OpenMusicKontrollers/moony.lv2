@@ -50,18 +50,18 @@ static const size_t moony_sz [MOONY_UDATA_COUNT] = {
 	[MOONY_UDATA_STASH]	= sizeof(lstash_t)
 };
 
-static _Atomic uint32_t voice_id = ATOMIC_VAR_INIT(UINT32_MAX);
+static _Atomic xpress_uuid_t voice_uuid = ATOMIC_VAR_INIT(0);
 
-static uint32_t
-_voice_map_new_id(void *handle)
+static int64_t
+_voice_map_new_uuid(void *handle)
 {
-	(void) handle;
-	return atomic_fetch_sub_explicit(&voice_id, 1, memory_order_relaxed);
+	_Atomic xpress_uuid_t *uuid = handle;
+	return atomic_fetch_add_explicit(uuid, 1, memory_order_relaxed);
 }
 
 static xpress_map_t voice_map_fallback = {
-	.handle = NULL,
-	.new_id = _voice_map_new_id
+	.handle = &voice_uuid,
+	.new_uuid = _voice_map_new_uuid
 };
 
 static int
@@ -169,7 +169,7 @@ _lvoice_map(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 
-	lua_pushinteger(L, moony->voice_map->new_id(moony->voice_map->handle));
+	lua_pushinteger(L, moony->voice_map->new_uuid(moony->voice_map->handle));
 	return 1;
 }
 

@@ -104,12 +104,13 @@ extern const LV2UI_Descriptor web_ui;
 extern const LV2UI_Descriptor web_kx;
 
 // xpress:voiceMap
+typedef int64_t xpress_uuid_t;
 typedef struct _xpress_map_t xpress_map_t;
-typedef uint32_t (*xpress_map_new_id_t)(void *handle);
+typedef xpress_uuid_t (*xpress_map_new_uuid_t)(void *handle);
 
 struct _xpress_map_t {
 	void *handle;
-	xpress_map_new_id_t new_id;
+	xpress_map_new_uuid_t new_uuid;
 };
 
 typedef enum _moony_udata_t {
