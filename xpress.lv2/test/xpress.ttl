@@ -1,0 +1,82 @@
+# Copyright (c) 2016 Hanspeter Portner (dev@open-music-kontrollers.ch)
+#
+# This is free software: you can redistribute it and/or modify
+# it under the terms of the Artistic License 2.0 as published by
+# The Perl Foundation.
+#
+# This source is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# Artistic License 2.0 for more details.
+#
+# You should have received a copy of the Artistic License 2.0
+# along the source as a COPYING file. If not, obtain it from
+# http://www.perlfoundation.org/artistic_license_2_0.
+
+@prefix owl:			<http://www.w3.org/2002/07/owl#> .
+@prefix foaf:			<http://xmlns.com/foaf/0.1/> .
+@prefix doap:			<http://usefulinc.com/ns/doap#> .
+@prefix rdfs: 		<http://www.w3.org/2000/01/rdf-schema#> .
+@prefix lv2:			<http://lv2plug.in/ns/lv2core#> .
+@prefix atom:			<http://lv2plug.in/ns/ext/atom#> .
+@prefix urid:			<http://lv2plug.in/ns/ext/urid#> .
+@prefix log:			<http://lv2plug.in/ns/ext/log#> .
+
+@prefix lic:			<http://opensource.org/licenses/> .
+@prefix omk:			<http://open-music-kontrollers.ch/ventosus#> .
+@prefix proj:			<http://open-music-kontrollers.ch/lv2/> .
+@prefix xpress:		<http://open-music-kontrollers.ch/lv2/xpress#> .
+
+# Features
+xpress:voiceMap
+	a lv2:Feature .
+
+xpress:Message
+	a rdfs:Class ,
+		rdfs:Datatype ;
+	rdfs:subClassOf atom:Atom .
+
+# Maintainer
+omk:me
+	a foaf:Person ;
+	foaf:name "Hanspeter Portner" ;
+	foaf:mbox <mailto:dev@open-music-kontrollers.ch> ;
+	foaf:homepage <http://open-music-kontrollers.ch> .
+
+# Project
+proj:xpress
+	a doap:Project ;
+	doap:maintainer omk:me ;
+	doap:name "Xpress Bundle" .
+
+# Test Plugin
+xpress:test
+	a lv2:Plugin ,
+		lv2:ConverterPlugin ;
+	doap:name "Xpress Test" ;
+	doap:license lic:Artistic-2.0 ;
+	lv2:project proj:xpress ;
+	lv2:requiredFeature urid:map, log:log ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, xpress:voiceMap ;
+
+	lv2:port [
+		# sink event port
+	  a lv2:InputPort ,
+			atom:AtomPort ;
+		atom:bufferType atom:Sequence ;
+		atom:supports xpress:Message ;
+		lv2:index 0 ;
+		lv2:symbol "event_in" ;
+		lv2:name "Event Input" ;
+		lv2:designation lv2:control ;
+	] , [
+		# source event port
+	  a lv2:OutputPort ,
+			atom:AtomPort ;
+		atom:bufferType atom:Sequence ;
+		atom:supports xpress:Message ;
+		lv2:index 1 ;
+		lv2:symbol "event_out" ;
+		lv2:name "Event Output" ;
+		lv2:designation lv2:control ;
+	] .
