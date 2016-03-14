@@ -42,6 +42,7 @@
 
 #include <api_vm.h>
 #include <lv2_osc.h>
+#include <xpress.h>
 
 #include <lua.h>
 #include <lauxlib.h>
@@ -102,16 +103,6 @@ extern const LV2UI_Descriptor simple_kx;
 
 extern const LV2UI_Descriptor web_ui;
 extern const LV2UI_Descriptor web_kx;
-
-// xpress:voiceMap
-typedef int64_t xpress_uuid_t;
-typedef struct _xpress_map_t xpress_map_t;
-typedef xpress_uuid_t (*xpress_map_new_uuid_t)(void *handle);
-
-struct _xpress_map_t {
-	void *handle;
-	xpress_map_new_uuid_t new_uuid;
-};
 
 typedef enum _moony_udata_t {
 	MOONY_UDATA_ATOM,

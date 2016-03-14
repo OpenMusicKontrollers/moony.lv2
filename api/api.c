@@ -28,11 +28,9 @@
 #include <api_time.h>
 #include <api_state.h>
 
-#define XPRESS_PREFIX "http://open-music-kontrollers.ch/lv2/xpress#"
 #define RDF_PREFIX "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 #define RDFS_PREFIX "http://www.w3.org/2000/01/rdf-schema#"
 
-#define XPRESS_VOICE_MAP XPRESS_PREFIX"voiceMap"
 #define RDF__value RDF_PREFIX"value"
 #define RDFS__label RDFS_PREFIX"label"
 #define RDFS__range RDFS_PREFIX"range"
