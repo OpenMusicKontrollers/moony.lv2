@@ -39,6 +39,20 @@
 
 #define MAX_PORTS 18
 
+#ifndef LV2_UI__protocol
+#	define LV2_UI__protocol         LV2_UI_PREFIX "protocol"
+#	define LV2_UI__floatProtocol    LV2_UI_PREFIX "floatProtocol"
+#	define LV2_UI__peakProtocol     LV2_UI_PREFIX "peakProtocol"
+#endif
+
+#ifdef LV2_ATOM_TUPLE_FOREACH
+#	undef LV2_ATOM_TUPLE_FOREACH
+#	define LV2_ATOM_TUPLE_FOREACH(tuple, iter) \
+	for (LV2_Atom* (iter) = lv2_atom_tuple_begin(tuple); \
+	     !lv2_atom_tuple_is_end(LV2_ATOM_BODY(tuple), (tuple)->atom.size, (iter)); \
+	     (iter) = lv2_atom_tuple_next(iter))
+#endif
+
 typedef struct _UI UI;
 typedef struct _server_t server_t;
 typedef struct _client_t client_t;

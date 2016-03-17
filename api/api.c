@@ -36,6 +36,10 @@
 #define RDFS__range RDFS_PREFIX"range"
 #define RDFS__comment RDFS_PREFIX"comment"
 
+#ifndef LV2_PATCH__Copy
+#	define LV2_PATCH__Copy LV2_PATCH_PREFIX "Copy"
+#endif
+
 static const char *moony_ref [MOONY_UDATA_COUNT] = {
 	[MOONY_UDATA_ATOM]	= "latom",
 	[MOONY_UDATA_FORGE]	= "lforge",
