@@ -4,6 +4,7 @@ mkdir -p release
 pushd release &> /dev/null
 
 #for toolchain in armv7h-linux;
+#for toolchain in multiarch-darwin;
 for toolchain in i686-linux i686-w64-mingw32 x86_64-linux x86_64-w64-mingw32;
 do
 	echo $toolchain
@@ -12,6 +13,7 @@ do
 	pushd $toolchain &> /dev/null
 	cmake \
 		-DCMAKE_TOOLCHAIN_FILE=../../cmake/$toolchain.cmake \
+		-DCMAKE_OSX_ARCHITECTURES="x86_64;i386" \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DBUILD_TESTING=1 \
 		-DBUILD_COMMON_UI=0 \
