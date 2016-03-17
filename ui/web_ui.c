@@ -615,7 +615,7 @@ _on_client_close(uv_handle_t *handle)
 	if(!server->clients) // no clients any more
 	{
 		int ret;
-		if((ret = uv_timer_start(&server->timer, _timeout, 1000, 0)))
+		if((ret = uv_timer_start(&server->timer, _timeout, 5000, 0)))
 			_err(ui, "uv_timer_start", ret);
 	}
 }
