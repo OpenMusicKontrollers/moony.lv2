@@ -172,7 +172,7 @@ static const char *http_content [] = {
 	[CONTENT_IMAGE_PNG] = "Content-Type: image/png\r\n"
 };
 
-static const char *content_length = "Content-Length: %zu\r\n\r\n%s";
+static const char *content_length = "Content-Length: %"PRIuPTR"\r\n\r\n%s";
 
 //TODO keep updated
 static const url_t valid_urls [] = {
@@ -1090,7 +1090,7 @@ _show(UI *ui)
 			_err(ui, "uv_tcp_get_sockname", ret);
 
 		const uint16_t port = ntohs(storage_ip4->sin_port);
-		sprintf(ui->path, "http://localhost:%hu", port);
+		sprintf(ui->path, "http://localhost:%"PRIu16, port);
 	}
 
 	/* FIXME
