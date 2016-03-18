@@ -619,7 +619,7 @@ function lv2_success(data) {
 	var prot = data[LV2.UI.protocol];
 	var value = data[RDF.value];
 
-	if(symbol && prot && value)
+	if(symbol && prot)
 	{
 		var callback = lv2_read[prot];
 		if(callback)
