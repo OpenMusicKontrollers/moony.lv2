@@ -52,7 +52,7 @@ static const size_t moony_sz [MOONY_UDATA_COUNT] = {
 	[MOONY_UDATA_STASH]	= sizeof(lstash_t)
 };
 
-static _Atomic xpress_uuid_t voice_uuid = ATOMIC_VAR_INIT(0);
+static _Atomic xpress_uuid_t voice_uuid = ATOMIC_VAR_INIT(INT64_MAX / UINT16_MAX * 2LL);
 
 static int64_t
 _voice_map_new_uuid(void *handle)
