@@ -49,10 +49,10 @@ typedef void (*osc_bundle_pop_cb_t)(void *data);
 typedef void (*osc_message_cb_t)(const char *path, const char *fmt,
 	const LV2_Atom_Tuple *arguments, void *data);
 
-typedef int64_t (*osc_schedule_osc2frames_t)(osc_schedule_handle_t handle,
+typedef double (*osc_schedule_osc2frames_t)(osc_schedule_handle_t handle,
 	uint64_t timestamp);
 typedef uint64_t (*osc_schedule_frames2osc_t)(osc_schedule_handle_t handle,
-	int64_t frames);
+	double frames);
 
 struct _osc_schedule_t {
 	osc_schedule_osc2frames_t osc2frames;
