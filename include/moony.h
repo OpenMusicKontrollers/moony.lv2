@@ -23,6 +23,13 @@
 #include <stdint.h>
 #include <stdatomic.h>
 
+#if !defined(_WIN32)
+#	include <sys/mman.h>
+#else
+#	define mlock(...)
+#	define munlock(...)
+#endif
+
 #include <lv2/lv2plug.in/ns/ext/atom/atom.h>
 #include <lv2/lv2plug.in/ns/ext/atom/util.h>
 #include <lv2/lv2plug.in/ns/ext/atom/forge.h>

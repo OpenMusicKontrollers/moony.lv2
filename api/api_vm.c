@@ -210,10 +210,11 @@ moony_vm_mem_alloc(size_t size)
 	area = _aligned_malloc(size, 8);
 #else
 	posix_memalign(&area, 8, size);
-	if(area)
-		mlock(area, size);
 #endif
+	if(!area)
+		return NULL;
 
+	mlock(area, size);
 	return area;
 }
 
@@ -226,9 +227,7 @@ moony_vm_mem_free(void *area, size_t size)
 	
 	//printf("moony_vm_mem_free: %zu\n", size);
 
-#if !defined(_WIN32)
 	munlock(area, size);
-#endif
 	free(area);
 }
 

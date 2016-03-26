@@ -42,6 +42,7 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 	Handle *handle = (Handle *)calloc(1, sizeof(Handle));
 	if(!handle)
 		return NULL;
+	mlock(handle, sizeof(Handle));
 
 	if(moony_init(&handle->moony, descriptor->URI, rate, features))
 	{
@@ -161,6 +162,7 @@ cleanup(LV2_Handle instance)
 	Handle *handle = (Handle *)instance;
 
 	moony_deinit(&handle->moony);
+	munlock(handle, sizeof(Handle));
 	free(handle);
 }
 
