@@ -912,26 +912,35 @@ moony_deinit(moony_t *moony)
 	moony_vm_deinit(&moony->vm);
 }
 
+#define _protect_metatable(L, idx) \
+	lua_pushboolean(L, 0); \
+	lua_setfield(L, idx - 1, "__metatable");
+
+#define _index_metatable(L, idx) \
+	lua_pushvalue(L, idx); \
+	lua_setfield(L, idx - 1, "__index");
+
 void
 moony_open(moony_t *moony, lua_State *L, bool use_assert)
 {
 	luaL_newmetatable(L, "latom");
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs (L, latom_mt, 1);
+	_protect_metatable(L, -1);
 	lua_pop(L, 1);
 	
 	luaL_newmetatable(L, "lforge");
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs (L, lforge_mt, 1);
-	lua_pushvalue(L, -1);
-	lua_setfield(L, -2, "__index");
+	_protect_metatable(L, -1);
+	_index_metatable(L, -1);
 	lua_pop(L, 1);
 	
 	luaL_newmetatable(L, "lstash");
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs (L, lstash_mt, 1);
-	lua_pushvalue(L, -1);
-	lua_setfield(L, -2, "__index");
+	_protect_metatable(L, -1);
+	_index_metatable(L, -1);
 	lua_pop(L, 1);
 
 	// lv2.map
@@ -939,6 +948,7 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	lua_newtable(L);
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs(L, lmap_mt, 1);
+	_protect_metatable(L, -1);
 	lua_setmetatable(L, -2);
 	lua_setglobal(L, "Map");
 
@@ -947,6 +957,7 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	lua_newtable(L);
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs(L, lunmap_mt, 1);
+	_protect_metatable(L, -1);
 	lua_setmetatable(L, -2);
 	lua_setglobal(L, "Unmap");
 
@@ -1048,6 +1059,7 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	lua_newtable(L);
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs(L, lnote_mt, 1);
+	_protect_metatable(L, -1);
 	lua_setmetatable(L, -2);
 	lua_setglobal(L, "Note");
 
@@ -1241,8 +1253,8 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	luaL_newmetatable(L, "lmidiresponder");
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs (L, lmidiresponder_mt, 1);
-	lua_pushvalue(L, -1);
-	lua_setfield(L, -2, "__index");
+	_protect_metatable(L, -1);
+	_index_metatable(L, -1);
 	lua_pop(L, 1);
 
 	// MIDIResponder factory
@@ -1254,8 +1266,8 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	luaL_newmetatable(L, "loscresponder");
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs (L, loscresponder_mt, 1);
-	lua_pushvalue(L, -1);
-	lua_setfield(L, -2, "__index");
+	_protect_metatable(L, -1);
+	_index_metatable(L, -1);
 	lua_pop(L, 1);
 
 	// OSCResponder factory
@@ -1270,6 +1282,7 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	luaL_newmetatable(L, "ltimeresponder");
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs (L, ltimeresponder_mt, 1);
+	_protect_metatable(L, -1);
 	// we have a __index function, thus no __index table here
 	lua_pop(L, 1);
 
@@ -1282,8 +1295,8 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	luaL_newmetatable(L, "lstateresponder");
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs (L, lstateresponder_mt, 1);
-	lua_pushvalue(L, -1);
-	lua_setfield(L, -2, "__index");
+	_protect_metatable(L, -1);
+	_index_metatable(L, -1);
 	lua_pop(L, 1);
 
 	// StateResponder factory

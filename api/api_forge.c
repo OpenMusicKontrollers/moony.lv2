@@ -38,7 +38,7 @@ _lforge_frame_time_inlined(lua_State *L, lforge_t *lforge, int64_t frames)
 static int
 _lforge_frame_time(lua_State *L)
 {
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 	int64_t frames = luaL_checkinteger(L, 2);
 
 	return _lforge_frame_time_inlined(L, lforge, frames);
@@ -63,7 +63,7 @@ _lforge_beat_time_inlined(lua_State *L, lforge_t *lforge, double beats)
 static int
 _lforge_beat_time(lua_State *L)
 {
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 	double beats = luaL_checknumber(L, 2);
 
 	return _lforge_beat_time_inlined(L, lforge, beats);
@@ -72,7 +72,7 @@ _lforge_beat_time(lua_State *L)
 static int
 _lforge_time(lua_State *L)
 {
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 
 	if(lua_isinteger(L, 2))
 	{
@@ -93,7 +93,7 @@ _lforge_time(lua_State *L)
 static int
 _lforge_atom(lua_State *L)
 {
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 	latom_t *latom = luaL_checkudata(L, 2, "latom");
 	const uint32_t size = latom->atom->size;
 
@@ -212,7 +212,7 @@ _lforge_basic(lua_State *L, int pos, LV2_Atom_Forge *forge, LV2_URID range)
 static int
 _lforge_int(lua_State *L)
 {
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 
 	if(!_lforge_basic_int(L, 2, lforge->forge))
 		luaL_error(L, forge_buffer_overflow);
@@ -224,7 +224,7 @@ _lforge_int(lua_State *L)
 static int
 _lforge_long(lua_State *L)
 {
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 
 	if(!_lforge_basic_long(L, 2, lforge->forge))
 		luaL_error(L, forge_buffer_overflow);
@@ -236,7 +236,7 @@ _lforge_long(lua_State *L)
 static int
 _lforge_float(lua_State *L)
 {
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 
 	if(!_lforge_basic_float(L, 2, lforge->forge))
 		luaL_error(L, forge_buffer_overflow);
@@ -248,7 +248,7 @@ _lforge_float(lua_State *L)
 static int
 _lforge_double(lua_State *L)
 {
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 
 	if(!_lforge_basic_double(L, 2, lforge->forge))
 		luaL_error(L, forge_buffer_overflow);
@@ -260,7 +260,7 @@ _lforge_double(lua_State *L)
 static int
 _lforge_bool(lua_State *L)
 {
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 
 	if(!_lforge_basic_bool(L, 2, lforge->forge))
 		luaL_error(L, forge_buffer_overflow);
@@ -272,7 +272,7 @@ _lforge_bool(lua_State *L)
 static int
 _lforge_urid(lua_State *L)
 {
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 
 	if(!_lforge_basic_urid(L, 2, lforge->forge))
 		luaL_error(L, forge_buffer_overflow);
@@ -284,7 +284,7 @@ _lforge_urid(lua_State *L)
 static int
 _lforge_string(lua_State *L)
 {
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 
 	if(!_lforge_basic_string(L, 2, lforge->forge))
 		luaL_error(L, forge_buffer_overflow);
@@ -296,7 +296,7 @@ _lforge_string(lua_State *L)
 static int
 _lforge_uri(lua_State *L)
 {
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 
 	if(!_lforge_basic_uri(L, 2, lforge->forge))
 		luaL_error(L, forge_buffer_overflow);
@@ -308,7 +308,7 @@ _lforge_uri(lua_State *L)
 static int
 _lforge_path(lua_State *L)
 {
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 
 	if(!_lforge_basic_path(L, 2, lforge->forge))
 		luaL_error(L, forge_buffer_overflow);
@@ -320,7 +320,7 @@ _lforge_path(lua_State *L)
 static int
 _lforge_literal(lua_State *L)
 {
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 	size_t size;
 	const char *val = luaL_checklstring(L, 2, &size);
 	LV2_URID datatype = luaL_checkinteger(L, 3);
@@ -336,7 +336,7 @@ _lforge_literal(lua_State *L)
 static int
 _lforge_bytes(lua_State *L, moony_t *moony, LV2_URID type)
 {
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 	int ltype = lua_type(L, 2);
 	if(ltype == LUA_TTABLE)
 	{
@@ -456,7 +456,7 @@ static int
 _lforge_osc_bundle(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 
 	osc_forge_t *oforge = &moony->oforge;
 	LV2_Atom_Forge *forge = lforge->forge;
@@ -478,7 +478,7 @@ static int
 _lforge_osc_message(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 
 	osc_forge_t *oforge = &moony->oforge;
 	LV2_Atom_Forge *forge = lforge->forge;
@@ -613,7 +613,7 @@ static int
 _lforge_tuple(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
 	lframe->depth = 1;
 	lframe->last.frames = lforge->last.frames;
@@ -629,7 +629,7 @@ static int
 _lforge_object(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 	LV2_URID id = luaL_optinteger(L, 2, 0);
 	LV2_URID otype = luaL_optinteger(L, 3, 0);
 	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
@@ -646,7 +646,7 @@ _lforge_object(lua_State *L)
 static int
 _lforge_key(lua_State *L)
 {
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 	LV2_URID key = luaL_checkinteger(L, 2);
 
 	if(!lv2_atom_forge_key(lforge->forge, key))
@@ -659,7 +659,7 @@ _lforge_key(lua_State *L)
 static int
 _lforge_property(lua_State *L)
 {
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 	LV2_URID key = luaL_checkinteger(L, 2);
 	LV2_URID context = luaL_checkinteger(L, 3);
 
@@ -673,7 +673,7 @@ _lforge_property(lua_State *L)
 static int
 _lforge_vector(lua_State *L)
 {
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 	LV2_URID child_type = luaL_checkinteger(L, 2);
 	uint32_t child_size = 0;
 	LV2_Atom_Forge_Frame frame;
@@ -791,7 +791,7 @@ static int
 _lforge_sequence(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 	LV2_URID unit = luaL_optinteger(L, 2, 0);
 	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
 	lframe->depth = 1;
@@ -808,7 +808,7 @@ static int
 _lforge_typed(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 	LV2_URID urid = luaL_checkinteger(L, 2);
 	lua_remove(L, 2); // urid
 
@@ -866,7 +866,7 @@ static int
 _lforge_get(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 	LV2_URID subject = luaL_optinteger(L, 2, 0);
 	LV2_URID property = luaL_checkinteger(L, 3);
 
@@ -898,7 +898,7 @@ static int
 _lforge_set(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 	LV2_URID subject = luaL_optinteger(L, 2, 0);
 	LV2_URID property = luaL_checkinteger(L, 3);
 	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
@@ -932,7 +932,7 @@ static int
 _lforge_put(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 	LV2_URID subject = luaL_optinteger(L, 2, 0);
 	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
 	lframe->depth = 2;
@@ -962,7 +962,7 @@ static int
 _lforge_patch(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 	LV2_URID subject = luaL_optinteger(L, 2, 0);
 	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
 	lframe->depth = 1;
@@ -987,7 +987,7 @@ static int
 _lforge_remove(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
 	lframe->depth = 1;
 	lframe->last.frames = lforge->last.frames;
@@ -1005,7 +1005,7 @@ static int
 _lforge_add(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
 	lframe->depth = 1;
 	lframe->last.frames = lforge->last.frames;
@@ -1022,7 +1022,7 @@ _lforge_add(lua_State *L)
 static int
 _lforge_pop(lua_State *L)
 {
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 
 	for(int i=lforge->depth; i>0; i--)
 	{
@@ -1038,7 +1038,7 @@ _lforge_pop(lua_State *L)
 static int
 _lforge_read(lua_State *L)
 {
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 
 	if(lforge->lheader.type != MOONY_UDATA_STASH)
 		luaL_error(L, "not a stash object");
@@ -1049,7 +1049,7 @@ _lforge_read(lua_State *L)
 static int
 _lforge__gc(lua_State *L)
 {
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 
 	if(lforge->lheader.type == MOONY_UDATA_STASH)
 		return _lstash__gc(L);
@@ -1060,7 +1060,7 @@ _lforge__gc(lua_State *L)
 static int
 _lforge__tostring(lua_State *L)
 {
-	lforge_t *lforge = luaL_checkudata(L, 1, "lforge");
+	lforge_t *lforge = lua_touserdata(L, 1);
 	lua_pushfstring(L, "(forge: %p)", lforge);
 	return 1;
 }

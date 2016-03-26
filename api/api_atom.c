@@ -901,7 +901,7 @@ static int
 _latom__index(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	latom_t *latom = luaL_checkudata(L, 1, "latom");
+	latom_t *latom = lua_touserdata(L, 1);
 	const latom_driver_t *driver = _latom_driver(moony, latom->atom->type);
 
 	if(driver)
@@ -958,7 +958,7 @@ static int
 _latom__len(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	latom_t *latom = luaL_checkudata(L, 1, "latom");
+	latom_t *latom = lua_touserdata(L, 1);
 	const latom_driver_t *driver = _latom_driver(moony, latom->atom->type);
 
 	if(driver && driver->__len)
@@ -972,7 +972,7 @@ static int
 _latom__tostring(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	latom_t *latom = luaL_checkudata(L, 1, "latom");
+	latom_t *latom = lua_touserdata(L, 1);
 	const latom_driver_t *driver = _latom_driver(moony, latom->atom->type);
 
 	if(driver && driver->__tostring)
@@ -986,7 +986,7 @@ static int
 _latom__eq(lua_State *L)
 {
 	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	latom_t *latom1 = luaL_checkudata(L, 1, "latom");
+	latom_t *latom1 = lua_touserdata(L, 1);
 	latom_t *latom2 = luaL_checkudata(L, 2, "latom");
 
 	lua_pushboolean(L,
