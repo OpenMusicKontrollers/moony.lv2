@@ -1,0 +1,316 @@
+# Copyright (c) 2015 Hanspeter Portner (dev@open-music-kontrollers.ch)
+#
+# This is free software: you can redistribute it and/or modify
+# it under the terms of the Artistic License 2.0 as published by
+# The Perl Foundation.
+#
+# This source is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# Artistic License 2.0 for more details.
+#
+# You should have received a copy of the Artistic License 2.0
+# along the source as a COPYING file. If not, obtain it from
+# http://www.perlfoundation.org/artistic_license_2_0.
+
+@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .
+@prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .
+@prefix atom: <http://lv2plug.in/ns/ext/atom#> .
+@prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .
+@prefix urid: <http://lv2plug.in/ns/ext/urid#> .
+@prefix kx:		<http://kxstudio.sf.net/ns/lv2ext/external-ui#> .
+
+@prefix moony:	<http://open-music-kontrollers.ch/lv2/moony#> .
+
+# Web UI
+moony:ui_1_web_1_ui
+	a ui:UI ;
+	ui:portNotification [
+		ui:plugin moony:c1xc1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c2xc2 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c4xc4 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a1xa1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a2xa2 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a4xa4 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c1a1xc1a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c2a1xc2a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c4a1xc4a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] ;
+	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map, urid:unmap ;
+  lv2:extensionData ui:idleInterface, ui:showInterface .
+
+moony:ui_1_web_2_kx
+	a kx:Widget ;
+	ui:portNotification [
+		ui:plugin moony:c1xc1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c2xc2 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c4xc4 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a1xa1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a2xa2 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a4xa4 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c1a1xc1a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c2a1xc2a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c4a1xc4a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] ;
+	lv2:requiredFeature kx:Host, ui:portMap, urid:map, urid:unmap .
+
+# Simple UI
+moony:ui_2_simple_1_ui
+	a ui:UI ;
+	ui:portNotification [
+		ui:plugin moony:c1xc1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c2xc2 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c4xc4 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a1xa1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a2xa2 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a4xa4 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c1a1xc1a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c2a1xc2a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c4a1xc4a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] ;
+	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map ;
+  lv2:extensionData ui:idleInterface, ui:showInterface .
+
+moony:ui_2_simple_2_kx
+	a kx:Widget ;
+	ui:portNotification [
+		ui:plugin moony:c1xc1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c2xc2 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c4xc4 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a1xa1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a2xa2 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a4xa4 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c1a1xc1a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c2a1xc2a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c4a1xc4a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] ;
+	lv2:requiredFeature kx:Host, ui:portMap, urid:map .
+
+# Common UI
+moony:ui_3_common_1_ui
+	a ui:UI ;
+	ui:portNotification [
+		ui:plugin moony:c1xc1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c2xc2 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c4xc4 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a1xa1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a2xa2 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a4xa4 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c1a1xc1a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c2a1xc2a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c4a1xc4a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] ;
+	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map ;
+  lv2:extensionData ui:idleInterface, ui:showInterface .
+
+moony:ui_3_common_2_kx
+	a kx:Widget ;
+	ui:portNotification [
+		ui:plugin moony:c1xc1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c2xc2 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c4xc4 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a1xa1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a2xa2 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a4xa4 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c1a1xc1a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c2a1xc2a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c4a1xc4a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] ;
+	lv2:requiredFeature kx:Host, ui:portMap, urid:map .
+
+moony:ui_3_common_3_eo
+	a ui:EoUI ;
+	ui:portNotification [
+		ui:plugin moony:c1xc1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c2xc2 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c4xc4 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a1xa1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a2xa2 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a4xa4 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c1a1xc1a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c2a1xc2a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c4a1xc4a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] ;
+	lv2:requiredFeature ui:portMap, urid:map .

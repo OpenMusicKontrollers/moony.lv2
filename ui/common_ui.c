@@ -21,16 +21,12 @@
 
 #include <Elementary.h>
 
-#include <lv2_eo_ui.h>
-
 #include <common_ui.h>
 #include <encoder.h>
 
 typedef struct _UI UI;
 
 struct _UI {
-	eo_ui_t eoui;
-
 	struct {
 		LV2_URID moony_code;
 		LV2_URID moony_error;
@@ -52,6 +48,7 @@ struct _UI {
 	uint32_t notify_port;
 
 	int w, h;
+	Evas_Object *widget;
 	Evas_Object *table;
 	Evas_Object *error;
 	Evas_Object *message;
@@ -534,16 +531,33 @@ _unfocused(void *data, Evas_Object *obj, void *event_info)
 	elm_object_text_set(ui->status, "");
 }
 
-static Evas_Object *
-_content_get(eo_ui_t *eoui)
+static void
+_content_free(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
-	UI *ui = (void *)eoui - offsetof(UI, eoui);
+	UI *ui = data;
 
-	ui->table = elm_table_add(eoui->win);
+	ui->widget = NULL;
+}
+
+static void
+_content_del(void *data, Evas *e, Evas_Object *obj, void *event_info)
+{
+	UI *ui = data;
+
+	evas_object_del(ui->widget);
+}
+
+static Evas_Object *
+_content_get(UI *ui, Evas_Object *parent)
+{
+	ui->table = elm_table_add(parent);
 	if(ui->table)
 	{
 		elm_table_homogeneous_set(ui->table, EINA_FALSE);
 		elm_table_padding_set(ui->table, 0, 0);
+		evas_object_size_hint_min_set(ui->table, 1280, 800);
+		evas_object_event_callback_add(ui->table, EVAS_CALLBACK_FREE, _content_free, ui);
+		evas_object_event_callback_add(ui->table, EVAS_CALLBACK_DEL, _content_del, ui);
 
 		ui->entry = elm_entry_add(ui->table);
 		if(ui->entry)
@@ -784,45 +798,21 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	LV2UI_Controller controller, LV2UI_Widget *widget,
 	const LV2_Feature *const *features)
 {
-	if(		strcmp(plugin_uri, MOONY_C1XC1_URI)
-		&&	strcmp(plugin_uri, MOONY_C2XC2_URI)
-		&&	strcmp(plugin_uri, MOONY_C4XC4_URI)
-
-		&&	strcmp(plugin_uri, MOONY_A1XA1_URI)
-		&&	strcmp(plugin_uri, MOONY_A2XA2_URI)
-		&&	strcmp(plugin_uri, MOONY_A4XA4_URI)
-
-		&&	strcmp(plugin_uri, MOONY_C1A1XC1A1_URI)
-		&&	strcmp(plugin_uri, MOONY_C2A1XC2A1_URI)
-		&&	strcmp(plugin_uri, MOONY_C4A1XC4A1_URI) )
-	{
-		return NULL;
-	}
-
-	eo_ui_driver_t driver;
-	if(descriptor == &common_eo)
-		driver = EO_UI_DRIVER_EO;
-	else if(descriptor == &common_ui)
-		driver = EO_UI_DRIVER_UI;
-	else if(descriptor == &common_x11)
-		driver = EO_UI_DRIVER_X11;
-	else if(descriptor == &common_kx)
-		driver = EO_UI_DRIVER_KX;
-	else
-		return NULL;
-
 	UI *ui = calloc(1, sizeof(UI));
 	if(!ui)
 		return NULL;
 
+	Evas_Object *parent = NULL;
 	for(int i=0; features[i]; i++)
 	{
 		if(!strcmp(features[i]->URI, LV2_URID__map))
-			ui->map = (LV2_URID_Map *)features[i]->data;
+			ui->map = features[i]->data;
 		else if(!strcmp(features[i]->URI, LV2_UI__portMap))
-			ui->port_map = (LV2UI_Port_Map *)features[i]->data;
+			ui->port_map = features[i]->data;
 		else if(!strcmp(features[i]->URI, LV2_LOG__log))
-			ui->log = (LV2_Log_Log *)features[i]->data;
+			ui->log = features[i]->data;
+		else if(!strcmp(features[i]->URI, LV2_UI__parent))
+			parent = features[i]->data;
 	}
 
 	if(!ui->map)
@@ -834,6 +824,11 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	if(!ui->port_map)
 	{
 		fprintf(stderr, "%s: Host does not support ui:portMap\n", descriptor->URI);
+		free(ui);
+		return NULL;
+	}
+	if(!parent)
+	{
 		free(ui);
 		return NULL;
 	}
@@ -865,28 +860,23 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	if(ui->log)
 		lv2_log_logger_init(&ui->logger, ui->map, ui->log);
 
-	eo_ui_t *eoui = &ui->eoui;
-	eoui->driver = driver;
-	eoui->content_get = _content_get;
-	eoui->w = 640,
-	eoui->h = 720;
-
 	ui->write_function = write_function;
 	ui->controller = controller;
 
 	asprintf(&ui->logo_path, "%s/omk_logo_256x256.png", bundle_path);
 
-	if(eoui_instantiate(eoui, descriptor, plugin_uri, bundle_path, write_function,
-		controller, widget, features))
-	{
-		free(ui);
-		return NULL;
-	}
-
 	_moony_message_send(ui, ui->uris.moony_code, NULL, 0);
 	
 	efreet_init();
 	ui->desks = efreet_util_desktop_mime_list("text/plain");
+
+	ui->widget = _content_get(ui, parent);
+	if(!ui->widget)
+	{
+		free(ui);
+		return NULL;
+	}
+	*(Evas_Object **)widget = ui->widget;
 
 	return ui;
 }
@@ -908,7 +898,8 @@ cleanup(LV2UI_Handle handle)
 	if(ui->monitor)
 		ecore_file_monitor_del(ui->monitor);
 
-	eoui_cleanup(&ui->eoui);
+	if(ui->widget)
+		evas_object_del(ui->widget);
 
 	if(ui->logo_path)
 		free(ui->logo_path);
@@ -973,29 +964,5 @@ const LV2UI_Descriptor common_eo = {
 	.instantiate		= instantiate,
 	.cleanup				= cleanup,
 	.port_event			= port_event,
-	.extension_data	= eoui_eo_extension_data
-};
-
-const LV2UI_Descriptor common_ui = {
-	.URI						= MOONY_COMMON_UI_URI,
-	.instantiate		= instantiate,
-	.cleanup				= cleanup,
-	.port_event			= port_event,
-	.extension_data	= eoui_ui_extension_data
-};
-
-const LV2UI_Descriptor common_x11 = {
-	.URI						= MOONY_COMMON_X11_URI,
-	.instantiate		= instantiate,
-	.cleanup				= cleanup,
-	.port_event			= port_event,
-	.extension_data	= eoui_x11_extension_data
-};
-
-const LV2UI_Descriptor common_kx = {
-	.URI						= MOONY_COMMON_KX_URI,
-	.instantiate		= instantiate,
-	.cleanup				= cleanup,
-	.port_event			= port_event,
-	.extension_data	= eoui_kx_extension_data
+	.extension_data	= NULL 
 };
