@@ -215,42 +215,67 @@ _xpress_float_vec(xpress_t *xpress, float *dst, const LV2_Atom_Vector *vec)
 	memcpy(dst, src, nelements * sizeof(float));
 }
 
-static inline int
-_xpress_signum(xpress_uuid_t urid1, xpress_uuid_t urid2)
+static inline void
+_xpress_qsort(xpress_voice_t *a, unsigned n)
 {
-	if(urid1 < urid2)
-		return 1;
-	else if(urid1 > urid2)
-		return -1;
+	if(n < 2)
+		return;
 	
-	return 0;
+	const xpress_voice_t *p = &a[n/2];
+
+	unsigned i, j;
+	for(i=0, j=n-1; ; i++, j--)
+	{
+		while(a[i].uuid > p->uuid)
+			i++;
+
+		while(p->uuid > a[j].uuid)
+			j--;
+
+		if(i >= j)
+			break;
+
+		const xpress_voice_t t = a[i];
+		a[i] = a[j];
+		a[j] = t;
+	}
+
+	_xpress_qsort(a, i);
+	_xpress_qsort(&a[i], n - i);
 }
 
-static int
-_xpress_voice_sort(const void *itm1, const void *itm2)
+static inline xpress_voice_t *
+_xpress_bsearch(xpress_uuid_t p, xpress_voice_t *a, unsigned n)
 {
-	const xpress_voice_t *voice1 = itm1;
-	const xpress_voice_t *voice2 = itm2;
+	unsigned start = 0;
+	unsigned end = n;
 
-	return _xpress_signum(voice1->uuid, voice2->uuid);
+	while(start < end)
+	{
+		const unsigned mid = start + (end - start)/2;
+		xpress_voice_t *dst = &a[mid];
+
+		if(p > dst->uuid)
+			end = mid;
+		else if(p < dst->uuid)
+			start = mid + 1;
+		else
+			return dst;
+	}
+
+	return NULL;
 }
 
 static inline void
 _xpress_sort(xpress_t *xpress)
 {
-	qsort(xpress->voices, xpress->nvoices, sizeof(xpress_voice_t), _xpress_voice_sort);
+	_xpress_qsort(xpress->voices, xpress->nvoices);
 }
 
 static inline xpress_voice_t *
 _xpress_voice_get(xpress_t *xpress, xpress_uuid_t uuid)
 {
-	const xpress_voice_t voice = {
-		.uuid = uuid,
-		.target = NULL
-	};
-
-	return bsearch(&voice, xpress->voices, xpress->nvoices, sizeof(xpress_voice_t),
-		_xpress_voice_sort);
+	return _xpress_bsearch(uuid, xpress->voices, xpress->nvoices);
 }
 
 static inline void *
