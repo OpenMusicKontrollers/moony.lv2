@@ -18,6 +18,8 @@
 #ifndef _SANDBOX_SLAVE_H
 #define _SANDBOX_SLAVE_H
 
+#include <lv2/lv2plug.in/ns/lv2core/lv2.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -43,8 +45,8 @@ sandbox_slave_new(int argc, char **argv, const sandbox_slave_driver_t *driver, v
 void
 sandbox_slave_free(sandbox_slave_t *sb);
 
-int
-sandbox_slave_instantiate(sandbox_slave_t *sb, void *parent, void *widget);
+void *
+sandbox_slave_instantiate(sandbox_slave_t *sb, const LV2_Feature *parent_feature, void *widget);
 
 void
 sandbox_slave_recv(sandbox_slave_t *sb);
@@ -52,8 +54,8 @@ sandbox_slave_recv(sandbox_slave_t *sb);
 bool
 sandbox_slave_flush(sandbox_slave_t *sb);
 
-int
-sandbox_slave_idle(sandbox_slave_t *sb);
+const void *
+sandbox_slave_extension_data(sandbox_slave_t *sb, const char *URI);
 
 void
 sandbox_slave_run(sandbox_slave_t *sb);

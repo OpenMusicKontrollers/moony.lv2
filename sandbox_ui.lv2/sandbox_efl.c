@@ -22,6 +22,8 @@
 
 #include <sandbox_slave.h>
 
+#include <lv2/lv2plug.in/ns/extensions/ui/ui.h>
+
 #include <Elementary.h>
 
 typedef struct _app_t app_t;
@@ -86,7 +88,12 @@ _init(sandbox_slave_t *sb, void *data)
 	evas_object_show(app->bg);
 	elm_win_resize_object_add(app->win, app->bg);
 
-	if(  sandbox_slave_instantiate(sb, (void *)app->win, (void *)&app->widget)
+	const LV2_Feature parent_feature = {
+		.URI = LV2_UI__parent,
+		.data = app->win
+	};
+
+	if(  !sandbox_slave_instantiate(sb, &parent_feature, &app->widget)
 		|| !app->widget)
 	{
 		fprintf(stderr, "sandbox_slave_instantiate failed\n");

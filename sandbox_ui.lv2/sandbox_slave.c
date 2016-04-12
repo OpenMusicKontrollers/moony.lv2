@@ -44,9 +44,6 @@ struct _sandbox_slave_t {
 	LV2UI_Port_Subscribe port_subscribe;
 
 	LV2UI_Resize host_resize;
-	const LV2UI_Resize *client_resize;
-
-	const LV2UI_Idle_Interface *idle_iface;
 
 	LilvWorld *world;
 	LilvNode *bundle_node;
@@ -178,15 +175,6 @@ _sandbox_recv_cb(LV2UI_Handle handle, uint32_t index, uint32_t size,
 
 	if(sb->desc && sb->desc->port_event)
 		sb->desc->port_event(sb->handle, index, size, protocol, buf);
-}
-
-static inline int
-_sandbox_resize(sandbox_slave_t *sb, int w, int h)
-{
-	if(sb->client_resize)
-		return sb->client_resize->ui_resize(sb->data, w, h);
-
-	return 0;
 }
 
 sandbox_slave_t *
@@ -364,12 +352,6 @@ sandbox_slave_new(int argc, char **argv, const sandbox_slave_driver_t *driver, v
 		goto fail;
 	}
 
-	if(sb->desc->extension_data)
-	{
-		sb->idle_iface = sb->desc->extension_data(LV2_UI__idleInterface);
-		sb->client_resize= sb->desc->extension_data(LV2_UI__resize);
-	}
-
 	if(_sandbox_io_init(&sb->io, &sb->map, &sb->unmap, sb->socket_path, false))
 	{
 		fprintf(stderr, "_sandbox_io_init failed\n");
@@ -432,8 +414,8 @@ sandbox_slave_free(sandbox_slave_t *sb)
 	free(sb);
 }
 
-int
-sandbox_slave_instantiate(sandbox_slave_t *sb, void *parent, void *widget)
+void *
+sandbox_slave_instantiate(sandbox_slave_t *sb, const LV2_Feature *parent_feature, void *widget)
 {
 	LV2_Options_Option options [] = {
 		[0] = {
@@ -458,10 +440,6 @@ sandbox_slave_instantiate(sandbox_slave_t *sb, void *parent, void *widget)
 		.URI = LV2_URID__unmap,
 		.data = &sb->unmap
 	};
-	const LV2_Feature parent_feature = {
-		.URI = LV2_UI__parent,
-		.data = parent
-	};
 	const LV2_Feature log_feature = {
 		.URI = LV2_LOG__log,
 		.data = &sb->log
@@ -474,29 +452,24 @@ sandbox_slave_instantiate(sandbox_slave_t *sb, void *parent, void *widget)
 		.URI = LV2_UI__portSubscribe,
 		.data = &sb->port_subscribe
 	};
-	const LV2_Feature idle_feature = {
-		.URI = LV2_UI__idleInterface,
-		.data = NULL
+	const LV2_Feature options_feature = {
+		.URI = LV2_OPTIONS__options,
+		.data = options
 	};
 	const LV2_Feature resize_feature = {
 		.URI = LV2_UI__resize,
 		.data = &sb->host_resize
 	};
-	const LV2_Feature options_feature = {
-		.URI = LV2_OPTIONS__options,
-		.data = options
-	};
 
 	const LV2_Feature *const features [] = {
 		&map_feature,
 		&unmap_feature,
-		&parent_feature,
 		&log_feature,
 		&port_map_feature,
 		&port_subscribe_feature,
-		&idle_feature,
 		&options_feature,
-		sb->host_resize.ui_resize ? &resize_feature : NULL,
+		sb->host_resize.ui_resize ? &resize_feature : parent_feature,
+		sb->host_resize.ui_resize && parent_feature ? parent_feature : NULL,
 		NULL
 	};
 
@@ -507,9 +480,9 @@ sandbox_slave_instantiate(sandbox_slave_t *sb, void *parent, void *widget)
 	}
 
 	if(sb->handle)
-		return 0; // success
+		return sb->handle; // success
 
-	return -1;
+	return NULL;
 }
 
 void
@@ -528,13 +501,13 @@ sandbox_slave_flush(sandbox_slave_t *sb)
 	return false;
 }
 
-int
-sandbox_slave_idle(sandbox_slave_t *sb)
+const void *
+sandbox_slave_extension_data(sandbox_slave_t *sb, const char *URI)
 {
-	if(sb && sb->idle_iface)
-		return sb->idle_iface->idle(sb->handle);
+	if(sb && sb->desc && sb->desc->extension_data)
+		return sb->desc->extension_data(URI);
 
-	return 0;
+	return NULL;
 }
 
 void
