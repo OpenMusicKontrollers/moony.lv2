@@ -38,20 +38,34 @@ _log_mem(moony_t *moony, void *ptr, size_t osize, size_t nsize)
 	moony_vm_t *vm = &moony->vm;
 	if(moony->log)
 	{
-		char suffix = ' ';
+		char suffix0 = ' ';
+		size_t space = vm->space;
+		if(space >= 1024)
+		{
+			suffix0 = 'K';
+			space >>= 10;
+		}
+		if(space >= 1024)
+		{
+			suffix0 = 'M';
+			space >>= 10;
+		}
+
+		char suffix1 = ' ';
 		size_t used = vm->used;
 		if(used >= 1024)
 		{
-			suffix = 'K';
+			suffix1 = 'K';
 			used >>= 10;
 		}
 		if(used >= 1024)
 		{
-			suffix = 'M';
+			suffix1 = 'M';
 			used >>= 10;
 		}
-		lv2_log_trace(&moony->logger, "used: %4zu%c, old: %4zu, new: %4zu, data: %p",
-			used, suffix, osize, nsize, ptr);
+
+		lv2_log_trace(&moony->logger, "space: %4zu%c, used: %4zu%c, old: %4zu, new: %4zu, data: %p",
+			space, suffix0, used, suffix1, osize, nsize, ptr);
 	}
 }
 #endif

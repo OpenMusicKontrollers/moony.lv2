@@ -145,7 +145,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 		lua_gc(L, LUA_GCSTEP, 0);
 
 		_unlock(&handle->moony.lock.state);
-	}
+	} //FIXME else
 
 	// clear output ports upon error
 	if(moony_bypass(&handle->moony))

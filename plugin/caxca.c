@@ -174,7 +174,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 		lua_gc(L, LUA_GCSTEP, 0);
 
 		_unlock(&handle->moony.lock.state);
-	}
+	} //FIXME else
 
 	if(&frame != handle->forge.stack) // intercept assert
 		moony_err(&handle->moony, "forge frame mismatch");

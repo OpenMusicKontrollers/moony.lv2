@@ -162,7 +162,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 		lua_gc(L, LUA_GCSTEP, 0);
 
 		_unlock(&handle->moony.lock.state);
-	}
+	} //FIXME else
 
 	for(unsigned i=0; i<handle->max_val; i++)
 		if(&frame[i] != handle->forge[i].stack) // intercept assert
