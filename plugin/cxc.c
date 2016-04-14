@@ -18,6 +18,7 @@
 #include <moony.h>
 #include <api_atom.h>
 #include <api_forge.h>
+#include <lock_stash.h>
 
 #include <lauxlib.h>
 
@@ -34,6 +35,10 @@ struct _Handle {
 	
 	const LV2_Atom_Sequence *control;
 	LV2_Atom_Sequence *notify;
+
+	lock_stash_t stash;
+	bool stashed;
+	uint32_t stash_nsamples;
 };
 
 static LV2_Handle
@@ -60,6 +65,9 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 	else
 		handle->max_val = 1;
 
+	_stash_init(&handle->stash, handle->moony.map);
+	_stash_reset(&handle->stash);
+
 	return handle;
 }
 
@@ -78,15 +86,14 @@ connect_port(LV2_Handle instance, uint32_t port, void *data)
 		handle->notify = (LV2_Atom_Sequence *)data;
 }
 
-static int
-_run(lua_State *L)
+static inline void
+_run_period(lua_State *L, Handle *handle, uint32_t nsamples,
+	const LV2_Atom_Sequence *control)
 {
-	Handle *handle = lua_touserdata(L, lua_upvalueindex(1));
-
 	int top = lua_gettop(L);
 	if(lua_getglobal(L, "run") != LUA_TNIL)
 	{
-		lua_pushinteger(L, handle->sample_count);
+		lua_pushinteger(L, nsamples);
 
 		for(unsigned i=0; i<handle->max_val; i++)
 			lua_pushnumber(L, *handle->val_in[i]);
@@ -94,7 +101,7 @@ _run(lua_State *L)
 		// push control / notify pair
 		{
 			latom_t *latom = moony_newuserdata(L, &handle->moony, MOONY_UDATA_ATOM, true);
-			latom->atom = (const LV2_Atom *)handle->control;
+			latom->atom = (const LV2_Atom *)control;
 			latom->body.raw = LV2_ATOM_BODY_CONST(latom->atom);
 
 			lforge_t *lforge = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE, true);
@@ -112,6 +119,25 @@ _run(lua_State *L)
 		for(unsigned i=ret; i<handle->max_val; i++) // fill in missing returns with 0.f
 			*handle->val_out[i] = 0.f;
 	}
+}
+
+static int
+_run(lua_State *L)
+{
+	Handle *handle = lua_touserdata(L, lua_upvalueindex(1));
+
+	// apply stash, if any
+	if(handle->stashed)
+	{
+		const LV2_Atom_Sequence *control = &handle->stash.seq;
+
+		_run_period(L, handle, handle->stash_nsamples, control);
+
+		LV2_ATOM_SEQUENCE_FOREACH(handle->notify, ev)
+			ev->time.frames = 0; // overwrite time stamps
+	}
+
+	_run_period(L, handle, handle->sample_count, handle->control);
 
 	return 0;
 }
@@ -124,28 +150,67 @@ run(LV2_Handle instance, uint32_t nsamples)
 
 	handle->sample_count = nsamples;
 
-	// handle UI comm
-	moony_in(&handle->moony, handle->control, handle->notify);
+	moony_pre(&handle->moony, handle->notify);
 
-	// run
-	if(!moony_bypass(&handle->moony) && _try_lock(&handle->moony.lock.state))
+	if(_try_lock(&handle->moony.lock.state))
 	{
-		if(lua_gettop(L) != 1)
+		// apply stash, if any
+		if(handle->stashed)
 		{
-			// cache for reuse
-			lua_settop(L, 0);
-			lua_pushlightuserdata(L, handle);
-			lua_pushcclosure(L, _run, 1);
-		}
-		lua_pushvalue(L, 1); // _run with upvalue
-		if(lua_pcall(L, 0, 0, 0))
-			moony_error(&handle->moony);
+			lock_stash_t *stash = &handle->stash;
+			moony_in(&handle->moony, &stash->seq, handle->notify);
 
-		//moony_freeuserdata(&handle->moony);
-		lua_gc(L, LUA_GCSTEP, 0);
+			LV2_ATOM_SEQUENCE_FOREACH(handle->notify, ev)
+				ev->time.frames = 0; // overwrite time stamps
+		}
+
+		// handle UI comm
+		moony_in(&handle->moony, handle->control, handle->notify);
+
+		// run
+		if(!moony_bypass(&handle->moony))
+		{
+			if(lua_gettop(L) != 1)
+			{
+				// cache for reuse
+				lua_settop(L, 0);
+				lua_pushlightuserdata(L, handle);
+				lua_pushcclosure(L, _run, 1);
+			}
+			lua_pushvalue(L, 1); // _run with upvalue
+			if(lua_pcall(L, 0, 0, 0))
+				moony_error(&handle->moony);
+
+			//moony_freeuserdata(&handle->moony);
+			lua_gc(L, LUA_GCSTEP, 0);
+		}
+
+		if(handle->stashed)
+		{
+			_stash_reset(&handle->stash);
+			
+			handle->stash_nsamples = 0;
+			handle->stashed = false;
+		}
 
 		_unlock(&handle->moony.lock.state);
-	} //FIXME else
+	}
+	else
+	{
+		// stash incoming events to later apply
+		
+		lock_stash_t *stash = &handle->stash;
+		LV2_ATOM_SEQUENCE_FOREACH(handle->control, ev)
+		{
+			if(stash->ref)
+				stash->ref = lv2_atom_forge_frame_time(&stash->forge, handle->stash_nsamples + ev->time.frames);
+			if(stash->ref)
+				stash->ref = lv2_atom_forge_write(&stash->forge, &ev->body, lv2_atom_total_size(&ev->body));
+		}
+
+		handle->stash_nsamples += nsamples;
+		handle->stashed= true;
+	}
 
 	// clear output ports upon error
 	if(moony_bypass(&handle->moony))

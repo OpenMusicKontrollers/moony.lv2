@@ -445,9 +445,9 @@ _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 	LV2_State_Status status = LV2_STATE_SUCCESS;
 	char *chunk = NULL;
 
-	_spin_lock(&moony->lock.chunk);
+	_spin_lock(&moony->lock.state);
 	chunk = strdup(moony->chunk);
-	_unlock(&moony->lock.chunk);
+	_unlock(&moony->lock.state);
 
 	if(chunk)
 	{
@@ -547,9 +547,7 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 
 	if(chunk && size && type)
 	{
-		//_spin_lock(&moony->lock.chunk);
 		strncpy(moony->chunk, chunk, size);
-		//_unlock(&moony->lock.chunk);
 
 		if(luaL_dostring(L, moony->chunk))
 			moony_error(moony);
@@ -886,8 +884,6 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->dirty_out = 1; // trigger update of UI
 	moony->props_out = 1; // trigger update of UI
 
-	atomic_flag_clear_explicit(&moony->lock.chunk, memory_order_relaxed);
-	atomic_flag_clear_explicit(&moony->lock.error, memory_order_relaxed);
 	atomic_flag_clear_explicit(&moony->lock.state, memory_order_relaxed);
 
 	moony_freeuserdata(moony);
@@ -1434,16 +1430,20 @@ moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type, bool cache)
 }
 
 void
+moony_pre(moony_t *moony, LV2_Atom_Sequence *notify)
+{
+	// initialize notify forge
+	const uint32_t capacity = notify->atom.size;
+	lv2_atom_forge_set_buffer(&moony->notify_forge, (uint8_t *)notify, capacity);
+	moony->notify_ref = lv2_atom_forge_sequence_head(&moony->notify_forge, &moony->notify_frame, 0);
+}
+
+void
 moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *notify)
 {
 	lua_State *L = moony->vm.L;
 	LV2_Atom_Forge *forge = &moony->notify_forge;
-	LV2_Atom_Forge_Ref ref;
-
-	// initialize notify forge
-	const uint32_t capacity = notify->atom.size;
-	lv2_atom_forge_set_buffer(&moony->notify_forge, (uint8_t *)notify, capacity);
-	ref = lv2_atom_forge_sequence_head(&moony->notify_forge, &moony->notify_frame, 0);
+	LV2_Atom_Forge_Ref ref = moony->notify_ref;
 
 	// read control sequence
 	LV2_ATOM_SEQUENCE_FOREACH(control, ev)
@@ -1512,76 +1512,60 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 			{
 				if(property->body == moony->uris.moony_code)
 				{
-					if(_try_lock(&moony->lock.state))
+					// stash
+					lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_STASH);
+					if(lua_pcall(L, 0, 0, 0))
+						moony_error(moony);
+					lua_gc(L, LUA_GCSTEP, 0);
+
+					// load chunk
+					const char *str = LV2_ATOM_BODY_CONST(value);
+					if(luaL_dostring(L, str)) // failed loading chunk
 					{
-						// stash
-						lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_STASH);
+						moony_error(moony);
+					}
+					else // succeeded loading chunk
+					{
+						strncpy(moony->chunk, str, value->size);
+						moony->error[0] = 0x0; // reset error flag
+
+						if(moony->state_atom)
+						{
+							// restore Lua defined properties
+							lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_RESTORE);
+							if(lua_pcall(L, 0, 0, 0))
+								moony_error(moony);
+							lua_gc(L, LUA_GCSTEP, 0);
+						}
+					}
+
+					// apply stash
+					if(moony->stash_atom) // something has been stashed previously
+					{
+						lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_APPLY);
 						if(lua_pcall(L, 0, 0, 0))
 							moony_error(moony);
 						lua_gc(L, LUA_GCSTEP, 0);
 
-						// load chunk
-						const char *str = LV2_ATOM_BODY_CONST(value);
-						if(luaL_dostring(L, str)) // failed loading chunk
-						{
-							moony_error(moony);
-						}
-						else // succeeded loading chunk
-						{
-							if(_try_lock(&moony->lock.chunk))
-							{
-								strncpy(moony->chunk, str, value->size);
-
-								_unlock(&moony->lock.chunk);
-							} //FIXME else
-
-							moony->error[0] = 0x0; // reset error flag
-
-							if(moony->state_atom)
-							{
-								// restore Lua defined properties
-								lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_RESTORE);
-								if(lua_pcall(L, 0, 0, 0))
-									moony_error(moony);
-								lua_gc(L, LUA_GCSTEP, 0);
-							}
-						}
-
-						// apply stash
-						if(moony->stash_atom) // something has been stashed previously
-						{
-							lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_APPLY);
-							if(lua_pcall(L, 0, 0, 0))
-								moony_error(moony);
-							lua_gc(L, LUA_GCSTEP, 0);
-
-							moony_free(moony, moony->stash_atom, moony->stash_size);
-							moony->stash_atom = NULL;
-							moony->stash_size = 0;
-						}
-
-						_unlock(&moony->lock.state);
-					} //FIXME else
+						moony_free(moony, moony->stash_atom, moony->stash_size);
+						moony->stash_atom = NULL;
+						moony->stash_size = 0;
+					}
 				}
 				else if(property->body == moony->uris.moony_selection)
 				{
 					// we do not do any stash, apply and restore for selections
 
-					if(_try_lock(&moony->lock.state))
+					// load chunk
+					const char *str = LV2_ATOM_BODY_CONST(value);
+					if(luaL_dostring(L, str)) // failed loading chunk
 					{
-						// load chunk
-						const char *str = LV2_ATOM_BODY_CONST(value);
-						if(luaL_dostring(L, str)) // failed loading chunk
-						{
-							moony_error(moony);
-						}
-						else // succeeded loading chunk
-						{
-							moony->error[0] = 0x0; // reset error flag
-						}
-
-						_unlock(&moony->lock.state);
-					} //FIXME else
+						moony_error(moony);
+					}
+					else // succeeded loading chunk
+					{
+						moony->error[0] = 0x0; // reset error flag
+					}
 				}
 			}
 		}
@@ -1593,51 +1577,46 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 		// clear all properties in UI
 		LV2_Atom_Forge_Frame obj_frame, add_frame, rem_frame;
 		if(ref)
-			ref = lv2_atom_forge_frame_time(&moony->notify_forge, 0);
+			ref = lv2_atom_forge_frame_time(forge, 0);
 		if(ref)
-			ref = lv2_atom_forge_object(&moony->notify_forge, &obj_frame, 0, moony->uris.patch.patch);
+			ref = lv2_atom_forge_object(forge, &obj_frame, 0, moony->uris.patch.patch);
 		if(ref)
-			ref = lv2_atom_forge_key(&moony->notify_forge, moony->uris.patch.subject);
+			ref = lv2_atom_forge_key(forge, moony->uris.patch.subject);
 		if(ref)
-			ref = lv2_atom_forge_urid(&moony->notify_forge, moony->uris.patch.self);
+			ref = lv2_atom_forge_urid(forge, moony->uris.patch.self);
 		if(ref)
-			ref = lv2_atom_forge_key(&moony->notify_forge, moony->uris.patch.remove);
+			ref = lv2_atom_forge_key(forge, moony->uris.patch.remove);
 		if(ref)
-			ref = lv2_atom_forge_object(&moony->notify_forge, &rem_frame, 0, 0);
+			ref = lv2_atom_forge_object(forge, &rem_frame, 0, 0);
 		if(ref)
-			ref = lv2_atom_forge_key(&moony->notify_forge, moony->uris.patch.writable);
+			ref = lv2_atom_forge_key(forge, moony->uris.patch.writable);
 		if(ref)
-			ref = lv2_atom_forge_urid(&moony->notify_forge, moony->uris.patch.wildcard);
+			ref = lv2_atom_forge_urid(forge, moony->uris.patch.wildcard);
 		if(ref)
-			ref = lv2_atom_forge_key(&moony->notify_forge, moony->uris.patch.readable);
+			ref = lv2_atom_forge_key(forge, moony->uris.patch.readable);
 		if(ref)
-			ref = lv2_atom_forge_urid(&moony->notify_forge, moony->uris.patch.wildcard);
+			ref = lv2_atom_forge_urid(forge, moony->uris.patch.wildcard);
 		if(ref)
-			lv2_atom_forge_pop(&moony->notify_forge, &rem_frame);
+			lv2_atom_forge_pop(forge, &rem_frame);
 		if(ref)
-			ref = lv2_atom_forge_key(&moony->notify_forge, moony->uris.patch.add);
+			ref = lv2_atom_forge_key(forge, moony->uris.patch.add);
 		if(ref)
-			lv2_atom_forge_object(&moony->notify_forge, &add_frame, 0, 0);
+			lv2_atom_forge_object(forge, &add_frame, 0, 0);
 		if(ref)
-			lv2_atom_forge_pop(&moony->notify_forge, &add_frame);
+			lv2_atom_forge_pop(forge, &add_frame);
 		if(ref)
-			lv2_atom_forge_pop(&moony->notify_forge, &obj_frame);
+			lv2_atom_forge_pop(forge, &obj_frame);
 
 		moony->props_out = 0;
 	}
 
 	if(moony->dirty_out)
 	{
-		if(_try_lock(&moony->lock.chunk))
-		{
-			uint32_t len = strlen(moony->chunk);
-			if(ref)
-				ref = lv2_atom_forge_frame_time(forge, 0);
-			if(ref)
-				ref = _moony_patch(&moony->uris.patch, forge, moony->uris.moony_code, moony->chunk, len);
-
-			_unlock(&moony->lock.chunk);
-		} //FIXME else
+		uint32_t len = strlen(moony->chunk);
+		if(ref)
+			ref = lv2_atom_forge_frame_time(forge, 0);
+		if(ref)
+			ref = _moony_patch(&moony->uris.patch, forge, moony->uris.moony_code, moony->chunk, len);
 
 		moony->dirty_out = 0; // reset flag
 	}
