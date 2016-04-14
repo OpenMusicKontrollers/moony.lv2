@@ -16,64 +16,64 @@
 
 	<body>
 		<div class="heading">
-			<table class="heading-table">
-				<tr>
-					<td class="heading-left">
-						<h1>moony</h1>
-					</td>
-
-					<td class="heading-right">
-						Copyright &#169; 2016 <a href="mailto:dev@open-music-kontrollers.ch?subject=moony-v0.2.2">Hanspeter Portner</a><br />
-						Released under <a href="http://www.perlfoundation.org/artistic_license_2_0">Artistic License 2.0</a><br />
-						by <a href="http://open-music-kontrollers.ch">Open Music Kontrollers</a>
-					</td>
-				<tr>
-			</table>
+			<h1>moony</h1>
 		</div>
 
-		<div class="sticky-top">
-			<div class="heading">
-				<table class="heading-table">
-					<tr>
-						<td class="heading-left">
-							v0.2.2 | <span id="status">disconnected</span> | <a class="clip" id="clear" href="#">clear log</a>
-						</td>
+		<div class="container">
+			<div class="sticky-top">
+				<div class="heading">
+					<table class="heading-table">
+						<tr>
+							<td class="heading-left">
+								v0.2.2 | <span id="status">disconnected</span> | <a class="clip" id="clear" href="#">clear log</a>
+							</td>
 
-						<td class="heading-right">
-							<form class="clip" hidden>
-								<input type="radio" id="emacs" name="mode" value="ace/keyboard/emacs">emacs</input>
-								<input type="radio" id="vim" name="mode" value="ace/keyboard/vim">vim</input>
-							</form>
-						</td>
-					<tr>
-				</table>
+							<td class="heading-right">
+								<form class="clip" hidden>
+									<input type="radio" id="emacs" name="mode" value="ace/keyboard/emacs">emacs</input>
+									<input type="radio" id="vim" name="mode" value="ace/keyboard/vim">vim</input>
+								</form>
+							</td>
+						<tr>
+					</table>
+				</div>
+			</div>
+
+			<div>
+				<noscript>
+					<b>moony needs JavaScript to run, please enable it in your browser
+						or add an exception rule for this site.</b>
+				</noscript>
+			</div>
+			
+			<div class="clip" hidden>
+				<div id="editor"></div>
+
+				<div class="sticky-bottom">
+					<div id="tracemsg" class="trace"></div>
+
+					<div id="errmsg" class="error" hidden></div>
+				</div>
+
 			</div>
 		</div>
 
-		<div>
-			<noscript>
-				<b>moony needs JavaScript to run, please enable it in your browser
-					or add an exception rule for this site.</b>
-			</noscript>
-		</div>
-		
 		<div class="clip" hidden>
-			<div id="editor"></div>
-			
 			<div class="props">
 				<table id="properties"></table>
-			</div>
-
-			<div class="sticky-bottom">
-				<div id="tracemsg" class="trace"></div>
-
-				<div id="errmsg" class="error" hidden></div>
 			</div>
 
 			<div class="box">
 				<div class="button"><a id="compile" href="#" alt="Shift+Return" title="Shift+Return">chunk</a></div>
 				<div class="button"><a id="compile_line" href="#" alt="Ctrl+Shift+Return" title="Ctrl+Shift+Return">line</a></div>
 			</div>
+		</div>
+
+		<div>
+			<br />
+			Copyright &#169; 2015-2016 <a href="mailto:dev@open-music-kontrollers.ch?subject=moony-v0.2.2">Hanspeter Portner</a><br />
+			Released under <a href="http://www.perlfoundation.org/artistic_license_2_0">Artistic License 2.0</a><br />
+			by <a href="http://open-music-kontrollers.ch">Open Music Kontrollers</a>
 		</div>
 
 	</body>

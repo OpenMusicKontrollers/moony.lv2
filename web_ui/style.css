@@ -41,24 +41,15 @@ select {
 	width:100px;
 }
 
-.heading-table {
-	width:100%;
-}
-
-.heading-left {
-	vertical-align:middle;
-}
-
-.heading-right {
-	vertical-align:middle;
-	text-align:right;
-}
-
 .trace {
 	font-family:monospace;
 	width:100%;
 	max-height:112px;
 	overflow-y:auto;
+}
+
+.container {
+	width:80%;
 }
 
 .sticky-top {
@@ -106,7 +97,8 @@ select {
 .box {
 	text-align:right;
 	position:fixed;
-	bottom:70%;
+	top:0%;
+	max-width:20%;
 	overflow:hidden;
 	right:0;
 	z-index:9999;
@@ -115,9 +107,10 @@ select {
 .props {
 	text-align:left;
 	position:fixed;
-	bottom:10%;
+	bottom:0%;
 	padding-right:14px;
-	max-height:55%;
+	max-width:20%;
+	max-height:75%;
 	overflow-y:auto;
 	overflow-x:hidden;
 	right:0;
