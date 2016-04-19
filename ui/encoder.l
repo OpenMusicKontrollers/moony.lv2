@@ -640,6 +640,9 @@ brace					 [\(\)\[\]\{\}]
    \\\"	       return TK_RAW;
    \"          BEGIN(0); return TK_DOUBLE_QUOTE_OUT;
    {eol}	     BEGIN(0); return TK_DOUBLE_QUOTE_ERR;
+   "&"         return TK_AMP;
+   "<"         return TK_LT;
+   ">"         return TK_GT;
    .           return TK_RAW;
 }
 
@@ -648,27 +651,39 @@ brace					 [\(\)\[\]\{\}]
    \\'	       return TK_RAW;
    '           BEGIN(0); return TK_SINGLE_QUOTE_OUT;
    {eol}	     BEGIN(0); return TK_SINGLE_QUOTE_ERR;
+   "&"         return TK_AMP;
+   "<"         return TK_LT;
+   ">"         return TK_GT;
    .           return TK_RAW;
 }
 
 <XSHORTCOMMENT>
 {
-   {eol}          BEGIN(0); return TK_SHORT_COMMENT_OUT;
-   .              return TK_RAW;
+   {eol}       BEGIN(0); return TK_SHORT_COMMENT_OUT;
+   "&"         return TK_AMP;
+   "<"         return TK_LT;
+   ">"         return TK_GT;
+   .           return TK_RAW;
 }
 
 <XLONGCOMMENT>
 {
-   "]]"  					BEGIN(0); return TK_LONG_COMMENT_OUT;
-   {eol}          return TK_NEWLINE;
-   .              return TK_RAW;
+   "]]"        BEGIN(0); return TK_LONG_COMMENT_OUT;
+   {eol}       return TK_NEWLINE;
+   "&"         return TK_AMP;
+   "<"         return TK_LT;
+   ">"         return TK_GT;
+   .           return TK_RAW;
 }
 
 <XLONGSTRING>
 {
-   "]]"				    BEGIN(0); return TK_LONG_STRING_OUT;
-   {eol}          return TK_NEWLINE;
-   .              return TK_RAW;
+   "]]"				 BEGIN(0); return TK_LONG_STRING_OUT;
+   {eol}       return TK_NEWLINE;
+   "&"         return TK_AMP;
+   "<"         return TK_LT;
+   ">"         return TK_GT;
+   .           return TK_RAW;
 }
 
 %%
