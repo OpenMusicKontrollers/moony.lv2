@@ -10,7 +10,6 @@ include_directories(${PROJECT_SOURCE_DIR}/osc.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/timely.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/xpress.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/lua-5.3.1)
-include_directories(${PROJECT_SOURCE_DIR}/http-parser)
 include_directories(${PROJECT_SOURCE_DIR}/cJSON)
 include_directories(${PROJECT_SOURCE_DIR}/api)
 include_directories(${PROJECT_SOURCE_DIR}/ui)
@@ -30,6 +29,7 @@ endif()
 set(CMAKE_C_FLAGS "-std=gnu11 -Wextra -Wno-unused-parameter -ffast-math -fvisibility=hidden ${CMAKE_C_FLAGS}")
 set(CMAKE_C_FLAGS "-Wshadow -Wimplicit-function-declaration -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes ${CMAKE_C_FLAGS}")
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+	set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-z,defs ${CMAKE_MODULE_LINKER_FLAGS}")
 	set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-z,nodelete ${CMAKE_MODULE_LINKER_FLAGS}")
 endif()
 add_definitions("-D_GNU_SOURCE=1") # asprintf
@@ -140,16 +140,17 @@ else()
 endif()
 
 if(BUILD_WEB_UI)
-	pkg_search_module(UV REQUIRED libuv>=1.0)
-	include_directories(${UV_INCLUDE_DIRS})
-	if(DEFINED STATIC_UV)
-		set(LIBS_WEB ${STATIC_UV} ${LIBS_WEB})
+	set(LIBS_WEB ${LIBS_WEB} m)
+
+	pkg_search_module(LWS REQUIRED libwebsockets>=0.7.0)
+	include_directories(${LWS_INCLUDE_DIRS})
+	if(DEFINED STATIC_LWS)
+		set(LIBS_WEB ${STATIC_LWS} ${LIBS_WEB})
 	else()
-		set(LIBS_WEB ${LIBS_WEB} ${UV_LDFLAGS})
+		set(LIBS_WEB ${LIBS_WEB} ${LWS_LDFLAGS})
 	endif()
 
 	add_library(moony_web MODULE
-		http-parser/http_parser.c
 		cJSON/cJSON.c
 		ui/moony_web.c
 		ui/web_ui.c)

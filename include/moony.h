@@ -65,6 +65,9 @@
 #define MOONY_TRACE_URI				MOONY_URI"#trace"
 #define MOONY_STATE_URI				MOONY_URI"#state"
 
+#define MOONY_UI_URI					MOONY_URI"#ui"
+#define MOONY_DSP_URI					MOONY_URI"#dsp"
+
 #define MOONY_COMMON_UI_URI		MOONY_URI"#ui_3_common_1_ui"
 #define MOONY_COMMON_KX_URI		MOONY_URI"#ui_3_common_2_kx"
 #define MOONY_COMMON_EO_URI		MOONY_URI"#ui_3_common_3_eo"
@@ -189,6 +192,7 @@ struct _patch_t {
 	LV2_URID wildcard;
 	LV2_URID writable;
 	LV2_URID readable;
+	LV2_URID destination;
 };
 
 struct _moony_t {

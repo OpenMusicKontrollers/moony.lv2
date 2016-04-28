@@ -17,6 +17,7 @@
 
 var editor = null;
 var tracecnt = 0;
+var socket_di = null;
 
 var LV2_CORE_PREFIX = "http://lv2plug.in/ns/lv2core#";
 var LV2_ATOM_PREFIX = "http://lv2plug.in/ns/ext/atom#";
@@ -86,7 +87,8 @@ var LV2 = {
 		add               : LV2_PATCH_PREFIX + "add",
 		wildcard          : LV2_PATCH_PREFIX + "wildcard",
 		writable          : LV2_PATCH_PREFIX + "writable",
-		readable          : LV2_PATCH_PREFIX + "readable"
+		readable          : LV2_PATCH_PREFIX + "readable",
+		destination       : LV2_PATCH_PREFIX + "destination"
 	},
 	CORE : {
 		minimum           : LV2_CORE_PREFIX + "minimum",
@@ -127,7 +129,9 @@ var MOONY = {
 	code                : MOONY_PREFIX + "code",
 	selection           : MOONY_PREFIX + "selection",
 	error               : MOONY_PREFIX + "error",
-	trace               : MOONY_PREFIX + "trace"
+	trace               : MOONY_PREFIX + "trace",
+	ui                  : MOONY_PREFIX + "ui",
+	dsp                 : MOONY_PREFIX + "dsp"
 };
 
 var format = {
@@ -159,15 +163,7 @@ var format = {
 
 var trim = /[^a-zA-Z0-9_]+/g;
 
-function lv2_ui(o) {
-	lv2_write('/lv2/ui', o);
-}
-
-function lv2_dsp(o) {
-	lv2_write('/lv2/dsp', o);
-}
-
-function lv2_get(func, property) {
+function lv2_get(destination, property) {
 	var props = [];
 	props.push({
 		[LV2.ATOM.Property] : LV2.PATCH.property,
@@ -186,6 +182,7 @@ function lv2_get(func, property) {
 		});
 	}
 	var req = {
+		[LV2.PATCH.destination] : destination,
 		[LV2.UI.protocol] : LV2.ATOM.eventTransfer,
 		[LV2.CORE.symbol] : 'control',
 		[RDF.value] : {
@@ -194,10 +191,10 @@ function lv2_get(func, property) {
 			[RDF.value] : props
 		}
 	};
-	func(req);
+	lv2_write(req);
 }
 
-function lv2_get_all(func) {
+function lv2_get_all(destination) {
 	var props = [];
 	if(SUBJECT) {
 		props.push({
@@ -209,6 +206,7 @@ function lv2_get_all(func) {
 		});
 	}
 	var req = {
+		[LV2.PATCH.destination] : destination,
 		[LV2.UI.protocol] : LV2.ATOM.eventTransfer,
 		[LV2.CORE.symbol] : 'control',
 		[RDF.value] : {
@@ -217,10 +215,10 @@ function lv2_get_all(func) {
 			[RDF.value] : props
 		}
 	};
-	func(req);
+	lv2_write(req);
 }
 
-function lv2_set(func, property, range, value) {
+function lv2_set(destination, property, range, value) {
 	var props = [];
 	props.push({
 		[LV2.ATOM.Property] : LV2.PATCH.property,
@@ -246,6 +244,7 @@ function lv2_set(func, property, range, value) {
 		});
 	}
 	var req = {
+		[LV2.PATCH.destination] : destination,
 		[LV2.UI.protocol] : LV2.ATOM.eventTransfer,
 		[LV2.CORE.symbol] : 'control',
 		[RDF.value] : {
@@ -254,16 +253,17 @@ function lv2_set(func, property, range, value) {
 			[RDF.value] : props
 		}
 	};
-	func(req);
+	lv2_write(req);
 }
 
-function lv2_control(func, symbol, value) {
+function lv2_control(destination, symbol, value) {
 	var req = {
+		[LV2.PATCH.destination] : destination,
 		[LV2.UI.protocol] : LV2.UI.floatProtocol,
 		[LV2.CORE.symbol] : symbol,
 		[RDF.value] : value
 	};
-	func(req);
+	lv2_write(req);
 }
 
 function lv2_object_get(atom, key) {
@@ -291,7 +291,7 @@ function float_wheel(e) {
 	if( (newval >= min) && (newval <= max) )
 	{
 		item.val(newval);
-		lv2_control(lv2_dsp, symbol, newval);
+		lv2_control(MOONY.dsp, symbol, newval);
 	}
 
 	e.preventDefault();
@@ -302,7 +302,7 @@ function float_change(e) {
 	var symbol = item.attr('id');
 	var newval = Number(item.val());
 
-	lv2_control(lv2_dsp, symbol, newval);
+	lv2_control(MOONY.dsp, symbol, newval);
 }
 
 function lv2_read_float(symbol, value) {
@@ -374,7 +374,7 @@ function property_wheel(e) {
 		if(range == LV2.ATOM.Bool) {
 			var newval = !item.prop('checked');
 			item.prop('checked', newval);
-			lv2_set(lv2_dsp, name, range, newval);
+			lv2_set(MOONY.dsp, name, range, newval);
 		} else {
 			var min = Number(item.attr('min'));
 			var max = Number(item.attr('max'));
@@ -387,7 +387,7 @@ function property_wheel(e) {
 			if( (newval >= min) && (newval <= max) )
 			{
 				item.val(newval);
-				lv2_set(lv2_dsp, name, range, newval);
+				lv2_set(MOONY.dsp, name, range, newval);
 			}
 		}
 	} else if(item.is('select')) {
@@ -399,7 +399,7 @@ function property_wheel(e) {
 		else if(delta > 0)
 			selected.next().prop('selected', true);
 		newval = Number(item.val());
-		lv2_set(lv2_dsp, name, range, newval);
+		lv2_set(MOONY.dsp, name, range, newval);
 	}
 
 	e.preventDefault();
@@ -421,7 +421,7 @@ function property_change(e) {
 		newval = item.val();
 	}
 
-	lv2_set(lv2_dsp, name, range, newval);
+	lv2_set(MOONY.dsp, name, range, newval);
 }
 
 function update_property_step(item) {
@@ -493,7 +493,7 @@ function lv2_read_event(symbol, obj) {
 
 							$('#' + id).bind('wheel', property_wheel).change(property_change);
 							
-							lv2_get(lv2_dsp, prop[RDF.value]);
+							lv2_get(MOONY.dsp, prop[RDF.value]);
 						} else if(key == LV2.PATCH.readable) {
 							//TODO check subject
 							var id = prop[RDF.value].replace(trim, '');
@@ -502,7 +502,7 @@ function lv2_read_event(symbol, obj) {
 							props.append('<tr class="readable" data-id="'+id+'"><td class="label"></td><td><input id="'+id+'" name="'+prop[RDF.value]+'" disabled /></td><td class="unit"></td></tr>');
 							sort_properties();
 
-							lv2_get(lv2_dsp, prop[RDF.value]);
+							lv2_get(MOONY.dsp, prop[RDF.value]);
 						} else {
 							var id = subject[RDF.value].replace(trim, '');
 							var item = $('#' + id);
@@ -585,7 +585,7 @@ function lv2_read_event(symbol, obj) {
 					SUBJECT = value[RDF.value];
 				} else if( (property[RDF.value] == MOONY.code) && (value[RDFS.range] == LV2.ATOM.String) ) {
 					editor.setValue(value[RDF.value], 1);
-					lv2_get_all(lv2_dsp); // update properties
+					lv2_get_all(MOONY.dsp); // update properties
 				} else if( (property[RDF.value] == MOONY.error) && (value[RDFS.range] == LV2.ATOM.String) ) {
 					var errmsg = $('#errmsg');
 					errmsg.html(value[RDF.value]).fadeIn(300);
@@ -627,62 +627,15 @@ function lv2_success(data) {
 	}
 }
 
-function keepalive() {
-	$.ajax({
-		type: 'POST',
-		url: '/keepalive',
-		data: JSON.stringify({}),
-		dataType: 'json',
-		timeout: 60000, // 1min
-		success: function(data) {
-			if(data && data.jobs) {
-				for(i in data.jobs) {
-					lv2_success(data.jobs[i]);
-				}
-			}
-
-			$('#status').html('connected');
-			$('.clip').show();
-			keepalive();
-		},
-		error: function(request, status, err) {
-			if(status == 'timeout') {
-				//alert('timeout');
-				$('#status').html('connected');
-				$('.clip').show();
-				keepalive();
-			} else {
-				$('#status').html('disconnected');
-				$('.clip').hide();
-				$('#tracemsg').empty();
-				tracecnt = 0;
-			}
-		}
-	});
-}
-
-function lv2_write(url, o) {
-	$.ajax({
-		type: 'POST',
-		url: url,
-		data: JSON.stringify(o),
-		dataType: 'json',
-		success: function(data) {
-			lv2_success(data);
-		},
-		error: function(request, status, err) {
-			if(status == 'timeout') {
-				alert('timeout');
-			}
-		}
-	});
+function lv2_write(o) {
+	socket_di.send(JSON.stringify(o));
 }
 
 function compile(editor) {
 	var sel_range = editor.getSelectionRange();
 	if(sel_range.isEmpty()) {
 		var selection = editor.getValue();
-		lv2_set(lv2_dsp, MOONY.code, LV2.ATOM.String, selection);
+		lv2_set(MOONY.dsp, MOONY.code, LV2.ATOM.String, selection);
 	} else {
 		var start_line = sel_range.start.row;
 		var end_line = sel_range.end.row;
@@ -690,7 +643,7 @@ function compile(editor) {
 		for(var i=0; i<start_line; i++)
 			selection = selection + '\n';
 		selection = selection + editor.getSession().getTextRange(sel_range);
-		lv2_set(lv2_dsp, MOONY.selection, LV2.ATOM.String, selection);
+		lv2_set(MOONY.dsp, MOONY.selection, LV2.ATOM.String, selection);
 		editor.clearSelection();
 	}
 	$('#errmsg').html('<br />').fadeOut(100);
@@ -704,11 +657,69 @@ function compile_line(editor) {
 		for(var i=0; i<cur_line; i++)
 			selection = selection + '\n';
 		selection = selection + editor.getSession().getLine(cur_line);
-		lv2_set(lv2_dsp, MOONY.selection, LV2.ATOM.String, selection);
+		lv2_set(MOONY.dsp, MOONY.selection, LV2.ATOM.String, selection);
 		editor.clearSelection();
 	}
 	$('#errmsg').html('<br />').fadeOut(100);
 	$("#compile_line").parent().fadeOut(100).fadeIn(300);
+}
+
+function ws_url() {
+	var pcol;
+	var u = document.URL;
+
+	pcol = 'ws://';
+	if (u.substring(0, 4) == 'http')
+		u = u.substr(7);
+
+	u = u.split('/');
+
+	/* + "/xxx" bit is for IE10 workaround */
+
+	return pcol + u[0] + '/xxx';
+}
+
+function ws_connect() {
+	if(typeof MozWebSocket != 'undefined') {
+		socket_di = new MozWebSocket(ws_url(), 'lv2-protocol');
+	} else {
+		socket_di = new WebSocket(ws_url(), 'lv2-protocol');
+	}
+
+	try {
+		socket_di.onopen = function() {
+			$('#status').html('connected');
+			$('.clip').show();
+
+			// query initial props
+			lv2_get(MOONY.ui, LV2.UI.windowTitle);
+			lv2_get(MOONY.ui, LV2.PATCH.subject);
+			lv2_get(MOONY.dsp, MOONY.code);
+			lv2_get(MOONY.dsp, MOONY.error);
+			lv2_get_all(MOONY.dsp);
+		} 
+
+		socket_di.onmessage =function got_packet(msg) {
+			if(msg && msg.data) {
+				var data = JSON.parse(msg.data);
+
+				if(data && data.jobs) {
+					for(i in data.jobs) {
+						lv2_success(data.jobs[i]);
+					}
+				}
+			}
+		} 
+
+		socket_di.onclose = function(){
+			$('#status').html('disconnected');
+			$('.clip').hide();
+			$('#tracemsg').empty();
+			tracecnt = 0;
+		}
+	} catch(exception) {
+		console.log('webocket exception', exception);
+	}
 }
 
 $(document).ready(function() {
@@ -766,13 +777,5 @@ $(document).ready(function() {
 		e.preventDefault();
 	});
 
-	// start keepalive loop
-	keepalive();
-
-	// query initial props
-	lv2_get(lv2_ui, LV2.UI.windowTitle);
-	lv2_get(lv2_ui, LV2.PATCH.subject);
-	lv2_get(lv2_dsp, MOONY.code);
-	lv2_get(lv2_dsp, MOONY.error);
-	lv2_get_all(lv2_dsp);
+	ws_connect();
 });

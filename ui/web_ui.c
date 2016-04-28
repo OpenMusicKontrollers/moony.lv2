@@ -15,17 +15,26 @@
  * http://www.perlfoundation.org/artistic_license_2_0.
  */
 
-#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stddef.h>
 #include <unistd.h>
-#include <inttypes.h>
+#if !defined(_WIN32)
+#	include <sys/wait.h>
+#endif
+#include <errno.h>
+#include <signal.h>
+#include <string.h>
 
 #include <moony.h>
 
-#include <uv.h>
 #include <lv2_external_ui.h> // kxstudio external-ui extension
 
-#include <http_parser.h>
 #include <cJSON.h>
+
+#include <libwebsockets.h>
+
+#define BUF_SIZE 0x100000 // 1M
 
 #define RDF_PREFIX "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 #define RDFS_PREFIX "http://www.w3.org/2000/01/rdf-schema#"
@@ -53,10 +62,8 @@
 	     (iter) = lv2_atom_tuple_next(iter))
 #endif
 
-typedef struct _UI UI;
-typedef struct _server_t server_t;
+typedef struct _ui_t ui_t;
 typedef struct _client_t client_t;
-typedef struct _url_t url_t;
 typedef struct _pmap_t pmap_t;
 
 struct _pmap_t {
@@ -65,27 +72,12 @@ struct _pmap_t {
 	float val;
 };
 
-struct _server_t {
-	uv_tcp_t http_server;
-	client_t *clients;
-	http_parser_settings http_settings;
-	uv_timer_t timer;
+struct _client_t {
+	client_t *next;
 	cJSON *root;
 };
 
-struct _client_t {
-	client_t *next;
-	uv_tcp_t handle;
-	http_parser parser;
-	uv_write_t req;
-
-	server_t *server;
-	char url [1024];
-	const char *body;
-	int keepalive;
-};
-
-struct _UI {
+struct _ui_t {
 	struct {
 		LV2_URID moony_message;
 		LV2_URID moony_code;
@@ -118,78 +110,169 @@ struct _UI {
 	uint32_t control_port;
 	pmap_t pmap [MAX_PORTS];
 
-	uv_loop_t loop;
-	uv_process_t req;
-	uv_process_options_t opts;
 	int done;
+	char *executable;
+	char *url;
+
+#if defined(_WIN32)
+	PROCESS_INFORMATION pi;
+#else
+	pid_t pid;
+#endif
 
 	struct {
 		LV2_External_UI_Widget widget;
 		const LV2_External_UI_Host *host;
 	} kx;
 
-	uint8_t buf [0x10000];
-	char path [512];
+	uint8_t buf [BUF_SIZE];
+
 	char title [512];
+	char *bundle_path;
 
-	char bundle_path [512];
-	server_t server;
+	struct lws_context *context;
+	client_t *clients;
 };
 
-struct _url_t {
-	const char *alias;
-	const char *url;
-	int content_type;
-};
+#if defined(_WIN32)
+static inline int 
+_spawn(ui_t *ui)
+{
+	STARTUPINFO si;
+	memset(&si, 0x0, sizeof(STARTUPINFO));
 
-enum {
-	STATUS_NOT_FOUND,
-	STATUS_OK
-};
+	si.cb = sizeof(STARTUPINFO);
 
-enum {
-	CONTENT_APPLICATION_OCTET_STREAM,
-	CONTENT_TEXT_HTML,
-	CONTENT_TEXT_JSON,
-	CONTENT_TEXT_CSS,
-	CONTENT_TEXT_JS,
-	CONTENT_TEXT_PLAIN,
-	CONTENT_IMAGE_PNG
-};
+	if(!CreateProcess(
+		NULL,           // No module name (use command line)
+		ui->url,        // Command line
+		NULL,           // Process handle not inheritable
+		NULL,           // Thread handle not inheritable
+		FALSE,          // Set handle inheritance to FALSE
+		0,              // No creation flags
+		NULL,           // Use parent's environment block
+		NULL,           // Use parent's starting directory 
+		&si,            // Pointer to STARTUPINFO structure
+		&ui->pi )       // Pointer to PROCESS_INFORMATION structure
+	)
+	{
+		printf( "CreateProcess failed (%d).\n", GetLastError() );
+		return -1;
+	}
 
-static const char *http_status [] = {
-	[STATUS_NOT_FOUND] = "HTTP/1.1 404 Not Found\r\n",
-	[STATUS_OK] = "HTTP/1.1 200 OK\r\n"
-};
+	return 0;
+}
 
-static const char *http_content [] = {
-	[CONTENT_APPLICATION_OCTET_STREAM] = "Content-Type: application/octet-stream\r\n",
-	[CONTENT_TEXT_HTML] = "Content-Type: text/html\r\n",
-	[CONTENT_TEXT_JSON] = "Content-Type: text/json\r\n",
-	[CONTENT_TEXT_CSS] = "Content-Type: text/css\r\n",
-	[CONTENT_TEXT_JS] = "Content-Type: text/javascript\r\n",
-	[CONTENT_TEXT_PLAIN] = "Content-Type: text/plain\r\n",
-	[CONTENT_IMAGE_PNG] = "Content-Type: image/png\r\n"
-};
+static inline int
+_waitpid(ui_t *ui, int *status, bool blocking)
+{
+	if(blocking)
+	{
+		WaitForSingleObject(ui->pi.hProcess, INFINITE);
+		return 0;
+	}
 
-static const char *content_length = "Content-Length: %"PRIuPTR"\r\n\r\n%s";
+	// !blocking
+	switch(WaitForSingleObject(ui->pi.hProcess, 0))
+	{
+		case WAIT_TIMEOUT: // non-signaled, e.g. still running
+			return 0;
+		case WAIT_OBJECT_0: // signaled, e.g. not running anymore
+			return -1;
+		case WAIT_ABANDONED: // failed
+		case WAIT_FAILED: // failed
+			return -1;
+	}
 
-//TODO keep updated
-static const url_t valid_urls [] = {
-	{ .alias = NULL, .url = "/favicon.png",         .content_type = CONTENT_IMAGE_PNG },
-	{ .alias = NULL, .url = "/jquery-2.2.0.min.js", .content_type = CONTENT_TEXT_JS },
-	{ .alias = NULL, .url = "/moony.js",            .content_type = CONTENT_TEXT_JS },
-	{ .alias = NULL, .url = "/style.css",           .content_type = CONTENT_TEXT_CSS },
-	{ .alias = NULL, .url = "/Chango-Regular.ttf",  .content_type = CONTENT_APPLICATION_OCTET_STREAM },
-	{ .alias = NULL, .url = "/ace.js",              .content_type = CONTENT_TEXT_JS },
-	{ .alias = NULL, .url = "/mode-lua.js",         .content_type = CONTENT_TEXT_JS },
-	{ .alias = NULL, .url = "/theme-chaos.js",      .content_type = CONTENT_TEXT_JS },
-	{ .alias = NULL, .url = "/keybinding-vim.js",   .content_type = CONTENT_TEXT_JS },
-	{ .alias = NULL, .url = "/keybinding-emacs.js", .content_type = CONTENT_TEXT_JS },
-	{ .alias = "/",  .url = "/index.html",          .content_type = CONTENT_TEXT_HTML },
+	return 0;
+}
 
-	{ .url = NULL } // sentinel
-};
+static inline int
+_kill(ui_t *ui, int sig)
+{
+	return !(CloseHandle(ui->pi.hProcess) && CloseHandle(ui->pi.hThread));
+}
+
+static inline bool
+_has_child(ui_t *ui)
+{
+	return (ui->pi.hProcess != 0x0) && (ui->pi.hThread != 0);
+}
+
+static inline void
+_invalidate_child(ui_t *ui)
+{
+	memset(&ui->pi, 0x0, sizeof(PROCESS_INFORMATION));
+}
+#else
+static inline int 
+_spawn(ui_t *ui)
+{
+	ui->pid = fork();
+	if(ui->pid == 0) // child
+	{
+		char *const argv [] = {
+			ui->executable,
+			ui->url,
+			NULL
+		};
+		execvp(ui->executable, argv); // p = search PATH for executable
+
+		printf("fork child failed\n");
+		exit(-1);
+	}
+	else if(ui->pid < 0)
+	{
+		printf("fork failed\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+static inline int
+_waitpid(ui_t *ui, int *status, bool blocking)
+{
+	if(blocking)
+	{
+		waitpid(ui->pid, status, 0);
+		return 0;
+	}
+
+	int res;
+	if( (res = waitpid(ui->pid, status, WNOHANG)) < 0) // error?
+	{
+		if(errno == ECHILD) // child not existing
+		{
+			return -1;
+		}
+	}
+	else if( (res > 0) && WIFEXITED(status) ) // child exited?
+	{
+		return -1;
+	}
+
+	return 0;
+}
+
+static inline int
+_kill(ui_t *ui, int sig)
+{
+	return kill(ui->pid, SIGINT);
+}
+
+static inline bool
+_has_child(ui_t *ui)
+{
+	return ui->pid > 0;
+}
+
+static inline void
+_invalidate_child(ui_t *ui)
+{
+	ui->pid = -1;
+}
+#endif
 
 static inline client_t *
 _client_append(client_t *list, client_t *child)
@@ -221,32 +304,276 @@ _client_remove(client_t *list, client_t *child)
 	return list;
 }
 
-#define SERVER_CLIENT_FOREACH(server, client) \
-	for(client_t *(client)=(server)->clients; (client); (client)=(client)->next)
+#define CLIENTS_FOREACH(clients, client) \
+	for(client_t *(client)=(clients); (client); (client)=(client)->next)
 
-static inline unsigned 
-_server_clients_count(server_t *server)
+static inline const char *
+get_mimetype(const char *file)
 {
-	unsigned count = 0;
-	SERVER_CLIENT_FOREACH(server, client)
-		count++;
+	int n = strlen(file);
 
-	return count;
+	if(n < 5)
+		return NULL;
+
+	if(!strcmp(&file[n - 4], ".ico"))
+		return "image/x-icon";
+
+	if(!strcmp(&file[n - 4], ".png"))
+		return "image/png";
+
+	if(!strcmp(&file[n - 5], ".html"))
+		return "text/html";
+
+	if(!strcmp(&file[n - 3], ".js"))
+		return "text/javascript";
+
+	if(!strcmp(&file[n - 5], ".json"))
+		return "text/json";
+
+	if(!strcmp(&file[n - 4], ".css"))
+		return "text/css";
+
+	if(!strcmp(&file[n - 4], ".ttf"))
+		return "application/octet-stream";
+
+	return NULL;
 }
 
-static inline unsigned 
-_server_clients_keepalive_count(server_t *server)
+static int
+callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
+	void *in, size_t len)
 {
-	unsigned count = 0;
-	SERVER_CLIENT_FOREACH(server, client)
-		if(client->keepalive)
-			count++;
+	ui_t *ui = lws_context_user(lws_get_context(wsi));
+	const char *in_str = in;
 
-	return count;
+	switch(reason)
+	{
+		case LWS_CALLBACK_HTTP:
+		{
+			if(len < 1)
+			{
+				lws_return_http_status(wsi, HTTP_STATUS_BAD_REQUEST, NULL);
+
+				goto try_to_reuse;
+			}
+
+			/* this server has no concept of directories */
+			if(strchr(in_str+ 1, '/'))
+			{
+				lws_return_http_status(wsi, HTTP_STATUS_FORBIDDEN, NULL);
+
+				goto try_to_reuse;
+			}
+
+			/* if a legal POST URL, let it continue and accept data */
+			if(lws_hdr_total_length(wsi, WSI_TOKEN_POST_URI))
+				return 0;
+
+			const char *file_path= strcmp(in_str, "/")
+				? in_str
+				: "/index.html";
+
+			/* refuse to serve files we don't understand */
+			const char *mimetype = get_mimetype(file_path);
+			if(!mimetype)
+			{
+				lwsl_err("Unknown mimetype for %s\n", file_path);
+				lws_return_http_status(wsi, HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE, NULL);
+				return -1;
+			}
+
+#if defined(_WIN32)
+			const char *sep = ui->bundle_path[strlen(ui->bundle_path) - 1] == '\\' ? "" : "\\";
+			const char *sep2 = "\\";
+#else
+			const char *sep = ui->bundle_path[strlen(ui->bundle_path) - 1] == '/' ? "" : "/";
+			const char *sep2 = "/";
+#endif
+
+			char *full_path;
+			if(asprintf(&full_path, "%s%sweb_ui%s%s", ui->bundle_path, sep, sep2, &file_path[1]) == -1)
+			{
+				lws_return_http_status(wsi, HTTP_STATUS_NOT_FOUND, NULL);
+				return -1;
+			}
+
+			const int n = lws_serve_http_file(wsi, full_path, mimetype, NULL, 0);
+			free(full_path);
+
+			if( (n < 0) || ( (n > 0) && lws_http_transaction_completed(wsi)))
+				return -1; /* error or can't reuse connection: close the socket */
+
+			// we'll get a LWS_CALLBACK_HTTP_FILE_COMPLETION callback asynchronously
+			break;
+		}
+
+		case LWS_CALLBACK_HTTP_BODY:
+		{
+			break;
+		}
+
+		case LWS_CALLBACK_HTTP_BODY_COMPLETION:
+		{
+			lws_return_http_status(wsi, HTTP_STATUS_OK, NULL);
+
+			goto try_to_reuse;
+		}
+
+		case LWS_CALLBACK_HTTP_FILE_COMPLETION:
+		{
+			goto try_to_reuse;
+		}
+
+		case LWS_CALLBACK_HTTP_WRITEABLE:
+			// fall-through
+		case LWS_CALLBACK_FILTER_NETWORK_CONNECTION:
+			// fall-through
+		case LWS_CALLBACK_LOCK_POLL:
+			// fall-through
+		case LWS_CALLBACK_UNLOCK_POLL:
+			// fall-through
+		case LWS_CALLBACK_GET_THREAD_ID:
+			// fall-through
+		default:
+		{
+			break;
+		}
+	}
+
+	return 0;
+
+	/* if we're on HTTP1.1 or 2.0, will keep the idle connection alive */
+try_to_reuse:
+	if(lws_http_transaction_completed(wsi))
+		return -1;
+
+	return 0;
 }
 
 static inline void
-_err2(UI *ui, const char *from)
+_moony_cb(ui_t *ui, const char *json);
+
+static int
+callback_lv2(struct lws *wsi, enum lws_callback_reasons reason,
+	void *user, void *in, size_t len)
+{
+	ui_t *ui = lws_context_user(lws_get_context(wsi));
+	client_t *client = user;
+	const char *in_str = in;
+
+	switch(reason)
+	{
+		case LWS_CALLBACK_ESTABLISHED:
+		{
+			memset(client, 0x0, sizeof(client_t));
+
+			ui->clients = _client_append(ui->clients, client);
+
+			break;
+		}
+
+		case LWS_CALLBACK_SERVER_WRITEABLE:
+		{
+			if(client->root)
+			{
+				char *json = cJSON_PrintUnformatted(client->root);
+				if(json)
+				{
+					const int n = strlen(json);
+
+					json = realloc(json, n + LWS_SEND_BUFFER_PRE_PADDING + LWS_SEND_BUFFER_POST_PADDING);
+					memmove(&json[LWS_SEND_BUFFER_PRE_PADDING], json, n);
+
+					const int m = lws_write(wsi, (uint8_t *)&json[LWS_SEND_BUFFER_PRE_PADDING], n, LWS_WRITE_TEXT);
+					free(json);
+
+					if(m < n)
+					{
+						lwsl_err("ERROR %d writing to di socket\n", n);
+						return -1;
+					}
+				}
+
+				cJSON_Delete(client->root);
+				client->root = NULL;
+			}
+
+			break;
+		}
+
+		case LWS_CALLBACK_RECEIVE:
+		{
+			if(len < 6)
+				break;
+
+			_moony_cb(ui, in_str);
+
+			/* FIXME
+			if(!strcmp(in_str, "closeme\n"))
+			{
+				lwsl_notice("lv2: closing as requested\n");
+				lws_close_reason(wsi, LWS_CLOSE_STATUS_GOINGAWAY, (unsigned char *)"seeya", 5);
+				//TODO client remove?
+				return -1;
+			}
+			*/
+
+			break;
+		}
+
+		case LWS_CALLBACK_CLOSED:
+		{
+			lwsl_notice("LWS_CALLBACK_CLOSE:\n");
+
+			ui->clients = _client_remove(ui->clients, client);
+			ui->done = 1;
+
+			break;
+		}
+
+		case LWS_CALLBACK_WS_PEER_INITIATED_CLOSE:
+		{
+			lwsl_notice("LWS_CALLBACK_WS_PEER_INITIATED_CLOSE: len %d\n", len);
+
+			ui->clients = _client_remove(ui->clients, client);
+			ui->done = 1;
+
+			break;
+		}
+
+		default:
+		{
+			break;
+		}
+	}
+
+	return 0;
+}
+
+enum demo_protocols {
+	PROTOCOL_HTTP = 0,
+	PROTOCOL_LV2,
+	DEMO_PROTOCOL_COUNT
+};
+
+static const struct lws_protocols protocols [] = {
+	[PROTOCOL_HTTP] = {
+		.name = "http-only",
+		.callback = callback_http,
+		.per_session_data_size = 0,
+		.rx_buffer_size = 0,
+	},
+	[PROTOCOL_LV2] = {
+		.name = "lv2-protocol",
+		.callback = callback_lv2,
+		.per_session_data_size = sizeof(client_t),
+		.rx_buffer_size = BUF_SIZE,
+	},
+	{ .name = NULL, .callback = NULL, .per_session_data_size = 0, .rx_buffer_size = 0 }
+};
+
+static inline void
+_err2(ui_t *ui, const char *from)
 {
 	if(ui->log)
 		lv2_log_error(&ui->logger, "%s", from);
@@ -254,23 +581,13 @@ _err2(UI *ui, const char *from)
 		fprintf(stderr, "%s\n", from);
 }
 
-static inline void
-_err(UI *ui, const char *from, int ret)
-{
-	if(ui->log)
-		lv2_log_error(&ui->logger, "%s: %s", from, uv_strerror(ret));
-	else
-		fprintf(stderr, "%s: %s\n", from, uv_strerror(ret));
-}
-
 static inline LV2_Atom_Object *
-_moony_message_forge(UI *ui, LV2_URID key,
+_moony_message_forge(ui_t *ui, LV2_URID key,
 	const char *str, uint32_t size)
 {
-	LV2_Atom_Forge_Frame frame;
 	LV2_Atom_Object *obj = (LV2_Atom_Object *)ui->buf;
 
-	lv2_atom_forge_set_buffer(&ui->forge, ui->buf, 0x10000);
+	lv2_atom_forge_set_buffer(&ui->forge, ui->buf, BUF_SIZE);
 	if(_moony_patch(&ui->uris.patch, &ui->forge, key, str, size))
 		return obj;
 
@@ -280,7 +597,7 @@ _moony_message_forge(UI *ui, LV2_URID key,
 }
 
 static inline LV2_Atom_Forge_Ref
-_json_to_atom(UI *ui, cJSON *root, LV2_Atom_Forge *forge)
+_json_to_atom(ui_t *ui, cJSON *root, LV2_Atom_Forge *forge)
 {
 	assert(root->type == cJSON_Object);
 
@@ -378,7 +695,7 @@ _json_to_atom(UI *ui, cJSON *root, LV2_Atom_Forge *forge)
 }
 
 static inline cJSON *
-_atom_to_json(UI *ui, const LV2_Atom *atom)
+_atom_to_json(ui_t *ui, const LV2_Atom *atom)
 {
 	cJSON *range = NULL;
 	cJSON *value = NULL;
@@ -525,7 +842,7 @@ _pmap_cmp(const void *data1, const void *data2)
 }
 
 static inline pmap_t *
-_pmap_get(UI *ui, uint32_t idx)
+_pmap_get(ui_t *ui, uint32_t idx)
 {
 	const pmap_t tar = { .index = idx };
 	pmap_t *pmap = bsearch(&tar, ui->pmap, MAX_PORTS, sizeof(pmap_t), _pmap_cmp);
@@ -533,191 +850,81 @@ _pmap_get(UI *ui, uint32_t idx)
 }
 
 static inline void
-_moony_dsp(UI *ui, const char *json)
+_moony_dsp(ui_t *ui, cJSON *root)
 {
-	cJSON *root = cJSON_Parse(json);
-	if(root)
+	cJSON *protocol = cJSON_GetObjectItem(root, LV2_UI__protocol);
+	cJSON *symbol = cJSON_GetObjectItem(root, LV2_CORE__symbol);
+	cJSON *value = cJSON_GetObjectItem(root, RDF__value);
+
+	if(  protocol && symbol && value
+		&& (protocol->type == cJSON_String)
+		&& (symbol->type == cJSON_String) )
 	{
-		cJSON *protocol = cJSON_GetObjectItem(root, LV2_UI__protocol);
-		cJSON *symbol = cJSON_GetObjectItem(root, LV2_CORE__symbol);
-		cJSON *value = cJSON_GetObjectItem(root, RDF__value);
-
-		if(  protocol && symbol && value
-			&& (protocol->type == cJSON_String)
-			&& (symbol->type == cJSON_String) )
+		if(!strcmp(protocol->valuestring, LV2_UI__floatProtocol)
+			&& (value->type == cJSON_Number) )
 		{
-			if(!strcmp(protocol->valuestring, LV2_UI__floatProtocol)
-				&& (value->type == cJSON_Number) )
-			{
-				uint32_t idx = ui->port_map->port_index(ui->port_map->handle, symbol->valuestring);
-				const float val = value->valuedouble;
-				ui->write_function(ui->controller, idx, sizeof(float),
-					0, &val);
+			uint32_t idx = ui->port_map->port_index(ui->port_map->handle, symbol->valuestring);
+			const float val = value->valuedouble;
+			ui->write_function(ui->controller, idx, sizeof(float),
+				0, &val);
 
-				// intercept control port changes
-				pmap_t *pmap = _pmap_get(ui, idx);
-				if(pmap)
-					pmap->val = val;
-			}
-			else if(!strcmp(protocol->valuestring, LV2_ATOM__eventTransfer)
-				&& (value->type == cJSON_Object) )
-			{
-				uint32_t idx = ui->port_map->port_index(ui->port_map->handle, symbol->valuestring);
-				lv2_atom_forge_set_buffer(&ui->forge, ui->buf, 0x10000);
-				if(_json_to_atom(ui, value, &ui->forge))
-				{
-					const LV2_Atom *atom = (const LV2_Atom *)ui->buf;
-					ui->write_function(ui->controller, idx, lv2_atom_total_size(atom),
-						ui->uris.atom_event_transfer, atom);
-				}
-				else if(ui->log)
-					lv2_log_error(&ui->logger, "_moony_dsp: forge buffer overflow");
-			}
-			else if(!strcmp(protocol->valuestring, LV2_ATOM__atomTransfer)
-				&& (value->type == cJSON_Object) )
-			{
-				//FIXME
-			}
+			// intercept control port changes
+			pmap_t *pmap = _pmap_get(ui, idx);
+			if(pmap)
+				pmap->val = val;
 		}
-		else if(ui->log)
-			lv2_log_error(&ui->logger, "_moony_dsp: missing protocol, symbol or value");
-		cJSON_Delete(root);
-	}
-}
-
-static inline void
-_hide(UI *ui);
-
-static void
-_timeout(uv_timer_t *timer)
-{
-	UI *ui = timer->data;
-
-	ui->done = 1;
-
-	if(ui->kx.host && ui->kx.host->ui_closed && ui->controller)
-	{
-		_hide(ui);
-		ui->kx.host->ui_closed(ui->controller);
-	}
-}
-
-static void
-_on_client_close(uv_handle_t *handle)
-{
-	client_t *client = handle->data;
-	server_t *server = client->server;
-	UI *ui = (void *)server - offsetof(UI, server);
-
-	server->clients = _client_remove(server->clients, client);
-	free(client);
-
-	if(!server->clients) // no clients any more
-	{
-		int ret;
-		if((ret = uv_timer_start(&server->timer, _timeout, 5000, 0)))
-			_err(ui, "uv_timer_start", ret);
-	}
-}
-
-static void
-_after_write(uv_write_t *req, int status)
-{
-	uv_tcp_t *handle = (uv_tcp_t *)req->handle;
-	client_t *client = handle->data;
-	server_t *server = client->server;
-	UI *ui = (void *)server - offsetof(UI, server);
-
-	int ret;
-
-	if(req->data)
-		free(req->data);
-
-	if(uv_is_active((uv_handle_t *)handle))
-	{
-		if((ret = uv_read_stop((uv_stream_t *)handle)))
-			_err(ui, "uv_read_stop", ret);
-	}
-	if(!uv_is_closing((uv_handle_t *)handle))
-		uv_close((uv_handle_t *)handle, _on_client_close);
-}
-
-static inline void
-_keepalive(server_t *server)
-{
-	const char *stat = http_status[STATUS_OK];
-	const char *cont = http_content[CONTENT_TEXT_JSON];
-
-	if(server->root && (_server_clients_keepalive_count(server) > 0) )
-	{
-		SERVER_CLIENT_FOREACH(server, client)
+		else if(!strcmp(protocol->valuestring, LV2_ATOM__eventTransfer)
+			&& (value->type == cJSON_Object) )
 		{
-			if(!client->keepalive)
-				continue;
-
-			char *json = cJSON_PrintUnformatted(server->root);
-			if(json)
+			uint32_t idx = ui->port_map->port_index(ui->port_map->handle, symbol->valuestring);
+			lv2_atom_forge_set_buffer(&ui->forge, ui->buf, BUF_SIZE);
+			if(_json_to_atom(ui, value, &ui->forge))
 			{
-				char *chunk = NULL;
-				if(asprintf(&chunk, content_length, strlen(json), json) != -1)
-				{
-					client->req.data = chunk;
-
-					uv_buf_t msg [3] = {
-						[0] = {
-							.base = (char *)stat,
-							.len = stat ? strlen(stat) : 0
-						},
-						[1] = {
-							.base = (char *)cont,
-							.len = cont ? strlen(cont) : 0
-						},
-						[2] = {
-							.base = client->req.data,
-							.len = strlen(chunk) 
-						}
-					};
-
-					uv_write(&client->req, (uv_stream_t *)&client->handle, msg, 3, _after_write);
-				}
-				free(json);
+				const LV2_Atom *atom = (const LV2_Atom *)ui->buf;
+				ui->write_function(ui->controller, idx, lv2_atom_total_size(atom),
+					ui->uris.atom_event_transfer, atom);
 			}
+			else if(ui->log)
+				lv2_log_error(&ui->logger, "_moony_dsp: forge buffer overflow");
+		}
+		else if(!strcmp(protocol->valuestring, LV2_ATOM__atomTransfer)
+			&& (value->type == cJSON_Object) )
+		{
+			//FIXME
+		}
+	}
+	else if(ui->log)
+		lv2_log_error(&ui->logger, "_moony_dsp: missing protocol, symbol or value");
+}
 
-			client->keepalive = false;
+static inline void
+_schedule(ui_t *ui, cJSON *job)
+{
+	CLIENTS_FOREACH(ui->clients, client)
+	{
+		if(!client->root)
+		{
+			// create root object
+			client->root = cJSON_CreateObject();
+			cJSON *jobs = cJSON_CreateArray();
+			if(client->root && jobs)
+				cJSON_AddItemToObject(client->root, "jobs", jobs);
 		}
 
-		cJSON_Delete(server->root);
-		server->root = NULL;
-	}
-}
-
-static inline void
-_schedule(UI *ui, cJSON *job)
-{
-	server_t *server = &ui->server;
-
-	if(!server->root)
-	{
-		// create root object
-		server->root = cJSON_CreateObject();
-		cJSON *jobs = cJSON_CreateArray();
-		if(server->root && jobs)
-			cJSON_AddItemToObject(server->root, "jobs", jobs);
+		if(client->root)
+		{
+			// add job to jobs array
+			cJSON *jobs = cJSON_GetObjectItem(client->root, "jobs");
+			if(jobs)
+				cJSON_AddItemToArray(jobs, job);
+		}
 	}
 
-	if(server->root)
-	{
-		// add job to jobs array
-		cJSON *jobs = cJSON_GetObjectItem(server->root, "jobs");
-		if(jobs)
-			cJSON_AddItemToArray(jobs, job);
-	}
-
-	_keepalive(server); // answer keep alives
+	lws_callback_on_writable_all_protocol(ui->context, &protocols[PROTOCOL_LV2]);
 }
 
 static inline cJSON * 
-_moony_send(UI *ui, uint32_t idx, uint32_t size, uint32_t prot, const void *buf)
+_moony_send(ui_t *ui, uint32_t idx, uint32_t size, uint32_t prot, const void *buf)
 {
 	cJSON *protocol = NULL;
 	cJSON *value = NULL;
@@ -781,149 +988,104 @@ _moony_send(UI *ui, uint32_t idx, uint32_t size, uint32_t prot, const void *buf)
 }
 
 static inline void
-_moony_ui(UI *ui, const char *json)
+_moony_ui(ui_t *ui, cJSON *root)
 {
-	cJSON *root = cJSON_Parse(json);
-	if(root)
+	cJSON *protocol = cJSON_GetObjectItem(root, LV2_UI__protocol);
+	cJSON *value = cJSON_GetObjectItem(root, RDF__value);
+
+	if(  protocol && value
+		&& (protocol->type == cJSON_String) )
 	{
-		cJSON *protocol = cJSON_GetObjectItem(root, LV2_UI__protocol);
-		cJSON *value = cJSON_GetObjectItem(root, RDF__value);
-
-		if(  protocol && value
-			&& (protocol->type == cJSON_String) )
+		if(!strcmp(protocol->valuestring, LV2_ATOM__eventTransfer)
+			&& (value->type == cJSON_Object) )
 		{
-			if(!strcmp(protocol->valuestring, LV2_ATOM__eventTransfer)
-				&& (value->type == cJSON_Object) )
+			lv2_atom_forge_set_buffer(&ui->forge, ui->buf, BUF_SIZE);
+			if(_json_to_atom(ui, value, &ui->forge))
 			{
-				lv2_atom_forge_set_buffer(&ui->forge, ui->buf, 0x10000);
-				if(_json_to_atom(ui, value, &ui->forge))
+				const LV2_Atom_Object *obj = (const LV2_Atom_Object *)ui->buf;
+
+				if(obj->atom.type == ui->forge.Object)
 				{
-					const LV2_Atom_Object *obj = (const LV2_Atom_Object *)ui->buf;
-
-					if(obj->atom.type == ui->forge.Object)
+					if(obj->body.otype == ui->uris.patch.get)
 					{
-						if(obj->body.otype == ui->uris.patch.get)
+						const LV2_Atom_URID *property = NULL;
+
+						lv2_atom_object_get(obj,
+							ui->uris.patch.property, &property,
+							0);
+						
+						if(property && (property->atom.type == ui->forge.URID) )
 						{
-							const LV2_Atom_URID *property = NULL;
-
-							lv2_atom_object_get(obj,
-								ui->uris.patch.property, &property,
-								0);
-							
-							if(property && (property->atom.type == ui->forge.URID) )
+							if(property->body == ui->uris.window_title)
 							{
-								if(property->body == ui->uris.window_title)
+								LV2_Atom_Object *obj_out = _moony_message_forge(ui, ui->uris.window_title,
+									ui->title, strlen(ui->title));
+								if(obj_out)
 								{
-									LV2_Atom_Object *obj_out = _moony_message_forge(ui, ui->uris.window_title,
-										ui->title, strlen(ui->title));
-									if(obj_out)
-									{
-										cJSON *job = _moony_send(ui, ui->control_port,
-											lv2_atom_total_size(&obj_out->atom), ui->uris.atom_event_transfer, obj_out);
-										if(job)
-											_schedule(ui, job);
-									}
-
-									// resend control port values
-									for(unsigned i=0; i<MAX_PORTS; i++) // iterate over all ports
-									{
-										if(  (ui->pmap[i].index != LV2UI_INVALID_PORT_INDEX )
-											&& (ui->pmap[i].val != HUGE_VAL) ) // skip invalid ports
-										{
-											cJSON *job = _moony_send(ui, ui->pmap[i].index, sizeof(float),
-												ui->uris.ui_float_protocol, &ui->pmap[i].val);
-											if(job)
-												_schedule(ui, job);
-										}
-									}
+									cJSON *job = _moony_send(ui, ui->control_port,
+										lv2_atom_total_size(&obj_out->atom), ui->uris.atom_event_transfer, obj_out);
+									if(job)
+										_schedule(ui, job);
 								}
-								if(property->body == ui->uris.patch.subject) //FIXME rename property?
+
+								// resend control port values
+								for(unsigned i=0; i<MAX_PORTS; i++) // iterate over all ports
 								{
-									const char *self = ui->unmap->unmap(ui->unmap->handle, ui->uris.patch.self);
-									LV2_Atom_Object *obj_out = _moony_message_forge(ui, ui->uris.patch.subject,
-										self, strlen(self)); //FIXME URI
-									if(obj_out)
+									if(  (ui->pmap[i].index != LV2UI_INVALID_PORT_INDEX )
+										&& (ui->pmap[i].val != HUGE_VAL) ) // skip invalid ports
 									{
-										cJSON *job = _moony_send(ui, ui->control_port,
-											lv2_atom_total_size(&obj_out->atom), ui->uris.atom_event_transfer, obj_out);
+										cJSON *job = _moony_send(ui, ui->pmap[i].index, sizeof(float),
+											ui->uris.ui_float_protocol, &ui->pmap[i].val);
 										if(job)
 											_schedule(ui, job);
 									}
 								}
 							}
+							if(property->body == ui->uris.patch.subject) //FIXME rename property?
+							{
+								const char *self = ui->unmap->unmap(ui->unmap->handle, ui->uris.patch.self);
+								LV2_Atom_Object *obj_out = _moony_message_forge(ui, ui->uris.patch.subject,
+									self, strlen(self)); //FIXME URI
+								if(obj_out)
+								{
+									cJSON *job = _moony_send(ui, ui->control_port,
+										lv2_atom_total_size(&obj_out->atom), ui->uris.atom_event_transfer, obj_out);
+									if(job)
+										_schedule(ui, job);
+								}
+							}
 						}
 					}
 				}
-				else if(ui->log)
-					lv2_log_error(&ui->logger, "_moony_ui: forge buffer overflow");
 			}
+			else if(ui->log)
+				lv2_log_error(&ui->logger, "_moony_ui: forge buffer overflow");
 		}
-		else if(ui->log)
-			lv2_log_error(&ui->logger, "_moony_ui: missing protocol or value");
+	}
+	else if(ui->log)
+		lv2_log_error(&ui->logger, "_moony_ui: missing protocol or value");
+}
+
+static inline void
+_moony_cb(ui_t *ui, const char *json)
+{
+	cJSON *root = cJSON_Parse(json);
+	if(root)
+	{
+		cJSON *destination= cJSON_GetObjectItem(root, LV2_PATCH__destination);
+		if(destination)
+		{
+			if( (destination->type == cJSON_String) && !strcmp(destination->valuestring, MOONY_UI_URI))
+				_moony_ui(ui, root);
+			else if( (destination->type == cJSON_String) && !strcmp(destination->valuestring, MOONY_DSP_URI))
+				_moony_dsp(ui, root);
+		}
+
 		cJSON_Delete(root);
 	}
 }
 
-static inline void
-_hide(UI *ui)
-{
-	server_t *server = &ui->server;
-	int ret;
-
-	uv_timer_stop(&server->timer);
-
-	if(uv_is_active((uv_handle_t *)&ui->req))
-	{
-		if((ret = uv_process_kill(&ui->req, SIGKILL)))
-			_err(ui, "uv_process_kill", ret);
-	}
-	if(!uv_is_closing((uv_handle_t *)&ui->req))
-		uv_close((uv_handle_t *)&ui->req, NULL);
-
-	SERVER_CLIENT_FOREACH(server, client)
-	{
-		// cancel pending requests
-		if(uv_is_active((uv_handle_t *)&client->req))
-			uv_cancel((uv_req_t *)&client->req);
-
-		// close client
-		if(uv_is_active((uv_handle_t *)&client->handle))
-		{
-			if((ret = uv_read_stop((uv_stream_t *)&client->handle)))
-				_err(ui, "uv_read_stop", ret);
-		}
-		if(!uv_is_closing((uv_handle_t *)&client->handle))
-			uv_close((uv_handle_t *)&client->handle, _on_client_close);
-	}
-
-	// close server
-	if(!uv_is_closing((uv_handle_t *)&server->http_server))
-		uv_close((uv_handle_t *)&server->http_server, NULL);
-
-	uv_stop(&ui->loop);
-	uv_run(&ui->loop, UV_RUN_DEFAULT); // cleanup
-	
-	ui->done = 0;
-}
-
-static void
-_on_exit(uv_process_t *req, int64_t exit_status, int term_signal)
-{
-	UI *ui = req ? (void *)req - offsetof(UI, req) : NULL;
-	if(!ui)
-		return;
-
-	/* FIXME
-	ui->done = 1;
-
-	if(ui->kx.host && ui->kx.host->ui_closed && ui->controller)
-	{
-		_hide(ui);
-		ui->kx.host->ui_closed(ui->controller);
-	}
-	*/
-}
-
+/*
 static inline char **
 _parse_env(char *env, char *path)
 {
@@ -966,141 +1128,6 @@ fail:
 	return 0;
 }
 
-static void
-_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
-{
-	//client_t *client = handle->data;
-
-	buf->base = malloc(suggested_size);
-	buf->len = buf->base ? suggested_size : 0;
-}
-
-static void
-_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
-{
-	uv_tcp_t *handle = (uv_tcp_t *)stream;
-	client_t *client = handle->data;
-	server_t *server = client->server;
-	UI *ui = (void *)server - offsetof(UI, server);
-	int ret;
-
-	if(nread >= 0)
-	{
-		ssize_t parsed = http_parser_execute(&client->parser, &server->http_settings, buf->base, nread);
-
-		if(parsed < nread)
-		{
-			_err2(ui, "_on_read: http parse error");
-			if(uv_is_active((uv_handle_t *)handle))
-			{
-				if((ret = uv_read_stop((uv_stream_t *)handle)))
-					_err(ui, "uv_read_stop", ret);
-			}
-			if(!uv_is_closing((uv_handle_t *)handle))
-				uv_close((uv_handle_t *)handle, _on_client_close);
-		}
-	}
-	else if(nread < 0)
-	{
-		if(nread != UV_EOF)
-			_err(ui, "_on_read", nread);
-		if(uv_is_active((uv_handle_t *)handle))
-		{
-			if((ret = uv_read_stop((uv_stream_t *)handle)))
-				_err(ui, "uv_read_stop", ret);
-		}
-		if(!uv_is_closing((uv_handle_t *)handle))
-			uv_close((uv_handle_t *)handle, _on_client_close);
-	}
-	else // nread == 0
-	{
-		// this is only reached in non-blocking read from pipes
-	}
-
-	if(buf->base)
-		free(buf->base);
-}
-
-static void
-_on_connected(uv_stream_t *handle, int status)
-{
-	server_t *server = handle->data;
-	UI *ui = (void *)server - offsetof(UI, server);
-	int ret;
-
-	client_t *client = calloc(1, sizeof(client_t)); //TODO check
-	client->server = server;
-	server->clients = _client_append(server->clients, client);
-
-	if((ret = uv_tcp_init(handle->loop, &client->handle)))
-	{
-		free(client);
-		_err(ui, "uv_tcp_init", ret);
-		return;
-	}
-
-	if((ret = uv_accept(handle, (uv_stream_t *)&client->handle)))
-	{
-		free(client);
-		_err(ui, "uv_accept", ret);
-		return;
-	}
-
-	client->handle.data = client;
-	client->parser.data = client;
-
-	http_parser_init(&client->parser, HTTP_REQUEST);
-
-	if((ret = uv_read_start((uv_stream_t *)&client->handle, _on_alloc, _on_read)))
-	{
-		free(client);
-		_err(ui, "uv_read_start", ret);
-		return;
-	}
-
-	uv_timer_stop(&server->timer);
-}
-
-static inline void
-_show(UI *ui)
-{
-	server_t *server = &ui->server;
-	int ret;
-
-	struct sockaddr_in addr_ip4;
-	struct sockaddr *addr = (struct sockaddr *)&addr_ip4;
-
-	if((ret = uv_ip4_addr("0.0.0.0", 0, &addr_ip4))) // let OS choose unused port
-	{
-		_err(ui, "uv_ip4_addr", ret);
-	}
-
-	if(!uv_is_active((uv_handle_t *)&server->http_server))
-	{
-		if((ret = uv_tcp_bind(&server->http_server, addr, 0)))
-			_err(ui, "uv_tcp_bind", ret);
-		if((ret = uv_listen((uv_stream_t *)&server->http_server, 128, _on_connected)))
-			_err(ui, "uv_listen", ret);
-
-		// get chosen port
-		struct sockaddr_storage storage;
-		struct sockaddr_in *storage_ip4 = (struct sockaddr_in *)&storage;
-		int namelen = sizeof(struct sockaddr_storage);
-		if((ret = uv_tcp_getsockname(&server->http_server, (struct sockaddr *)&storage, &namelen)))
-			_err(ui, "uv_tcp_get_sockname", ret);
-
-		const uint16_t port = ntohs(storage_ip4->sin_port);
-		sprintf(ui->path, "http://localhost:%"PRIu16, port);
-	}
-
-	/* FIXME
-	if(!uv_is_active((uv_handle_t *)&server->timer))
-	{
-		if((ret = uv_timer_start(&server->timer, _timeout, 10000, 0)))
-			_err(ui, "uv_timer_start", ret);
-	}
-	*/
-
 #if defined(_WIN32)
 	const char *command = "cmd /c start";
 #elif defined(__APPLE__)
@@ -1121,60 +1148,48 @@ _show(UI *ui)
 	ui->opts.exit_cb = _on_exit;
 	ui->opts.file = args ? args[0] : NULL;
 	ui->opts.args = args;
-
-	if(!uv_is_active((uv_handle_t *)&ui->req))
-	{
-		if((ret = uv_spawn(&ui->loop, &ui->req, &ui->opts)))
-			_err(ui, "uv_spawn", ret);
-	}
-
-	if(dup)
-		free(dup);
-	if(args)
-		free(args);
 }
-
-// External-UI Interface
-static inline void
-_kx_run(LV2_External_UI_Widget *widget)
-{
-	UI *ui = widget ? (void *)widget - offsetof(UI, kx.widget) : NULL;
-	if(ui)
-		uv_run(&ui->loop, UV_RUN_NOWAIT);
-}
-
-static inline void
-_kx_hide(LV2_External_UI_Widget *widget)
-{
-	UI *ui = widget ? (void *)widget - offsetof(UI, kx.widget) : NULL;
-	if(ui)
-		_hide(ui);
-}
-
-static inline void
-_kx_show(LV2_External_UI_Widget *widget)
-{
-	UI *ui = widget ? (void *)widget - offsetof(UI, kx.widget) : NULL;
-	if(ui)
-		_show(ui);
-}
+*/
 
 // Show Interface
 static inline int
 _show_cb(LV2UI_Handle instance)
 {
-	UI *ui = instance;
-	if(ui)
-		_show(ui);
+printf("_show_cb\n");
+	ui_t *handle = instance;
+
+	if(!handle->done)
+		return 0; // already showing
+
+	if(_spawn(handle))
+		return -1; // failed to spawn
+
+	handle->done = 0;
+
 	return 0;
 }
 
 static inline int
 _hide_cb(LV2UI_Handle instance)
 {
-	UI *ui = instance;
-	if(ui)
-		_hide(ui);
+printf("_hide_cb\n");
+	ui_t *handle = instance;
+
+	if(_has_child(handle))
+	{
+		_kill(handle, SIGINT);
+
+		int status;
+		_waitpid(handle, &status, true);
+
+		_invalidate_child(handle);
+	}
+
+	if(handle->kx.host && handle->kx.host->ui_closed)
+		handle->kx.host->ui_closed(handle->controller);
+
+	handle->done = 1;
+
 	return 0;
 }
 
@@ -1187,165 +1202,57 @@ static const LV2UI_Show_Interface show_ext = {
 static inline int
 _idle_cb(LV2UI_Handle instance)
 {
-	UI *ui = instance;
-	if(!ui)
-		return -1;
-	uv_run(&ui->loop, UV_RUN_NOWAIT);
-	return ui->done;
+	ui_t *handle = instance;
+
+	if(_has_child(handle))
+	{
+		int status;
+		int res;
+		if((res = _waitpid(handle, &status, false)) < 0)
+		{
+			_invalidate_child(handle);
+			//_hide_cb(ui);
+			//handle->done = 1; FIXME xdg-open, START return immediately
+		}
+	}
+
+	if(!handle->done)
+	{
+		if(lws_service(handle->context, 0))
+			handle->done = 1; // lws errored
+	}
+
+	return handle->done;
 }
 
 static const LV2UI_Idle_Interface idle_ext = {
 	.idle = _idle_cb
 };
 
-static char *
-_read_file(UI *ui, const char *bundle_path, const char *file_path, size_t *size)
+// External-UI Interface
+static inline void
+_kx_run(LV2_External_UI_Widget *widget)
 {
-#if defined(_WIN32)
-	const char *sep = bundle_path[strlen(bundle_path) - 1] == '\\' ? "" : "\\";
-	const char *sep2 = "\\";
-#else
-	const char *sep = bundle_path[strlen(bundle_path) - 1] == '/' ? "" : "/";
-	const char *sep2 = "/";
-#endif
+	ui_t *handle = (void *)widget - offsetof(ui_t, kx.widget);
 
-	char *full_path;
-	if(asprintf(&full_path, "%s%sweb_ui%s%s", bundle_path, sep, sep2, &file_path[1]) == -1)
-		return NULL;
-
-	/* FIXME
-	if(ui->log)
-		lv2_log_note(&ui->logger, "full_path: %s", full_path);
-	*/
-
-	FILE *f = fopen(full_path, "rb");
-	free(full_path);
-	if(f)
-	{
-		fseek(f, 0, SEEK_END);
-		size_t fsize = ftell(f);
-		fseek(f, 0, SEEK_SET);
-
-		char *str = malloc(128 + fsize);
-		if(str)
-		{
-			sprintf(str, content_length, fsize, "");
-			size_t len = strlen(str);
-			char *ptr = str + len;
-			if(fread(ptr, fsize, 1, f) == 1)
-			{
-				*size = len + fsize;
-				return str; // success
-			}
-
-			free(str);
-		}
-
-		fclose(f);
-	}
-
-	return NULL;
+	if(_idle_cb(handle))
+		_hide_cb(handle);
 }
 
-static int
-_on_message_complete(http_parser *parser)
+static inline void
+_kx_hide(LV2_External_UI_Widget *widget)
 {
-	client_t *client = parser->data;
-	server_t *server = client->server;
-	UI *ui = (void *)server - offsetof(UI, server);
+	ui_t *handle = (void *)widget - offsetof(ui_t, kx.widget);
 
-	const char *stat = http_status[STATUS_NOT_FOUND];
-	const char *cont = NULL;
-	char *chunk = NULL;
-	size_t size = 0;
-
-	if(strstr(client->url, "/keepalive") == client->url)
-	{
-		stat = http_status[STATUS_OK];
-		cont = http_content[CONTENT_TEXT_JSON];
-		client->keepalive = 1;
-		// keepalive
-	}
-	else if(strstr(client->url, "/lv2/ui") == client->url)
-	{
-		_moony_ui(ui, client->body);
-
-		stat = http_status[STATUS_OK];
-		cont = http_content[CONTENT_TEXT_JSON];
-		chunk = strdup("Content-Length: 2\r\n\r\n{}");
-		size = chunk ? strlen(chunk) : 0;
-	}
-	else if(strstr(client->url, "/lv2/dsp") == client->url)
-	{
-		_moony_dsp(ui, client->body);
-
-		stat = http_status[STATUS_OK];
-		cont = http_content[CONTENT_TEXT_JSON];
-		chunk = strdup("Content-Length: 2\r\n\r\n{}");
-		size = chunk ? strlen(chunk) : 0;
-	}
-	else
-	{
-		for(const url_t *valid = valid_urls; valid->url; valid++)
-		{
-			if(  (strstr(client->url, valid->url) == client->url)
-				|| (valid->alias && (strstr(client->url, valid->alias) == client->url)) )
-			{
-				stat = http_status[STATUS_OK];
-				cont = http_content[valid->content_type];
-				chunk = _read_file(ui, ui->bundle_path, valid->url, &size);
-				break;
-			}
-		}
-	}
-
-	client->req.data = chunk;
-
-	uv_buf_t msg [3] = {
-		[0] = {
-			.base = (char *)stat,
-			.len = stat ? strlen(stat) : 0
-		},
-		[1] = {
-			.base = (char *)cont,
-			.len = cont ? strlen(cont) : 0
-		},
-		[2] = {
-			.base = client->req.data,
-			.len = size
-		}
-	};
-
-	if(stat == http_status[STATUS_NOT_FOUND])
-		uv_write(&client->req, (uv_stream_t *)&client->handle, msg, 1, _after_write);
-	else if(chunk)
-		uv_write(&client->req, (uv_stream_t *)&client->handle, msg, 3, _after_write);
-	else
-		_keepalive(server); // answer keep alives
-
-	return 0;
+	_hide_cb(handle);
 }
 
-static int
-_on_url(http_parser *parser, const char *at, size_t len)
+static inline void
+_kx_show(LV2_External_UI_Widget *widget)
 {
-	client_t *client = parser->data;
-	//server_t *server = client->server;
-	//UI *ui = (void *)server - offsetof(UI, server);
+	ui_t *handle = (void *)widget - offsetof(ui_t, kx.widget);
 
-	snprintf(client->url, len+1, "%s", at); //FIXME
-
-	return 0;
-}
-
-static int
-_on_body(http_parser *parser, const char *at, size_t len)
-{
-	client_t *client = parser->data;
-
-	client->body = at;
-
-	return 0;
+	_show_cb(handle);
 }
 
 static LV2UI_Handle
@@ -1369,7 +1276,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		return NULL;
 	}
 
-	UI *ui = calloc(1, sizeof(UI));
+	ui_t *ui = calloc(1, sizeof(ui_t));
 	if(!ui)
 		return NULL;
 
@@ -1391,7 +1298,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 			opts = features[i]->data;
 	}
 
-	snprintf(ui->bundle_path, 512, "%s", bundle_path);
+	ui->bundle_path = strdup(bundle_path); //TODO check
 
 	ui->kx.widget.run = _kx_run;
 	ui->kx.widget.show = _kx_show;
@@ -1491,6 +1398,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	ui->uris.patch.wildcard = ui->map->map(ui->map->handle, LV2_PATCH__wildcard);
 	ui->uris.patch.writable = ui->map->map(ui->map->handle, LV2_PATCH__writable);
 	ui->uris.patch.readable = ui->map->map(ui->map->handle, LV2_PATCH__readable);
+	ui->uris.patch.destination = ui->map->map(ui->map->handle, LV2_PATCH__destination);
 
 	ui->uris.ui_float_protocol = ui->map->map(ui->map->handle, LV2_UI__floatProtocol);
 	ui->uris.ui_peak_protocol = ui->map->map(ui->map->handle, LV2_UI__peakProtocol);
@@ -1519,39 +1427,45 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	ui->write_function = write_function;
 	ui->controller = controller;
 
-	int ret;
-	if((ret = uv_loop_init(&ui->loop)))
+	// LWS
+
+	struct lws_context_creation_info info;
+	memset(&info, 0x0, sizeof(info));
+
+	info.user = ui;
+	info.port = 0;
+	info.iface = NULL;
+	info.protocols = protocols;
+
+	info.gid = -1;
+	info.uid = -1;
+	info.max_http_header_pool = 1;
+	info.options = LWS_SERVER_OPTION_VALIDATE_UTF8;
+	ui->context = lws_create_context(&info);
+	if(!ui->context)
 	{
-		fprintf(stderr, "%s: %s\n", descriptor->URI, uv_strerror(ret));
 		free(ui);
 		return NULL;
 	}
 
-	server_t *server = &ui->server;
-	server->http_settings.on_message_begin = NULL;
-	server->http_settings.on_message_complete= _on_message_complete;
-	server->http_settings.on_headers_complete= NULL;
-
-	server->http_settings.on_url = _on_url;
-	server->http_settings.on_header_field = NULL;
-	server->http_settings.on_header_value = NULL;
-	server->http_settings.on_body = _on_body;
-	server->http_server.data = server;
-
-	if((ret = uv_tcp_init(&ui->loop, &server->http_server)))
+	if(asprintf(&ui->executable, "%s", "luakit") == -1)
 	{
-		fprintf(stderr, "%s: %s\n", descriptor->URI, uv_strerror(ret));
 		free(ui);
 		return NULL;
 	}
 
-	if((ret = uv_timer_init(&ui->loop, &server->timer)))
+#if defined(_WIN32)
+	if(asprintf(&ui->url, "cmd /c start http://localhost:%d", info.port) == -1)
+#else
+	if(asprintf(&ui->url, "http://localhost:%d", info.port) == -1)
+#endif
 	{
-		fprintf(stderr, "%s: %s\n", descriptor->URI, uv_strerror(ret));
 		free(ui);
 		return NULL;
 	}
-	server->timer.data = ui;
+
+	_invalidate_child(ui);
+	ui->done = 1;
 
 	return ui;
 }
@@ -1559,16 +1473,26 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 static void
 cleanup(LV2UI_Handle handle)
 {
-	UI *ui = handle;
+	ui_t *ui = handle;
 
-	uv_loop_close(&ui->loop);
+	if(ui->executable)
+		free(ui->executable);
+
+	if(ui->url)
+		free(ui->url);
+
+	if(ui->bundle_path)
+		free(ui->bundle_path);
+
+	if(ui->context)
+		lws_context_destroy(ui->context);
 }
 
 static void
 port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 	uint32_t format, const void *buffer)
 {
-	UI *ui = handle;
+	ui_t *ui = handle;
 
 	if(format == 0)
 		format = ui->uris.ui_float_protocol;

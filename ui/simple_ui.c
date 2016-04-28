@@ -508,6 +508,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	ui->uris.patch.wildcard = ui->map->map(ui->map->handle, LV2_PATCH__wildcard);
 	ui->uris.patch.writable = ui->map->map(ui->map->handle, LV2_PATCH__writable);
 	ui->uris.patch.readable = ui->map->map(ui->map->handle, LV2_PATCH__readable);
+	ui->uris.patch.destination = ui->map->map(ui->map->handle, LV2_PATCH__destination);
 
 	lv2_atom_forge_init(&ui->forge, ui->map);
 	if(ui->log)
