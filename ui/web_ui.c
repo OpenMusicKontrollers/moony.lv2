@@ -111,7 +111,6 @@ struct _ui_t {
 	pmap_t pmap [MAX_PORTS];
 
 	int done;
-	char *executable;
 	char *url;
 
 #if defined(_WIN32)
@@ -136,16 +135,33 @@ struct _ui_t {
 
 #if defined(_WIN32)
 static inline int 
-_spawn(ui_t *ui)
+_spawn(ui_t *ui, char **args)
 {
 	STARTUPINFO si;
 	memset(&si, 0x0, sizeof(STARTUPINFO));
 
 	si.cb = sizeof(STARTUPINFO);
 
+	size_t len = 0;
+	for(char **arg = args; *arg; arg++)
+	{
+		len += strlen(*arg) + 1; // + space
+	}
+
+	char *cmd = malloc(len + 1); // + zero byte
+	if(!cmd)
+		return -1;
+	cmd[0] = '\0';
+
+	for(char **arg = args; *arg; arg++)
+	{
+		cmd = strcat(cmd, *arg);
+		cmd = strcat(cmd, " ");
+	}
+
 	if(!CreateProcess(
 		NULL,           // No module name (use command line)
-		ui->url,        // Command line
+		cmd,            // Command line
 		NULL,           // Process handle not inheritable
 		NULL,           // Thread handle not inheritable
 		FALSE,          // Set handle inheritance to FALSE
@@ -156,15 +172,18 @@ _spawn(ui_t *ui)
 		&ui->pi )       // Pointer to PROCESS_INFORMATION structure
 	)
 	{
-		printf( "CreateProcess failed (%d).\n", GetLastError() );
+		if(ui->log)
+			lv2_log_error(&ui->logger, "CreateProcess failed: %d\n", GetLastError());
 		return -1;
 	}
+
+	free(cmd);
 
 	return 0;
 }
 
 static inline int
-_waitpid(ui_t *ui, int *status, bool blocking)
+_waitpid(ui_t *ui, bool blocking)
 {
 	if(blocking)
 	{
@@ -173,30 +192,38 @@ _waitpid(ui_t *ui, int *status, bool blocking)
 	}
 
 	// !blocking
+	const DWORD status = WaitForSingleObject(ui->pi.hProcess, 0);
+
 	switch(WaitForSingleObject(ui->pi.hProcess, 0))
 	{
 		case WAIT_TIMEOUT: // non-signaled, e.g. still running
 			return 0;
 		case WAIT_OBJECT_0: // signaled, e.g. not running anymore
 			return -1;
-		case WAIT_ABANDONED: // failed
-		case WAIT_FAILED: // failed
+		case WAIT_ABANDONED: // abandoned
+			if(ui->log)
+				lv2_log_error(&ui->logger, "WaitForSingleObject abandoned\n");
 			return -1;
+		case WAIT_FAILED: // failed, try later
+			if(ui->log)
+				lv2_log_error(&ui->logger, "WaitForSingleObject failed\n");
+			return 0;
 	}
 
-	return 0;
+	return 0; // try later
 }
 
-static inline int
+static inline void 
 _kill(ui_t *ui, int sig)
 {
-	return !(CloseHandle(ui->pi.hProcess) && CloseHandle(ui->pi.hThread));
+	CloseHandle(ui->pi.hProcess);
+	CloseHandle(ui->pi.hThread);
 }
 
 static inline bool
 _has_child(ui_t *ui)
 {
-	return (ui->pi.hProcess != 0x0) && (ui->pi.hThread != 0);
+	return (ui->pi.hProcess != 0x0) && (ui->pi.hThread != 0x0);
 }
 
 static inline void
@@ -204,61 +231,65 @@ _invalidate_child(ui_t *ui)
 {
 	memset(&ui->pi, 0x0, sizeof(PROCESS_INFORMATION));
 }
-#else
+#else // UNICES
 static inline int 
-_spawn(ui_t *ui)
+_spawn(ui_t *ui, char **args)
 {
 	ui->pid = fork();
+
 	if(ui->pid == 0) // child
 	{
-		char *const argv [] = {
-			ui->executable,
-			ui->url,
-			NULL
-		};
-		execvp(ui->executable, argv); // p = search PATH for executable
+		execvp(args[0], args); // p = search PATH for executable
 
-		printf("fork child failed\n");
+		if(ui->log)
+			lv2_log_error(&ui->logger, "execvp failed\n");
 		exit(-1);
 	}
 	else if(ui->pid < 0)
 	{
-		printf("fork failed\n");
+		if(ui->log)
+			lv2_log_error(&ui->logger, "fork failed\n");
 		return -1;
 	}
 
-	return 0;
+	return 0; // fork succeeded
 }
 
 static inline int
-_waitpid(ui_t *ui, int *status, bool blocking)
+_waitpid(ui_t *ui, bool blocking)
 {
+	int status;
+	int res;
+
 	if(blocking)
 	{
-		waitpid(ui->pid, status, 0);
+		waitpid(ui->pid, &status, WUNTRACED); // blocking waitpid
 		return 0;
 	}
 
-	int res;
-	if( (res = waitpid(ui->pid, status, WNOHANG)) < 0) // error?
+	// !blocking
+	if( (res = waitpid(ui->pid, &status, WUNTRACED | WNOHANG)) < 0)
 	{
 		if(errno == ECHILD) // child not existing
 		{
+			if(ui->log)
+				lv2_log_error(&ui->logger, "waitpid child not existing\n");
 			return -1;
 		}
 	}
-	else if( (res > 0) && WIFEXITED(status) ) // child exited?
+	else if(res == ui->pid) // status change
 	{
-		return -1;
+		if(!WIFSTOPPED(status) && !WIFCONTINUED(status)) // has actually exited, not only stopped
+			return -1;
 	}
 
-	return 0;
+	return 0; // no status change, still running
 }
 
-static inline int
+static inline void
 _kill(ui_t *ui, int sig)
 {
-	return kill(ui->pid, SIGINT);
+	kill(ui->pid, SIGINT);
 }
 
 static inline bool
@@ -571,15 +602,6 @@ static const struct lws_protocols protocols [] = {
 	},
 	{ .name = NULL, .callback = NULL, .per_session_data_size = 0, .rx_buffer_size = 0 }
 };
-
-static inline void
-_err2(ui_t *ui, const char *from)
-{
-	if(ui->log)
-		lv2_log_error(&ui->logger, "%s", from);
-	else
-		fprintf(stderr, "%s\n", from);
-}
 
 static inline LV2_Atom_Object *
 _moony_message_forge(ui_t *ui, LV2_URID key,
@@ -1085,7 +1107,6 @@ _moony_cb(ui_t *ui, const char *json)
 	}
 }
 
-/*
 static inline char **
 _parse_env(char *env, char *path)
 {
@@ -1128,6 +1149,15 @@ fail:
 	return 0;
 }
 
+// Show Interface
+static inline int
+_show_cb(LV2UI_Handle instance)
+{
+	ui_t *handle = instance;
+
+	if(!handle->done)
+		return 0; // already showing
+
 #if defined(_WIN32)
 	const char *command = "cmd /c start";
 #elif defined(__APPLE__)
@@ -1137,31 +1167,22 @@ fail:
 #endif
 
 	// get default editor from environment
-	const char *moony_editor = getenv("MOONY_BROWSER");
-	if(!moony_editor)
-		moony_editor = getenv("BROWSER");
-	if(!moony_editor)
-		moony_editor = command;
-	char *dup = strdup(moony_editor);
-	char **args = dup ? _parse_env(dup, ui->path) : NULL;
-	
-	ui->opts.exit_cb = _on_exit;
-	ui->opts.file = args ? args[0] : NULL;
-	ui->opts.args = args;
-}
-*/
+	const char *moony_browser = getenv("MOONY_BROWSER");
+	if(!moony_browser)
+		moony_browser = getenv("BROWSER");
+	if(!moony_browser)
+		moony_browser = command;
+	char *dup = strdup(moony_browser);
+	char **args = dup ? _parse_env(dup, handle->url) : NULL;
 
-// Show Interface
-static inline int
-_show_cb(LV2UI_Handle instance)
-{
-printf("_show_cb\n");
-	ui_t *handle = instance;
+	const int status = _spawn(handle, args);
 
-	if(!handle->done)
-		return 0; // already showing
+	if(args)
+		free(args);
+	if(dup)
+		free(dup);
 
-	if(_spawn(handle))
+	if(status)
 		return -1; // failed to spawn
 
 	handle->done = 0;
@@ -1172,15 +1193,13 @@ printf("_show_cb\n");
 static inline int
 _hide_cb(LV2UI_Handle instance)
 {
-printf("_hide_cb\n");
 	ui_t *handle = instance;
 
 	if(_has_child(handle))
 	{
 		_kill(handle, SIGINT);
 
-		int status;
-		_waitpid(handle, &status, true);
+		_waitpid(handle, true);
 
 		_invalidate_child(handle);
 	}
@@ -1206,13 +1225,11 @@ _idle_cb(LV2UI_Handle instance)
 
 	if(_has_child(handle))
 	{
-		int status;
 		int res;
-		if((res = _waitpid(handle, &status, false)) < 0)
+		if((res = _waitpid(handle, false)) < 0)
 		{
 			_invalidate_child(handle);
-			//_hide_cb(ui);
-			//handle->done = 1; FIXME xdg-open, START return immediately
+			//handle->done = 1; // xdg-open, START return immediately, we wait for websocket to terminate
 		}
 	}
 
@@ -1448,17 +1465,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		return NULL;
 	}
 
-	if(asprintf(&ui->executable, "%s", "luakit") == -1)
-	{
-		free(ui);
-		return NULL;
-	}
-
-#if defined(_WIN32)
-	if(asprintf(&ui->url, "cmd /c start http://localhost:%d", info.port) == -1)
-#else
 	if(asprintf(&ui->url, "http://localhost:%d", info.port) == -1)
-#endif
 	{
 		free(ui);
 		return NULL;
@@ -1474,9 +1481,6 @@ static void
 cleanup(LV2UI_Handle handle)
 {
 	ui_t *ui = handle;
-
-	if(ui->executable)
-		free(ui->executable);
 
 	if(ui->url)
 		free(ui->url);

@@ -6,3 +6,4 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32" CACHE STRING "c++ flags")
 set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -m32" CACHE STRING "c flags")
 
 set(STATIC_UV "/usr/lib32/libuv.a")
+set(STATIC_LWS "/usr/lib32/libwebsockets.a")

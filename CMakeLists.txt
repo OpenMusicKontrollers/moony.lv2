@@ -142,7 +142,7 @@ endif()
 if(BUILD_WEB_UI)
 	set(LIBS_WEB ${LIBS_WEB} m)
 
-	pkg_search_module(LWS REQUIRED libwebsockets>=0.7.0)
+	pkg_search_module(LWS REQUIRED libwebsockets>=1.7.0)
 	include_directories(${LWS_INCLUDE_DIRS})
 	if(DEFINED STATIC_LWS)
 		set(LIBS_WEB ${STATIC_LWS} ${LIBS_WEB})
