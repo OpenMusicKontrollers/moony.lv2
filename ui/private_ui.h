@@ -20,6 +20,7 @@
 
 #include <unistd.h>
 #include <stdbool.h>
+#include <errno.h>
 #if !defined(_WIN32)
 #	include <sys/wait.h>
 #else
@@ -39,6 +40,48 @@ struct _spawn_t {
 
 	LV2_Log_Logger *logger;
 };
+
+static inline char **
+_spawn_parse_env(char *env, char *path)
+{
+	unsigned n = 0;
+	char **args = malloc((n+1) * sizeof(char *));
+	char **oldargs = NULL;
+	if(!args)
+		goto fail;
+	args[n] = NULL;
+
+	char *pch = strtok(env," \t");
+	while(pch)
+	{
+		args[n++] = pch;
+		oldargs = args;
+		args = realloc(args, (n+1) * sizeof(char *));
+		if(!args)
+			goto fail;
+		oldargs = NULL;
+		args[n] = NULL;
+
+		pch = strtok(NULL, " \t");
+	}
+
+	args[n++] = path;
+	oldargs = args;
+	args = realloc(args, (n+1) * sizeof(char *));
+	if(!args)
+		goto fail;
+	oldargs = NULL;
+	args[n] = NULL;
+
+	return args;
+
+fail:
+	if(oldargs)
+		free(oldargs);
+	if(args)
+		free(args);
+	return 0;
+}
 
 #if defined(_WIN32)
 static inline int 

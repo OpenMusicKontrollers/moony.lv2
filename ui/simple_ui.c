@@ -19,9 +19,11 @@
 #include <unistd.h>
 #include <inttypes.h>
 
-#include <moony.h>
-
 #include <uv.h>
+
+#include <moony.h>
+#include <private_ui.h>
+
 #include <lv2_external_ui.h> // kxstudio external-ui extension
 
 typedef struct _UI UI;
@@ -259,48 +261,6 @@ _on_fs_poll(uv_fs_poll_t *pol, int status, const uv_stat_t* prev, const uv_stat_
 }
 #endif
 
-static inline char **
-_parse_env(char *env, char *path)
-{
-	unsigned n = 0;
-	char **args = malloc((n+1) * sizeof(char *));
-	char **oldargs = NULL;
-	if(!args)
-		goto fail;
-	args[n] = NULL;
-
-	char *pch = strtok(env," \t");
-	while(pch)
-	{
-		args[n++] = pch;
-		oldargs = args;
-		args = realloc(args, (n+1) * sizeof(char *));
-		if(!args)
-			goto fail;
-		oldargs = NULL;
-		args[n] = NULL;
-
-		pch = strtok(NULL, " \t");
-	}
-
-	args[n++] = path;
-	oldargs = args;
-	args = realloc(args, (n+1) * sizeof(char *));
-	if(!args)
-		goto fail;
-	oldargs = NULL;
-	args[n] = NULL;
-
-	return args;
-
-fail:
-	if(oldargs)
-		free(oldargs);
-	if(args)
-		free(args);
-	return 0;
-}
-
 static inline void
 _show(UI *ui)
 {
@@ -320,7 +280,7 @@ _show(UI *ui)
 	if(!moony_editor)
 		moony_editor = command;
 	char *dup = strdup(moony_editor);
-	char **args = dup ? _parse_env(dup, ui->path) : NULL;
+	char **args = dup ? _spawn_parse_env(dup, ui->path) : NULL;
 	
 	ui->opts.exit_cb = _on_exit;
 	ui->opts.file = args ? args[0] : NULL;

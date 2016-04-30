@@ -19,7 +19,6 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <unistd.h>
-#include <errno.h>
 #include <signal.h>
 #include <string.h>
 
@@ -929,48 +928,6 @@ _moony_cb(ui_t *ui, const char *json)
 	}
 }
 
-static inline char **
-_parse_env(char *env, char *path)
-{
-	unsigned n = 0;
-	char **args = malloc((n+1) * sizeof(char *));
-	char **oldargs = NULL;
-	if(!args)
-		goto fail;
-	args[n] = NULL;
-
-	char *pch = strtok(env," \t");
-	while(pch)
-	{
-		args[n++] = pch;
-		oldargs = args;
-		args = realloc(args, (n+1) * sizeof(char *));
-		if(!args)
-			goto fail;
-		oldargs = NULL;
-		args[n] = NULL;
-
-		pch = strtok(NULL, " \t");
-	}
-
-	args[n++] = path;
-	oldargs = args;
-	args = realloc(args, (n+1) * sizeof(char *));
-	if(!args)
-		goto fail;
-	oldargs = NULL;
-	args[n] = NULL;
-
-	return args;
-
-fail:
-	if(oldargs)
-		free(oldargs);
-	if(args)
-		free(args);
-	return 0;
-}
-
 // Show Interface
 static inline int
 _show_cb(LV2UI_Handle instance)
@@ -995,7 +952,7 @@ _show_cb(LV2UI_Handle instance)
 	if(!moony_browser)
 		moony_browser = command;
 	char *dup = strdup(moony_browser);
-	char **args = dup ? _parse_env(dup, ui->url) : NULL;
+	char **args = dup ? _spawn_parse_env(dup, ui->url) : NULL;
 
 	const int status = _spawn_spawn(&ui->spawn, args);
 
