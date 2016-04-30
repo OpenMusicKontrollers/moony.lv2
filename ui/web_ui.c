@@ -19,20 +19,18 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <unistd.h>
-#if !defined(_WIN32)
-#	include <sys/wait.h>
-#endif
 #include <errno.h>
 #include <signal.h>
 #include <string.h>
 
+#include <libwebsockets.h>
+
 #include <moony.h>
+#include <private_ui.h>
 
 #include <lv2_external_ui.h> // kxstudio external-ui extension
 
 #include <cJSON.h>
-
-#include <libwebsockets.h>
 
 #define BUF_SIZE 0x100000 // 1M
 
@@ -113,11 +111,7 @@ struct _ui_t {
 	int done;
 	char *url;
 
-#if defined(_WIN32)
-	PROCESS_INFORMATION pi;
-#else
-	pid_t pid;
-#endif
+	spawn_t spawn;
 
 	struct {
 		LV2_External_UI_Widget widget;
@@ -132,178 +126,6 @@ struct _ui_t {
 	struct lws_context *context;
 	client_t *clients;
 };
-
-#if defined(_WIN32)
-static inline int 
-_spawn(ui_t *ui, char **args)
-{
-	STARTUPINFO si;
-	memset(&si, 0x0, sizeof(STARTUPINFO));
-
-	si.cb = sizeof(STARTUPINFO);
-
-	size_t len = 0;
-	for(char **arg = args; *arg; arg++)
-	{
-		len += strlen(*arg) + 1; // + space
-	}
-
-	char *cmd = malloc(len + 1); // + zero byte
-	if(!cmd)
-		return -1;
-	cmd[0] = '\0';
-
-	for(char **arg = args; *arg; arg++)
-	{
-		cmd = strcat(cmd, *arg);
-		cmd = strcat(cmd, " ");
-	}
-
-	if(!CreateProcess(
-		NULL,           // No module name (use command line)
-		cmd,            // Command line
-		NULL,           // Process handle not inheritable
-		NULL,           // Thread handle not inheritable
-		FALSE,          // Set handle inheritance to FALSE
-		0,              // No creation flags
-		NULL,           // Use parent's environment block
-		NULL,           // Use parent's starting directory 
-		&si,            // Pointer to STARTUPINFO structure
-		&ui->pi )       // Pointer to PROCESS_INFORMATION structure
-	)
-	{
-		if(ui->log)
-			lv2_log_error(&ui->logger, "CreateProcess failed: %d\n", GetLastError());
-		return -1;
-	}
-
-	free(cmd);
-
-	return 0;
-}
-
-static inline int
-_waitpid(ui_t *ui, bool blocking)
-{
-	if(blocking)
-	{
-		WaitForSingleObject(ui->pi.hProcess, INFINITE);
-		return 0;
-	}
-
-	// !blocking
-	const DWORD status = WaitForSingleObject(ui->pi.hProcess, 0);
-
-	switch(WaitForSingleObject(ui->pi.hProcess, 0))
-	{
-		case WAIT_TIMEOUT: // non-signaled, e.g. still running
-			return 0;
-		case WAIT_OBJECT_0: // signaled, e.g. not running anymore
-			return -1;
-		case WAIT_ABANDONED: // abandoned
-			if(ui->log)
-				lv2_log_error(&ui->logger, "WaitForSingleObject abandoned\n");
-			return -1;
-		case WAIT_FAILED: // failed, try later
-			if(ui->log)
-				lv2_log_error(&ui->logger, "WaitForSingleObject failed\n");
-			return 0;
-	}
-
-	return 0; // try later
-}
-
-static inline void 
-_kill(ui_t *ui, int sig)
-{
-	CloseHandle(ui->pi.hProcess);
-	CloseHandle(ui->pi.hThread);
-}
-
-static inline bool
-_has_child(ui_t *ui)
-{
-	return (ui->pi.hProcess != 0x0) && (ui->pi.hThread != 0x0);
-}
-
-static inline void
-_invalidate_child(ui_t *ui)
-{
-	memset(&ui->pi, 0x0, sizeof(PROCESS_INFORMATION));
-}
-#else // UNICES
-static inline int 
-_spawn(ui_t *ui, char **args)
-{
-	ui->pid = fork();
-
-	if(ui->pid == 0) // child
-	{
-		execvp(args[0], args); // p = search PATH for executable
-
-		if(ui->log)
-			lv2_log_error(&ui->logger, "execvp failed\n");
-		exit(-1);
-	}
-	else if(ui->pid < 0)
-	{
-		if(ui->log)
-			lv2_log_error(&ui->logger, "fork failed\n");
-		return -1;
-	}
-
-	return 0; // fork succeeded
-}
-
-static inline int
-_waitpid(ui_t *ui, bool blocking)
-{
-	int status;
-	int res;
-
-	if(blocking)
-	{
-		waitpid(ui->pid, &status, WUNTRACED); // blocking waitpid
-		return 0;
-	}
-
-	// !blocking
-	if( (res = waitpid(ui->pid, &status, WUNTRACED | WNOHANG)) < 0)
-	{
-		if(errno == ECHILD) // child not existing
-		{
-			if(ui->log)
-				lv2_log_error(&ui->logger, "waitpid child not existing\n");
-			return -1;
-		}
-	}
-	else if(res == ui->pid) // status change
-	{
-		if(!WIFSTOPPED(status) && !WIFCONTINUED(status)) // has actually exited, not only stopped
-			return -1;
-	}
-
-	return 0; // no status change, still running
-}
-
-static inline void
-_kill(ui_t *ui, int sig)
-{
-	kill(ui->pid, SIGINT);
-}
-
-static inline bool
-_has_child(ui_t *ui)
-{
-	return ui->pid > 0;
-}
-
-static inline void
-_invalidate_child(ui_t *ui)
-{
-	ui->pid = -1;
-}
-#endif
 
 static inline client_t *
 _client_append(client_t *list, client_t *child)
@@ -592,7 +414,7 @@ static const struct lws_protocols protocols [] = {
 		.name = "http-only",
 		.callback = callback_http,
 		.per_session_data_size = 0,
-		.rx_buffer_size = 0,
+		.rx_buffer_size = 512,
 	},
 	[PROTOCOL_LV2] = {
 		.name = "lv2-protocol",
@@ -1153,9 +975,9 @@ fail:
 static inline int
 _show_cb(LV2UI_Handle instance)
 {
-	ui_t *handle = instance;
+	ui_t *ui = instance;
 
-	if(!handle->done)
+	if(!ui->done)
 		return 0; // already showing
 
 #if defined(_WIN32)
@@ -1173,9 +995,9 @@ _show_cb(LV2UI_Handle instance)
 	if(!moony_browser)
 		moony_browser = command;
 	char *dup = strdup(moony_browser);
-	char **args = dup ? _parse_env(dup, handle->url) : NULL;
+	char **args = dup ? _parse_env(dup, ui->url) : NULL;
 
-	const int status = _spawn(handle, args);
+	const int status = _spawn_spawn(&ui->spawn, args);
 
 	if(args)
 		free(args);
@@ -1185,7 +1007,7 @@ _show_cb(LV2UI_Handle instance)
 	if(status)
 		return -1; // failed to spawn
 
-	handle->done = 0;
+	ui->done = 0;
 
 	return 0;
 }
@@ -1193,21 +1015,21 @@ _show_cb(LV2UI_Handle instance)
 static inline int
 _hide_cb(LV2UI_Handle instance)
 {
-	ui_t *handle = instance;
+	ui_t *ui = instance;
 
-	if(_has_child(handle))
+	if(_spawn_has_child(&ui->spawn))
 	{
-		_kill(handle, SIGINT);
+		_spawn_kill(&ui->spawn, SIGINT);
 
-		_waitpid(handle, true);
+		_spawn_waitpid(&ui->spawn, true);
 
-		_invalidate_child(handle);
+		_spawn_invalidate_child(&ui->spawn);
 	}
 
-	if(handle->kx.host && handle->kx.host->ui_closed)
-		handle->kx.host->ui_closed(handle->controller);
+	if(ui->kx.host && ui->kx.host->ui_closed)
+		ui->kx.host->ui_closed(ui->controller);
 
-	handle->done = 1;
+	ui->done = 1;
 
 	return 0;
 }
@@ -1221,25 +1043,25 @@ static const LV2UI_Show_Interface show_ext = {
 static inline int
 _idle_cb(LV2UI_Handle instance)
 {
-	ui_t *handle = instance;
+	ui_t *ui = instance;
 
-	if(_has_child(handle))
+	if(_spawn_has_child(&ui->spawn))
 	{
 		int res;
-		if((res = _waitpid(handle, false)) < 0)
+		if((res = _spawn_waitpid(&ui->spawn, false)) < 0)
 		{
-			_invalidate_child(handle);
-			//handle->done = 1; // xdg-open, START return immediately, we wait for websocket to terminate
+			_spawn_invalidate_child(&ui->spawn);
+			//ui->done = 1; // xdg-open, START return immediately, we wait for websocket to terminate
 		}
 	}
 
-	if(!handle->done)
+	if(!ui->done)
 	{
-		if(lws_service(handle->context, 0))
-			handle->done = 1; // lws errored
+		if(lws_service(ui->context, 0))
+			ui->done = 1; // lws errored
 	}
 
-	return handle->done;
+	return ui->done;
 }
 
 static const LV2UI_Idle_Interface idle_ext = {
@@ -1426,6 +1248,8 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	if(ui->log)
 		lv2_log_logger_init(&ui->logger, ui->map, ui->log);
 
+	ui->spawn.logger = ui->log ? &ui->logger : NULL;
+
 	// set window title
 	snprintf(ui->title, 512, "%s", descriptor->URI);
 	if(opts)
@@ -1471,7 +1295,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		return NULL;
 	}
 
-	_invalidate_child(ui);
+	_spawn_invalidate_child(&ui->spawn);
 	ui->done = 1;
 
 	return ui;
