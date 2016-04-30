@@ -18,17 +18,19 @@
 #include <string.h>
 #include <unistd.h>
 #include <inttypes.h>
+#include <signal.h>
 
-#include <uv.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <moony.h>
 #include <private_ui.h>
 
 #include <lv2_external_ui.h> // kxstudio external-ui extension
 
-typedef struct _UI UI;
+typedef struct _ui_t ui_t;
 
-struct _UI {
+struct _ui_t {
 	struct {
 		LV2_URID moony_code;
 		LV2_URID moony_error;
@@ -49,17 +51,11 @@ struct _UI {
 	uint32_t control_port;
 	uint32_t notify_port;
 
-	uv_loop_t loop;
-	uv_process_t req;
-	uv_process_options_t opts;
-#if USE_FS_EVENT
-	uv_fs_event_t fs;
-	uv_timespec_t mtim;
-#else
-	uv_fs_poll_t pol;
-#endif
+	struct stat stat;
 	int done;
 	int ignore;
+
+	spawn_t spawn;
 
 	struct {
 		LV2_External_UI_Widget widget;
@@ -67,12 +63,11 @@ struct _UI {
 	} kx;
 
 	uint8_t buf [0x10000];
-	char dir [512];
 	char path [512];
 };
 
 static inline void
-_err2(UI *ui, const char *from)
+_err2(ui_t *ui, const char *from)
 {
 	if(ui->log)
 		lv2_log_error(&ui->logger, "%s", from);
@@ -80,17 +75,8 @@ _err2(UI *ui, const char *from)
 		fprintf(stderr, "%s\n", from);
 }
 
-static inline void
-_err(UI *ui, const char *from, int ret)
-{
-	if(ui->log)
-		lv2_log_error(&ui->logger, "%s: %s", from, uv_strerror(ret));
-	else
-		fprintf(stderr, "%s: %s\n", from, uv_strerror(ret));
-}
-
 static void
-_moony_message_send(UI *ui, LV2_URID key, const char *str, uint32_t size)
+_moony_message_send(ui_t *ui, LV2_URID key, const char *str, uint32_t size)
 {
 	LV2_Atom_Forge_Frame frame;
 	LV2_Atom_Object *obj = (LV2_Atom_Object *)ui->buf;
@@ -109,7 +95,7 @@ _moony_message_send(UI *ui, LV2_URID key, const char *str, uint32_t size)
 }
 
 static void
-_load_chosen(UI *ui, const char *path)
+_load_chosen(ui_t *ui, const char *path)
 {
 	if(!path)
 		return;
@@ -138,132 +124,15 @@ _load_chosen(UI *ui, const char *path)
 	}
 }
 
-static inline void
-_hide(UI *ui)
+// Show Interface
+static inline int
+_show_cb(LV2UI_Handle instance)
 {
-	int ret;
-#if USE_FS_EVENT
-	if(uv_is_active((uv_handle_t *)&ui->fs))
-	{
-		if((ret = uv_fs_event_stop(&ui->fs)))
-			_err(ui, "uv_fs_event_stop", ret);
-	}
-	if(!uv_is_closing((uv_handle_t *)&ui->fs))
-		uv_close((uv_handle_t *)&ui->fs, NULL);
-#else
-	if(uv_is_active((uv_handle_t *)&ui->pol))
-	{
-		if((ret = uv_fs_poll_stop(&ui->pol)))
-			_err(ui, "uv_fs_poll_stop", ret);
-	}
-	if(!uv_is_closing((uv_handle_t *)&ui->pol))
-		uv_close((uv_handle_t *)&ui->pol, NULL);
-#endif
+	ui_t *ui = instance;
 
-	if(uv_is_active((uv_handle_t *)&ui->req))
-	{
-		if((ret = uv_process_kill(&ui->req, SIGKILL)))
-			_err(ui, "uv_process_kill", ret);
-	}
-	if(!uv_is_closing((uv_handle_t *)&ui->req))
-		uv_close((uv_handle_t *)&ui->req, NULL);
+	if(!ui->done)
+		return 0; // already showing
 
-	uv_stop(&ui->loop);
-	uv_run(&ui->loop, UV_RUN_DEFAULT); // cleanup
-	
-	ui->done = 0;
-}
-
-static void
-_on_exit(uv_process_t *req, int64_t exit_status, int term_signal)
-{
-	UI *ui = req ? (void *)req - offsetof(UI, req) : NULL;
-	if(!ui)
-		return;
-
-	ui->done = 1;
-
-	if(ui->kx.host && ui->kx.host->ui_closed && ui->controller)
-	{
-		_hide(ui);
-		ui->kx.host->ui_closed(ui->controller);
-	}
-}
-
-#if USE_FS_EVENT
-static void
-_on_fs_event(uv_fs_event_t *fs, const char *path, int events, int status)
-{
-	UI *ui = fs ? (void *)fs - offsetof(UI, fs) : NULL;
-	if(!ui)
-		return;
-
-	if(events & UV_CHANGE)
-	{
-		uv_fs_t req;
-		int ret;
-		if((ret = uv_fs_stat(&ui->loop, &req, ui->path, NULL)))
-			_err(ui, "uv_fs_stat", ret);
-		else
-		{
-			if(  (ui->mtim.tv_sec == req.statbuf.st_mtim.tv_sec)
-				&& (ui->mtim.tv_nsec == req.statbuf.st_mtim.tv_nsec) )
-			{
-				// same timestamp as before, e.g. false alarm
-				return;
-			}
-			else
-			{
-				ui->mtim.tv_sec = req.statbuf.st_mtim.tv_sec;
-				ui->mtim.tv_nsec = req.statbuf.st_mtim.tv_nsec;
-			}
-		}
-
-		if(ui->ignore)
-			ui->ignore = 0;
-		else
-			_load_chosen(ui, ui->path);
-	}
-
-	if(events & UV_RENAME)
-	{
-		int ret;
-		if(uv_is_active((uv_handle_t *)&ui->fs))
-		{
-			if((ret = uv_fs_event_stop(&ui->fs)))
-				_err(ui, "uv_fs_event_stop", ret);
-		}
-
-		//restart watcher
-		if((ret = uv_fs_event_start(&ui->fs, _on_fs_event, ui->path, 0)))
-			_err(ui, "uv_fs_event_start", ret);
-	}
-}
-#else
-static void
-_on_fs_poll(uv_fs_poll_t *pol, int status, const uv_stat_t* prev, const uv_stat_t* curr)
-{
-	UI *ui = pol ? (void *)pol - offsetof(UI, pol) : NULL;
-	if(!ui)
-		return;
-
-	if(  (prev->st_mtim.tv_sec == curr->st_mtim.tv_sec)
-		&& (prev->st_mtim.tv_nsec == curr->st_mtim.tv_nsec) )
-	{
-		// same timestamp as before, e.g. false alarm
-		return;
-	}
-
-	if(ui->ignore)
-		ui->ignore = 0;
-	else
-		_load_chosen(ui, ui->path);
-}
-#endif
-
-static inline void
-_show(UI *ui)
-{
 #if defined(_WIN32)
 	const char *command = "cmd /c start /wait";
 #elif defined(__APPLE__)
@@ -281,89 +150,41 @@ _show(UI *ui)
 		moony_editor = command;
 	char *dup = strdup(moony_editor);
 	char **args = dup ? _spawn_parse_env(dup, ui->path) : NULL;
-	
-	ui->opts.exit_cb = _on_exit;
-	ui->opts.file = args ? args[0] : NULL;
-	ui->opts.args = args;
-#if defined(_WIN32)
-	ui->opts.flags = UV_PROCESS_WINDOWS_HIDE | UV_PROCESS_WINDOWS_VERBATIM_ARGUMENTS;
-#endif
 
-	// touch file
-	FILE *f = fopen(ui->path, "wb");
-	if(f)
-		fclose(f);
+	const int status = _spawn_spawn(&ui->spawn, args);
 
-#if USE_FS_EVENT
-	if(!uv_is_active((uv_handle_t *)&ui->fs))
-	{
-		int ret;
-		if((ret = uv_fs_event_start(&ui->fs, _on_fs_event, ui->path, 0)))
-			_err(ui, "uv_fs_event_start", ret);
-	}
-#else
-	if(!uv_is_active((uv_handle_t *)&ui->pol))
-	{
-		int ret;
-		if((ret = uv_fs_poll_start(&ui->pol, _on_fs_poll, ui->path, 1000))) // ms
-			_err(ui, "uv_fs_poll_start", ret);
-	}
-#endif
-
-	if(!uv_is_active((uv_handle_t *)&ui->req))
-	{
-		int ret;
-		if((ret = uv_spawn(&ui->loop, &ui->req, &ui->opts)))
-			_err(ui, "uv_spawn", ret);
-	}
-
-	if(dup)
-		free(dup);
 	if(args)
 		free(args);
-}
+	if(dup)
+		free(dup);
 
-// External-UI Interface
-static inline void
-_kx_run(LV2_External_UI_Widget *widget)
-{
-	UI *ui = widget ? (void *)widget - offsetof(UI, kx.widget) : NULL;
-	if(ui)
-		uv_run(&ui->loop, UV_RUN_NOWAIT);
-}
+	if(status)
+		return -1; // failed to spawn
 
-static inline void
-_kx_hide(LV2_External_UI_Widget *widget)
-{
-	UI *ui = widget ? (void *)widget - offsetof(UI, kx.widget) : NULL;
-	if(ui)
-		_hide(ui);
-}
+	ui->done = 0;
 
-static inline void
-_kx_show(LV2_External_UI_Widget *widget)
-{
-	UI *ui = widget ? (void *)widget - offsetof(UI, kx.widget) : NULL;
-	if(ui)
-		_show(ui);
-}
-
-// Show Interface
-static inline int
-_show_cb(LV2UI_Handle instance)
-{
-	UI *ui = instance;
-	if(ui)
-		_show(ui);
 	return 0;
 }
 
 static inline int
 _hide_cb(LV2UI_Handle instance)
 {
-	UI *ui = instance;
-	if(ui)
-		_hide(ui);
+	ui_t *ui = instance;
+
+	if(_spawn_has_child(&ui->spawn))
+	{
+		_spawn_kill(&ui->spawn, SIGTERM);
+
+		_spawn_waitpid(&ui->spawn, true);
+
+		_spawn_invalidate_child(&ui->spawn);
+	}
+
+	if(ui->kx.host && ui->kx.host->ui_closed)
+		ui->kx.host->ui_closed(ui->controller);
+
+	ui->done = 1;
+
 	return 0;
 }
 
@@ -376,16 +197,66 @@ static const LV2UI_Show_Interface show_ext = {
 static inline int
 _idle_cb(LV2UI_Handle instance)
 {
-	UI *ui = instance;
-	if(!ui)
-		return -1;
-	uv_run(&ui->loop, UV_RUN_NOWAIT);
+	ui_t *ui = instance;
+
+	if(_spawn_has_child(&ui->spawn))
+	{
+		int res;
+		if((res = _spawn_waitpid(&ui->spawn, false)) < 0)
+		{
+			_spawn_invalidate_child(&ui->spawn);
+			ui->done = 1; // xdg-open may return immediately
+		}
+	}
+
+	if(!ui->done)
+	{
+		struct stat stat1;
+		memset(&stat1, 0x0, sizeof(struct stat));
+
+		if(stat(ui->path, &stat1) < 0)
+			ui->done = 1; // no file or other error
+
+		if(stat1.st_mtime != ui->stat.st_mtime)
+		{
+			_load_chosen(ui, ui->path);
+
+			ui->stat = stat1; // update stat
+		}
+	}
+
 	return ui->done;
 }
 
 static const LV2UI_Idle_Interface idle_ext = {
 	.idle = _idle_cb
 };
+
+// External-ui_t Interface
+static inline void
+_kx_run(LV2_External_UI_Widget *widget)
+{
+	ui_t *handle = (void *)widget - offsetof(ui_t, kx.widget);
+
+	if(_idle_cb(handle))
+		_hide_cb(handle);
+}
+
+static inline void
+_kx_hide(LV2_External_UI_Widget *widget)
+{
+	ui_t *handle = (void *)widget - offsetof(ui_t, kx.widget);
+
+	_hide_cb(handle);
+}
+
+static inline void
+_kx_show(LV2_External_UI_Widget *widget)
+{
+	ui_t *handle = (void *)widget - offsetof(ui_t, kx.widget);
+
+	_show_cb(handle);
+}
 
 static LV2UI_Handle
 instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
@@ -408,7 +279,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		return NULL;
 	}
 
-	UI *ui = calloc(1, sizeof(UI));
+	ui_t *ui = calloc(1, sizeof(ui_t));
 	if(!ui)
 		return NULL;
 
@@ -477,14 +348,6 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	ui->write_function = write_function;
 	ui->controller = controller;
 
-	int ret;
-	if((ret = uv_loop_init(&ui->loop)))
-	{
-		fprintf(stderr, "%s: %s\n", descriptor->URI, uv_strerror(ret));
-		free(ui);
-		return NULL;
-	}
-
 	char *tmp_template;
 #if defined(_WIN32)
 	char tmp_dir[MAX_PATH + 1];
@@ -494,7 +357,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	const char *tmp_dir = P_tmpdir;
 	const char *sep = tmp_dir[strlen(tmp_dir) - 1] == '/' ? "" : "/";
 #endif
-	asprintf(&tmp_template, "%s%smoony_XXXXXX", tmp_dir, sep);
+	asprintf(&tmp_template, "%s%smoony_XXXXXX.lua", tmp_dir, sep);
 
 	if(!tmp_template)
 	{
@@ -503,41 +366,22 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		return NULL;
 	}
 
-	uv_fs_t req;
-	if((ret = uv_fs_mkdtemp(&ui->loop, &req, tmp_template, NULL)))
-	{
-		fprintf(stderr, "%s: %s\n", descriptor->URI, uv_strerror(ret));
-		free(ui);
-		return NULL;
-	}
+	int fd = mkstemps(tmp_template, 4);
+	if(fd)
+		close(fd);
 
-	sprintf(ui->dir, "%s", req.path);
-
-#if defined(_WIN32)
-	sep = req.path[strlen(req.path) - 1] == '\\' ? "" : "\\";
-#else
-	sep = req.path[strlen(req.path) - 1] == '/' ? "" : "/";
-#endif
-	sprintf(ui->path, "%s%smoony.lua", req.path, sep);
-
-	uv_fs_req_cleanup(&req); // deallocates req.path
-	free(tmp_template);
+	sprintf(ui->path, "%s", tmp_template);
 
 	if(ui->log)
 	{
-		lv2_log_note(&ui->logger, "dir: %s", ui->dir);
+		lv2_log_note(&ui->logger, "dir: %s", tmp_template);
 		lv2_log_note(&ui->logger, "path: %s", ui->path);
 	}
 
-	_moony_message_send(ui, ui->uris.moony_code, NULL, 0);
+	free(tmp_template);
 
-#if USE_FS_EVENT
-	if((ret = uv_fs_event_init(&ui->loop, &ui->fs)))
-		_err(ui, "uv_fs_event_init", ret);
-#else
-	if((ret = uv_fs_poll_init(&ui->loop, &ui->pol)))
-		_err(ui, "uv_fs_poll_init", ret);
-#endif
+	_moony_message_send(ui, ui->uris.moony_code, NULL, 0);
+	ui->done = 1;
 
 	return ui;
 }
@@ -545,23 +389,16 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 static void
 cleanup(LV2UI_Handle handle)
 {
-	UI *ui = handle;
+	ui_t *ui = handle;
 
-	int ret;
-	uv_fs_t req;
-	if((ret = uv_fs_unlink(&ui->loop, &req, ui->path, NULL)))
-		_err(ui, "uv_fs_unlink", ret);
-	if((ret = uv_fs_rmdir(&ui->loop, &req, ui->dir, NULL)))
-		_err(ui, "uv_fs_rmdir", ret);
-
-	uv_loop_close(&ui->loop);
+	free(ui);
 }
 
 static void
 port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 	uint32_t format, const void *buffer)
 {
-	UI *ui = handle;
+	ui_t *ui = handle;
 
 	if( (port_index == ui->notify_port) && (format == ui->uris.event_transfer) )
 	{
@@ -607,6 +444,7 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 				}
 				else if(property->body == ui->uris.moony_error)
 				{
+					printf("error: %s\n", str);
 					FILE *f = fopen(ui->path, "ab");
 					if(f)
 					{

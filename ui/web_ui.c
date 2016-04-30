@@ -945,7 +945,7 @@ _show_cb(LV2UI_Handle instance)
 	const char *command = "xdg-open";
 #endif
 
-	// get default editor from environment
+	// get default browser from environment
 	const char *moony_browser = getenv("MOONY_BROWSER");
 	if(!moony_browser)
 		moony_browser = getenv("BROWSER");
@@ -976,7 +976,7 @@ _hide_cb(LV2UI_Handle instance)
 
 	if(_spawn_has_child(&ui->spawn))
 	{
-		_spawn_kill(&ui->spawn, SIGINT);
+		_spawn_kill(&ui->spawn, SIGTERM);
 
 		_spawn_waitpid(&ui->spawn, true);
 

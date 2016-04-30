@@ -24,6 +24,8 @@
 #if !defined(_WIN32)
 #	include <sys/wait.h>
 #else
+#	include <fcntl.h>
+#	include <sys/stat.h>
 # include <windows.h>
 #endif
 
@@ -239,7 +241,7 @@ _spawn_waitpid(spawn_t *spawn, bool blocking)
 static inline void
 _spawn_kill(spawn_t *spawn, int sig)
 {
-	kill(spawn->pid, SIGINT);
+	kill(spawn->pid, sig);
 }
 
 static inline bool
@@ -252,6 +254,81 @@ static inline void
 _spawn_invalidate_child(spawn_t *spawn)
 {
 	spawn->pid = -1;
+}
+#endif
+
+#if defined(_WIN32)
+static int
+_mkstemp_init(char *__template, char **suffix, size_t *length, DWORD *val,
+              size_t suffixlen)
+{
+   *length = strlen(__template);
+   if ((*length < (6 + suffixlen))
+       || (strncmp(__template + *length - 6 - suffixlen, "XXXXXX", 6) != 0))
+     {
+        errno = EINVAL;
+        return 0;
+     }
+
+   *suffix = __template + *length - 6 - suffixlen;
+
+   *val = GetTickCount();
+   *val += GetCurrentProcessId();
+
+   return 1;
+}
+
+static int
+_mkstemp(char *suffix, int val)
+{
+   const char lookup[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+   DWORD v = val;
+
+   suffix[0] = lookup[v % 62];
+   v /= 62;
+   suffix[1] = lookup[v % 62];
+   v /= 62;
+   suffix[2] = lookup[v % 62];
+   v /= 62;
+   suffix[3] = lookup[v % 62];
+   v /= 62;
+   suffix[4] = lookup[v % 62];
+   v /= 62;
+   suffix[5] = lookup[v % 62];
+   v /= 62;
+
+   val += 7777;
+
+   return val;
+}
+
+static int
+mkstemps(char *__template, int suffixlen)
+{
+   char      *suffix;
+   DWORD      val;
+   size_t     length;
+   int        i;
+
+   if (!__template || (suffixlen < 0))
+     return 0;
+
+   if (!_mkstemp_init(__template, &suffix, &length, &val, (size_t) suffixlen))
+     return -1;
+
+   for (i = 0; i < 32768; i++)
+     {
+        int fd;
+
+        val = _mkstemp(suffix, val);
+
+        fd = open(__template, _O_RDWR | _O_BINARY | _O_CREAT | _O_EXCL, _S_IREAD | _S_IWRITE);
+        if (fd >= 0)
+          return fd;
+     }
+
+   errno = EEXIST;
+   return -1;
 }
 #endif
 

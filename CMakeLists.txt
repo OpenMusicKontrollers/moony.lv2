@@ -55,7 +55,6 @@ include(CMakeDependentOption)
 option(BUILD_COMMON_UI "Build common embeddable UI" OFF)
 option(BUILD_SIMPLE_UI "Build simple external UI" OFF)
 option(BUILD_WEB_UI "Build web-based external UI" ON)
-cmake_dependent_option(USE_FS_EVENT "Use filesystem notify events" ON "BUILD_SIMPLE_UI" OFF)
 
 if(BUILD_COMMON_UI)
 	pkg_search_module(ELM REQUIRED elementary>=1.8)
@@ -117,18 +116,6 @@ else()
 endif()
 
 if(BUILD_SIMPLE_UI)
-	if(USE_FS_EVENT)
-		add_definitions("-DUSE_FS_EVENT=1")
-	endif()
-
-	pkg_search_module(UV REQUIRED libuv>=1.0)
-	include_directories(${UV_INCLUDE_DIRS})
-	if(DEFINED STATIC_UV)
-		set(LIBS_SIMPLE ${STATIC_UV} ${LIBS_SIMPLE})
-	else()
-		set(LIBS_SIMPLE ${LIBS_SIMPLE} ${UV_LDFLAGS})
-	endif()
-
 	add_library(moony_simple MODULE
 		ui/moony_simple.c
 		ui/simple_ui.c)
