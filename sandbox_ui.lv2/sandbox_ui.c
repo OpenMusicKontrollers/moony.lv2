@@ -26,6 +26,7 @@
 
 #include <lv2/lv2plug.in/ns/ext/options/options.h>
 #include <lv2/lv2plug.in/ns/ext/atom/atom.h>
+#include <lv2/lv2plug.in/ns/ext/parameters/parameters.h>
 
 #include <sandbox_ui.h>
 #include <sandbox_master.h>
@@ -50,10 +51,13 @@ struct _plughandle_t {
 	char *executable;
 	char *ui_uri;
 	char *window_title;
+	char *sample_rate;
 	char socket_path [SOCKET_PATH_LEN];
 
 	LV2_URID ui_window_title;
+	LV2_URID params_sample_rate;
 	LV2_URID atom_string;
+	LV2_URID atom_float;
 
 	pid_t pid;
 
@@ -118,6 +122,7 @@ _show_cb(LV2UI_Handle instance)
 			"-u", handle->ui_uri,
 			"-s", handle->socket_path,
 			"-w", handle->window_title,
+			"-r", handle->sample_rate,
 			NULL
 		};
 		execv(handle->executable, argv); // p = search PATH for executable
@@ -253,6 +258,8 @@ _free_strdups(plughandle_t *handle)
 		free(handle->ui_uri);
 	if(handle->window_title)
 		free(handle->window_title);
+	if(handle->sample_rate)
+		free(handle->sample_rate);
 };
 
 LV2UI_Handle
@@ -291,8 +298,12 @@ sandbox_ui_instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_ur
 
 	handle->ui_window_title = handle->driver.map->map(handle->driver.map->handle,
 		LV2_UI__windowTitle);
+	handle->params_sample_rate= handle->driver.map->map(handle->driver.map->handle,
+		LV2_PARAMETERS__sampleRate);
 	handle->atom_string = handle->driver.map->map(handle->driver.map->handle,
 		LV2_ATOM__String);
+	handle->atom_float = handle->driver.map->map(handle->driver.map->handle,
+		LV2_ATOM__Float);
 
 	handle->plugin_uri = strdup(plugin_uri);
 	handle->bundle_path = strdup(bundle_path);
@@ -310,7 +321,11 @@ sandbox_ui_instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_ur
 			if( (opt->key == handle->ui_window_title) && (opt->type == handle->atom_string) )
 			{
 				handle->window_title = strdup(opt->value);
-				break;
+			}
+			else if( (opt->key == handle->params_sample_rate) && (opt->type == handle->atom_float) )
+			{
+				if(asprintf(&handle->sample_rate, "%f", *(const float *)opt->value) == -1)
+					handle->sample_rate = NULL;
 			}
 		}
 	}
@@ -318,8 +333,10 @@ sandbox_ui_instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_ur
 		handle->window_title = strdup(handle->kx.host->plugin_human_id);
 	if(!handle->window_title)
 		handle->window_title = strdup(descriptor->URI);
+	if(!handle->sample_rate)
+		handle->sample_rate = strdup("44100");
 
-	if(!handle->plugin_uri || !handle->bundle_path || !handle->executable || !handle->ui_uri || !handle->window_title)
+	if(!handle->plugin_uri || !handle->bundle_path || !handle->executable || !handle->ui_uri || !handle->window_title || !handle->sample_rate)
 	{
 		_free_strdups(handle);
 		free(handle);

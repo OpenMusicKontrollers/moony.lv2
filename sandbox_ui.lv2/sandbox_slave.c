@@ -67,6 +67,7 @@ struct _sandbox_slave_t {
 	const char *ui_uri;
 	const char *socket_path;
 	const char *window_title;
+	float sample_rate
 };
 	
 static inline LV2_URID
@@ -187,8 +188,10 @@ sandbox_slave_new(int argc, char **argv, const sandbox_slave_driver_t *driver, v
 		goto fail;
 	}
 
+	sb->sample_rate = 44100; // fall-back
+
 	int c;
-	while((c = getopt(argc, argv, "p:b:u:s:w:")) != -1)
+	while((c = getopt(argc, argv, "p:b:u:s:w:r:")) != -1)
 	{
 		switch(c)
 		{
@@ -207,8 +210,11 @@ sandbox_slave_new(int argc, char **argv, const sandbox_slave_driver_t *driver, v
 			case 'w':
 				sb->window_title = optarg;
 				break;
+			case 'r':
+				sb->sample_rate = atof(optarg);
+				break;
 			case '?':
-				if( (optopt == 'p') || (optopt == 'b') || (optopt == 'u') || (optopt == 's') || (optopt == 'w') )
+				if( (optopt == 'p') || (optopt == 'b') || (optopt == 'u') || (optopt == 's') || (optopt == 'w') || (optopt == 'r') )
 					fprintf(stderr, "Option `-%c' requires an argument.\n", optopt);
 				else if(isprint(optopt))
 					fprintf(stderr, "Unknown option `-%c'.\n", optopt);
@@ -427,6 +433,14 @@ sandbox_slave_instantiate(sandbox_slave_t *sb, const LV2_Feature *parent_feature
 			.value = sb->plugin_uri
 		},
 		[1] = {
+			.context = LV2_OPTIONS_INSTANCE,
+			.subject = 0,
+			.key = sb->io.params_sample_rate,
+			.size = sizeof(float)
+			.type = sb->io.forge.Float,
+			.value = &sb->sample_rate
+		},
+		[2] = {
 			.key = 0,
 			.value = NULL
 		}

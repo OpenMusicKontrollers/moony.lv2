@@ -26,6 +26,7 @@
 #include <lv2/lv2plug.in/ns/lv2core/lv2.h>
 #include <lv2/lv2plug.in/ns/ext/urid/urid.h>
 #include <lv2/lv2plug.in/ns/ext/atom/atom.h>
+#include <lv2/lv2plug.in/ns/ext/parameters/parameters.h>
 #include <lv2/lv2plug.in/ns/extensions/ui/ui.h>
 
 #ifdef __cplusplus
@@ -88,6 +89,7 @@ struct _sandbox_io_t {
 	LV2_URID ui_peak;
 	LV2_URID ui_window_title;
 	LV2_URID ui_port_subscribe;
+	LV2_URID params_sample_rate;
 };
 
 static inline LV2_Atom_Forge_Ref
@@ -515,6 +517,7 @@ _sandbox_io_init(sandbox_io_t *io, LV2_URID_Map *map, LV2_URID_Unmap *unmap,
 	io->ui_peak = map->map(map->handle, LV2_UI_PREFIX"peak");
 	io->ui_window_title = map->map(map->handle, LV2_UI__windowTitle);
 	io->ui_port_subscribe = map->map(map->handle, LV2_UI__portSubscribe);
+	io->params_sample_rate = map->map(map->handle, LV2_PARAMETERS__sampleRate);
 
 	_sandbox_io_reset(io);
 
