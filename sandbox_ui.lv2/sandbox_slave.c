@@ -473,11 +473,22 @@ sandbox_slave_instantiate(sandbox_slave_t *sb, const LV2_Feature *parent_feature
 		NULL
 	};
 
+	const LilvNode *ui_bundle_uri = lilv_ui_get_bundle_uri(sb->ui);
+#if defined(LILV_0_22)
+	char *ui_bundle_path = lilv_file_uri_parse(lilv_node_as_string(ui_bundle_uri), NULL);
+#else
+	const char *ui_bundle_path = lilv_uri_to_path(lilv_node_as_string(ui_bundle_uri));
+#endif
+
 	if(sb->desc && sb->desc->instantiate)
 	{
 		sb->handle = sb->desc->instantiate(sb->desc, sb->plugin_uri,
-			sb->bundle_path, _write_function, sb, widget, features);
+			ui_bundle_path, _write_function, sb, widget, features);
 	}
+
+#if defined(LILV_0_22)
+	lilv_free(ui_bundle_path);
+#endif
 
 	if(sb->handle)
 		return sb->handle; // success
