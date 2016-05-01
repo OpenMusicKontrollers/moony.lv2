@@ -67,7 +67,7 @@ struct _sandbox_slave_t {
 	const char *ui_uri;
 	const char *socket_path;
 	const char *window_title;
-	float sample_rate
+	float sample_rate;
 };
 	
 static inline LV2_URID
@@ -436,7 +436,7 @@ sandbox_slave_instantiate(sandbox_slave_t *sb, const LV2_Feature *parent_feature
 			.context = LV2_OPTIONS_INSTANCE,
 			.subject = 0,
 			.key = sb->io.params_sample_rate,
-			.size = sizeof(float)
+			.size = sizeof(float),
 			.type = sb->io.forge.Float,
 			.value = &sb->sample_rate
 		},
