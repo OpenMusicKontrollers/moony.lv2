@@ -373,10 +373,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	sprintf(ui->path, "%s", tmp_template);
 
 	if(ui->log)
-	{
-		lv2_log_note(&ui->logger, "dir: %s", tmp_template);
-		lv2_log_note(&ui->logger, "path: %s", ui->path);
-	}
+		lv2_log_note(&ui->logger, "moony simple_ui path: %s", ui->path);
 
 	free(tmp_template);
 
