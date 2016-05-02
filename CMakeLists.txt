@@ -137,6 +137,8 @@ if(BUILD_WEB_UI)
 		set(LIBS_WEB ${LIBS_WEB} ${LWS_LDFLAGS})
 	endif()
 
+	configure_file(${PROJECT_SOURCE_DIR}/web_ui/index.html.in ${PROJECT_BINARY_DIR}/index.html)
+
 	add_library(moony_web MODULE
 		cJSON/cJSON.c
 		ui/moony_web.c
@@ -144,7 +146,7 @@ if(BUILD_WEB_UI)
 	target_link_libraries(moony_web ${LIBS_WEB})
 	set_target_properties(moony_web PROPERTIES PREFIX "")
 	install(TARGETS moony_web DESTINATION ${PLUGIN_DEST})
-	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/index.html DESTINATION ${PLUGIN_DEST}/web_ui)
+	install(FILES ${PROJECT_BINARY_DIR}/index.html DESTINATION ${PLUGIN_DEST}/web_ui)
 	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/favicon.png DESTINATION ${PLUGIN_DEST}/web_ui)
 	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/jquery-2.2.0.min.js DESTINATION ${PLUGIN_DEST}/web_ui)
 	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/moony.js DESTINATION ${PLUGIN_DEST}/web_ui)
