@@ -154,11 +154,11 @@ _spawn_waitpid(spawn_t *spawn, bool blocking)
 			return -1;
 		case WAIT_ABANDONED: // abandoned
 			if(spawn->logger)
-				lv2_log_error(spawn->logger, "WaitForSingleObject abandoned\n");
+				lv2_log_note(spawn->logger, "WaitForSingleObject abandoned\n");
 			return -1;
 		case WAIT_FAILED: // failed, try later
 			if(spawn->logger)
-				lv2_log_error(spawn->logger, "WaitForSingleObject failed\n");
+				lv2_log_note(spawn->logger, "WaitForSingleObject failed\n");
 			return 0;
 	}
 
@@ -225,7 +225,7 @@ _spawn_waitpid(spawn_t *spawn, bool blocking)
 		if(errno == ECHILD) // child not existing
 		{
 			if(spawn->logger)
-				lv2_log_error(spawn->logger, "waitpid child not existing\n");
+				lv2_log_note(spawn->logger, "waitpid child not existing\n");
 			return -1;
 		}
 	}

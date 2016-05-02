@@ -19,7 +19,6 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <unistd.h>
-#include <signal.h>
 #include <string.h>
 
 #include <libwebsockets.h>
@@ -123,41 +122,8 @@ struct _ui_t {
 	char *bundle_path;
 
 	struct lws_context *context;
-	client_t *clients;
+	client_t *client;
 };
-
-static inline client_t *
-_client_append(client_t *list, client_t *child)
-{
-	child->next = list;
-
-	return child;
-}
-
-static inline client_t *
-_client_remove(client_t *list, client_t *child)
-{
-	for(client_t *o=NULL, *l=list; l; o=l, l=l->next)
-	{
-		if(l == child)
-		{
-			if(o)
-			{
-				o->next = child->next; // skip child
-				return list;
-			}
-			else // !o
-			{
-				return l->next; // skip child
-			}
-		}
-	}
-
-	return list;
-}
-
-#define CLIENTS_FOREACH(clients, client) \
-	for(client_t *(client)=(clients); (client); (client)=(client)->next)
 
 static inline const char *
 get_mimetype(const char *file)
@@ -317,9 +283,14 @@ callback_lv2(struct lws *wsi, enum lws_callback_reasons reason,
 	{
 		case LWS_CALLBACK_ESTABLISHED:
 		{
+			//lwsl_notice("LWS_CALLBACK_ESTABLISHED:\n");
+
+			if(ui->client)
+				return -1; // refuse to connect to a second websocket
+
 			memset(client, 0x0, sizeof(client_t));
 
-			ui->clients = _client_append(ui->clients, client);
+			ui->client = client;
 
 			break;
 		}
@@ -360,24 +331,14 @@ callback_lv2(struct lws *wsi, enum lws_callback_reasons reason,
 
 			_moony_cb(ui, in_str);
 
-			/* FIXME
-			if(!strcmp(in_str, "closeme\n"))
-			{
-				lwsl_notice("lv2: closing as requested\n");
-				lws_close_reason(wsi, LWS_CLOSE_STATUS_GOINGAWAY, (unsigned char *)"seeya", 5);
-				//TODO client remove?
-				return -1;
-			}
-			*/
-
 			break;
 		}
 
 		case LWS_CALLBACK_CLOSED:
 		{
-			lwsl_notice("LWS_CALLBACK_CLOSE:\n");
+			//lwsl_notice("LWS_CALLBACK_CLOSE:\n");
 
-			ui->clients = _client_remove(ui->clients, client);
+			ui->client = NULL;
 			ui->done = 1;
 
 			break;
@@ -385,9 +346,9 @@ callback_lv2(struct lws *wsi, enum lws_callback_reasons reason,
 
 		case LWS_CALLBACK_WS_PEER_INITIATED_CLOSE:
 		{
-			lwsl_notice("LWS_CALLBACK_WS_PEER_INITIATED_CLOSE: len %d\n", len);
+			//lwsl_notice("LWS_CALLBACK_WS_PEER_INITIATED_CLOSE: len %d\n", len);
 
-			ui->clients = _client_remove(ui->clients, client);
+			ui->client = NULL;
 			ui->done = 1;
 
 			break;
@@ -743,7 +704,9 @@ _moony_dsp(ui_t *ui, cJSON *root)
 static inline void
 _schedule(ui_t *ui, cJSON *job)
 {
-	CLIENTS_FOREACH(ui->clients, client)
+	client_t *client;
+
+	if( (client = ui->client) )
 	{
 		if(!client->root)
 		{
@@ -1226,6 +1189,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	ui->controller = controller;
 
 	// LWS
+	lws_set_log_level(0, NULL);
 
 	struct lws_context_creation_info info;
 	memset(&info, 0x0, sizeof(info));
@@ -1251,6 +1215,9 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		free(ui);
 		return NULL;
 	}
+
+	if(ui->log)
+		lv2_log_note(&ui->logger, "moony web_ui url: %s", ui->url);
 
 	_spawn_invalidate_child(&ui->spawn);
 	ui->done = 1;
