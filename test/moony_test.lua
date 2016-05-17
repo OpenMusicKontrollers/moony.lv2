@@ -628,10 +628,13 @@ do
 		bndl:message('/three', 'i', 3)
 		bndl:bundle(0.1):pop() -- nested
 		assert(bndl:pop() == nil)
+		
+		forge:frame_time(6)
+		forge:message('/color', 'r', {0xff, 0x00, 0x00, 0x7f})
 	end
 
 	local function consumer(seq)
-		assert(#seq == 6)
+		assert(#seq == 7)
 
 		local atom = seq[1]
 		assert(atom.type == Atom.Object)
@@ -746,6 +749,19 @@ do
 		assert(itms[3].otype == OSC.Message)
 		assert(itms[4].otype == OSC.Bundle)
 		assert(#itms[4][OSC.bundleItems] == 0)
+		
+		atom = seq[7]
+		assert(atom.type == Atom.Object)
+		assert(atom.otype == OSC.Message)
+		args = atom[OSC.messageArguments]
+		assert(args.type == Atom.Tuple)
+		assert(#args== 1)
+		assert(args[1].type == OSC.RGBA)
+		local col = args[1].value
+		assert(col[1] == 0xff)
+		assert(col[2] == 0x00)
+		assert(col[3] == 0x00)
+		assert(col[4] == 0x7f)
 	end
 
 	test(producer, consumer)

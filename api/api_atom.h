@@ -102,6 +102,7 @@ extern const latom_driver_t latom_sequence_driver;
 extern const latom_driver_t latom_chunk_driver;
 extern const latom_driver_t latom_char_driver;
 extern const latom_driver_t latom_impulse_driver;
+extern const latom_driver_t latom_rgba_driver;
 
 extern const luaL_Reg latom_mt [];
 

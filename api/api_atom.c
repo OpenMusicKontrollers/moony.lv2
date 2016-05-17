@@ -953,6 +953,41 @@ const latom_driver_t latom_impulse_driver = {
 	.value = _latom_impulse_value
 };
 
+// RGBA driver
+static int
+_latom_rgba__len(lua_State *L, latom_t *latom)
+{
+	lua_pushinteger(L, latom->atom->size);
+	return 1;
+}
+
+static int
+_latom_rgba__tostring(lua_State *L, latom_t *latom)
+{
+	const uint8_t *rgba = latom->body.raw;
+	lua_pushfstring(L, "(rgba: %p, %02x, %02x, %02x, %02x)", latom,
+		rgba[0], rgba[1], rgba[2], rgba[3]);
+	return 1;
+}
+
+static inline int
+_latom_rgba_value(lua_State *L, latom_t *latom)
+{
+	const uint8_t *rgba = latom->body.raw;
+	lua_createtable(L, 4, 0);
+	lua_pushinteger(L, rgba[0]); lua_rawseti(L, -2, 1);
+	lua_pushinteger(L, rgba[1]); lua_rawseti(L, -2, 2);
+	lua_pushinteger(L, rgba[2]); lua_rawseti(L, -2, 3);
+	lua_pushinteger(L, rgba[3]); lua_rawseti(L, -2, 4);
+	return 1;
+}
+
+const latom_driver_t latom_rgba_driver = {
+	.__len = _latom_rgba__len,
+	.__tostring = _latom_rgba__tostring,
+	.value = _latom_rgba_value
+};
+
 static int
 _latom__index(lua_State *L)
 {
