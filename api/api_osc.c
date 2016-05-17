@@ -15,8 +15,12 @@
  * http://www.perlfoundation.org/artistic_license_2_0.
  */
 
+#include <math.h>
+
 #include <api_osc.h>
 #include <api_atom.h>
+
+#include <osc.lv2/util.h>
 
 static inline bool
 _osc_path_has_wildcards(const char *path)
@@ -61,14 +65,14 @@ const char *loscresponder_match =
 	"	return handled\n"
 	"end";
 
-static void
-_loscresponder_msg(const char *path, const char *fmt, const LV2_Atom_Tuple *args,
-	void *data)
+static inline void
+_loscresponder_method(const char *path, const LV2_Atom_Tuple *arguments, void *data)
 {
 	moony_t *moony = data;
 	lua_State *L = moony->vm.L;
 	LV2_Atom_Forge *forge = &moony->forge;
-	osc_forge_t *oforge = &moony->oforge;
+	LV2_OSC_URID *osc_urid = &moony->osc_urid;
+	LV2_URID_Unmap *unmap = moony->unmap;
 
 	// 1: uservalue
 	// 2: frames
@@ -84,124 +88,123 @@ _loscresponder_msg(const char *path, const char *fmt, const LV2_Atom_Tuple *args
 	else if(lua_getfield(L, 1, path) == LUA_TNIL) // raw string match
 	{
 		lua_pop(L, 1); // nil
-		return; // no match
+		return;
 	}
 
 	lua_pushvalue(L, 1); // self
 	lua_pushvalue(L, 2); // frames
 	lua_pushvalue(L, 3); // data
-	lua_pushstring(L, fmt);
 
 	int oldtop = lua_gettop(L);
-	const LV2_Atom *atom = lv2_atom_tuple_begin(args);
 
-	for(const char *type = fmt; *type && atom; type++)
+	LV2_ATOM_TUPLE_FOREACH(arguments, atom)
 	{
-		switch(*type)
+		const LV2_Atom_Object *obj= (const LV2_Atom_Object *)atom;
+
+		switch(lv2_osc_argument_type(osc_urid, atom))
 		{
-			case 'i':
+			case LV2_OSC_INT32:
 			{
-				int32_t i = 0;
-				atom = osc_deforge_int32(oforge, forge, atom, &i);
-				lua_pushinteger(L, i);
+				lua_pushinteger(L, ((const LV2_Atom_Int *)atom)->body);
 				break;
 			}
-			case 'f':
+			case LV2_OSC_FLOAT:
 			{
-				float f = 0.f;
-				atom = osc_deforge_float(oforge, forge, atom, &f);
-				lua_pushnumber(L, f);
+				lua_pushnumber(L, ((const LV2_Atom_Float *)atom)->body);
 				break;
 			}
-			case 's':
+			case LV2_OSC_STRING:
 			{
-				const char *s = NULL;
-				atom = osc_deforge_string(oforge, forge, atom, &s);
-				lua_pushstring(L, s);
+				lua_pushstring(L, LV2_ATOM_BODY_CONST(atom));
 				break;
 			}
-			case 'S':
+			case LV2_OSC_BLOB:
 			{
-				const char *s = NULL;
-				atom = osc_deforge_symbol(oforge, forge, atom, &s);
-				lua_pushstring(L, s);
-				break;
-			}
-			case 'b':
-			{
-				uint32_t size = 0;
-				const uint8_t *b = NULL;
-				atom = osc_deforge_blob(oforge, forge, atom, &size, &b);
-				//TODO or return a AtomChunk?
-				lua_createtable(L, size, 0);
-				for(unsigned i=0; i<size; i++)
+				const uint8_t *b = LV2_ATOM_BODY_CONST(atom);
+				lua_createtable(L, atom->size, 0);
+				for(unsigned i=0; i<atom->size; i++)
 				{
 					lua_pushinteger(L, b[i]);
 					lua_rawseti(L, -2, i+1);
 				}
 				break;
 			}
-			
-			case 'h':
+
+			case LV2_OSC_INT64:
 			{
-				int64_t h = 0;
-				atom = osc_deforge_int64(oforge, forge, atom, &h);
-				lua_pushinteger(L, h);
+				lua_pushinteger(L, ((const LV2_Atom_Long *)atom)->body);
 				break;
 			}
-			case 'd':
+			case LV2_OSC_DOUBLE:
 			{
-				double d = 0.f;
-				atom = osc_deforge_double(oforge, forge, atom, &d);
-				lua_pushnumber(L, d);
+				lua_pushnumber(L, ((const LV2_Atom_Double *)atom)->body);
 				break;
 			}
-			case 't':
+			case LV2_OSC_TIMETAG:
 			{
-				uint64_t t = 0;
-				atom = osc_deforge_timestamp(oforge, forge, atom, &t);
-				lua_pushinteger(L, t);
+				LV2_OSC_Timetag tt;
+				lv2_osc_timetag_get(osc_urid, obj, &tt);
+				lua_pushinteger(L, lv2_osc_timetag_parse(&tt));
 				break;
 			}
-			
-			case 'c':
+
+			case LV2_OSC_TRUE:
 			{
-				char c = '\0';
-				atom = osc_deforge_char(oforge, forge, atom, &c);
-				lua_pushinteger(L, c);
+				lua_pushboolean(L, 1);
 				break;
 			}
-			case 'm':
+			case LV2_OSC_FALSE:
 			{
-				uint32_t size = 0;
-				const uint8_t *m = NULL;
-				atom = osc_deforge_midi(oforge, forge, atom, &size, &m);
-				//TODO or return a MIDIEvent?
-				lua_createtable(L, size, 0);
-				for(unsigned i=0; i<size; i++)
+				lua_pushboolean(L, 0);
+				break;
+			}
+			case LV2_OSC_NIL:
+			{
+				lua_pushnil(L);
+				break;
+			}
+			case LV2_OSC_IMPULSE:
+			{
+				lua_pushnumber(L, HUGE_VAL);
+				break;
+			}
+
+			case LV2_OSC_SYMBOL:
+			{
+				lua_pushinteger(L, ((const LV2_Atom_URID *)atom)->body);
+				break;
+			}
+			case LV2_OSC_MIDI:
+			{
+				const uint8_t *m = LV2_ATOM_BODY_CONST(atom);
+				lua_createtable(L, atom->size, 0);
+				for(unsigned i=0; i<atom->size; i++)
 				{
 					lua_pushinteger(L, m[i]);
 					lua_rawseti(L, -2, i+1);
 				}
 				break;
 			}
-			
-			case 'T':
-			case 'F':
-			case 'N':
-			case 'I':
+			case LV2_OSC_CHAR:
 			{
+				lua_pushinteger(L, *(const uint8_t *)LV2_ATOM_BODY_CONST(atom));
 				break;
 			}
-
-			default: // unknown argument type
+			case LV2_OSC_RGBA:
 			{
+				const uint8_t *r = LV2_ATOM_BODY_CONST(atom);
+				lua_createtable(L, atom->size, 0);
+				for(unsigned i=0; i<atom->size; i++)
+				{
+					lua_pushinteger(L, r[i]);
+					lua_rawseti(L, -2, i+1);
+				}
 				break;
 			}
 		}
 	}
 
-	lua_call(L, 4 + matching + lua_gettop(L) - oldtop, 0);
+	lua_call(L, 3 + matching + lua_gettop(L) - oldtop, 0);
 }
 
 static int
@@ -221,8 +224,11 @@ _loscresponder__call(lua_State *L)
 	lua_pop(L, 1); // atom
 
 	// check for valid atom and event type
-	if(!latom || !(osc_atom_is_bundle(&moony->oforge, (const LV2_Atom_Object *)latom->atom) //FIXME use body
-		|| osc_atom_is_message(&moony->oforge, (const LV2_Atom_Object *)latom->atom))) //FIXME use body
+	const LV2_Atom_Object *obj = (const LV2_Atom_Object *)latom->atom;
+
+	if(  !latom
+		|| !lv2_atom_forge_is_object_type(&moony->forge, obj->atom.type)
+		|| !(lv2_osc_is_message_or_bundle_type(&moony->osc_urid, obj->body.otype)))
 	{
 		lua_pushboolean(L, 0); // not handled
 		return 1;
@@ -232,9 +238,8 @@ _loscresponder__call(lua_State *L)
 	lua_getuservalue(L, 1);
 	lua_replace(L, 1);
 
-	osc_atom_event_unroll(&moony->oforge, (const LV2_Atom_Object *)latom->atom, NULL, NULL, _loscresponder_msg, moony); //FIXME use body
-
-	lua_pushboolean(L, 1); // handled
+	lua_pushboolean(L, lv2_osc_body_unroll(&moony->osc_urid,
+		latom->atom->size, latom->body.obj, _loscresponder_method, moony));
 	return 1;
 }
 

@@ -639,9 +639,6 @@ do
 		local path = atom[OSC.messagePath]
 		assert(path.type == Atom.String)
 		assert(path.value == '/hello')
-		local fmt = atom[OSC.messageFormat]
-		assert(fmt.type == Atom.String)
-		assert(fmt.value == 'sif')
 		local args = atom[OSC.messageArguments]
 		assert(args.type == Atom.Tuple)
 		assert(#args == 3)
@@ -660,9 +657,6 @@ do
 		path = atom[OSC.messagePath]
 		assert(path.type == Atom.String)
 		assert(path.value == '/hallo')
-		fmt = atom[OSC.messageFormat]
-		assert(fmt.type == Atom.String)
-		assert(fmt.value == 'Shdt')
 		args = atom[OSC.messageArguments]
 		assert(args.type == Atom.Tuple)
 		assert(#args == 4)
@@ -673,8 +667,10 @@ do
 		assert(args[2].value == 12)
 		assert(args[3].type == Atom.Double)
 		assert(args[3].value == 13.0)
-		assert(args[4].type == Atom.Long)
-		assert(args[4].value == 1)
+		assert(args[4].type == Atom.Object)
+		assert(args[4].otype == OSC.Timetag)
+		assert(args[4][OSC.timetagIntegral].value == 0)
+		assert(args[4][OSC.timetagFraction].value == 1)
 		assert(args[5] == nil)
 		
 		atom = seq[3]
@@ -683,15 +679,12 @@ do
 		path = atom[OSC.messagePath]
 		assert(path.type == Atom.String)
 		assert(path.value == '/yup')
-		fmt = atom[OSC.messageFormat]
-		assert(fmt.type == Atom.String)
-		assert(fmt.value == 'c')
 		args = atom[OSC.messageArguments]
 		assert(args.type == Atom.Tuple)
 		assert(#args == 1)
 		assert(args[0] == nil)
-		assert(args[1].type == Atom.Int)
-		assert(string.char(args[1].value) == 'a')
+		assert(args[1].type == OSC.Char)
+		assert(args[1].value == string.byte('a'))
 		assert(args[2] == nil)
 		
 		atom = seq[4]
@@ -700,17 +693,18 @@ do
 		path = atom[OSC.messagePath]
 		assert(path.type == Atom.String)
 		assert(path.value == '/singletons')
-		fmt = atom[OSC.messageFormat]
-		assert(fmt.type == Atom.String)
-		assert(fmt.value == 'TFNI')
 		args = atom[OSC.messageArguments]
 		assert(args.type == Atom.Tuple)
-		assert(#args == 0)
+		assert(#args == 4)
 		assert(args[0] == nil)
-		assert(args[1] == nil)
-		assert(args[2] == nil)
-		assert(args[3] == nil)
-		assert(args[4] == nil)
+		assert(args[1].type == Atom.Bool)
+		assert(args[1].value == true)
+		assert(args[2].type == Atom.Bool)
+		assert(args[2].value == false)
+		assert(args[3].type == 0)
+		assert(args[3].value == nil)
+		assert(args[4].type == OSC.Impulse)
+		assert(args[4].value == nil)
 		assert(args[5] == nil)
 		
 		atom = seq[5]
@@ -719,9 +713,6 @@ do
 		path = atom[OSC.messagePath]
 		assert(path.type == Atom.String)
 		assert(path.value == '/chunky')
-		fmt = atom[OSC.messageFormat]
-		assert(fmt.type == Atom.String)
-		assert(fmt.value == 'mb')
 		args = atom[OSC.messageArguments]
 		assert(args.type == Atom.Tuple)
 		assert(#args == 2)
@@ -742,9 +733,11 @@ do
 		atom = seq[6]
 		assert(atom.type == Atom.Object)
 		assert(atom.otype == OSC.Bundle)
-		local timestamp = atom[OSC.bundleTimestamp]
-		assert(timestamp.type == Atom.Long)
-		assert(timestamp.value == 1)
+		local timetag = atom[OSC.bundleTimetag]
+		assert(timetag.type == Atom.Object)
+		assert(timetag.otype == OSC.Timetag)
+		assert(timetag[OSC.timetagIntegral].value == 0)
+		assert(timetag[OSC.timetagFraction].value == 1)
 		local itms = atom[OSC.bundleItems]
 		assert(itms.type == Atom.Tuple)
 		assert(#itms == 4)
@@ -779,21 +772,18 @@ do
 	local complex_responded = 0
 
 	local osc_responder = OSCResponder({
-		['/ping'] = function(self, frames, forge, fmt, i)
+		['/ping'] = function(self, frames, forge, i)
 			assert(frames == 0)
-			assert(fmt == 'i')
 			assert(i == 13)
 			ping_responded = true
 		end,
-		['/pong'] = function(self, frames, forge, fmt, s)
+		['/pong'] = function(self, frames, forge, s)
 			assert(frames == 1)
-			assert(fmt == 's')
 			assert(s == 'world')
 			pong_responded = true
 		end,
-		['/one/two/three'] = function(self, frames, forge, fmt, d)
+		['/one/two/three'] = function(self, frames, forge, d)
 			assert(frames == 2)
-			assert(fmt == 'd')
 			assert(d == 12.3)
 			complex_responded = complex_responded + 1
 		end

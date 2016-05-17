@@ -897,6 +897,62 @@ const latom_driver_t latom_chunk_driver = {
 	.unpack = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_CHUNK_UNPACK,
 };
 
+// Char driver
+static int
+_latom_char__len(lua_State *L, latom_t *latom)
+{
+	lua_pushinteger(L, latom->atom->size);
+	return 1;
+}
+
+static int
+_latom_char__tostring(lua_State *L, latom_t *latom)
+{
+	lua_pushfstring(L, "(char: %p, %c)", latom, latom->body.str[0]);
+	return 1;
+}
+
+static inline int
+_latom_char_value(lua_State *L, latom_t *latom)
+{
+	lua_pushinteger(L, *latom->body.i32);
+	return 1;
+}
+
+const latom_driver_t latom_char_driver = {
+	.__len = _latom_char__len,
+	.__tostring = _latom_char__tostring,
+	.value = _latom_char_value
+};
+
+// Impulse driver
+static int
+_latom_impulse__len(lua_State *L, latom_t *latom)
+{
+	lua_pushinteger(L, latom->atom->size);
+	return 1;
+}
+
+static int
+_latom_impulse__tostring(lua_State *L, latom_t *latom)
+{
+	lua_pushfstring(L, "(impulse: %p)", latom);
+	return 1;
+}
+
+static inline int
+_latom_impulse_value(lua_State *L, latom_t *latom)
+{
+	lua_pushnil(L);
+	return 1;
+}
+
+const latom_driver_t latom_impulse_driver = {
+	.__len = _latom_impulse__len,
+	.__tostring = _latom_impulse__tostring,
+	.value = _latom_impulse_value
+};
+
 static int
 _latom__index(lua_State *L)
 {

@@ -712,17 +712,17 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	for(unsigned i=0; features[i]; i++)
 	{
 		if(!strcmp(features[i]->URI, LV2_URID__map))
-			moony->map = (LV2_URID_Map *)features[i]->data;
+			moony->map = features[i]->data;
 		else if(!strcmp(features[i]->URI, LV2_URID__unmap))
-			moony->unmap = (LV2_URID_Unmap *)features[i]->data;
+			moony->unmap = features[i]->data;
 		else if(!strcmp(features[i]->URI, LV2_WORKER__schedule))
-			moony->sched = (LV2_Worker_Schedule *)features[i]->data;
+			moony->sched = features[i]->data;
 		else if(!strcmp(features[i]->URI, LV2_LOG__log))
-			moony->log = (LV2_Log_Log *)features[i]->data;
+			moony->log = features[i]->data;
 		else if(!strcmp(features[i]->URI, LV2_OPTIONS__options))
-			opts = (LV2_Options_Option *)features[i]->data;
-		else if(!strcmp(features[i]->URI, OSC__schedule))
-			moony->osc_sched = (osc_schedule_t *)features[i]->data;
+			opts = features[i]->data;
+		else if(!strcmp(features[i]->URI, LV2_OSC__schedule))
+			moony->osc_sched = features[i]->data;
 		else if(!strcmp(features[i]->URI, LV2_STATE__loadDefaultState))
 			load_default_state = true;
 		else if(!strcmp(features[i]->URI, XPRESS_VOICE_MAP))
@@ -800,7 +800,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->uris.atom_frame_time = moony->map->map(moony->map->handle, LV2_ATOM__frameTime);
 	moony->uris.atom_beat_time = moony->map->map(moony->map->handle, LV2_ATOM__beatTime);
 
-	osc_forge_init(&moony->oforge, moony->map);
+	lv2_osc_urid_init(&moony->osc_urid, moony->map);
 	lv2_atom_forge_init(&moony->forge, moony->map);
 	lv2_atom_forge_init(&moony->state_forge, moony->map);
 	lv2_atom_forge_init(&moony->stash_forge, moony->map);
@@ -861,6 +861,12 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 
 	latom_driver_hash[pos].type = moony->uris.midi_event;
 	latom_driver_hash[pos++].driver = &latom_chunk_driver;
+
+	latom_driver_hash[pos].type = moony->osc_urid.OSC_Char;
+	latom_driver_hash[pos++].driver = &latom_char_driver;
+
+	latom_driver_hash[pos].type = moony->osc_urid.OSC_Impulse;
+	latom_driver_hash[pos++].driver = &latom_impulse_driver;
 
 	assert(pos++ == DRIVER_HASH_MAX);
 	qsort(latom_driver_hash, DRIVER_HASH_MAX, sizeof(latom_driver_hash_t), _hash_sort);
@@ -1074,14 +1080,20 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 
 	lua_newtable(L);
 	{
-		SET_MAP(L, OSC__, Event);
-		SET_MAP(L, OSC__, Bundle);
-		SET_MAP(L, OSC__, Message);
-		SET_MAP(L, OSC__, bundleTimestamp);
-		SET_MAP(L, OSC__, bundleItems);
-		SET_MAP(L, OSC__, messagePath);
-		SET_MAP(L, OSC__, messageFormat);
-		SET_MAP(L, OSC__, messageArguments);
+		SET_MAP(L, LV2_OSC__, Event);
+		SET_MAP(L, LV2_OSC__, Packet);
+		SET_MAP(L, LV2_OSC__, Bundle);
+		SET_MAP(L, LV2_OSC__, bundleTimetag);
+		SET_MAP(L, LV2_OSC__, bundleItems);
+		SET_MAP(L, LV2_OSC__, Message);
+		SET_MAP(L, LV2_OSC__, messagePath);
+		SET_MAP(L, LV2_OSC__, messageArguments);
+		SET_MAP(L, LV2_OSC__, Timetag);
+		SET_MAP(L, LV2_OSC__, timetagIntegral);
+		SET_MAP(L, LV2_OSC__, timetagFraction);
+		SET_MAP(L, LV2_OSC__, Impulse);
+		SET_MAP(L, LV2_OSC__, Char);
+		SET_MAP(L, LV2_OSC__, RGBA);
 	}
 	lua_setglobal(L, "OSC");
 

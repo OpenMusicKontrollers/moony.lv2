@@ -20,6 +20,7 @@
 #include <stddef.h>
 #include <unistd.h>
 #include <string.h>
+#include <math.h>
 
 #include <libwebsockets.h>
 

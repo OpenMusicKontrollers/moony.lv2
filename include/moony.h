@@ -48,7 +48,7 @@
 #include <lv2/lv2plug.in/ns/extensions/units/units.h>
 
 #include <api_vm.h>
-#include <lv2_osc.h>
+#include <osc.lv2/osc.h>
 #include <xpress.h>
 
 #include <lua.h>
@@ -170,7 +170,7 @@ struct _latom_driver_hash_t {
 };
 
 #define UDATA_OFFSET (LUA_RIDX_LAST + 1)
-#define DRIVER_HASH_MAX 17
+#define DRIVER_HASH_MAX 19
 
 // from moony.c
 typedef struct _patch_t patch_t;
@@ -244,13 +244,12 @@ struct _moony_t {
 		uint32_t sample_rate;
 	} opts;
 
-	osc_forge_t oforge;
+	LV2_OSC_URID osc_urid;
+	LV2_OSC_Schedule *osc_sched;
 	
 	LV2_Worker_Schedule *sched;
 	volatile int working;
 	volatile int fully_extended;
-
-	osc_schedule_t *osc_sched;
 	
 	LV2_Log_Log *log;
 	LV2_Log_Logger logger;
