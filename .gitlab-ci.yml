@@ -1,0 +1,59 @@
+stages:
+  - build
+  - deploy
+
+.common_template: &common_definition
+  stage: build
+  script:
+    - mkdir build
+    - pushd build
+    - PKG_CONFIG_PATH="/opt/lv2/lib/pkgconfig;/opt/${CI_BUILD_NAME}" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${CI_PROJECT_DIR}" -DPLUGIN_DEST="$(basename ${CI_PROJECT_DIR})-${CI_BUILD_REF_NAME}/${CI_BUILD_NAME}/$(basename ${CI_PROJECT_DIR})" -DCMAKE_TOOLCHAIN_FILE="${CI_PROJECT_DIR}/cmake/${CI_BUILD_NAME}.cmake" ..
+    - cmake .. # needed for multiarch-darwin
+    - make
+    - make install
+  artifacts:
+    name: "$(basename ${CI_PROJECT_DIR})-${CI_BUILD_REF_NAME}-${CI_BUILD_NAME}"
+    paths:
+      - "$(basename ${CI_PROJECT_DIR})-${CI_BUILD_REF_NAME}/"
+
+.native_template: &native_definition
+  tags:
+    - native 
+  <<: *common_definition
+
+.docker_template: &docker_definition
+  image: omk/lad 
+  tags:
+    - docker
+  <<: *common_definition
+
+# building natively
+x86_64-linux:
+  <<: *native_definition
+
+i686-linux:
+  <<: *native_definition
+
+# building in docker
+x86_64-w64-mingw32:
+  <<: *docker_definition
+
+i686-w64-mingw32:
+  <<: *docker_definition
+
+arm-linux-gnueabihf:
+  <<: *docker_definition
+
+universal-apple-darwin:
+  <<: *docker_definition
+
+pack:
+  stage: deploy
+  tags:
+    - native
+  script:
+    - echo 'packing up...'
+  artifacts:
+    name: "$(basename ${CI_PROJECT_DIR})-${CI_BUILD_REF_NAME}"
+    paths:
+      - "$(basename ${CI_PROJECT_DIR})-${CI_BUILD_REF_NAME}/"
