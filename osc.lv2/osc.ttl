@@ -1,4 +1,4 @@
-# Copyright (c) 2015 Hanspeter Portner (dev@open-music-kontrollers.ch)
+# Copyright (c) 2015-2016 Hanspeter Portner (dev@open-music-kontrollers.ch)
 #
 # This is free software: you can redistribute it and/or modify
 # it under the terms of the Artistic License 2.0 as published by
@@ -13,14 +13,12 @@
 # along the source as a COPYING file. If not, obtain it from
 # http://www.perlfoundation.org/artistic_license_2_0.
 
-@prefix atom: <http://lv2plug.in/ns/ext/atom#> .
-@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .
-@prefix midi: <http://lv2plug.in/ns/midi#> .
-@prefix owl:  <http://www.w3.org/2002/07/owl#> .
-@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
-@prefix osc:  <http://open-music-kontrollers.ch/lv2/osc#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix lv2: <http://lv2plug.in/ns/lv2core#> .
+@prefix atom: <http://lv2plug.in/ns/ext/atom#> .
+@prefix osc: <http://open-music-kontrollers.ch/lv2/osc#> .
 
 <http://open-music-kontrollers.ch/lv2/osc>
 	a owl:Ontology ;
@@ -37,65 +35,8 @@ osc:schedule
 	a lv2:Feature .
 
 osc:Event
-	a rdfs:Class ;
-	rdfs:subClassOf atom:Object ;
+	a rdfs:Class ,
+		rdfs:Datatype ;
+	rdfs:subClassOf atom:Atom ;
+	owl:onDatatype xsd:hexBinary ;
 	rdfs:label "OSC Event (Bundle or Message)" .
-
-osc:Bundle
-	a rdfs:Class ;
-	rdfs:subClassOf osc:Event ;
-	rdfs:label "OSC Bundle" .
-
-osc:Message
-	a rdfs:Class ;
-	rdfs:subClassOf osc:Event ;
-	rdfs:label "OSC Message" .
-
-osc:bundleTimestamp
-	a rdf:Property ,
-		owl:ObjectProperty ,
-		owl:FunctionalProperty ;
-	rdfs:domain osc:Bundle ;
-	rdfs:range atom:Long ;
-	rdfs:label "OSC Bundle Timestamp" .
-
-osc:bundleItems
-	a rdf:Property ,
-		owl:ObjectProperty ,
-		owl:FunctionalProperty ;
-	rdfs:domain osc:Bundle ;
-	rdfs:range atom:Tuple ;
-	rdfs:label "OSC Bundle Items" ;
-	lv2:documentation """
-		<p>Tuple of OSC Bundle Items (e.g. nested osc:Bundle's and/or
-		osc:Message's).</p>
-	""" .
-
-osc:messagePath
-	a rdf:Property ,
-		owl:ObjectProperty ,
-		owl:FunctionalProperty ;
-	rdfs:domain osc:Message ;
-	rdfs:range atom:String ;
-	rdfs:label "OSC Message Path" .
-
-osc:messageFormat
-	a rdf:Property ,
-		owl:ObjectProperty ,
-		owl:FunctionalProperty ;
-	rdfs:domain osc:Message ;
-	rdfs:range atom:String ;
-	rdfs:label "OSC Message Format" .
-
-osc:messageArguments
-	a rdf:Property ,
-		owl:ObjectProperty ,
-		owl:FunctionalProperty ;
-	rdfs:domain osc:Message ;
-	rdfs:range atom:Tuple ;
-	rdfs:label "OSC Message Arguments" ;
-	lv2:documentation """
-		<p>Tuple of OSC Message Arguments (e.g. Atom:Int, Atom:Long, Atom:Float,
-		Atom:Double, Atom:String, Atom:Chunk, Atom:Bool, Atom:Blank,
-		MIDI:MidiEvent).</p>
-	""" .
