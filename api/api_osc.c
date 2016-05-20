@@ -143,7 +143,7 @@ _loscresponder_method(const char *path, const LV2_Atom_Tuple *arguments, void *d
 			case LV2_OSC_TIMETAG:
 			{
 				LV2_OSC_Timetag tt;
-				lv2_osc_timetag_get(osc_urid, obj, &tt);
+				lv2_osc_timetag_get(osc_urid, atom, &tt);
 				lua_pushinteger(L, lv2_osc_timetag_parse(&tt));
 				break;
 			}
