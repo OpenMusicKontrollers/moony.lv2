@@ -7,7 +7,7 @@ include_directories(${PROJECT_BINARY_DIR})
 
 set(CMAKE_C_FLAGS "-std=gnu99 -Wextra -Wno-unused-parameter -ffast-math -fvisibility=hidden ${CMAKE_C_FLAGS}")
 set(CMAKE_C_FLAGS "-Wshadow -Wimplicit-function-declaration -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes ${CMAKE_C_FLAGS}")
-set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-z,nodelete ${CMAKE_MODULE_LINKER_FLAGS}")
+set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-z,nodelete -Wl,-z,defs ${CMAKE_MODULE_LINKER_FLAGS}")
 add_definitions("-D_GNU_SOURCE=1") # asprintf
 
 set(TIMELY_MAJOR_VERSION 0)
@@ -17,22 +17,13 @@ set(TIMELY_VERSION "${TIMELY_MAJOR_VERSION}.${TIMELY_MINOR_VERSION}.${TIMELY_MIC
 add_definitions("-DTIMELY_VERSION=\"${TIMELY_VERSION}\"")
 
 set(DEST lib/lv2/timely.lv2)
-if(WIN32)
-	set(LIB_EXT ".dll")
-elseif(APPLE)
-	set(LIB_EXT ".so")
-else()
-	set(LIB_EXT ".so")
-endif()
 
 find_package(PkgConfig) # ${PKG_CONFIG_FOUND}
-
-set(LIBS "-lm")
 
 # timely
 add_library(timely MODULE
 	test/timely.c)
-target_link_libraries(timely ${LIBS})
+target_link_libraries(timely m)
 set_target_properties(timely PROPERTIES PREFIX "")
 install(TARGETS timely DESTINATION ${DEST})
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/test/timely.ttl DESTINATION ${DEST})

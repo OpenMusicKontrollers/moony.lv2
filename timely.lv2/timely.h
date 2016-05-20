@@ -18,6 +18,8 @@
 #ifndef _LV2_TIMELY_H_
 #define _LV2_TIMELY_H_
 
+#include <math.h>
+
 #include <lv2/lv2plug.in/ns/lv2core/lv2.h>
 #include <lv2/lv2plug.in/ns/ext/urid/urid.h>
 #include <lv2/lv2plug.in/ns/ext/atom/atom.h>
