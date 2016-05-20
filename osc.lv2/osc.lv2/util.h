@@ -189,11 +189,64 @@ lv2_osc_argument_type(LV2_OSC_URID *osc_urid, const LV2_Atom *atom)
 	return '\0';
 }
 
-/**
-   TODO
-*/
-static inline void 
-lv2_osc_timetag_get(LV2_OSC_URID *osc_urid, const LV2_Atom_Object *obj,
+static inline const LV2_Atom *
+lv2_osc_int32_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, int32_t *i)
+{
+	assert(i);
+	*i = ((const LV2_Atom_Int *)atom)->body;
+
+	return lv2_atom_tuple_next(atom);
+}
+
+static inline const LV2_Atom *
+lv2_osc_float_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, float *f)
+{
+	assert(f);
+	*f = ((const LV2_Atom_Float *)atom)->body;
+
+	return lv2_atom_tuple_next(atom);
+}
+
+static inline const LV2_Atom *
+lv2_osc_string_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, const char **s)
+{
+	assert(s);
+	*s = LV2_ATOM_BODY_CONST(atom);
+
+	return lv2_atom_tuple_next(atom);
+}
+
+static inline const LV2_Atom *
+lv2_osc_blob_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, uint32_t *size,
+	const uint8_t **b)
+{
+	assert(size && b);
+	*size = atom->size;
+	*b = LV2_ATOM_BODY_CONST(atom);
+
+	return lv2_atom_tuple_next(atom);
+}
+
+static inline const LV2_Atom *
+lv2_osc_int64_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, int64_t *h)
+{
+	assert(h);
+	*h = ((const LV2_Atom_Long *)atom)->body;
+
+	return lv2_atom_tuple_next(atom);
+}
+
+static inline const LV2_Atom *
+lv2_osc_double_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, double *d)
+{
+	assert(d);
+	*d = ((const LV2_Atom_Double *)atom)->body;
+
+	return lv2_atom_tuple_next(atom);
+}
+
+static inline const LV2_Atom * 
+lv2_osc_timetag_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom,
 	LV2_OSC_Timetag *timetag)
 {
 	assert(timetag);
@@ -201,7 +254,7 @@ lv2_osc_timetag_get(LV2_OSC_URID *osc_urid, const LV2_Atom_Object *obj,
 	const LV2_Atom_Long *integral = NULL;
 	const LV2_Atom_Long *fraction = NULL;
 
-	lv2_atom_object_get(obj,
+	lv2_atom_object_get((const LV2_Atom_Object *)atom,
 		osc_urid->OSC_timetagIntegral, &integral,
 		osc_urid->OSC_timetagFraction, &fraction, 
 		0);
@@ -218,6 +271,75 @@ lv2_osc_timetag_get(LV2_OSC_URID *osc_urid, const LV2_Atom_Object *obj,
 		timetag->integral = 0;
 		timetag->fraction = 1;
 	}
+
+	return lv2_atom_tuple_next(atom);
+}
+
+static inline const LV2_Atom *
+lv2_osc_true_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom)
+{
+	return lv2_atom_tuple_next(atom);
+}
+
+static inline const LV2_Atom *
+lv2_osc_false_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom)
+{
+	return lv2_atom_tuple_next(atom);
+}
+
+static inline const LV2_Atom *
+lv2_osc_nil_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom)
+{
+	return lv2_atom_tuple_next(atom);
+}
+
+static inline const LV2_Atom *
+lv2_osc_impulse_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom)
+{
+	return lv2_atom_tuple_next(atom);
+}
+
+static inline const LV2_Atom *
+lv2_osc_symbol_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, const char **s)
+{
+	assert(s);
+	*s = LV2_ATOM_BODY_CONST(atom);
+
+	return lv2_atom_tuple_next(atom);
+}
+
+static inline const LV2_Atom *
+lv2_osc_midi_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, uint32_t *size,
+	const uint8_t **m)
+{
+	assert(size && m);
+	*size = atom->size;
+	*m = LV2_ATOM_BODY_CONST(atom);
+
+	return lv2_atom_tuple_next(atom);
+}
+
+static inline const LV2_Atom *
+lv2_osc_char_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, char *c)
+{
+	assert(c);
+	*c = ((const LV2_Atom_Int *)atom)->body;
+
+	return lv2_atom_tuple_next(atom);
+}
+
+static inline const LV2_Atom *
+lv2_osc_rgba_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom,
+	uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a)
+{
+	assert(r && g && b && a);
+	const uint8_t *rgba = LV2_ATOM_BODY_CONST(atom);
+	*r = rgba[0];
+	*g = rgba[1];
+	*b = rgba[2];
+	*a = rgba[3];
+
+	return lv2_atom_tuple_next(atom);
 }
 
 /**
@@ -306,7 +428,7 @@ lv2_osc_body_unroll(LV2_OSC_URID *osc_urid, uint32_t size, const LV2_Atom_Object
 			return false;
 
 		LV2_OSC_Timetag tt;
-		lv2_osc_timetag_get(osc_urid, timetag, &tt);
+		lv2_osc_timetag_get(osc_urid, &timetag->atom, &tt);
 
 		LV2_ATOM_TUPLE_FOREACH(items, atom)
 		{

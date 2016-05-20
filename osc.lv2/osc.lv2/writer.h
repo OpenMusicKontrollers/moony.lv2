@@ -425,7 +425,7 @@ lv2_osc_writer_packet(LV2_OSC_Writer *writer, LV2_OSC_URID *osc_urid,
 		LV2_OSC_Timetag tt;
 		LV2_OSC_Writer_Frame bndl;
 
-		lv2_osc_timetag_get(osc_urid, timetag, &tt);
+		lv2_osc_timetag_get(osc_urid, &timetag->atom, &tt);
 		if(!lv2_osc_writer_push_bundle(writer, &bndl, lv2_osc_timetag_parse(&tt)))
 			return false;
 
@@ -502,7 +502,7 @@ lv2_osc_writer_packet(LV2_OSC_Writer *writer, LV2_OSC_URID *osc_urid,
 				else if( (atom->type == osc_urid->ATOM_Object) && (obj->body.otype == osc_urid->OSC_Timetag) )
 				{
 					LV2_OSC_Timetag tt;
-					lv2_osc_timetag_get(osc_urid, obj, &tt);
+					lv2_osc_timetag_get(osc_urid, &obj->atom, &tt);
 					if(!lv2_osc_writer_add_timetag(writer, lv2_osc_timetag_parse(&tt)))
 						return false;
 				}
