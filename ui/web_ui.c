@@ -375,7 +375,7 @@ static const struct lws_protocols protocols [] = {
 		.name = "http-only",
 		.callback = callback_http,
 		.per_session_data_size = 0,
-		.rx_buffer_size = 512,
+		.rx_buffer_size = BUF_SIZE,
 	},
 	[PROTOCOL_LV2] = {
 		.name = "lv2-protocol",
