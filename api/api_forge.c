@@ -516,31 +516,21 @@ _lforge_osc_message(lua_State *L)
 			}
 			case LV2_OSC_STRING:
 			{
-				const char *s = luaL_checkstring(L, pos++);
-				if(!lv2_osc_forge_string(forge, osc_urid, s, strlen(s)))
+				size_t n;
+				const char *s = luaL_checklstring(L, pos++, &n);
+				if(!lv2_osc_forge_string(forge, osc_urid, s, n))
 					luaL_error(L, forge_buffer_overflow);
 				break;
 			}
 			case LV2_OSC_BLOB:
 			{
-				if(lua_istable(L, pos))
-				{
-					const int n = lua_rawlen(L, pos);
-
-					if(!lv2_atom_forge_atom(forge, n, forge->Chunk))
-						luaL_error(L, forge_buffer_overflow);
-					for(int i=1; i<=n; i++)
-					{
-						lua_rawgeti(L, pos, i);
-						const uint8_t b = luaL_checkinteger(L, -1);
-						lua_pop(L, 1);
-						if(!lv2_atom_forge_raw(forge, &b, 1))
-							luaL_error(L, forge_buffer_overflow);
-					}
-					lv2_atom_forge_pad(forge, n);
-				}
-				pos += 1;
-
+				size_t n;
+				const char *b = luaL_checklstring(L, pos++, &n);
+				if(!lv2_atom_forge_atom(forge, n, forge->Chunk))
+					luaL_error(L, forge_buffer_overflow);
+				if(!lv2_atom_forge_raw(forge, b, n))
+					luaL_error(L, forge_buffer_overflow);
+				lv2_atom_forge_pad(forge, n);
 				break;
 			}
 
@@ -601,24 +591,13 @@ _lforge_osc_message(lua_State *L)
 			}
 			case LV2_OSC_MIDI:
 			{
-				if(lua_istable(L, pos))
-				{
-					const int n = lua_rawlen(L, pos);
-
-					if(!lv2_atom_forge_atom(forge, n, moony->osc_urid.MIDI_MidiEvent))
-						luaL_error(L, forge_buffer_overflow);
-					for(int i=1; i<=n; i++)
-					{
-						lua_rawgeti(L, pos, i);
-						const uint8_t b = luaL_checkinteger(L, -1);
-						lua_pop(L, 1);
-						if(!lv2_atom_forge_raw(forge, &b, 1))
-							luaL_error(L, forge_buffer_overflow);
-					}
-					lv2_atom_forge_pad(forge, n);
-				}
-				pos += 1;
-
+				size_t n;
+				const char *m = luaL_checklstring(L, pos++, &n);
+				if(!lv2_atom_forge_atom(forge, n, moony->osc_urid.MIDI_MidiEvent))
+					luaL_error(L, forge_buffer_overflow);
+				if(!lv2_atom_forge_raw(forge, m, n))
+					luaL_error(L, forge_buffer_overflow);
+				lv2_atom_forge_pad(forge, n);
 				break;
 			}
 			case LV2_OSC_CHAR:
@@ -630,21 +609,13 @@ _lforge_osc_message(lua_State *L)
 			}
 			case LV2_OSC_RGBA:
 			{
-				if(lua_istable(L, pos))
-				{
-					uint8_t rgba [4] = {0x0, 0x0, 0x0, 0x0};
-					const int n = 4;
-
-					for(int i=1; i<=n; i++)
-					{
-						lua_rawgeti(L, pos, i);
-						rgba[i-1] = luaL_optinteger(L, -1, 0);
-						lua_pop(L, 1);
-					}
-					if(!lv2_osc_forge_rgba(forge, osc_urid, rgba[0], rgba[1], rgba[2], rgba[3]))
-						luaL_error(L, forge_buffer_overflow);
-				}
-				pos += 1;
+				const uint32_t rgba = luaL_checkinteger(L, pos++);
+				if(!lv2_osc_forge_rgba(forge, osc_urid,
+						(rgba >> 24) & 0xff,
+						(rgba >> 16) & 0xff,
+						(rgba >> 8) & 0xff,
+						rgba & 0xff))
+					luaL_error(L, forge_buffer_overflow);
 				break;
 			}
 		}

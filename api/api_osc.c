@@ -105,46 +105,53 @@ _loscresponder_method(const char *path, const LV2_Atom_Tuple *arguments, void *d
 		{
 			case LV2_OSC_INT32:
 			{
-				lua_pushinteger(L, ((const LV2_Atom_Int *)atom)->body);
+				int32_t i;
+				if(lv2_osc_int32_get(osc_urid, atom, &i))
+					lua_pushinteger(L, i);
 				break;
 			}
 			case LV2_OSC_FLOAT:
 			{
-				lua_pushnumber(L, ((const LV2_Atom_Float *)atom)->body);
+				float f;
+				if(lv2_osc_float_get(osc_urid, atom, &f))
+					lua_pushnumber(L, f);
 				break;
 			}
 			case LV2_OSC_STRING:
 			{
-				lua_pushstring(L, LV2_ATOM_BODY_CONST(atom));
+				const char *s;
+				if(lv2_osc_string_get(osc_urid, atom, &s))
+					lua_pushstring(L, s);
 				break;
 			}
 			case LV2_OSC_BLOB:
 			{
-				const uint8_t *b = LV2_ATOM_BODY_CONST(atom);
-				lua_createtable(L, atom->size, 0);
-				for(unsigned i=0; i<atom->size; i++)
-				{
-					lua_pushinteger(L, b[i]);
-					lua_rawseti(L, -2, i+1);
-				}
+				const uint8_t *b;
+				uint32_t len;
+				if(lv2_osc_blob_get(osc_urid, atom, &len, &b))
+					lua_pushlstring(L, (const char *)b, len);
 				break;
 			}
 
 			case LV2_OSC_INT64:
 			{
-				lua_pushinteger(L, ((const LV2_Atom_Long *)atom)->body);
+				int64_t h;
+				if(lv2_osc_int64_get(osc_urid, atom, &h))
+					lua_pushinteger(L, h);
 				break;
 			}
 			case LV2_OSC_DOUBLE:
 			{
-				lua_pushnumber(L, ((const LV2_Atom_Double *)atom)->body);
+				double d;
+				if(lv2_osc_double_get(osc_urid, atom, &d))
+					lua_pushnumber(L, d);
 				break;
 			}
 			case LV2_OSC_TIMETAG:
 			{
 				LV2_OSC_Timetag tt;
-				lv2_osc_timetag_get(osc_urid, atom, &tt);
-				lua_pushinteger(L, lv2_osc_timetag_parse(&tt));
+				if(lv2_osc_timetag_get(osc_urid, atom, &tt))
+					lua_pushinteger(L, lv2_osc_timetag_parse(&tt));
 				break;
 			}
 
@@ -171,34 +178,31 @@ _loscresponder_method(const char *path, const LV2_Atom_Tuple *arguments, void *d
 
 			case LV2_OSC_SYMBOL:
 			{
-				lua_pushinteger(L, ((const LV2_Atom_URID *)atom)->body);
+				const char *S;
+				if(lv2_osc_symbol_get(&moony->osc_urid, atom, &S))
+					lua_pushstring(L, S);
 				break;
 			}
 			case LV2_OSC_MIDI:
 			{
-				const uint8_t *m = LV2_ATOM_BODY_CONST(atom);
-				lua_createtable(L, atom->size, 0);
-				for(unsigned i=0; i<atom->size; i++)
-				{
-					lua_pushinteger(L, m[i]);
-					lua_rawseti(L, -2, i+1);
-				}
+				const uint8_t *m;
+				uint32_t len;
+				if(lv2_osc_midi_get(&moony->osc_urid, atom, &len, &m))
+					lua_pushlstring(L, (const char *)m, len);
 				break;
 			}
 			case LV2_OSC_CHAR:
 			{
-				lua_pushinteger(L, *(const uint8_t *)LV2_ATOM_BODY_CONST(atom));
+				char c;
+				if(lv2_osc_char_get(&moony->osc_urid, atom, &c))
+					lua_pushinteger(L, c);
 				break;
 			}
 			case LV2_OSC_RGBA:
 			{
-				const uint8_t *r = LV2_ATOM_BODY_CONST(atom);
-				lua_createtable(L, atom->size, 0);
-				for(unsigned i=0; i<atom->size; i++)
-				{
-					lua_pushinteger(L, r[i]);
-					lua_rawseti(L, -2, i+1);
-				}
+				uint8_t r, g, b, a;
+				if(lv2_osc_rgba_get(&moony->osc_urid, atom, &r, &g, &b, &a))
+					lua_pushinteger(L, (r << 24) | (g << 16) | (b << 8) | a);
 				break;
 			}
 		}

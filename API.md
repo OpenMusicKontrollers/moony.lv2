@@ -655,7 +655,7 @@ end
 
 ``` lua
 osc_responder = OSCResponder:new({
-	['/ping'] = function(self, frames, forge, fmt, ...)
+	['/ping'] = function(self, frames, forge, ...)
 		--
 	end
 })

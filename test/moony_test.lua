@@ -618,7 +618,7 @@ do
 		forge:message('/singletons', 'TFNI')
 		
 		forge:frame_time(4)
-		forge:message('/chunky', 'mb', {0x90, 0x20, 0x7f}, {0x01, 0x02, 0x03, 0x04})
+		forge:message('/chunky', 'mb', string.char(0x90, 0x20, 0x7f), string.char(0x01, 0x02, 0x03, 0x04))
 		
 		forge:frame_time(5)
 		local bndl = forge:bundle(1)
@@ -630,7 +630,7 @@ do
 		assert(bndl:pop() == nil)
 		
 		forge:frame_time(6)
-		forge:message('/color', 'r', {0xff, 0x00, 0x00, 0x7f})
+		forge:message('/color', 'r', 0xff00007f)
 	end
 
 	local function consumer(seq)
