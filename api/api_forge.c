@@ -327,8 +327,8 @@ _lforge_literal(lua_State *L)
 	lforge_t *lforge = lua_touserdata(L, 1);
 	size_t size;
 	const char *val = luaL_checklstring(L, 2, &size);
-	LV2_URID datatype = luaL_checkinteger(L, 3);
-	LV2_URID lang = luaL_checkinteger(L, 4);
+	LV2_URID datatype = luaL_optinteger(L, 3, 0);
+	LV2_URID lang = luaL_optinteger(L, 4, 0);
 
 	if(!lv2_atom_forge_literal(lforge->forge, val, size, datatype, lang))
 		luaL_error(L, forge_buffer_overflow);
