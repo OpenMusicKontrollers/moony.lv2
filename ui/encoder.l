@@ -411,13 +411,19 @@ checkKw(char*s)
 			CHECK(OSCResponder, CALLER);
 
 			CHECK(OSC.Event, NUMBER);
+			CHECK(OSC.Packet, NUMBER);
 			CHECK(OSC.Bundle, NUMBER);
-			CHECK(OSC.Message, NUMBER);
-			CHECK(OSC.bundleTimestamp, NUMBER);
+			CHECK(OSC.bundleTimetag, NUMBER);
 			CHECK(OSC.bundleItems, NUMBER);
+			CHECK(OSC.Message, NUMBER);
 			CHECK(OSC.messagePath, NUMBER);
-			CHECK(OSC.messageFormat, NUMBER);
 			CHECK(OSC.messageArguments, NUMBER);
+			CHECK(OSC.Timetag, NUMBER);
+			CHECK(OSC.timetagIntegral, NUMBER);
+			CHECK(OSC.timetagFraction, NUMBER);
+			CHECK(OSC.Impulse, NUMBER);
+			CHECK(OSC.Char, NUMBER);
+			CHECK(OSC.RGBA, NUMBER);
 			
 			CHECK(Options, CALLER);
 			break;
