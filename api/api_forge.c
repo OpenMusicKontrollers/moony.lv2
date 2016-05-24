@@ -515,7 +515,6 @@ _lforge_osc_message(lua_State *L)
 				break;
 			}
 			case LV2_OSC_STRING:
-			case LV2_OSC_SYMBOL:
 			{
 				const char *s = luaL_checkstring(L, pos++);
 				if(!lv2_osc_forge_string(forge, osc_urid, s, strlen(s)))
@@ -592,10 +591,11 @@ _lforge_osc_message(lua_State *L)
 				break;
 			}
 
-			case LV2_OSC_CHAR:
+			case LV2_OSC_SYMBOL:
 			{
-				const char c = luaL_checkinteger(L, pos++);
-				if(!lv2_osc_forge_char(forge, osc_urid, c))
+				const char *s = luaL_checkstring(L, pos++);
+				const LV2_URID sym = moony->map->map(moony->map->handle, s);
+				if(!lv2_osc_forge_symbol(forge, osc_urid, sym))
 					luaL_error(L, forge_buffer_overflow);
 				break;
 			}
@@ -621,23 +621,28 @@ _lforge_osc_message(lua_State *L)
 
 				break;
 			}
+			case LV2_OSC_CHAR:
+			{
+				const char c = luaL_checkinteger(L, pos++);
+				if(!lv2_osc_forge_char(forge, osc_urid, c))
+					luaL_error(L, forge_buffer_overflow);
+				break;
+			}
 			case LV2_OSC_RGBA:
 			{
 				if(lua_istable(L, pos))
 				{
+					uint8_t rgba [4] = {0x0, 0x0, 0x0, 0x0};
 					const int n = 4;
 
-					if(!lv2_atom_forge_atom(forge, n, moony->osc_urid.OSC_RGBA))
-						luaL_error(L, forge_buffer_overflow);
 					for(int i=1; i<=n; i++)
 					{
 						lua_rawgeti(L, pos, i);
-						const uint8_t b = luaL_optinteger(L, -1, 0);
+						rgba[i-1] = luaL_optinteger(L, -1, 0);
 						lua_pop(L, 1);
-						if(!lv2_atom_forge_raw(forge, &b, 1))
-							luaL_error(L, forge_buffer_overflow);
 					}
-					lv2_atom_forge_pad(forge, n);
+					if(!lv2_osc_forge_rgba(forge, osc_urid, rgba[0], rgba[1], rgba[2], rgba[3]))
+						luaL_error(L, forge_buffer_overflow);
 				}
 				pos += 1;
 				break;

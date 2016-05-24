@@ -421,6 +421,7 @@ checkKw(char*s)
 			CHECK(OSC.Timetag, NUMBER);
 			CHECK(OSC.timetagIntegral, NUMBER);
 			CHECK(OSC.timetagFraction, NUMBER);
+			CHECK(OSC.Nil, NUMBER);
 			CHECK(OSC.Impulse, NUMBER);
 			CHECK(OSC.Char, NUMBER);
 			CHECK(OSC.RGBA, NUMBER);

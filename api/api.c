@@ -1094,6 +1094,7 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 		SET_MAP(L, LV2_OSC__, Timetag);
 		SET_MAP(L, LV2_OSC__, timetagIntegral);
 		SET_MAP(L, LV2_OSC__, timetagFraction);
+		SET_MAP(L, LV2_OSC__, Nil);
 		SET_MAP(L, LV2_OSC__, Impulse);
 		SET_MAP(L, LV2_OSC__, Char);
 		SET_MAP(L, LV2_OSC__, RGBA);

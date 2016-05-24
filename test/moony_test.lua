@@ -664,8 +664,8 @@ do
 		assert(args.type == Atom.Tuple)
 		assert(#args == 4)
 		assert(args[0] == nil)
-		assert(args[1].type == Atom.String)
-		assert(args[1].value == 'velo')
+		assert(args[1].type == Atom.URID)
+		assert(args[1].value == Map['velo'])
 		assert(args[2].type == Atom.Long)
 		assert(args[2].value == 12)
 		assert(args[3].type == Atom.Double)
@@ -686,8 +686,9 @@ do
 		assert(args.type == Atom.Tuple)
 		assert(#args == 1)
 		assert(args[0] == nil)
-		assert(args[1].type == OSC.Char)
-		assert(args[1].value == string.byte('a'))
+		assert(args[1].type == Atom.Literal)
+		assert(args[1].datatype == OSC.Char)
+		assert(args[1].value == 'a')
 		assert(args[2] == nil)
 		
 		atom = seq[4]
@@ -704,10 +705,11 @@ do
 		assert(args[1].value == true)
 		assert(args[2].type == Atom.Bool)
 		assert(args[2].value == false)
-		assert(args[3].type == 0)
-		assert(args[3].value == nil)
-		assert(args[4].type == OSC.Impulse)
-		assert(args[4].value == nil)
+		assert(args[3].type == Atom.Literal)
+		assert(args[3].datatype == OSC.Nil)
+		assert(args[4].type == Atom.Literal)
+		assert(args[4].datatype == OSC.Impulse)
+		assert(args[4].value == '')
 		assert(args[5] == nil)
 		
 		atom = seq[5]
@@ -756,12 +758,9 @@ do
 		args = atom[OSC.messageArguments]
 		assert(args.type == Atom.Tuple)
 		assert(#args== 1)
-		assert(args[1].type == OSC.RGBA)
-		local col = args[1].value
-		assert(col[1] == 0xff)
-		assert(col[2] == 0x00)
-		assert(col[3] == 0x00)
-		assert(col[4] == 0x7f)
+		assert(args[1].type == Atom.Literal)
+		assert(args[1].datatype == OSC.RGBA)
+		assert(args[1].value == 'ff00007f')
 	end
 
 	test(producer, consumer)

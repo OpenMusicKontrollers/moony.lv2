@@ -59,7 +59,7 @@ var LuaHighlightRules = function() {
 				// moony Time
 				"Position|barBeat|bar|beat|beatUnit|beatsPerBar|beatsPerMinute|frame|framesPerSecond|speed|"+
 				// moony OSC
-				"Event|Packet|Bundle|bundleTimetag|bundleItems|Message|messagePath|messageArguments|Timetag|timetagIntegral|timetagFraction|Impulse|Char|RGBA|"+
+				"Event|Packet|Bundle|bundleTimetag|bundleItems|Message|messagePath|messageArguments|Timetag|timetagIntegral|timetagFraction|Nil|Impulse|Char|RGBA|"+
 				// moony Core
 				"sampleRate|minimum|maximum|scalePoint|"+
 				// moony Buf_Size
