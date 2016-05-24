@@ -21,6 +21,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <inttypes.h>
+#include <stdio.h>
 
 #include <osc.lv2/osc.h>
 
