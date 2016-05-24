@@ -44,9 +44,10 @@
 #define LV2_OSC__timetagIntegral    LV2_OSC_PREFIX "timetagIntegral" // atom object property
 #define LV2_OSC__timetagFraction    LV2_OSC_PREFIX "timetagFraction" // atom object property 
 
-#define LV2_OSC__Impulse            LV2_OSC_PREFIX "Impulse" // atom type
-#define LV2_OSC__Char               LV2_OSC_PREFIX "Char" // atom type
-#define LV2_OSC__RGBA               LV2_OSC_PREFIX "RGBA" // atom type
+#define LV2_OSC__Nil                LV2_OSC_PREFIX "Nil" // atom literal type
+#define LV2_OSC__Impulse            LV2_OSC_PREFIX "Impulse" // atom literal type
+#define LV2_OSC__Char               LV2_OSC_PREFIX "Char" // atom literal type
+#define LV2_OSC__RGBA               LV2_OSC_PREFIX "RGBA" // atom literal type
 
 #define LV2_OSC_PADDED_SIZE(size) ( ( (size_t)(size) + 3 ) & ( ~3 ) )
 #define LV2_OSC_IMMEDIATE         1ULL
@@ -127,6 +128,7 @@ typedef struct _LV2_OSC_URID {
 	LV2_URID OSC_timetagIntegral;
 	LV2_URID OSC_timetagFraction;
 
+	LV2_URID OSC_Nil;
 	LV2_URID OSC_Impulse;
 	LV2_URID OSC_Char;
 	LV2_URID OSC_RGBA;
@@ -136,6 +138,7 @@ typedef struct _LV2_OSC_URID {
 	LV2_URID ATOM_Int;
 	LV2_URID ATOM_Long;
 	LV2_URID ATOM_String;
+	LV2_URID ATOM_Literal;
 	LV2_URID ATOM_Float;
 	LV2_URID ATOM_Double;
 	LV2_URID ATOM_URID;
@@ -162,6 +165,7 @@ lv2_osc_urid_init(LV2_OSC_URID *osc_urid, LV2_URID_Map *map)
 	osc_urid->OSC_timetagIntegral = map->map(map->handle, LV2_OSC__timetagIntegral);
 	osc_urid->OSC_timetagFraction = map->map(map->handle, LV2_OSC__timetagFraction);
 
+	osc_urid->OSC_Nil = map->map(map->handle, LV2_OSC__Nil);
 	osc_urid->OSC_Impulse = map->map(map->handle, LV2_OSC__Impulse);
 	osc_urid->OSC_Char = map->map(map->handle, LV2_OSC__Char);
 	osc_urid->OSC_RGBA = map->map(map->handle, LV2_OSC__RGBA);
@@ -171,6 +175,7 @@ lv2_osc_urid_init(LV2_OSC_URID *osc_urid, LV2_URID_Map *map)
 	osc_urid->ATOM_Int = map->map(map->handle, LV2_ATOM__Int);
 	osc_urid->ATOM_Long = map->map(map->handle, LV2_ATOM__Long);
 	osc_urid->ATOM_String = map->map(map->handle, LV2_ATOM__String);
+	osc_urid->ATOM_Literal = map->map(map->handle, LV2_ATOM__Literal);
 	osc_urid->ATOM_Float = map->map(map->handle, LV2_ATOM__Float);
 	osc_urid->ATOM_Double = map->map(map->handle, LV2_ATOM__Double);
 	osc_urid->ATOM_URID = map->map(map->handle, LV2_ATOM__URID);

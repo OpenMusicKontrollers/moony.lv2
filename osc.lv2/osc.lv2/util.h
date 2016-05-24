@@ -20,6 +20,7 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <inttypes.h>
 
 #include <osc.lv2/osc.h>
 
@@ -172,19 +173,23 @@ lv2_osc_argument_type(LV2_OSC_URID *osc_urid, const LV2_Atom *atom)
 		else
 			return LV2_OSC_FALSE;
 	}
-	else if( (atom->type == 0) && (atom->size == 0) )
-		return LV2_OSC_NIL;
-	else if(atom->type == osc_urid->OSC_Impulse)
-		return LV2_OSC_IMPULSE;
+	else if(atom->type == osc_urid->ATOM_Literal)
+	{
+		const LV2_Atom_Literal *lit = (const LV2_Atom_Literal *)atom;
+		if(lit->body.datatype == osc_urid->OSC_Nil)
+			return LV2_OSC_NIL;
+		else if(lit->body.datatype == osc_urid->OSC_Impulse)
+			return LV2_OSC_IMPULSE;
+		else if(lit->body.datatype == osc_urid->OSC_Char)
+			return LV2_OSC_CHAR;
+		else if(lit->body.datatype == osc_urid->OSC_RGBA)
+			return LV2_OSC_RGBA;
+	}
 
 	else if(atom->type == osc_urid->ATOM_URID)
 		return LV2_OSC_SYMBOL;
 	else if(atom->type == osc_urid->MIDI_MidiEvent)
 		return LV2_OSC_MIDI;
-	else if(atom->type == osc_urid->OSC_Char)
-		return LV2_OSC_CHAR;
-	else if(atom->type == osc_urid->OSC_RGBA)
-		return LV2_OSC_RGBA;
 
 	return '\0';
 }
@@ -323,7 +328,8 @@ static inline const LV2_Atom *
 lv2_osc_char_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, char *c)
 {
 	assert(c);
-	*c = ((const LV2_Atom_Int *)atom)->body;
+	const char *str = LV2_ATOM_CONTENTS_CONST(LV2_Atom_Literal, atom);
+	*c = str[0];
 
 	return lv2_atom_tuple_next(atom);
 }
@@ -333,11 +339,8 @@ lv2_osc_rgba_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom,
 	uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a)
 {
 	assert(r && g && b && a);
-	const uint8_t *rgba = LV2_ATOM_BODY_CONST(atom);
-	*r = rgba[0];
-	*g = rgba[1];
-	*b = rgba[2];
-	*a = rgba[3];
+	const char *str = LV2_ATOM_CONTENTS_CONST(LV2_Atom_Literal, atom);
+	sscanf(str, "%02"SCNx8"%02"SCNx8"%02"SCNx8"%02"SCNx8, r, g, b, a);
 
 	return lv2_atom_tuple_next(atom);
 }

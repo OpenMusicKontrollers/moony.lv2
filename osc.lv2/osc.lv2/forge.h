@@ -18,6 +18,8 @@
 #ifndef LV2_OSC_FORGE_H
 #define LV2_OSC_FORGE_H
 
+#include <inttypes.h>
+
 #include <osc.lv2/osc.h>
 #include <osc.lv2/util.h>
 #include <osc.lv2/reader.h>
@@ -50,10 +52,10 @@ extern "C" {
 	lv2_atom_forge_bool((forge), 0)
 
 #define lv2_osc_forge_nil(forge, osc_urid) \
-	lv2_atom_forge_atom((forge), 0, 0)
+	lv2_atom_forge_literal((forge), "", 0, (osc_urid)->OSC_Nil, 0)
 
 #define lv2_osc_forge_impulse(forge, osc_urid) \
-	lv2_atom_forge_atom((forge), 0, (osc_urid)->OSC_Impulse)
+	lv2_atom_forge_literal((forge), "", 0, (osc_urid)->OSC_Impulse, 0)
 
 #define lv2_osc_forge_symbol(forge, osc_urid, val) \
 	lv2_atom_forge_urid((forge), (val))
@@ -93,15 +95,16 @@ static inline LV2_Atom_Forge_Ref
 lv2_osc_forge_char(LV2_Atom_Forge* forge, LV2_OSC_URID *osc_urid,
 	char val)
 {
-	return lv2_osc_forge_chunk(forge, osc_urid->OSC_Char, (const uint8_t *)&val, 1);
+	return lv2_atom_forge_literal(forge, &val, 1, osc_urid->OSC_Char, 0);
 }
 
 static inline LV2_Atom_Forge_Ref
 lv2_osc_forge_rgba(LV2_Atom_Forge* forge, LV2_OSC_URID *osc_urid,
 	uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
-	const uint8_t val [4] = {r, g, b, a};
-	return lv2_osc_forge_chunk(forge, osc_urid->OSC_RGBA, val, 4);
+	char val [9];
+	sprintf(val, "%02"PRIx8"%02"PRIx8"%02"PRIx8"%02"PRIx8, r, g, b, a);
+	return lv2_atom_forge_literal(forge, val, 8, osc_urid->OSC_RGBA, 0);
 }
 
 static inline LV2_Atom_Forge_Ref
