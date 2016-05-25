@@ -95,6 +95,17 @@ _loscresponder_method(const char *path, const LV2_Atom_Tuple *arguments, void *d
 	lua_pushvalue(L, 2); // frames
 	lua_pushvalue(L, 3); // data
 
+	// push format string
+	luaL_Buffer B;
+	luaL_buffinit(L, &B);
+	LV2_ATOM_TUPLE_FOREACH(arguments, atom)
+	{
+		const LV2_OSC_Type type = lv2_osc_argument_type(osc_urid, atom);
+		if(type)
+			luaL_addchar(&B, type);
+	}
+	luaL_pushresult(&B);
+
 	int oldtop = lua_gettop(L);
 
 	LV2_ATOM_TUPLE_FOREACH(arguments, atom)
@@ -208,7 +219,7 @@ _loscresponder_method(const char *path, const LV2_Atom_Tuple *arguments, void *d
 		}
 	}
 
-	lua_call(L, 3 + matching + lua_gettop(L) - oldtop, 0);
+	lua_call(L, 4 + matching + lua_gettop(L) - oldtop, 0);
 }
 
 static int

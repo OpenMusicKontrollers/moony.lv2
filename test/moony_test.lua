@@ -803,18 +803,21 @@ do
 	local complex_responded = 0
 
 	local osc_responder = OSCResponder({
-		['/ping'] = function(self, frames, forge, i)
+		['/ping'] = function(self, frames, forge, fmt, i)
 			assert(frames == 0)
+			assert(fmt == 'i')
 			assert(i == 13)
 			ping_responded = true
 		end,
-		['/pong'] = function(self, frames, forge, s)
+		['/pong'] = function(self, frames, forge, fmt, s)
 			assert(frames == 1)
+			assert(fmt == 's')
 			assert(s == 'world')
 			pong_responded = true
 		end,
-		['/one/two/three'] = function(self, frames, forge, d)
+		['/one/two/three'] = function(self, frames, forge, fmt, d)
 			assert(frames == 2)
+			assert(fmt == 'd')
 			assert(d == 12.3)
 			complex_responded = complex_responded + 1
 		end

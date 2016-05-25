@@ -221,11 +221,11 @@ end"""
 moony:bank-osc_osc-responder
 	state:state [
 		moony:code """osc_responder = OSCResponder({
-	['/ping'] = function(self, frames, forge, ...)
-		forge:time(frames):message('/pong', ...)
+	['/ping'] = function(self, frames, forge, fmt, ...)
+		forge:time(frames):message('/pong', fmt, ...)
 	end,
-	['/pong'] = function(self, frames, forge, ...)
-		forge:time(frames):message('/ping', ...)
+	['/pong'] = function(self, frames, forge, fmt, ...)
+		forge:time(frames):message('/ping', fmt, ...)
 	end
 })
 
