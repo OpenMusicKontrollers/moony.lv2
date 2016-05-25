@@ -1,5 +1,6 @@
 stages:
   - build
+  - test
   - deploy
 
 .common_template: &common_definition
@@ -27,6 +28,11 @@ stages:
     - docker
   <<: *common_definition
 
+.test_template: &test_definition
+  stage: test
+  script:
+    - make test
+
 # building natively
 x86_64-linux:
   <<: *native_definition
@@ -46,6 +52,37 @@ arm-linux-gnueabihf:
 
 universal-apple-darwin:
   <<: *docker_definition
+
+# testing
+x86_64-linux:test:
+  <<: *test_definition
+  dependencies:
+    - x86_64-linux
+
+i686-linux:test:
+  <<: *test_definition
+  dependencies:
+    - i686-linux
+
+x86_64-w64-mingw32:test:
+  <<: *test_definition
+  dependencies:
+    - x86_64-w64-mingw32
+
+i686-w64-mingw32:test:
+  <<: *test_definition
+  dependencies:
+    - i686-w64-mingw32
+
+arm-linux-gnueabihf:test:
+  <<: *test_definition
+  dependencies:
+    - arm-linux-gnueabihf
+
+universal-apple-darwin:test:
+  <<: *test_definition
+  dependencies:
+    - universal-apple-darwin
 
 pack:
   stage: deploy
