@@ -1,12 +1,13 @@
 # the name of the target operating system
-set(CMAKE_SYSTEM_NAME Windows)
+set(CMAKE_SYSTEM_NAME Darwin)
 set(CMAKE_SYSTEM_PROCESSOR "x86_64")
-set(TOOLCHAIN "x86_64-w64-mingw32")
+set(TOOLCHAIN "osxcross")
+
+set(CMAKE_OSX_ARCHITECTURES "x86_64;i386")
 
 # which compilers to use for C and C++
-set(CMAKE_C_COMPILER "${TOOLCHAIN}-gcc")
-set(CMAKE_CXX_COMPILER "${TOOLCHAIN}-g++")
-set(CMAKE_RC_COMPILER "${TOOLCHAIN}-windres")
+set(CMAKE_C_COMPILER "/usr/${TOOLCHAIN}/bin/o64-clang")
+set(CMAKE_CXX_COMPILER "/usr/${TOOLCHAIN}/bin/o64-clang++")
 
 # here is the target environment located
 set(CMAKE_FIND_ROOT_PATH "/usr/${TOOLCHAIN}")

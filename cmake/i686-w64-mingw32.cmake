@@ -17,7 +17,3 @@ set(CMAKE_FIND_ROOT_PATH "/usr/${TOOLCHAIN}")
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-
-set(STATIC_LWS "/usr/${TOOLCHAIN}/lib/libwebsockets_static.a")
-set(LIBS_SIMPLE ${LIBS_SIMPLE} "-static-libgcc -lws2_32 -lpsapi -liphlpapi -Wl,-Bstatic -lwinpthread -luserenv")
-set(LIBS_WEB ${LIBS_WEB} "-static-libgcc -lws2_32 -Wl,-Bstatic -lwinpthread -luserenv")
