@@ -22,7 +22,7 @@ stages:
   <<: *common_definition
 
 .docker_template: &docker_definition
-  image: omk/lad 
+  image: ventosus/crossbuild
   tags:
     - docker
   <<: *common_definition
