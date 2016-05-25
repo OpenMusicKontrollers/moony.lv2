@@ -185,6 +185,68 @@ _lforge_basic_literal(lua_State *L, int pos, LV2_Atom_Forge *forge)
 	return lv2_atom_forge_literal(forge, val, len, 0, 0); //TODO context, lang
 }
 
+static int
+_lforge_basic_bytes(lua_State *L, int pos, LV2_Atom_Forge *forge, LV2_URID type)
+{
+	int ltype = lua_type(L, pos);
+
+	if(ltype == LUA_TTABLE)
+	{
+		int size = lua_rawlen(L, pos);
+		if(!lv2_atom_forge_atom(forge, size, type))
+			luaL_error(L, forge_buffer_overflow);
+		for(int i=1; i<=size; i++)
+		{
+			lua_rawgeti(L, pos, i);
+			uint8_t byte = luaL_checkinteger(L, -1);
+			lua_pop(L, 1);
+			if(!lv2_atom_forge_raw(forge, &byte, 1))
+				luaL_error(L, forge_buffer_overflow);
+		}
+		lv2_atom_forge_pad(forge, size);
+	}
+	else if(ltype == LUA_TSTRING)
+	{
+		size_t size;
+		const char *str = lua_tolstring(L, pos, &size);
+		if(!lv2_atom_forge_atom(forge, size, type))
+			luaL_error(L, forge_buffer_overflow);
+		if(!lv2_atom_forge_raw(forge, str, size))
+			luaL_error(L, forge_buffer_overflow);
+		lv2_atom_forge_pad(forge, size);
+	}
+	else if(luaL_testudata(L, pos, "latom")) //to convert between chunk <-> midi
+	{
+		latom_t *latom = lua_touserdata(L, pos);
+		uint32_t size = latom->atom->size;
+		if(!lv2_atom_forge_atom(forge, size, type))
+			luaL_error(L, forge_buffer_overflow);
+		if(!lv2_atom_forge_raw(forge, latom->body.raw, size))
+			luaL_error(L, forge_buffer_overflow);
+		lv2_atom_forge_pad(forge, size);
+	}
+	else
+		return 0; // type mismatch
+
+	return 1;
+}
+
+static inline LV2_Atom_Forge_Ref
+_lforge_basic_chunk(lua_State *L, int pos, LV2_Atom_Forge *forge)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	return _lforge_basic_bytes(L, pos, forge, moony->forge.Chunk);
+}
+
+static inline LV2_Atom_Forge_Ref
+_lforge_basic_midi(lua_State *L, int pos, LV2_Atom_Forge *forge)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	return _lforge_basic_bytes(L, pos, forge, moony->uris.midi_event);
+}
+
 LV2_Atom_Forge_Ref
 _lforge_basic(lua_State *L, int pos, LV2_Atom_Forge *forge, LV2_URID range)
 {
@@ -209,6 +271,8 @@ _lforge_basic(lua_State *L, int pos, LV2_Atom_Forge *forge, LV2_URID range)
 		return _lforge_basic_path(L, pos, forge);
 	else if(range == forge->Literal)
 		return _lforge_basic_literal(L, pos, forge);
+	else if(range == forge->Chunk)
+		return _lforge_basic_chunk(L, pos, forge);
 
 	return luaL_error(L, "not a basic type");
 }
@@ -338,78 +402,27 @@ _lforge_literal(lua_State *L)
 }
 
 static int
-_lforge_bytes(lua_State *L, moony_t *moony, LV2_URID type)
+_lforge_chunk(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
-	int ltype = lua_type(L, 2);
-	if(ltype == LUA_TTABLE)
-	{
-		int size = lua_rawlen(L, 2);
-		if(!lv2_atom_forge_atom(lforge->forge, size, type))
-			luaL_error(L, forge_buffer_overflow);
-		for(int i=1; i<=size; i++)
-		{
-			lua_rawgeti(L, -1, i);
-			uint8_t byte = luaL_checkinteger(L, -1);
-			lua_pop(L, 1);
-			if(!lv2_atom_forge_raw(lforge->forge, &byte, 1))
-				luaL_error(L, forge_buffer_overflow);
-		}
-		lv2_atom_forge_pad(lforge->forge, size);
-	}
-	else if(ltype == LUA_TSTRING)
-	{
-		size_t size;
-		const char *str = lua_tolstring(L, 2, &size);
-		if(!lv2_atom_forge_atom(lforge->forge, size, type))
-			luaL_error(L, forge_buffer_overflow);
-		if(!lv2_atom_forge_raw(lforge->forge, str, size))
-			luaL_error(L, forge_buffer_overflow);
-		lv2_atom_forge_pad(lforge->forge, size);
-	}
-	else if(luaL_testudata(L, 2, "latom")) //to convert between chunk <-> midi
-	{
-		latom_t *latom = lua_touserdata(L, 2);
-		uint32_t size = latom->atom->size;
-		if(!lv2_atom_forge_atom(lforge->forge, size, type))
-			luaL_error(L, forge_buffer_overflow);
-		if(!lv2_atom_forge_raw(lforge->forge, latom->body.raw, size))
-			luaL_error(L, forge_buffer_overflow);
-		lv2_atom_forge_pad(lforge->forge, size);
-	}
-	else // bytes as individual function arguments
-	{
-		int size = lua_gettop(L) - 1;
 
-		if(!lv2_atom_forge_atom(lforge->forge, size, type))
-			luaL_error(L, forge_buffer_overflow);
-		for(int i=0; i<size; i++)
-		{
-			uint8_t byte = luaL_checkinteger(L, i+2);
-			if(!lv2_atom_forge_raw(lforge->forge, &byte, 1))
-				luaL_error(L, forge_buffer_overflow);
-		}
-		lv2_atom_forge_pad(lforge->forge, size);
-	}
+	if(!_lforge_basic_chunk(L, 2, lforge->forge))
+		luaL_error(L, forge_buffer_overflow);
 
 	lua_settop(L, 1);
 	return 1;
 }
 
 static int
-_lforge_chunk(lua_State *L)
-{
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-
-	return _lforge_bytes(L, moony, moony->forge.Chunk);
-}
-
-static int
 _lforge_midi(lua_State *L)
 {
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = lua_touserdata(L, 1);
 
-	return _lforge_bytes(L, moony, moony->uris.midi_event);
+	if(!_lforge_basic_midi(L, 2, lforge->forge))
+		luaL_error(L, forge_buffer_overflow);
+
+	lua_settop(L, 1);
+	return 1;
 }
 
 static inline uint64_t

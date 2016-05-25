@@ -283,7 +283,7 @@ do
 		forge:time(0.1):midi(m)
 
 		forge:time(0.2)
-		forge:midi(table.unpack(m))
+		forge:midi(string.char(table.unpack(m)))
 	end
 
 	local function consumer(seq)
@@ -411,7 +411,7 @@ do
 		forge:chunk(c)
 
 		forge:frame_time(0)
-		forge:chunk(table.unpack(c))
+		forge:chunk(string.char(table.unpack(c)))
 	end
 
 	local function consumer(seq)
