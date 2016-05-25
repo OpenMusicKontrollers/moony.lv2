@@ -405,7 +405,7 @@ bytes = #midi -- number of MIDI bytes
 
 ``` lua
 t = midi.type -- type of atom, e.g. MIDI.MidiEvent
-m = midi.value -- Lua table with single raw MIDI bytes
+m = midi.body -- Lua table with single raw MIDI bytes
 status = m[1] -- MIDI status byte as Lua integer
 ```
 
@@ -552,7 +552,7 @@ bytes = #chunk -- number of chunk bytes
 
 ``` lua
 t = chunk.type -- type of atom, e.g. Atom.Chunk
-c = chunk.value -- Lua table with single raw chunk bytes
+c = chunk.body -- Lua table with single raw chunk bytes
 c1 = c[1] -- first byte as Lua integer
 ```
 
@@ -582,37 +582,37 @@ n = #atom -- byte size of atom
 
 ``` lua
 t = atom.type -- type of atom, e.g. Atom.Int, Atom.Double, Atom.String
-v = atom.value -- native Lua value for the corresponding atom
+v = atom.body -- native Lua value for the corresponding atom
 ```
 
 #### Atom.Bool
 
 ``` lua
-bool = atom.value -- Lua boolean, e.g. true or false
+bool = atom.body -- Lua boolean, e.g. true or false
 ```
 
 #### Atom.Int, Atom.Long
 
 ``` lua
-int = atom.value -- Lua integer
+int = atom.body -- Lua integer
 ```
 
 #### Atom.Float, Atom.Double
 
 ``` lua
-float = atom.value -- Lua number
+float = atom.body -- Lua number
 ```
 
 #### Atom.String
 
 ``` lua
-str = atom.value -- Lua string
+str = atom.body -- Lua string
 ```
 
 #### Atom.Literal
 
 ``` lua
-literal = atom.value -- Lua string
+literal = atom.body -- Lua string
 datatype = atom.datatype -- URID as Lua integer
 lang = atom.lang -- URID as Lua integer
 ```
@@ -620,19 +620,19 @@ lang = atom.lang -- URID as Lua integer
 #### Atom.URID
 
 ``` lua
-urid = atom.value -- Lua integer
+urid = atom.body -- Lua integer
 ```
 
 #### Atom.URI
 
 ``` lua
-uri = atom.value -- Lua string
+uri = atom.body -- Lua string
 ```
 
 #### Atom.Path
 
 ``` lua
-path = atom.value -- Lua string
+path = atom.body -- Lua string
 ```
 
 ### Responders

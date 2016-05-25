@@ -915,7 +915,7 @@ _latom__index(lua_State *L)
 				lua_pushinteger(L, latom->atom->type);
 				return 1;
 			}
-			else if(driver->value && !strcmp(key, "value"))
+			else if(driver->value && !strcmp(key, "body"))
 			{
 				return driver->value(L, latom);
 			}

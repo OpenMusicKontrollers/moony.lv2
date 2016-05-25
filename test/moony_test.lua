@@ -43,14 +43,14 @@ do
 		local atom = seq[1]
 		assert(atom.type == Atom.Int)
 		assert(#atom == 4)
-		assert(type(atom.value) == 'number')
-		assert(atom.value == 0x7fffffff)
+		assert(type(atom.body) == 'number')
+		assert(atom.body == 0x7fffffff)
 		
 		local atom = seq[2]
 		assert(atom.type == Atom.Int)
 		assert(#atom == 4)
-		assert(type(atom.value) == 'number')
-		assert(atom.value ~= 0xffffffff)
+		assert(type(atom.body) == 'number')
+		assert(atom.body ~= 0xffffffff)
 	end
 
 	test(producer, consumer)
@@ -85,8 +85,8 @@ do
 		local atom = seq[1]
 		assert(atom.type == Atom.Long)
 		assert(#atom == 8)
-		assert(type(atom.value) == 'number')
-		assert(atom.value == 0x100000000)
+		assert(type(atom.body) == 'number')
+		assert(atom.body == 0x100000000)
 	end
 
 	test(producer, consumer)
@@ -105,8 +105,8 @@ do
 		local atom = seq[1]
 		assert(atom.type == Atom.Float)
 		assert(#atom == 4)
-		assert(type(atom.value) == 'number')
-		assert(atom.value == 2.0)
+		assert(type(atom.body) == 'number')
+		assert(atom.body == 2.0)
 	end
 
 	test(producer, consumer)
@@ -124,8 +124,8 @@ do
 		local atom = seq[1]
 		assert(atom.type == Atom.Double)
 		assert(#atom == 8)
-		assert(type(atom.value) == 'number')
-		assert(atom.value == 0.12)
+		assert(type(atom.body) == 'number')
+		assert(atom.body == 0.12)
 	end
 
 	test(producer, consumer)
@@ -144,15 +144,15 @@ do
 		local atom = seq[1]
 		assert(atom.type == Atom.Bool)
 		assert(#atom == 4)
-		assert(type(atom.value) == 'boolean')
-		assert(atom.value == true)
+		assert(type(atom.body) == 'boolean')
+		assert(atom.body == true)
 		
 		local atom = seq[2]
 		assert(atom.type == Atom.Bool)
 		assert(#atom == 4)
-		assert(type(atom.value) == 'boolean')
-		assert(type(atom.value) == 'boolean')
-		assert(atom.value == false)
+		assert(type(atom.body) == 'boolean')
+		assert(type(atom.body) == 'boolean')
+		assert(atom.body == false)
 	end
 
 	test(producer, consumer)
@@ -173,8 +173,8 @@ do
 		local atom = seq[1]
 		assert(atom.type == Atom.String)
 		assert(#atom == string.len(str) + 1)
-		assert(type(atom.value) == 'string')
-		assert(atom.value == str)
+		assert(type(atom.body) == 'string')
+		assert(atom.body == str)
 	end
 
 	test(producer, consumer)
@@ -196,9 +196,9 @@ do
 		assert(#seq == 1)
 		local atom = seq[1]
 		assert(atom.type == Atom.Literal)
-		assert(type(atom.value) == 'string')
+		assert(type(atom.body) == 'string')
 		assert(#atom == 8 + string.len(str) + 1)
-		assert(atom.value == str)
+		assert(atom.body == str)
 		assert(atom.datatype == datatype)
 		assert(atom.lang == lang)
 		assert(str, datatype, lang == atom:unpack())
@@ -222,8 +222,8 @@ do
 		local atom = seq[1]
 		assert(atom.type == Atom.URI)
 		assert(#atom == string.len(uri) + 1)
-		assert(type(atom.value) == 'string')
-		assert(atom.value == uri)
+		assert(type(atom.body) == 'string')
+		assert(atom.body == uri)
 	end
 
 	test(producer, consumer)
@@ -244,8 +244,8 @@ do
 		local atom = seq[1]
 		assert(atom.type == Atom.Path)
 		assert(#atom == string.len(path) + 1)
-		assert(type(atom.value) == 'string')
-		assert(atom.value == path)
+		assert(type(atom.body) == 'string')
+		assert(atom.body == path)
 	end
 
 	test(producer, consumer)
@@ -266,9 +266,9 @@ do
 		local atom = seq[1]
 		assert(atom.type == Atom.URID)
 		assert(#atom == 4)
-		assert(type(atom.value) == 'number')
-		assert(atom.value == urid)
-		assert(Unmap[atom.value] == uri)
+		assert(type(atom.body) == 'number')
+		assert(atom.body == urid)
+		assert(Unmap[atom.body] == uri)
 	end
 
 	test(producer, consumer)
@@ -294,12 +294,12 @@ do
 
 		local atom = seq[1]
 		assert(atom.type == MIDI.MidiEvent)
-		assert(type(atom.value) == 'string')
+		assert(type(atom.body) == 'string')
 		assert(#atom == #m)
-		assert(#atom.value == #m)
-		assert(atom.value:byte(0, 0) == nil)
-		assert(atom.value:byte(1, 3) == 0x90, 0x2a, 0x7f)
-		assert(atom.value:byte(4, 4) == nil)
+		assert(#atom.body == #m)
+		assert(atom.body:byte(0, 0) == nil)
+		assert(atom.body:byte(1, 3) == 0x90, 0x2a, 0x7f)
+		assert(atom.body:byte(4, 4) == nil)
 
 		atom = seq[2]
 		assert(atom.type == MIDI.MidiEvent)
@@ -337,7 +337,7 @@ do
 
 		atom = seq[3]
 		assert(atom.type == MIDI.MidiEvent)
-		assert(atom.value == string.char(table.unpack(m)))
+		assert(atom.body == string.char(table.unpack(m)))
 	end
 
 	test(producer, consumer)
@@ -430,12 +430,12 @@ do
 
 		local atom = seq[1]
 		assert(atom.type == Atom.Chunk)
-		assert(type(atom.value) == 'string')
+		assert(type(atom.body) == 'string')
 		assert(#atom == #c)
-		assert(#atom.value == #c)
-		assert(atom.value:byte(0) == nil)
-		assert(atom.value:byte(1, 6) == 0x01, 0x02, 0x03, 0x04, 0x05, 0x06)
-		assert(atom.value:byte(7) == nil)
+		assert(#atom.body == #c)
+		assert(atom.body:byte(0) == nil)
+		assert(atom.body:byte(1, 6) == 0x01, 0x02, 0x03, 0x04, 0x05, 0x06)
+		assert(atom.body:byte(7) == nil)
 
 		atom = seq[2]
 		assert(atom.type == Atom.Chunk)
@@ -474,7 +474,7 @@ do
 
 		atom = seq[3]
 		assert(atom.type == Atom.Chunk)
-		assert(atom.value == string.char(table.unpack(c)))
+		assert(atom.body == string.char(table.unpack(c)))
 	end
 
 	test(producer, consumer)
@@ -500,25 +500,25 @@ do
 
 		local sub = atom[1]
 		assert(sub.type == Atom.Int)
-		assert(sub.value == 1)
+		assert(sub.body == 1)
 		
 		sub = atom[2]
 		assert(sub.type == Atom.Float)
-		assert(sub.value == 2.0)
+		assert(sub.body == 2.0)
 		
 		sub = atom[3]
 		assert(sub.type == Atom.Long)
-		assert(sub.value == 3)
+		assert(sub.body == 3)
 		
 		sub = atom[4]
 		assert(sub.type == Atom.Double)
-		assert(sub.value == 4.0)
+		assert(sub.body == 4.0)
 
 		assert(atom[0] == nil)
 		assert(atom[5] == nil)
 
 		for i, sub in atom:foreach() do
-			assert(atom[i].value == sub.value)
+			assert(atom[i].body == sub.body)
 		end
 
 		local subsub
@@ -579,10 +579,10 @@ do
 		assert(sub.type == Atom.Int)
 		
 		sub = atom[key2]
-		assert(sub.value == 13)
+		assert(sub.body == 13)
 
 		for key, context, sub in atom:foreach() do
-			assert(atom[key].value == sub.value)
+			assert(atom[key].body == sub.body)
 
 			if(key == key2) then
 				assert(context == context2)
@@ -609,7 +609,7 @@ do
 		assert(#seq == 1)
 		local atom = seq[1]
 		assert(atom.type == Atom.Int)
-		assert(atom.value == 12)
+		assert(atom.body == 12)
 
 		forge0:frame_time(0):atom(atom)
 	end
@@ -657,17 +657,17 @@ do
 		assert(atom.otype == OSC.Message)
 		local path = atom[OSC.messagePath]
 		assert(path.type == Atom.String)
-		assert(path.value == '/hello')
+		assert(path.body == '/hello')
 		local args = atom[OSC.messageArguments]
 		assert(args.type == Atom.Tuple)
 		assert(#args == 3)
 		assert(args[0] == nil)
 		assert(args[1].type == Atom.String)
-		assert(args[1].value == 'world')
+		assert(args[1].body == 'world')
 		assert(args[2].type == Atom.Int)
-		assert(args[2].value == 12)
+		assert(args[2].body == 12)
 		assert(args[3].type == Atom.Float)
-		assert(args[3].value == 13.0)
+		assert(args[3].body == 13.0)
 		assert(args[4] == nil)
 		
 		atom = seq[2]
@@ -675,21 +675,21 @@ do
 		assert(atom.otype == OSC.Message)
 		path = atom[OSC.messagePath]
 		assert(path.type == Atom.String)
-		assert(path.value == '/hallo')
+		assert(path.body == '/hallo')
 		args = atom[OSC.messageArguments]
 		assert(args.type == Atom.Tuple)
 		assert(#args == 4)
 		assert(args[0] == nil)
 		assert(args[1].type == Atom.URID)
-		assert(args[1].value == Map['velo'])
+		assert(args[1].body == Map['velo'])
 		assert(args[2].type == Atom.Long)
-		assert(args[2].value == 12)
+		assert(args[2].body == 12)
 		assert(args[3].type == Atom.Double)
-		assert(args[3].value == 13.0)
+		assert(args[3].body == 13.0)
 		assert(args[4].type == Atom.Object)
 		assert(args[4].otype == OSC.Timetag)
-		assert(args[4][OSC.timetagIntegral].value == 0)
-		assert(args[4][OSC.timetagFraction].value == 1)
+		assert(args[4][OSC.timetagIntegral].body == 0)
+		assert(args[4][OSC.timetagFraction].body == 1)
 		assert(args[5] == nil)
 		
 		atom = seq[3]
@@ -697,14 +697,14 @@ do
 		assert(atom.otype == OSC.Message)
 		path = atom[OSC.messagePath]
 		assert(path.type == Atom.String)
-		assert(path.value == '/yup')
+		assert(path.body == '/yup')
 		args = atom[OSC.messageArguments]
 		assert(args.type == Atom.Tuple)
 		assert(#args == 1)
 		assert(args[0] == nil)
 		assert(args[1].type == Atom.Literal)
 		assert(args[1].datatype == OSC.Char)
-		assert(args[1].value == 'a')
+		assert(args[1].body == 'a')
 		assert(args[2] == nil)
 		
 		atom = seq[4]
@@ -712,20 +712,20 @@ do
 		assert(atom.otype == OSC.Message)
 		path = atom[OSC.messagePath]
 		assert(path.type == Atom.String)
-		assert(path.value == '/singletons')
+		assert(path.body == '/singletons')
 		args = atom[OSC.messageArguments]
 		assert(args.type == Atom.Tuple)
 		assert(#args == 4)
 		assert(args[0] == nil)
 		assert(args[1].type == Atom.Bool)
-		assert(args[1].value == true)
+		assert(args[1].body == true)
 		assert(args[2].type == Atom.Bool)
-		assert(args[2].value == false)
+		assert(args[2].body == false)
 		assert(args[3].type == Atom.Literal)
 		assert(args[3].datatype == OSC.Nil)
 		assert(args[4].type == Atom.Literal)
 		assert(args[4].datatype == OSC.Impulse)
-		assert(args[4].value == '')
+		assert(args[4].body == '')
 		assert(args[5] == nil)
 		
 		atom = seq[5]
@@ -733,7 +733,7 @@ do
 		assert(atom.otype == OSC.Message)
 		path = atom[OSC.messagePath]
 		assert(path.type == Atom.String)
-		assert(path.value == '/chunky')
+		assert(path.body == '/chunky')
 		args = atom[OSC.messageArguments]
 		assert(args.type == Atom.Tuple)
 		assert(#args == 2)
@@ -757,8 +757,8 @@ do
 		local timetag = atom[OSC.bundleTimetag]
 		assert(timetag.type == Atom.Object)
 		assert(timetag.otype == OSC.Timetag)
-		assert(timetag[OSC.timetagIntegral].value == 0)
-		assert(timetag[OSC.timetagFraction].value == 1)
+		assert(timetag[OSC.timetagIntegral].body == 0)
+		assert(timetag[OSC.timetagFraction].body == 1)
 		local itms = atom[OSC.bundleItems]
 		assert(itms.type == Atom.Tuple)
 		assert(#itms == 4)
@@ -776,7 +776,7 @@ do
 		assert(#args== 1)
 		assert(args[1].type == Atom.Literal)
 		assert(args[1].datatype == OSC.RGBA)
-		assert(args[1].value == 'ff00007f')
+		assert(args[1].body == 'ff00007f')
 	end
 
 	test(producer, consumer)
@@ -984,14 +984,14 @@ do
 		local atom = seq[1]
 		assert(atom.type == Atom.Object)
 		assert(atom.otype == Time.Position)
-		assert(atom[Time.barBeat].value == 0.5)
-		assert(atom[Time.bar].value == 34)
-		assert(atom[Time.beatUnit].value == 8)
-		assert(atom[Time.beatsPerBar].value == 6.0)
-		assert(atom[Time.beatsPerMinute].value == 200.0)
-		assert(atom[Time.frame].value == 23000)
-		assert(atom[Time.framesPerSecond].value == 44100.0)
-		assert(atom[Time.speed].value == 1.0)
+		assert(atom[Time.barBeat].body == 0.5)
+		assert(atom[Time.bar].body == 34)
+		assert(atom[Time.beatUnit].body == 8)
+		assert(atom[Time.beatsPerBar].body == 6.0)
+		assert(atom[Time.beatsPerMinute].body == 200.0)
+		assert(atom[Time.frame].body == 23000)
+		assert(atom[Time.framesPerSecond].body == 44100.0)
+		assert(atom[Time.speed].body == 1.0)
 
 		-- test time:apply
 		--time_responder(0, 0, nil, atom)
@@ -1035,7 +1035,7 @@ do
 		for frames, atom in subseq:foreach() do
 			assert(not math.tointeger(frames)) -- beatTime is double
 			assert(atom.type == Atom.Int)
-			assert(atom.value == 1)
+			assert(atom.body == 1)
 		end
 
 		subseq = seq[2]
@@ -1082,7 +1082,7 @@ do
 
 		for i, atom in vec:foreach() do
 			assert(atom.type == Atom.Int)
-			assert(atom.value == i)
+			assert(atom.body == i)
 		end
 		
 		vec = seq[2]
@@ -1093,7 +1093,7 @@ do
 
 		for i, atom in vec:foreach() do
 			assert(atom.type == Atom.Long)
-			assert(atom.value == i + 4)
+			assert(atom.body == i + 4)
 		end
 
 		vec = seq[3]
@@ -1102,8 +1102,8 @@ do
 		assert(vec.child_type == Atom.Bool)
 		assert(vec.child_size == 4)
 		assert(vec[0] == nil)
-		assert(vec[1].value == true)
-		assert(vec[2].value == false)
+		assert(vec[1].body == true)
+		assert(vec[2].body == false)
 		assert(vec[3] == nil)
 
 		vec = seq[4]
@@ -1112,8 +1112,8 @@ do
 		assert(vec.child_type == Atom.Float)
 		assert(vec.child_size == 4)
 		local a, b = vec:unpack()
-		assert(a.value == 1.0)
-		assert(b.value == 2.0)
+		assert(a.body == 1.0)
+		assert(b.body == 2.0)
 		
 		vec = seq[5]
 		assert(vec.type == Atom.Vector)
@@ -1121,8 +1121,8 @@ do
 		assert(vec.child_type == Atom.Double)
 		assert(vec.child_size == 8)
 		local a, b = vec:unpack()
-		assert(a.value == 3.3)
-		assert(b.value == 4.4)
+		assert(a.body == 3.3)
+		assert(b.body == 4.4)
 		
 		vec = seq[6]
 		assert(vec.type == Atom.Vector)
@@ -1130,10 +1130,10 @@ do
 		assert(vec.child_type == Atom.URID)
 		assert(vec.child_size == 4)
 		local a, b = vec:unpack(1, 1)
-		assert(a.value == Atom.Int)
+		assert(a.body == Atom.Int)
 		assert(b == nil)
 		local a, b = vec:unpack(2, 2)
-		assert(a.value == Atom.Long)
+		assert(a.body == Atom.Long)
 		assert(b == nil)
 	end
 
@@ -1201,63 +1201,63 @@ do
 		assert(get.type == Atom.Object)
 		assert(get.otype == Patch.Get)
 		assert(#get == 2)
-		assert(get[Patch.subject].value == subject)
-		assert(get[Patch.property].value == property)
+		assert(get[Patch.subject].body == subject)
+		assert(get[Patch.property].body == property)
 
 		get = seq[2]
 		assert(get.type == Atom.Object)
 		assert(get.otype == Patch.Get)
 		assert(#get == 1)
 		assert(get[Patch.subject] == nil)
-		assert(get[Patch.property].value == property)
+		assert(get[Patch.property].body == property)
 
 		local set = seq[3]
 		assert(set.type == Atom.Object)
 		assert(set.otype == Patch.Set)
 		assert(#set == 3)
-		assert(set[Patch.subject].value == subject)
-		assert(set[Patch.property].value == property)
-		assert(set[Patch.value].value == 'hello world')
+		assert(set[Patch.subject].body == subject)
+		assert(set[Patch.property].body == property)
+		assert(set[Patch.value].body == 'hello world')
 
 		set = seq[4]
 		assert(set.type == Atom.Object)
 		assert(set.otype == Patch.Set)
 		assert(#set == 2)
 		assert(set[Patch.subject] == nil)
-		assert(set[Patch.property].value == property)
-		assert(set[Patch.value].value == 'hello world')
+		assert(set[Patch.property].body == property)
+		assert(set[Patch.value].body == 'hello world')
 
 		local patch = seq[5]
 		assert(patch.type == Atom.Object)
 		assert(patch.otype == Patch.Patch)
 		assert(#patch == 3)
-		assert(patch[Patch.subject].value == subject)
-		assert(patch[Patch.remove][access].value == Patch.wildcard) 
-		assert(patch[Patch.add][access].value == property) 
+		assert(patch[Patch.subject].body == subject)
+		assert(patch[Patch.remove][access].body == Patch.wildcard) 
+		assert(patch[Patch.add][access].body == property) 
 
 		patch = seq[6]
 		assert(patch.type == Atom.Object)
 		assert(patch.otype == Patch.Patch)
 		assert(#patch == 3)
-		assert(patch[Patch.subject].value == property)
-		assert(patch[Patch.remove][RDFS.label].value == Patch.wildcard)
-		assert(patch[Patch.remove][RDFS.range].value == Patch.wildcard) 
-		assert(patch[Patch.remove][Core.minimum].value == Patch.wildcard) 
-		assert(patch[Patch.remove][Core.maximum].value == Patch.wildcard) 
-		assert(patch[Patch.add][RDFS.label].value == 'A dummy label') 
-		assert(patch[Patch.add][RDFS.range].value == Atom.Int) 
-		assert(patch[Patch.add][Core.minimum].value == 0) 
-		assert(patch[Patch.add][Core.maximum].value == 10) 
+		assert(patch[Patch.subject].body == property)
+		assert(patch[Patch.remove][RDFS.label].body == Patch.wildcard)
+		assert(patch[Patch.remove][RDFS.range].body == Patch.wildcard) 
+		assert(patch[Patch.remove][Core.minimum].body == Patch.wildcard) 
+		assert(patch[Patch.remove][Core.maximum].body == Patch.wildcard) 
+		assert(patch[Patch.add][RDFS.label].body == 'A dummy label') 
+		assert(patch[Patch.add][RDFS.range].body == Atom.Int) 
+		assert(patch[Patch.add][Core.minimum].body == 0) 
+		assert(patch[Patch.add][Core.maximum].body == 10) 
 
 		local put = seq[7]
 		assert(put.type == Atom.Object)
 		assert(put.otype == Patch.Put)
 		assert(#put == 2)
-		assert(put[Patch.subject].value == subject)
+		assert(put[Patch.subject].body == subject)
 		local body = put[Patch.body]
 		assert(body)
 		assert(#body == 1)
-		assert(body[property].value == 'hello world')
+		assert(body[property].body == 'hello world')
 	end
 
 	test(producer, consumer)
@@ -1336,9 +1336,9 @@ do
 		assert(atom.type == Atom.Object)
 		assert(#atom == 2)
 		assert(atom[urid.int].type == Atom.Int)
-		assert(atom[urid.int].value == 1)
+		assert(atom[urid.int].body == 1)
 		assert(atom[urid.flt].type == Atom.Float)
-		assert(atom[urid.flt].value == 1.0)
+		assert(atom[urid.flt].body == 1.0)
 
 		-- test state:apply
 		state:apply(atom)
@@ -1405,7 +1405,7 @@ do
 
 			assert(#atom == #clone)
 			assert(atom.type == clone.type)
-			assert(atom.value == clone.value)
+			assert(atom.body == clone.body)
 
 			clones[frames] = clone
 			references[frames] = atom
@@ -1416,19 +1416,19 @@ do
 
 	assert(#clones[1] == 4)
 	assert(clones[1].type == Atom.Int)
-	assert(clones[1].value == 1)
+	assert(clones[1].body == 1)
 
 	assert(#clones[2] == 8)
 	assert(clones[2].type == Atom.Long)
-	assert(clones[2].value == 2)
+	assert(clones[2].body == 2)
 
 	assert(#references[1] == 8) -- latoms in :foreach are recycled
 	assert(references[1].type == Atom.Long)
-	assert(references[1].value == 2)
+	assert(references[1].body == 2)
 
 	assert(#references[2] == 8)
 	assert(references[2].type == Atom.Long)
-	assert(references[2].value == 2)
+	assert(references[2].body == 2)
 end
 
 -- Stash
@@ -1441,7 +1441,7 @@ do
 	stash:read()
 	assert(#stash == 4)
 	assert(stash.type == Atom.Int)
-	assert(stash.value == 12)
+	assert(stash.body == 12)
 
 	stash:write()
 	stash:read()
@@ -1494,7 +1494,7 @@ do
 	local function consumer(seq)
 		for frames, atom in seq:foreach() do
 			if atom.type == Atom.Chunk then
-				local f = load(atom.value, 'rt-chunk', 'b', env)
+				local f = load(atom.body, 'rt-chunk', 'b', env)
 				if f then
 					foo = f()
 				end
