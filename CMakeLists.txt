@@ -87,6 +87,8 @@ if(BUILD_COMMON_UI)
 	target_link_libraries(moony_ui
 		${NANOMSG_LDFLAGS}
 		${SRATOM_LDFLAGS})
+	set_target_properties(moony_ui PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
+	set_target_properties(moony_ui PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 	set_target_properties(moony_ui PROPERTIES PREFIX "")
 	install(TARGETS moony_ui DESTINATION ${PLUGIN_DEST})
 
@@ -96,6 +98,8 @@ if(BUILD_COMMON_UI)
 		${FLEX_encoder_OUTPUTS})
 	target_link_libraries(moony_eo
 		${ELM_LDFLAGS})
+	set_target_properties(moony_eo PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
+	set_target_properties(moony_eo PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 	set_target_properties(moony_eo PROPERTIES PREFIX "")
 	install(TARGETS moony_eo DESTINATION ${PLUGIN_DEST})
 
@@ -120,6 +124,8 @@ if(BUILD_SIMPLE_UI)
 		ui/moony_simple.c
 		ui/simple_ui.c)
 	target_link_libraries(moony_simple ${LIBS_SIMPLE})
+	set_target_properties(moony_simple PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
+	set_target_properties(moony_simple PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 	set_target_properties(moony_simple PROPERTIES PREFIX "")
 	install(TARGETS moony_simple DESTINATION ${PLUGIN_DEST})
 else()
@@ -144,6 +150,8 @@ if(BUILD_WEB_UI)
 		ui/moony_web.c
 		ui/web_ui.c)
 	target_link_libraries(moony_web ${LIBS_WEB})
+	set_target_properties(moony_web PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
+	set_target_properties(moony_web PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 	set_target_properties(moony_web PROPERTIES PREFIX "")
 	install(TARGETS moony_web DESTINATION ${PLUGIN_DEST})
 	install(FILES ${PROJECT_BINARY_DIR}/index.html DESTINATION ${PLUGIN_DEST}/web_ui)
@@ -226,6 +234,7 @@ elseif(APPLE)
 	target_compile_definitions(moony PUBLIC -DLUA_USE_MACOSX)
 endif()
 target_link_libraries(moony ${LIBS} "-lm")
+set_target_properties(moony PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
 set_target_properties(moony PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 set_target_properties(moony PROPERTIES PREFIX "")
 install(TARGETS moony DESTINATION ${PLUGIN_DEST})
