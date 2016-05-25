@@ -218,15 +218,26 @@ _lforge_basic_bytes(lua_State *L, int pos, LV2_Atom_Forge *forge, LV2_URID type)
 	else if(luaL_testudata(L, pos, "latom")) //to convert between chunk <-> midi
 	{
 		latom_t *latom = lua_touserdata(L, pos);
-		uint32_t size = latom->atom->size;
+		const uint32_t size = latom->atom->size;
 		if(!lv2_atom_forge_atom(forge, size, type))
 			luaL_error(L, forge_buffer_overflow);
 		if(!lv2_atom_forge_raw(forge, latom->body.raw, size))
 			luaL_error(L, forge_buffer_overflow);
 		lv2_atom_forge_pad(forge, size);
 	}
-	else
-		return 0; // type mismatch
+	else // bytes as individual function arguments
+	{
+		const uint32_t size = lua_gettop(L) - 1;
+		if(!lv2_atom_forge_atom(forge, size, type))
+			luaL_error(L, forge_buffer_overflow);
+		for(unsigned i=0; i<size; i++)
+		{
+			const uint8_t byte = luaL_checkinteger(L, pos + i);
+			if(!lv2_atom_forge_raw(forge, &byte, 1))
+				luaL_error(L, forge_buffer_overflow);
+		}
+		lv2_atom_forge_pad(forge, size);
+	}
 
 	return 1;
 }

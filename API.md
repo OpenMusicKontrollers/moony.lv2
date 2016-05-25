@@ -223,8 +223,10 @@ forge:uri('http://foo.org#bar') -- push a Lua string as URI
 forge:path('/tmp/test.lua') -- push a Lua string as path
 
 forge:midi({0x90, 0x4a, 0x7f}) -- push a Lua table as MIDI message
+forge:midi(0x90, 0x4a, 0x7f) -- push single bytes as MIDI message
 forge:midi(string.char(0x90, 0x4a, 0x7f)) -- push Lua byte string MIDI message
 forge:chunk({0x01, 0x02, 0x03, 0x04}) -- push a Lua table as atom chunk
+forge:chunk(0x01, 0x02, 0x03, 0x04) -- push single bytes as atom chunk
 forge:chunk(string.char(0x01, 0x02, 0x03, 0x04)) -- push Lua byte string as atom chunk
 
 forge:vector(URID, {a, b, c, d}) -- push a vector of fixed-sized type URID

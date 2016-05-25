@@ -284,10 +284,14 @@ do
 
 		forge:time(0.2)
 		forge:midi(string.char(table.unpack(m)))
+
+		forge:time(0.3)
+		forge:midi(table.unpack(m))
 	end
 
 	local function consumer(seq)
-		assert(#seq == 2)
+		assert(#seq == 3)
+
 		local atom = seq[1]
 		assert(atom.type == MIDI.MidiEvent)
 		assert(type(atom.value) == 'string')
@@ -330,6 +334,10 @@ do
 		
 		assert(#{atom:unpack()} == #{atom:unpack(-100, 100)})
 		assert(#{atom:unpack(1, 2)} == #{atom:unpack(2, 3)})
+
+		atom = seq[3]
+		assert(atom.type == MIDI.MidiEvent)
+		assert(atom.value == string.char(table.unpack(m)))
 	end
 
 	test(producer, consumer)
@@ -412,10 +420,14 @@ do
 
 		forge:frame_time(0)
 		forge:chunk(string.char(table.unpack(c)))
+
+		forge:frame_time(0)
+		forge:chunk(table.unpack(c))
 	end
 
 	local function consumer(seq)
-		assert(#seq == 2)
+		assert(#seq == 3)
+
 		local atom = seq[1]
 		assert(atom.type == Atom.Chunk)
 		assert(type(atom.value) == 'string')
@@ -459,6 +471,10 @@ do
 		
 		assert(#{atom:unpack()} == #{atom:unpack(-100, 100)})
 		assert(#{atom:unpack(1, 2)} == #{atom:unpack(2, 3)})
+
+		atom = seq[3]
+		assert(atom.type == Atom.Chunk)
+		assert(atom.value == string.char(table.unpack(c)))
 	end
 
 	test(producer, consumer)
