@@ -526,7 +526,8 @@ function lv2_read_event(symbol, obj) {
 									|| (prop[RDF.value] == LV2.ATOM.URID) ) {
 									item.attr('type', 'url');
 								} else if( (prop[RDF.value] == LV2.ATOM.String)
-									|| (prop[RDF.value] == LV2.ATOM.Literal) ) {
+									|| (prop[RDF.value] == LV2.ATOM.Literal)
+									|| (prop[RDF.value] == LV2.ATOM.Chunk) ) {
 									item.attr('type', 'text');
 								}
 							} else if(key == LV2.CORE.minimum) {

@@ -26,6 +26,7 @@
 
 #include <moony.h>
 #include <private_ui.h>
+#include <base64.h>
 
 #include <lv2_external_ui.h> // kxstudio external-ui extension
 
@@ -431,7 +432,22 @@ _json_to_atom(ui_t *ui, cJSON *root, LV2_Atom_Forge *forge)
 		return lv2_atom_forge_uri(forge, value->valuestring, strlen(value->valuestring));
 	else if(!strcmp(range->valuestring, LV2_ATOM__Path) && (value->type == cJSON_String) )
 		return lv2_atom_forge_path(forge, value->valuestring, strlen(value->valuestring));
-	//TODO literal, chunk
+	else if(!strcmp(range->valuestring, LV2_ATOM__Chunk) && (value->type == cJSON_String) )
+	{
+		LV2_Atom_Forge_Ref ref = 0;
+		size_t size;
+		uint8_t *body = base64_decode(value->valuestring, strlen(value->valuestring), &size);
+		if(body)
+		{
+			if(  (ref = lv2_atom_forge_atom(forge, size, forge->Chunk))
+				&& (ref = lv2_atom_forge_raw(forge, body, size)) )
+			{
+				lv2_atom_forge_pad(forge, size);
+			}
+		}
+		return ref;
+	}
+	//TODO literal
 	else if(!strcmp(range->valuestring, LV2_ATOM__Tuple) && (value->type == cJSON_Array) )
 	{
 		LV2_Atom_Forge_Frame frame;
@@ -554,7 +570,17 @@ _atom_to_json(ui_t *ui, const LV2_Atom *atom)
 		range = cJSON_CreateString(LV2_ATOM__Path);
 		value = cJSON_CreateString(LV2_ATOM_BODY_CONST(atom));
 	}
-	//todo literal, chunk
+	else if(atom->type == ui->forge.Chunk)
+	{
+		char *str = base64_encode(LV2_ATOM_BODY_CONST(atom), atom->size);
+		if(str)
+		{
+			range = cJSON_CreateString(LV2_ATOM__Chunk);
+			value = cJSON_CreateString(str);
+			free(str);
+		}
+	}
+	//TODO literal 
 	else if(atom->type == ui->forge.Tuple)
 	{
 		const LV2_Atom_Tuple *tup = (const LV2_Atom_Tuple *)atom;
