@@ -7,7 +7,7 @@ stages:
   script:
     - mkdir build
     - pushd build
-    - PKG_CONFIG_PATH="/opt/lv2/lib/pkgconfig;/opt/${CI_BUILD_NAME}" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${CI_PROJECT_DIR}" -DPLUGIN_DEST="$(basename ${CI_PROJECT_DIR})-${CI_BUILD_REF_NAME}/${CI_BUILD_NAME}/$(basename ${CI_PROJECT_DIR})" -DCMAKE_TOOLCHAIN_FILE="${CI_PROJECT_DIR}/cmake/${CI_BUILD_NAME}.cmake" ..
+    - PKG_CONFIG_PATH="/opt/lv2/lib/pkgconfig:/opt/${CI_BUILD_NAME}/lib/pkgconfig" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${CI_PROJECT_DIR}" -DPLUGIN_DEST="$(basename ${CI_PROJECT_DIR})-${CI_BUILD_REF_NAME}/${CI_BUILD_NAME}/$(basename ${CI_PROJECT_DIR})" -DCMAKE_TOOLCHAIN_FILE="${CI_PROJECT_DIR}/cmake/${CI_BUILD_NAME}.cmake" ..
     - cmake .. # needed for multiarch-darwin
     - make
     - make install
