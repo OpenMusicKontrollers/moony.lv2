@@ -265,7 +265,7 @@ if(${BUILD_TESTING})
 	if(NOT WIN32)
 		add_test(NAME API-Test COMMAND moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
 	else()
-		add_test(NAME API-Test COMMAND wine moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
+		add_test(NAME API-Test COMMAND ${WINE} moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
 	endif()
 endif()
 

@@ -5,89 +5,69 @@ stages:
 
 .common_template: &common_definition
   stage: build
-  script:
-    - mkdir build
-    - pushd build
-    - PKG_CONFIG_PATH="/opt/lv2/lib/pkgconfig:/opt/${CI_BUILD_NAME}/lib/pkgconfig" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${CI_PROJECT_DIR}" -DPLUGIN_DEST="$(basename ${CI_PROJECT_DIR})-${CI_BUILD_REF_NAME}/${CI_BUILD_NAME}/$(basename ${CI_PROJECT_DIR})" -DCMAKE_TOOLCHAIN_FILE="${CI_PROJECT_DIR}/cmake/${CI_BUILD_NAME}.cmake" ..
-    - cmake .. # needed for multiarch-darwin
-    - make
-    - make install
   artifacts:
     name: "$(basename ${CI_PROJECT_DIR})-${CI_BUILD_REF_NAME}-${CI_BUILD_NAME}"
     paths:
       - "$(basename ${CI_PROJECT_DIR})-${CI_BUILD_REF_NAME}/"
 
-.native_template: &native_definition
-  tags:
-    - native 
+.build_template: &build_definition
   <<: *common_definition
-
-.docker_template: &docker_definition
-  image: ventosus/crossbuild
-  tags:
-    - docker
-  <<: *common_definition
+  script:
+    - mkdir build
+    - pushd build
+    - PKG_CONFIG_PATH="/opt/lv2/lib/pkgconfig:/opt/${CI_BUILD_NAME}/lib/pkgconfig" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${CI_PROJECT_DIR}" -DPLUGIN_DEST="$(basename ${CI_PROJECT_DIR})-${CI_BUILD_REF_NAME}/${CI_BUILD_NAME}/$(basename ${CI_PROJECT_DIR})" -DCMAKE_TOOLCHAIN_FILE="${CI_PROJECT_DIR}/cmake/${CI_BUILD_NAME}.cmake" ..
+    - cmake .. # needed for darwin
+    - make
+    - make install
 
 .test_template: &test_definition
-  stage: test
+  <<: *common_definition
   script:
+    - mkdir build
+    - pushd build
+    - PKG_CONFIG_PATH="/opt/lv2/lib/pkgconfig:/opt/${CI_BUILD_NAME}/lib/pkgconfig" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${CI_PROJECT_DIR}" -DPLUGIN_DEST="$(basename ${CI_PROJECT_DIR})-${CI_BUILD_REF_NAME}/${CI_BUILD_NAME}/$(basename ${CI_PROJECT_DIR})" -DCMAKE_TOOLCHAIN_FILE="${CI_PROJECT_DIR}/cmake/${CI_BUILD_NAME}.cmake" ..
+    - cmake .. # needed for darwin
+    - make
+    - make install
     - make test
 
-# building natively
-x86_64-linux:
-  <<: *native_definition
+.universal_linux_template: &universal_linux_definition
+  image: ventosus/universal-linux-gnu
+  <<: *test_definition
 
-i686-linux:
-  <<: *native_definition
+.arm_linux_template: &arm_linux_definition
+  image: ventosus/arm-linux-gnueabihf
+  <<: *build_definition
+
+.universal_w64_template: &universal_w64_definition
+  image: ventosus/universal-w64-mingw32
+  <<: *test_definition
+
+.universal_apple_template: &universal_apple_definition
+  image: ventosus/universal-apple-darwin
+  <<: *build_definition
 
 # building in docker
-x86_64-w64-mingw32:
-  <<: *docker_definition
+x86_64-linux-gnu:
+  <<: *universal_linux_definition
 
-i686-w64-mingw32:
-  <<: *docker_definition
+i686-linux-gnu:
+  <<: *universal_linux_definition
 
 arm-linux-gnueabihf:
-  <<: *docker_definition
+  <<: *arm_linux_definition
+
+x86_64-w64-mingw32:
+  <<: *universal_w64_definition
+
+i686-w64-mingw32:
+  <<: *universal_w64_definition
 
 universal-apple-darwin:
-  <<: *docker_definition
-
-# testing
-x86_64-linux:test:
-  <<: *test_definition
-  dependencies:
-    - x86_64-linux
-
-i686-linux:test:
-  <<: *test_definition
-  dependencies:
-    - i686-linux
-
-x86_64-w64-mingw32:test:
-  <<: *test_definition
-  dependencies:
-    - x86_64-w64-mingw32
-
-i686-w64-mingw32:test:
-  <<: *test_definition
-  dependencies:
-    - i686-w64-mingw32
-
-arm-linux-gnueabihf:test:
-  <<: *test_definition
-  dependencies:
-    - arm-linux-gnueabihf
-
-universal-apple-darwin:test:
-  <<: *test_definition
-  dependencies:
-    - universal-apple-darwin
+  <<: *universal_apple_definition
 
 pack:
   stage: deploy
-  tags:
-    - native
   script:
     - echo 'packing up...'
   artifacts:
