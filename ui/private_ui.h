@@ -166,7 +166,7 @@ _spawn_waitpid(spawn_t *spawn, bool blocking)
 }
 
 static inline void 
-_spawn_kill(spawn_t *spawn, int sig)
+_spawn_kill(spawn_t *spawn)
 {
 	CloseHandle(spawn->pi.hProcess);
 	CloseHandle(spawn->pi.hThread);
@@ -239,9 +239,9 @@ _spawn_waitpid(spawn_t *spawn, bool blocking)
 }
 
 static inline void
-_spawn_kill(spawn_t *spawn, int sig)
+_spawn_kill(spawn_t *spawn)
 {
-	kill(spawn->pid, sig);
+	kill(spawn->pid, SIGTERM);
 }
 
 static inline bool

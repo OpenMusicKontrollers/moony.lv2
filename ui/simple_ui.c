@@ -173,7 +173,7 @@ _hide_cb(LV2UI_Handle instance)
 
 	if(_spawn_has_child(&ui->spawn))
 	{
-		_spawn_kill(&ui->spawn, SIGTERM);
+		_spawn_kill(&ui->spawn);
 
 		_spawn_waitpid(&ui->spawn, true);
 
