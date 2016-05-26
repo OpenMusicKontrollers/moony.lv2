@@ -20,9 +20,9 @@
 
 #include <stdbool.h>
 #include <string.h>
-#include <endian.h>
 
 #include <osc.lv2/osc.h>
+#include <osc.lv2/endian.h>
 
 #ifdef __cplusplus
 extern "C" {

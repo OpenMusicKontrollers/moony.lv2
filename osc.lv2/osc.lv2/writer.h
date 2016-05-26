@@ -20,10 +20,10 @@
 
 #include <stdbool.h>
 #include <string.h>
-#include <endian.h>
 
 #include <osc.lv2/osc.h>
 #include <osc.lv2/util.h>
+#include <osc.lv2/endian.h>
 
 #include <lv2/lv2plug.in/ns/ext/atom/util.h>
 
