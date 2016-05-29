@@ -21,7 +21,7 @@ body {
   background-color:#222;
 }
 
-.heading {
+div.heading {
 	font-weight:normal;
 	font-style:normal;
 }
@@ -37,22 +37,22 @@ input {
 	width:100px;
 }
 
-select {
-	width:100px;
+input.narrow {
+	width: auto;
 }
 
-.trace {
+div.trace {
 	font-family:monospace;
 	width:100%;
 	max-height:112px;
 	overflow-y:auto;
 }
 
-.container {
+div.container {
 	width:80%;
 }
 
-.sticky-top {
+div.sticky-top {
 	position:-webkit-sticky;
 	position:-moz-sticky;
 	position:-ms-sticky;
@@ -69,7 +69,7 @@ select {
 #editor {
 }
 
-.sticky-bottom {
+div.sticky-bottom {
 	position:-webkit-sticky;
 	position:-moz-sticky;
 	position:-ms-sticky;
@@ -83,18 +83,18 @@ select {
 	border:2px solid #666;
 }
 
-.error {
+div.error {
 	border:2px solid #b00;
 }
 
-.button {
+div.button {
 	font-size:16px;
   background-color:#fff;
 	padding:10px;
 	margin:5px 0px 0px 0px;
 }
 
-.box {
+div.box {
 	text-align:right;
 	position:fixed;
 	top:0%;
@@ -104,7 +104,7 @@ select {
 	z-index:9999;
 }
 
-.props {
+div.props {
 	text-align:left;
 	position:fixed;
 	bottom:0%;

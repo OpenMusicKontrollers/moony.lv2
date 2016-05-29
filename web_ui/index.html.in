@@ -22,20 +22,11 @@
 		<div class="container">
 			<div class="sticky-top">
 				<div class="heading">
-					<table class="heading-table">
-						<tr>
-							<td class="heading-left">
-								v@MOONY_VERSION@ | <span id="status">disconnected</span> | <a class="clip" id="clear" href="#">clear log</a>
-							</td>
-
-							<td class="heading-right">
-								<form class="clip" hidden>
-									<input type="radio" id="emacs" name="mode" value="ace/keyboard/emacs">emacs</input>
-									<input type="radio" id="vim" name="mode" value="ace/keyboard/vim">vim</input>
-								</form>
-							</td>
-						<tr>
-					</table>
+					v@MOONY_VERSION@ | <span id="status">disconnected</span>
+					<span class="clip">|
+						<label><input class="narrow" type="radio" id="emacs" name="mode" value="ace/keyboard/emacs" />emacs</label>
+						<label><input class="narrow" type="radio" id="vim" name="mode" value="ace/keyboard/vim" />vim</label>
+					</span>
 				</div>
 			</div>
 
@@ -64,8 +55,9 @@
 			</div>
 
 			<div class="box">
-				<div class="button"><a id="compile" href="#" alt="Shift+Return" title="Shift+Return">chunk</a></div>
-				<div class="button"><a id="compile_line" href="#" alt="Ctrl+Shift+Return" title="Ctrl+Shift+Return">line</a></div>
+				<div class="button"><a id="compile" href="#" alt="Shift+Return" title="Shift+Return">send chunk</a></div>
+				<div class="button"><a id="compile_line" href="#" alt="Ctrl+Shift+Return" title="Ctrl+Shift+Return">send line</a></div>
+				<div class="button"><a id="clear" href="#" alt="Ctrl+L" title="Ctrl+L">clear log</a></div>
 			</div>
 		</div>
 

@@ -665,6 +665,12 @@ function compile_line(editor) {
 	$("#compile_line").parent().fadeOut(100).fadeIn(300);
 }
 
+function clear_log() {
+	$('#tracemsg').empty();
+	$("#clear").parent().fadeOut(100).fadeIn(300);
+	tracecnt = 0;
+}
+
 function ws_url() {
 	var pcol;
 	var u = document.URL;
@@ -715,8 +721,7 @@ function ws_connect() {
 		socket_di.onclose = function(){
 			$('#status').html('disconnected');
 			$('.clip').hide();
-			$('#tracemsg').empty();
-			tracecnt = 0;
+			clear_log();
 		}
 	} catch(exception) {
 		console.log('webocket exception', exception);
@@ -750,6 +755,14 @@ $(document).ready(function() {
 		},
 		readOnly: true // false if this command should not apply in readOnly mode
 	});
+	editor.commands.addCommand({
+		name: 'clear log',
+		bindKey: {win: 'Ctrl-L',  mac: 'Ctrl-L'},
+		exec: function(editor) {
+			clear_log();
+		},
+		readOnly: true // false if this command should not apply in readOnly mode
+	});
 
 	editor.$blockScrolling = Infinity
 	editor.setOptions({
@@ -773,8 +786,7 @@ $(document).ready(function() {
 		e.preventDefault();
 	});
 	$('#clear').click(function(e) {
-		$('#tracemsg').empty();
-		tracecnt = 0;
+		clear_log();
 		e.preventDefault();
 	});
 
