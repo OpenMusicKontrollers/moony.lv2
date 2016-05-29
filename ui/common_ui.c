@@ -29,6 +29,7 @@ typedef struct _UI UI;
 struct _UI {
 	struct {
 		LV2_URID moony_code;
+		LV2_URID moony_selection;
 		LV2_URID moony_error;
 		LV2_URID moony_trace;
 		LV2_URID event_transfer;
@@ -59,19 +60,14 @@ struct _UI {
 	Evas_Object *status;
 	Evas_Object *save;
 	Evas_Object *compile;
-	Evas_Object *external;
+	Evas_Object *line;
+	Evas_Object *clrlog;
 	Evas_Object *popup;
 	Evas_Object *overlay;
 	Evas_Object *trace;
 
 	unsigned tracecnt;
 	
-	Eina_List *desks;
-
-	Ecore_Exe *exe;
-	Ecore_Event_Handler *handler;
-	Ecore_File_Monitor *monitor;
-
 	char *logo_path;
 
 	char *chunk;
@@ -114,7 +110,31 @@ _entry_cache(UI *ui, int update)
 }
 
 static void
-_compile(UI *ui)
+_count_lines_and_chars(UI *ui, int *L, int *C)
+{
+	int pos = elm_entry_cursor_pos_get(ui->entry);
+	char *utf8 = _entry_cache(ui, 0);
+
+	// count lines and chars
+	const char *end = utf8 + pos;
+	int l = 0;
+	int c = pos;
+	for(const char *ptr = utf8, *start = utf8; ptr < end; ptr++)
+	{
+		if(*ptr == '\n')
+		{
+			l += 1;
+			c -= ptr + 1 - start;
+			start = ptr + 1;
+		}
+	}
+
+	*L = l;
+	*C = c;
+}
+
+static inline void
+_clear_error(UI *ui)
 {
 	// clear error
 	elm_object_text_set(ui->error, "");
@@ -124,14 +144,37 @@ _compile(UI *ui)
 	if(evas_object_visible_get(ui->notify))
 		evas_object_hide(ui->notify);
 	evas_object_show(ui->notify);
+}
 
-	// get code from entry
-	char *utf8 = _entry_cache(ui, 1);
+static inline void
+_compile_selection(UI *ui)
+{
+	_clear_error(ui);
+
+	const char *chunk= elm_entry_selection_get(ui->entry);
+	char *utf8 = elm_entry_markup_to_utf8(chunk);
+	elm_entry_select_none(ui->entry);
+
+	if(!utf8)
+		return;
+
 	uint32_t size = strlen(utf8) + 1;
+
+	int l = 0;
+	int c = 0;
+	_count_lines_and_chars(ui, &l, &c);
+	size += l;
+
+	char *sel = malloc(size);
+	if(!sel)
+		return;
+
+	memset(sel, '\n', l);
+	strcpy(&sel[l], utf8);
 
 	if(size <= MOONY_MAX_CHUNK_LEN)
 	{
-		_moony_message_send(ui, ui->uris.moony_code, utf8, size);
+		_moony_message_send(ui, ui->uris.moony_selection, sel, size);
 	}
 	else
 	{
@@ -140,6 +183,68 @@ _compile(UI *ui)
 		elm_object_text_set(ui->error, buf);
 		evas_object_show(ui->message);
 	}
+
+	free(sel);
+	free(utf8);
+}
+
+static inline void
+_compile_all(UI *ui)
+{
+	_clear_error(ui);
+
+	// get code from entry
+	char *utf8 = _entry_cache(ui, 1);
+	if(utf8)
+	{
+		uint32_t size = strlen(utf8) + 1;
+
+		if(size <= MOONY_MAX_CHUNK_LEN)
+		{
+			_moony_message_send(ui, ui->uris.moony_code, utf8, size);
+		}
+		else
+		{
+			char buf [64];
+			sprintf(buf, "script too long by %"PRIi32, size - MOONY_MAX_CHUNK_LEN);
+			elm_object_text_set(ui->error, buf);
+			evas_object_show(ui->message);
+		}
+	}
+}
+
+static void
+_compile(UI *ui)
+{
+	const char *sel = elm_entry_selection_get(ui->entry);
+
+	if(sel) //FIXME is never reached if called via _lua_makrup, as selection is replaced by a new line
+		_compile_selection(ui);
+	else
+		_compile_all(ui);
+}
+
+static void
+_compile_line(UI *ui)
+{
+	const int pos = elm_entry_cursor_pos_get(ui->entry);
+
+	elm_entry_cursor_line_begin_set(ui->entry);
+	elm_entry_cursor_selection_begin(ui->entry);
+
+	elm_entry_cursor_line_end_set(ui->entry);
+	elm_entry_cursor_selection_end(ui->entry);
+
+	_compile_selection(ui);
+
+	elm_entry_cursor_pos_set(ui->entry, pos);
+}
+
+static void
+_clear_log(UI *ui)
+{
+	ui->tracecnt = 0;
+	elm_entry_entry_set(ui->trace, "");
 }
 
 static void
@@ -162,7 +267,10 @@ _lua_markup(void *data, Evas_Object *obj, char **txt)
 			free(*txt);
 			*txt = strdup("");
 
-			_compile(ui);
+			if(evas_key_modifier_is_set(mods, "Control"))
+				_compile_line(ui);
+			else
+				_compile(ui);
 		}
 	}
 }
@@ -267,221 +375,27 @@ _changed(void *data, Evas_Object *obj, void *event_info)
 }
 
 static void
-_monitor(void *data, Ecore_File_Monitor *em, Ecore_File_Event event, const char *path)
-{
-	UI *ui = data;
-
-	switch(event)
-	{
-		case ECORE_FILE_EVENT_NONE:              /**< No event. */
-		case ECORE_FILE_EVENT_CREATED_FILE:      /**< Created file event. */
-		case ECORE_FILE_EVENT_CREATED_DIRECTORY: /**< Created directory event. */
-		case ECORE_FILE_EVENT_DELETED_FILE:      /**< Deleted file event. */
-		case ECORE_FILE_EVENT_DELETED_DIRECTORY: /**< Deleted directory event. */
-		case ECORE_FILE_EVENT_DELETED_SELF:      /**< Deleted monitored directory event. */
-		case ECORE_FILE_EVENT_CLOSED:            /**< Closed file event */
-		{
-			// ignore
-			break;
-		}
-		case ECORE_FILE_EVENT_MODIFIED:          /**< Modified file or directory event. */
-		{
-			//printf("external editor has modified file\n");
-			_load_chosen(ui, ui->entry, (void *)path);
-
-			break;
-		}
-	}
-}
-
-static void
-_exe_cleanup(UI *ui)
-{
-	ui->exe = NULL;
-
-	if(ui->handler)
-	{
-		ecore_event_handler_del(ui->handler);
-		ui->handler = NULL;
-	}
-
-	if(ui->monitor)
-	{
-		ecore_file_monitor_del(ui->monitor);
-		ui->monitor = NULL;
-	}
-
-	elm_object_text_set(ui->overlay, "closing");
-	evas_object_hide(ui->overlay);
-	elm_entry_editable_set(ui->entry, EINA_TRUE);
-	elm_object_disabled_set(ui->load, EINA_FALSE);
-	elm_object_disabled_set(ui->save, EINA_FALSE);
-	elm_object_disabled_set(ui->compile, EINA_FALSE);
-}
-
-static Eina_Bool
-_exe_del(void *data, int type, void *event)
-{
-	UI *ui = data;
-	Ecore_Exe_Event_Del *ev = event;
-		
-	// is this event of our concern?
-	if(ui->exe && (ev->exe == ui->exe) )
-	{
-		//printf("external editor has been closed\n");
-
-		if(ui->log)
-			switch(ev->exit_code)
-			{
-				case 0: // success
-					break;
-#if !defined(_WIN32) && !defined(__APPLE__)
-				case 1:
-					lv2_log_error(&ui->logger, "xdg-open: Error in command line syntax.");
-					break;
-				case 2:
-					lv2_log_error(&ui->logger, "xdg-open: One of the files passed on the command line did not exist.");
-					break;
-				case 3:
-					lv2_log_error(&ui->logger, "xdg-open: A required tool could not be found.");
-					break;
-				case 4:
-					lv2_log_error(&ui->logger, "xdg-open: The action failed.");
-					break;
-#endif
-				default:
-					lv2_log_error(&ui->logger, "opening the file in an external editor failed.");
-					break;
-			}
-
-		_exe_cleanup(ui);
-
-		return EINA_TRUE;
-	}
-
-	return EINA_FALSE;
-}
-
-static void
-_editor_chosen(void *data, Evas_Object *obj, void *event_info)
-{
-	Efreet_Desktop *desk = data;
-	UI *ui = evas_object_data_get(obj, "ui");
-	
-	if(!ui)
-		return;
-
-	Eina_Tmpstr *path;
-	int fd = eina_file_mkstemp("moony_XXXXXX.lua", &path);
-	if(fd == -1)
-	{
-		if(ui->log)
-			lv2_log_error(&ui->logger, "creation of temporary file failed");
-		return;
-	}
-
-	// write to file
-	close(fd); //FIXME this is dangerous, better fdopen
-	_save_chosen(ui, ui->entry, (void *)path);
-
-	// open file in external editor
-	char *command = NULL;
-	if(desk)
-	{
-		char *exec = strdup(desk->exec);
-		char *repl = NULL;
-
-		if(exec)
-		{
-			// replace %F with %s
-			if((repl=strstr(exec, "%F")))
-				repl[1] = 's';
-			
-			asprintf(&command, exec, path);
-
-			free(exec);
-		}
-	}
-	else // !desk
-	{
-#if defined(_WIN32)
-		asprintf(&command, "START %s", path);
-#elif defined(__APPLE__)
-		asprintf(&command, "open %s", path);
-#else // Linux/BSD
-		asprintf(&command, "xdg-open %s", path);
-#endif
-	}
-
-	if(command)
-	{
-		ui->exe = ecore_exe_run(command, ui);
-		free(command);
-
-		if(ui->exe)
-		{
-			// add file and exe monitoring callback
-			ui->handler = ecore_event_handler_add(ECORE_EXE_EVENT_DEL, _exe_del, ui);
-			ui->monitor = ecore_file_monitor_add(path, _monitor, ui);
-		}
-		else if(ui->log)
-			lv2_log_error(&ui->logger, "spawning of external editor failed");
-	}
-	else if(ui->log)
-		lv2_log_error(&ui->logger, "memory allocation for external editor command failed");
-
-	eina_tmpstr_del(path);
-	
-	elm_object_text_set(ui->overlay, "external editor in use");
-}
-
-static void
-_external_clicked(void *data, Evas_Object *obj, void *event_info)
-{
-	UI *ui = data;
-
-	if(evas_object_visible_get(ui->overlay))
-	{
-		if(ui->exe)
-			ecore_exe_quit(ui->exe);
-
-		//if(ui->exe)
-			_exe_cleanup(ui);
-	}
-	else // !visible
-	{
-		Eina_List *l;
-		Efreet_Desktop *desk;
-		EINA_LIST_FOREACH(ui->desks, l, desk)
-		{
-			if(desk->exec)
-			{
-				Evas_Object *icon = NULL;
-				if(desk->icon && (icon = elm_icon_add(ui->overlay)) )
-				{
-					elm_icon_standard_set(icon, desk->icon);
-					evas_object_show(icon);
-				}
-
-				elm_popup_item_append(ui->overlay, desk->name, icon, _editor_chosen, desk);
-			}
-		}
-		elm_popup_item_append(ui->overlay, "Use system default", NULL, _editor_chosen, NULL);
-
-		evas_object_show(ui->overlay);
-		elm_entry_editable_set(ui->entry, EINA_FALSE);
-		elm_object_disabled_set(ui->load, EINA_TRUE);
-		elm_object_disabled_set(ui->save, EINA_TRUE);
-		elm_object_disabled_set(ui->compile, EINA_TRUE);
-	}
-}
-
-static void
 _compile_clicked(void *data, Evas_Object *obj, void *event_info)
 {
 	UI *ui = data;
 
 	_compile(ui);
+}
+
+static void
+_line_clicked(void *data, Evas_Object *obj, void *event_info)
+{
+	UI *ui = data;
+
+	_compile_line(ui);
+}
+
+static void
+_clrlog_clicked(void *data, Evas_Object *obj, void *event_info)
+{
+	UI *ui = data;
+
+	_clear_log(ui);
 }
 
 static void
@@ -504,22 +418,9 @@ _cursor(void *data, Evas_Object *obj, void *event_info)
 {
 	UI *ui = data;
 
-	int pos = elm_entry_cursor_pos_get(ui->entry);
-	char *utf8 = _entry_cache(ui, 0);
-
-	// count lines and chars
-	const char *end = utf8 + pos;
 	int l = 0;
-	int c = pos;
-	for(const char *ptr = utf8, *start = utf8; ptr < end; ptr++)
-	{
-		if(*ptr == '\n')
-		{
-			l += 1;
-			c -= ptr + 1 - start;
-			start = ptr + 1;
-		}
-	}
+	int c = 0;
+	_count_lines_and_chars(ui, &l, &c);
 
 	char buf [64];
 	sprintf(buf, "%"PRIi32" / %"PRIi32, l + 1, c + 1);
@@ -551,12 +452,51 @@ _content_del(void *data, Evas *e, Evas_Object *obj, void *event_info)
 	evas_object_del(ui->widget);
 }
 
+static void
+_key_down(void *data, Evas *e, Evas_Object *obj, void *event_info)
+{
+	UI *ui = data;
+	const Evas_Event_Key_Down *ev = event_info;
+
+	const Eina_Bool cntrl = evas_key_modifier_is_set(ev->modifiers, "Control");
+	const Eina_Bool shift = evas_key_modifier_is_set(ev->modifiers, "Shift");
+	(void)shift;
+	
+	//printf("_key_down: %s %i %i\n", ev->key, cntrl, shift);
+
+	if(cntrl)
+	{
+		if(!strcmp(ev->key, "l"))
+		{
+			_clear_log(ui);
+		}
+		else if(!strcmp(ev->key, "s"))
+		{
+			_compile(ui);
+		}
+	}
+}
+
 static Evas_Object *
 _content_get(UI *ui, Evas_Object *parent)
 {
 	ui->table = elm_table_add(parent);
 	if(ui->table)
 	{
+		evas_object_event_callback_add(ui->table, EVAS_CALLBACK_KEY_DOWN, _key_down, ui);
+
+		const Eina_Bool exclusive = EINA_TRUE;
+		const Evas_Modifier_Mask ctrl_mask = evas_key_modifier_mask_get(
+			evas_object_evas_get(ui->table), "Control");
+		const Evas_Modifier_Mask shift_mask = evas_key_modifier_mask_get(
+			evas_object_evas_get(ui->table), "Shift");
+
+		if(!evas_object_key_grab(ui->table, "l", ctrl_mask, 0, exclusive))
+			fprintf(stderr, "could not grab 'l' key\n");
+		if(!evas_object_key_grab(ui->table, "s", ctrl_mask, 0, exclusive))
+			fprintf(stderr, "could not grab 's' key\n");
+		//TODO add more bindings
+
 		elm_table_homogeneous_set(ui->table, EINA_FALSE);
 		elm_table_padding_set(ui->table, 0, 0);
 		evas_object_size_hint_min_set(ui->table, 1280, 800);
@@ -581,7 +521,7 @@ _content_get(UI *ui, Evas_Object *parent)
 			evas_object_size_hint_weight_set(ui->entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
 			evas_object_size_hint_align_set(ui->entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
 			evas_object_show(ui->entry);
-			elm_table_pack(ui->table, ui->entry, 0, 0, 6, 1);
+			elm_table_pack(ui->table, ui->entry, 0, 0, 7, 1);
 		}
 
 		ui->trace = elm_entry_add(ui->table);
@@ -597,7 +537,7 @@ _content_get(UI *ui, Evas_Object *parent)
 			evas_object_size_hint_weight_set(ui->trace, EVAS_HINT_EXPAND, 0.1);
 			evas_object_size_hint_align_set(ui->trace, EVAS_HINT_FILL, EVAS_HINT_FILL);
 			evas_object_show(ui->trace);
-			elm_table_pack(ui->table, ui->trace, 0, 1, 6, 1);
+			elm_table_pack(ui->table, ui->trace, 0, 1, 7, 1);
 		}
 
 		ui->error = elm_label_add(ui->table);
@@ -687,35 +627,39 @@ _content_get(UI *ui, Evas_Object *parent)
 			}
 		}
 
-		ui->external = elm_button_add(ui->table);
-		if(ui->external)
+		ui->clrlog = elm_button_add(ui->table);
+		if(ui->clrlog)
 		{
-			elm_object_part_text_set(ui->external, "default", "Ext. Editor");
-			evas_object_smart_callback_add(ui->external, "clicked", _external_clicked, ui);
-			evas_object_size_hint_weight_set(ui->external, 0.25, 0.f);
-			evas_object_size_hint_align_set(ui->external, EVAS_HINT_FILL, EVAS_HINT_FILL);
-			evas_object_show(ui->external);
-			elm_table_pack(ui->table, ui->external, 2, 2, 1, 1);
+			elm_object_part_text_set(ui->clrlog, "default", "Clear Log");
+			evas_object_smart_callback_add(ui->clrlog, "clicked", _clrlog_clicked, ui);
+			evas_object_size_hint_weight_set(ui->clrlog, 0.25, 0.f);
+			evas_object_size_hint_align_set(ui->clrlog, EVAS_HINT_FILL, EVAS_HINT_FILL);
+			evas_object_show(ui->clrlog);
+			elm_table_pack(ui->table, ui->clrlog, 2, 2, 1, 1);
+			elm_object_tooltip_text_set(ui->clrlog, "Control + L");
+#if defined(ELM_1_9)
+			elm_object_tooltip_orient_set(ui->clrlog, ELM_TOOLTIP_ORIENT_TOP);
+#endif
 
-			Evas_Object *icon = elm_icon_add(ui->external);
+			Evas_Object *icon = elm_icon_add(ui->clrlog);
 			if(icon)
 			{
-				elm_icon_standard_set(icon, "view-fullscreen");
+				elm_icon_standard_set(icon, "edit-clear");
 				evas_object_show(icon);
-				elm_object_content_set(ui->external, icon);
+				elm_object_content_set(ui->clrlog, icon);
 			}
 		}
 
 		ui->compile = elm_button_add(ui->table);
 		if(ui->compile)
 		{
-			elm_object_part_text_set(ui->compile, "default", "Compile");
+			elm_object_part_text_set(ui->compile, "default", "Compile Sel/All");
 			evas_object_smart_callback_add(ui->compile, "clicked", _compile_clicked, ui);
 			evas_object_size_hint_weight_set(ui->compile, 0.25, 0.f);
 			evas_object_size_hint_align_set(ui->compile, EVAS_HINT_FILL, EVAS_HINT_FILL);
 			evas_object_show(ui->compile);
 			elm_table_pack(ui->table, ui->compile, 3, 2, 1, 1);
-			elm_object_tooltip_text_set(ui->compile, "Shift + Enter");
+			elm_object_tooltip_text_set(ui->compile, "Shift + Enter / Control + S");
 #if defined(ELM_1_9)
 			elm_object_tooltip_orient_set(ui->compile, ELM_TOOLTIP_ORIENT_TOP);
 #endif
@@ -729,6 +673,29 @@ _content_get(UI *ui, Evas_Object *parent)
 			}
 		}
 
+		ui->line = elm_button_add(ui->table);
+		if(ui->line)
+		{
+			elm_object_part_text_set(ui->line, "default", "Compile Line");
+			evas_object_smart_callback_add(ui->line, "clicked", _line_clicked, ui);
+			evas_object_size_hint_weight_set(ui->line, 0.25, 0.f);
+			evas_object_size_hint_align_set(ui->line, EVAS_HINT_FILL, EVAS_HINT_FILL);
+			evas_object_show(ui->line);
+			elm_table_pack(ui->table, ui->line, 4, 2, 1, 1);
+			elm_object_tooltip_text_set(ui->line, "Shift + Control + Enter");
+#if defined(ELM_1_9)
+			elm_object_tooltip_orient_set(ui->line, ELM_TOOLTIP_ORIENT_TOP);
+#endif
+
+			Evas_Object *icon = elm_icon_add(ui->line);
+			if(icon)
+			{
+				elm_icon_standard_set(icon, "system-run");
+				evas_object_show(icon);
+				elm_object_content_set(ui->line, icon);
+			}
+		}
+
 		ui->status = elm_label_add(ui->table);
 		if(ui->status)
 		{
@@ -736,7 +703,7 @@ _content_get(UI *ui, Evas_Object *parent)
 			evas_object_size_hint_weight_set(ui->status, 0.25, 0.f);
 			evas_object_size_hint_align_set(ui->status, EVAS_HINT_FILL, EVAS_HINT_FILL);
 			evas_object_show(ui->status);
-			elm_table_pack(ui->table, ui->status, 4, 2, 1, 1);
+			elm_table_pack(ui->table, ui->status, 5, 2, 1, 1);
 		}
 
 		Evas_Object *info = elm_button_add(ui->table);
@@ -746,7 +713,7 @@ _content_get(UI *ui, Evas_Object *parent)
 			evas_object_size_hint_weight_set(info, 0.f, 0.f);
 			evas_object_size_hint_align_set(info, 1.f, EVAS_HINT_FILL);
 			evas_object_show(info);
-			elm_table_pack(ui->table, info, 5, 2, 1, 1);
+			elm_table_pack(ui->table, info, 6, 2, 1, 1);
 
 			Evas_Object *icon = elm_icon_add(info);
 			if(icon)
@@ -858,6 +825,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	ui->notify_port = ui->port_map->port_index(ui->port_map->handle, "notify");
 
 	ui->uris.moony_code = ui->map->map(ui->map->handle, MOONY_CODE_URI);
+	ui->uris.moony_selection = ui->map->map(ui->map->handle, MOONY_SELECTION_URI);
 	ui->uris.moony_error = ui->map->map(ui->map->handle, MOONY_ERROR_URI);
 	ui->uris.moony_trace  = ui->map->map(ui->map->handle, MOONY_TRACE_URI);
 	ui->uris.event_transfer = ui->map->map(ui->map->handle, LV2_ATOM__eventTransfer);
@@ -889,9 +857,6 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 
 	_moony_message_send(ui, ui->uris.moony_code, NULL, 0);
 	
-	efreet_init();
-	ui->desks = efreet_util_desktop_mime_list("text/plain");
-
 	ui->widget = _content_get(ui, parent);
 	if(!ui->widget)
 	{
@@ -907,18 +872,6 @@ static void
 cleanup(LV2UI_Handle handle)
 {
 	UI *ui = handle;
-
-	Efreet_Desktop *desk;
-	EINA_LIST_FREE(ui->desks, desk)
-		efreet_desktop_free(desk);
-	efreet_shutdown();
-
-	if(ui->exe)
-		ecore_exe_quit(ui->exe); //TODO does not seem to work with xdg-open
-	if(ui->handler)
-		ecore_event_handler_del(ui->handler);
-	if(ui->monitor)
-		ecore_file_monitor_del(ui->monitor);
 
 	if(ui->widget)
 		evas_object_del(ui->widget);
