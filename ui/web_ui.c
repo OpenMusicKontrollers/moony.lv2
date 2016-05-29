@@ -973,9 +973,6 @@ _hide_cb(LV2UI_Handle instance)
 		_spawn_invalidate_child(&ui->spawn);
 	}
 
-	if(ui->kx.host && ui->kx.host->ui_closed)
-		ui->kx.host->ui_closed(ui->controller);
-
 	ui->done = 1;
 
 	return 0;
@@ -1022,7 +1019,11 @@ _kx_run(LV2_External_UI_Widget *widget)
 	ui_t *handle = (void *)widget - offsetof(ui_t, kx.widget);
 
 	if(_idle_cb(handle))
+	{
+		if(handle->kx.host && handle->kx.host->ui_closed)
+			handle->kx.host->ui_closed(handle->controller);
 		_hide_cb(handle);
+	}
 }
 
 static inline void
