@@ -30,6 +30,7 @@ struct _UI {
 	struct {
 		LV2_URID moony_code;
 		LV2_URID moony_error;
+		LV2_URID moony_trace;
 		LV2_URID event_transfer;
 		patch_t patch;
 	} uris;
@@ -61,6 +62,9 @@ struct _UI {
 	Evas_Object *external;
 	Evas_Object *popup;
 	Evas_Object *overlay;
+	Evas_Object *trace;
+
+	unsigned tracecnt;
 	
 	Eina_List *desks;
 
@@ -580,6 +584,22 @@ _content_get(UI *ui, Evas_Object *parent)
 			elm_table_pack(ui->table, ui->entry, 0, 0, 6, 1);
 		}
 
+		ui->trace = elm_entry_add(ui->table);
+		if(ui->trace)
+		{
+			elm_entry_autosave_set(ui->trace, EINA_FALSE);
+			elm_entry_entry_set(ui->trace, "");
+			elm_entry_single_line_set(ui->trace, EINA_FALSE);
+			elm_entry_scrollable_set(ui->trace, EINA_TRUE);
+			elm_entry_editable_set(ui->trace, EINA_FALSE);
+			elm_entry_cnp_mode_set(ui->trace, ELM_CNP_MODE_PLAINTEXT);
+			elm_object_focus_set(ui->trace, EINA_FALSE);
+			evas_object_size_hint_weight_set(ui->trace, EVAS_HINT_EXPAND, 0.1);
+			evas_object_size_hint_align_set(ui->trace, EVAS_HINT_FILL, EVAS_HINT_FILL);
+			evas_object_show(ui->trace);
+			elm_table_pack(ui->table, ui->trace, 0, 1, 6, 1);
+		}
+
 		ui->error = elm_label_add(ui->table);
 		if(ui->error)
 		{
@@ -634,7 +654,7 @@ _content_get(UI *ui, Evas_Object *parent)
 			evas_object_size_hint_weight_set(ui->load, 0.25, 0.f);
 			evas_object_size_hint_align_set(ui->load, EVAS_HINT_FILL, EVAS_HINT_FILL);
 			evas_object_show(ui->load);
-			elm_table_pack(ui->table, ui->load, 0, 1, 1, 1);
+			elm_table_pack(ui->table, ui->load, 0, 2, 1, 1);
 
 			Evas_Object *icon = elm_icon_add(ui->load);
 			if(icon)
@@ -656,7 +676,7 @@ _content_get(UI *ui, Evas_Object *parent)
 			evas_object_size_hint_weight_set(ui->save, 0.25, 0.f);
 			evas_object_size_hint_align_set(ui->save, EVAS_HINT_FILL, EVAS_HINT_FILL);
 			evas_object_show(ui->save);
-			elm_table_pack(ui->table, ui->save, 1, 1, 1, 1);
+			elm_table_pack(ui->table, ui->save, 1, 2, 1, 1);
 
 			Evas_Object *icon = elm_icon_add(ui->save);
 			if(icon)
@@ -675,7 +695,7 @@ _content_get(UI *ui, Evas_Object *parent)
 			evas_object_size_hint_weight_set(ui->external, 0.25, 0.f);
 			evas_object_size_hint_align_set(ui->external, EVAS_HINT_FILL, EVAS_HINT_FILL);
 			evas_object_show(ui->external);
-			elm_table_pack(ui->table, ui->external, 2, 1, 1, 1);
+			elm_table_pack(ui->table, ui->external, 2, 2, 1, 1);
 
 			Evas_Object *icon = elm_icon_add(ui->external);
 			if(icon)
@@ -694,7 +714,7 @@ _content_get(UI *ui, Evas_Object *parent)
 			evas_object_size_hint_weight_set(ui->compile, 0.25, 0.f);
 			evas_object_size_hint_align_set(ui->compile, EVAS_HINT_FILL, EVAS_HINT_FILL);
 			evas_object_show(ui->compile);
-			elm_table_pack(ui->table, ui->compile, 3, 1, 1, 1);
+			elm_table_pack(ui->table, ui->compile, 3, 2, 1, 1);
 			elm_object_tooltip_text_set(ui->compile, "Shift + Enter");
 #if defined(ELM_1_9)
 			elm_object_tooltip_orient_set(ui->compile, ELM_TOOLTIP_ORIENT_TOP);
@@ -716,7 +736,7 @@ _content_get(UI *ui, Evas_Object *parent)
 			evas_object_size_hint_weight_set(ui->status, 0.25, 0.f);
 			evas_object_size_hint_align_set(ui->status, EVAS_HINT_FILL, EVAS_HINT_FILL);
 			evas_object_show(ui->status);
-			elm_table_pack(ui->table, ui->status, 4, 1, 1, 1);
+			elm_table_pack(ui->table, ui->status, 4, 2, 1, 1);
 		}
 
 		Evas_Object *info = elm_button_add(ui->table);
@@ -726,7 +746,7 @@ _content_get(UI *ui, Evas_Object *parent)
 			evas_object_size_hint_weight_set(info, 0.f, 0.f);
 			evas_object_size_hint_align_set(info, 1.f, EVAS_HINT_FILL);
 			evas_object_show(info);
-			elm_table_pack(ui->table, info, 5, 1, 1, 1);
+			elm_table_pack(ui->table, info, 5, 2, 1, 1);
 
 			Evas_Object *icon = elm_icon_add(info);
 			if(icon)
@@ -839,6 +859,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 
 	ui->uris.moony_code = ui->map->map(ui->map->handle, MOONY_CODE_URI);
 	ui->uris.moony_error = ui->map->map(ui->map->handle, MOONY_ERROR_URI);
+	ui->uris.moony_trace  = ui->map->map(ui->map->handle, MOONY_TRACE_URI);
 	ui->uris.event_transfer = ui->map->map(ui->map->handle, LV2_ATOM__eventTransfer);
 
 	ui->uris.patch.self = ui->map->map(ui->map->handle, plugin_uri);
@@ -954,6 +975,15 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 					if(evas_object_visible_get(ui->message))
 						evas_object_hide(ui->message);
 					evas_object_show(ui->message);
+				}
+				else if(property->body == ui->uris.moony_trace)
+				{
+					char _tracecnt [64];
+					sprintf(_tracecnt, "<font=Mono><color=#AAAAAA>%u</color> ", ui->tracecnt++);
+					elm_entry_entry_append(ui->trace, _tracecnt);
+					elm_entry_entry_append(ui->trace, str);
+					elm_entry_entry_append(ui->trace, "<br></font>");
+					elm_entry_cursor_end_set(ui->trace);
 				}
 			}
 		}
