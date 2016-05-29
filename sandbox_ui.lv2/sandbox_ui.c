@@ -166,9 +166,6 @@ _hide_cb(LV2UI_Handle instance)
 	remove(&handle->socket_path[6]);
 	*/
 
-	if(handle->kx.host && handle->kx.host->ui_closed)
-		handle->kx.host->ui_closed(handle->controller);
-
 	handle->done = 1;
 
 	return 0;
@@ -194,14 +191,12 @@ _idle_cb(LV2UI_Handle instance)
 			if(errno == ECHILD)
 			{
 				handle->pid = -1; // invalidate
-				//_hide_cb(ui);
 				handle->done = 1;
 			}
 		}
 		else if( (res > 0) && WIFEXITED(status) )
 		{
 			handle->pid = -1; // invalidate
-			//_hide_cb(ui);
 			handle->done = 1;
 		}
 	}
@@ -226,7 +221,11 @@ _kx_run(LV2_External_UI_Widget *widget)
 	plughandle_t *handle = (void *)widget - offsetof(plughandle_t, kx.widget);
 
 	if(_idle_cb(handle))
+	{
+		if(handle->kx.host && handle->kx.host->ui_closed)
+			handle->kx.host->ui_closed(handle->controller);
 		_hide_cb(handle);
+	}
 }
 
 static inline void
