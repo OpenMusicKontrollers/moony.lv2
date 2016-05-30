@@ -74,6 +74,17 @@
 #		define htole32(x) (x)
 #		define be32toh(x) ntohl(x)
 #		define le32toh(x) (x)
+
+#		ifndef htonll
+static inline uint64_t htonll(uint64_t n)
+{
+	return (((uint64_t)htonl(n)) << 32) + htonl(n >> 32);
+}
+#		endif
+
+#		ifndef ntohll
+#			define ntohll htonll
+#		endif
  
 #		define htobe64(x) htonll(x)
 #		define htole64(x) (x)
