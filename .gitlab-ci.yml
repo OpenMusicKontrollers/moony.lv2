@@ -3,19 +3,27 @@ stages:
   - test
   - deploy
 
+.variables_template: &variables_definition
+  variables:
+    BASE_NAME: "moony.lv2"
+    PKG_CONFIG_PATH: "/opt/lv2/lib/pkgconfig:/opt/${CI_BUILD_NAME}/lib/pkgconfig"
+    PLUGIN_DEST: "${BASE_NAME}-${CI_BUILD_REF_NAME}-${CI_BUILD_REF}/${CI_BUILD_NAME}-${BASE_NAME}"
+    TOOLCHAIN_FILE: "${CI_PROJECT_DIR}/cmake/${CI_BUILD_NAME}.cmake"
+
 .common_template: &common_definition
+  <<: *variables_definition
   stage: build
   artifacts:
-    name: "$(basename ${CI_PROJECT_DIR})-${CI_BUILD_REF_NAME}-${CI_BUILD_NAME}"
+    name: "${CI_BUILD_NAME}-${BASE_NAME}-${CI_BUILD_REF_NAME}-${CI_BUILD_REF}"
     paths:
-      - "$(basename ${CI_PROJECT_DIR})-${CI_BUILD_REF_NAME}/"
+      - "${BASE_NAME}-${CI_BUILD_REF_NAME}-${CI_BUILD_REF}/"
 
 .build_template: &build_definition
   <<: *common_definition
   script:
     - mkdir build
     - pushd build
-    - PKG_CONFIG_PATH="/opt/lv2/lib/pkgconfig:/opt/${CI_BUILD_NAME}/lib/pkgconfig" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${CI_PROJECT_DIR}" -DPLUGIN_DEST="$(basename ${CI_PROJECT_DIR})-${CI_BUILD_REF_NAME}/${CI_BUILD_NAME}/$(basename ${CI_PROJECT_DIR})" -DCMAKE_TOOLCHAIN_FILE="${CI_PROJECT_DIR}/cmake/${CI_BUILD_NAME}.cmake" ..
+    - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${CI_PROJECT_DIR}" -DPLUGIN_DEST=${PLUGIN_DEST} -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FILE} ..
     - cmake .. # needed for darwin
     - make
     - make install
@@ -25,7 +33,7 @@ stages:
   script:
     - mkdir build
     - pushd build
-    - PKG_CONFIG_PATH="/opt/lv2/lib/pkgconfig:/opt/${CI_BUILD_NAME}/lib/pkgconfig" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${CI_PROJECT_DIR}" -DPLUGIN_DEST="$(basename ${CI_PROJECT_DIR})-${CI_BUILD_REF_NAME}/${CI_BUILD_NAME}/$(basename ${CI_PROJECT_DIR})" -DCMAKE_TOOLCHAIN_FILE="${CI_PROJECT_DIR}/cmake/${CI_BUILD_NAME}.cmake" ..
+    - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${CI_PROJECT_DIR}" -DPLUGIN_DEST=${PLUGIN_DEST} -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FILE} ..
     - cmake .. # needed for darwin
     - make
     - make install
@@ -67,10 +75,11 @@ universal-apple-darwin:
   <<: *universal_apple_definition
 
 pack:
+  <<: *variables_definition
   stage: deploy
   script:
     - echo 'packing up...'
   artifacts:
-    name: "$(basename ${CI_PROJECT_DIR})-${CI_BUILD_REF_NAME}"
+    name: "${BASE_NAME}-${CI_BUILD_REF_NAME}-${CI_BUILD_REF}"
     paths:
-      - "$(basename ${CI_PROJECT_DIR})-${CI_BUILD_REF_NAME}/"
+      - "${BASE_NAME}-${CI_BUILD_REF_NAME}-${CI_BUILD_REF}"
