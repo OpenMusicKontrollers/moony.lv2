@@ -7,23 +7,22 @@ stages:
   variables:
     BASE_NAME: "moony.lv2"
     PKG_CONFIG_PATH: "/opt/lv2/lib/pkgconfig:/opt/${CI_BUILD_NAME}/lib/pkgconfig"
-    PLUGIN_DEST: "${BASE_NAME}-${CI_BUILD_REF_NAME}-${CI_BUILD_REF}/${CI_BUILD_NAME}-${BASE_NAME}"
     TOOLCHAIN_FILE: "${CI_PROJECT_DIR}/cmake/${CI_BUILD_NAME}.cmake"
 
 .common_template: &common_definition
   <<: *variables_definition
   stage: build
   artifacts:
-    name: "${CI_BUILD_NAME}-${BASE_NAME}-${CI_BUILD_REF_NAME}-${CI_BUILD_REF}"
+    name: "${BASE_NAME}-$(cat VERSION)-${CI_BUILD_NAME}"
     paths:
-      - "${BASE_NAME}-${CI_BUILD_REF_NAME}-${CI_BUILD_REF}/"
+      - "${BASE_NAME}-$(cat VERSION)/"
 
 .build_template: &build_definition
   <<: *common_definition
   script:
     - mkdir build
     - pushd build
-    - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${CI_PROJECT_DIR}" -DPLUGIN_DEST=${PLUGIN_DEST} -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FILE} ..
+    - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR} -DPLUGIN_DEST="${BASE_NAME}-$(cat ../VERSION)/${CI_BUILD_NAME}/${BASE_NAME}" -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FILE} ..
     - cmake .. # needed for darwin
     - make
     - make install
@@ -33,7 +32,7 @@ stages:
   script:
     - mkdir build
     - pushd build
-    - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${CI_PROJECT_DIR}" -DPLUGIN_DEST=${PLUGIN_DEST} -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FILE} ..
+    - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR} -DPLUGIN_DEST="${BASE_NAME}-$(cat ../VERSION)/${CI_BUILD_NAME}/${BASE_NAME}" -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FILE} ..
     - cmake .. # needed for darwin
     - make
     - make install
@@ -80,6 +79,6 @@ pack:
   script:
     - echo 'packing up...'
   artifacts:
-    name: "${BASE_NAME}-${CI_BUILD_REF_NAME}-${CI_BUILD_REF}"
+    name: "${BASE_NAME}-$(cat VERSION)"
     paths:
-      - "${BASE_NAME}-${CI_BUILD_REF_NAME}-${CI_BUILD_REF}"
+      - "${BASE_NAME}-$(cat VERSION)/"
