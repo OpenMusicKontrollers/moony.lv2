@@ -934,7 +934,14 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 					char _tracecnt [64];
 					sprintf(_tracecnt, "<font=Mono><color=#AAAAAA>%u</color> ", ui->tracecnt++);
 					elm_entry_entry_append(ui->trace, _tracecnt);
-					elm_entry_entry_append(ui->trace, str);
+					char *markup = elm_entry_utf8_to_markup(str);
+					if(markup)
+					{
+						elm_entry_entry_append(ui->trace, markup);
+						free(markup);
+					}
+					else
+						elm_entry_entry_append(ui->trace, str);
 					elm_entry_entry_append(ui->trace, "<br></font>");
 					elm_entry_cursor_end_set(ui->trace);
 				}
