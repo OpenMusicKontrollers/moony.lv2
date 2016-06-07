@@ -1519,3 +1519,14 @@ do
 		ids[id] = true
 	end
 end
+
+-- midi2cps/cps2midi
+print('[test] midi2cps/cps2midi')
+do
+	for note = 0.0, 127.0, 0.1 do
+		local cps = midi2cps(note)
+		assert(note - cps2midi(cps) < 1e-4)
+	end
+	assert(69.0 == cps2midi(440.0))
+	assert(440.0 == midi2cps(69.0))
+end

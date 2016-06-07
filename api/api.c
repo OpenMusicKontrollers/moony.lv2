@@ -175,6 +175,28 @@ _lvoice_map(lua_State *L)
 	return 1;
 }
 
+static int
+_lmidi2cps(lua_State *L)
+{
+	const lua_Number note = luaL_checknumber(L, 1);
+
+	const lua_Number cps = exp2( (note - 69.0) / 12.0) * 440.0;
+
+	lua_pushnumber(L, cps);
+	return 1;
+}
+
+static int
+_lcps2midi(lua_State *L)
+{
+	const lua_Number cps = luaL_checknumber(L, 1);
+
+	const lua_Number note = log2(cps / 440.0) * 12.0 + 69.0;
+
+	lua_pushnumber(L, note);
+	return 1;
+}
+
 static const char *note_keys [12] = {
 	"C", "C#",
 	"D", "D#",
@@ -959,6 +981,14 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	lua_pushcclosure(L, _lvoice_map, 1);
 	lua_setglobal(L, "VoiceMap");
+
+	// lv2.midi2cps
+	lua_pushcclosure(L, _lmidi2cps, 0);
+	lua_setglobal(L, "midi2cps");
+
+	// lv2cps2midi.
+	lua_pushcclosure(L, _lcps2midi, 0);
+	lua_setglobal(L, "cps2midi");
 
 #define SET_MAP(L, PREFIX, PROPERTY) \
 ({ \

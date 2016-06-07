@@ -212,6 +212,8 @@ checkKw(char*s)
 			CHECK(coroutine.status, CALLER);
 
 			CHECK(collectgarbage, CALLER);
+
+			CHECK(cps2midi, CALLER)
 			break;
 		case 'C':
 			CHECK(Core.sampleRate, NUMBER);
@@ -278,6 +280,8 @@ checkKw(char*s)
 			CHECK(math.sin, CALLER)
 			CHECK(math.log, CALLER)
 			CHECK(math.atan, CALLER)
+
+			CHECK(midi2cps, CALLER)
 			break;
 		case 'M':
 			CHECK(Map, CALLER);
