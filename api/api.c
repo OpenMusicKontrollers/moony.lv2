@@ -483,6 +483,27 @@ _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 
 		free(chunk);
 	}
+	//TODO check status
+
+	const int32_t minor_version = MOONY_MINOR_VERSION;
+	status = store(
+		state,
+		moony->uris.core_minor_version,
+		&minor_version,
+		sizeof(int32_t),
+		moony->forge.Int,
+		LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
+	//TODO check status
+
+	const int32_t micro_version = MOONY_MICRO_VERSION;
+	status = store(
+		state,
+		moony->uris.core_micro_version,
+		&micro_version,
+		sizeof(int32_t),
+		moony->forge.Int,
+		LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
+	//TODO check status
 
 	atom_ser_t ser = {
 		.moony = NULL,
@@ -557,17 +578,37 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 	uint32_t type;
 	uint32_t flags2;
 
+	// get minor version
+	const int32_t *minor_version = retrieve(
+		state,
+		moony->uris.core_minor_version,
+		&size,
+		&type,
+		&flags2);
+	if(!minor_version || (size != sizeof(int32_t)) || (type != moony->forge.Int) )
+		minor_version = NULL;
+
+	// get micro version
+	const int32_t *micro_version = retrieve(
+		state,
+		moony->uris.core_micro_version,
+		&size,
+		&type,
+		&flags2);
+	if(!micro_version || (size != sizeof(int32_t)) || (type != moony->forge.Int) )
+		micro_version = NULL;
+
+	//TODO check preset verstion with current plugin version for API compatibility
+
+	// get code chunk
 	const char *chunk = retrieve(
 		state,
 		moony->uris.moony_code,
 		&size,
 		&type,
-		&flags2
-	);
+		&flags2);
 
-	//TODO check type, flags2
-
-	if(chunk && size && type)
+	if(chunk && size && (type == moony->forge.String) )
 	{
 		strncpy(moony->chunk, chunk, size);
 
@@ -816,6 +857,8 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->uris.core_minimum = moony->map->map(moony->map->handle, LV2_CORE__minimum);
 	moony->uris.core_maximum = moony->map->map(moony->map->handle, LV2_CORE__maximum);
 	moony->uris.core_scale_point = moony->map->map(moony->map->handle, LV2_CORE__scalePoint);
+	moony->uris.core_minor_version= moony->map->map(moony->map->handle, LV2_CORE__minorVersion);
+	moony->uris.core_micro_version= moony->map->map(moony->map->handle, LV2_CORE__microVersion);
 
 	moony->uris.units_unit = moony->map->map(moony->map->handle, LV2_UNITS__unit);
 
