@@ -9,7 +9,7 @@ include_directories(${PROJECT_SOURCE_DIR}/symap)
 include_directories(${PROJECT_SOURCE_DIR}/osc.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/timely.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/xpress.lv2)
-include_directories(${PROJECT_SOURCE_DIR}/lua-5.3.1)
+include_directories(${PROJECT_SOURCE_DIR}/lua-5.3.3)
 include_directories(${PROJECT_SOURCE_DIR}/cJSON)
 include_directories(${PROJECT_SOURCE_DIR}/api)
 include_directories(${PROJECT_SOURCE_DIR}/ui)
@@ -173,40 +173,40 @@ else()
 endif()
 
 add_library(lua OBJECT
-	lua-5.3.1/lapi.c
-	lua-5.3.1/lcode.c
-	lua-5.3.1/lctype.c
-	lua-5.3.1/ldebug.c
-	lua-5.3.1/ldo.c
-	lua-5.3.1/ldump.c
-	lua-5.3.1/lfunc.c
-	lua-5.3.1/lgc.c
-	lua-5.3.1/llex.c
-	lua-5.3.1/lmem.c
-	lua-5.3.1/lobject.c
-	lua-5.3.1/lopcodes.c
-	lua-5.3.1/lparser.c
-	lua-5.3.1/lstate.c
-	lua-5.3.1/lstring.c
-	lua-5.3.1/ltable.c
-	lua-5.3.1/ltm.c
-	lua-5.3.1/lundump.c
-	lua-5.3.1/lvm.c
-	lua-5.3.1/lzio.c
+	lua-5.3.3/lapi.c
+	lua-5.3.3/lcode.c
+	lua-5.3.3/lctype.c
+	lua-5.3.3/ldebug.c
+	lua-5.3.3/ldo.c
+	lua-5.3.3/ldump.c
+	lua-5.3.3/lfunc.c
+	lua-5.3.3/lgc.c
+	lua-5.3.3/llex.c
+	lua-5.3.3/lmem.c
+	lua-5.3.3/lobject.c
+	lua-5.3.3/lopcodes.c
+	lua-5.3.3/lparser.c
+	lua-5.3.3/lstate.c
+	lua-5.3.3/lstring.c
+	lua-5.3.3/ltable.c
+	lua-5.3.3/ltm.c
+	lua-5.3.3/lundump.c
+	lua-5.3.3/lvm.c
+	lua-5.3.3/lzio.c
 
-	#lua-5.3.1/lbitlib.c
-	#lua-5.3.1/ldblib.c
-	#lua-5.3.1/liolib.c
-	#lua-5.3.1/loslib.c
-	#lua-5.3.1/loadlib.c
-	#lua-5.3.1/linit.c
-	lua-5.3.1/lbaselib.c
-	lua-5.3.1/lauxlib.c
-	lua-5.3.1/lcorolib.c
-	lua-5.3.1/lmathlib.c
-	lua-5.3.1/lstrlib.c
-	lua-5.3.1/ltablib.c
-	lua-5.3.1/lutf8lib.c)
+	#lua-5.3.3/lbitlib.c
+	#lua-5.3.3/ldblib.c
+	#lua-5.3.3/liolib.c
+	#lua-5.3.3/loslib.c
+	#lua-5.3.3/loadlib.c
+	#lua-5.3.3/linit.c
+	lua-5.3.3/lbaselib.c
+	lua-5.3.3/lauxlib.c
+	lua-5.3.3/lcorolib.c
+	lua-5.3.3/lmathlib.c
+	lua-5.3.3/lstrlib.c
+	lua-5.3.3/ltablib.c
+	lua-5.3.3/lutf8lib.c)
 set_target_properties(lua PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
 
 add_library(api OBJECT
