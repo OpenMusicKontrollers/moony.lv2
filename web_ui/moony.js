@@ -19,260 +19,260 @@ var editor = null;
 var tracecnt = 0;
 var socket_di = null;
 
-var LV2_CORE_PREFIX = "http://lv2plug.in/ns/lv2core#";
-var LV2_ATOM_PREFIX = "http://lv2plug.in/ns/ext/atom#";
-var LV2_PATCH_PREFIX= "http://lv2plug.in/ns/ext/patch#";
-var LV2_UI_PREFIX   = "http://lv2plug.in/ns/extensions/ui#";
-var LV2_UNITS_PREFIX= "http://lv2plug.in/ns/extensions/units#";
-var RDF_PREFIX      = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
-var RDFS_PREFIX     = "http://www.w3.org/2000/01/rdf-schema#";
-var MOONY_PREFIX    = "http://open-music-kontrollers.ch/lv2/moony#";
+var LV2_CORE_PREFIX = 'http://lv2plug.in/ns/lv2core#';
+var LV2_ATOM_PREFIX = 'http://lv2plug.in/ns/ext/atom#';
+var LV2_PATCH_PREFIX= 'http://lv2plug.in/ns/ext/patch#';
+var LV2_UI_PREFIX   = 'http://lv2plug.in/ns/extensions/ui#';
+var LV2_UNITS_PREFIX= 'http://lv2plug.in/ns/extensions/units#';
+var RDF_PREFIX      = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
+var RDFS_PREFIX     = 'http://www.w3.org/2000/01/rdf-schema#';
+var MOONY_PREFIX    = 'http://open-music-kontrollers.ch/lv2/moony#';
+
+var context = {
+	'lv2'             : LV2_CORE_PREFIX,
+	'atom'            : LV2_ATOM_PREFIX,
+	'patch'           : LV2_PATCH_PREFIX,
+	'ui'              : LV2_UI_PREFIX,
+	'units'           : LV2_UNITS_PREFIX,
+	'rdf'             : RDF_PREFIX,
+	'rdfs'            : RDFS_PREFIX,
+	'moony'           : MOONY_PREFIX
+};
+
+var options = {
+	'compactArrays'   : true,
+	'skipExpansion'   : false,
+	'expandContext'   : context,
+};
 
 var SUBJECT         = undefined;
 
 var RDF = {
-	value             : RDF_PREFIX + "value",
-	type              : RDF_PREFIX + "type"
+	value             : '@value',
+	type              : '@type',
+	id                : '@id',
+	list              : '@list',
+	set               : '@set'
 };
 
 var RDFS = {
-	label             : RDFS_PREFIX + "label",
-	range             : RDFS_PREFIX + "range",
-	comment           : RDFS_PREFIX + "comment"
+	label             : 'rdfs:label',
+	range             : 'rdfs:range',
+	comment           : 'rdfs:comment'
+};
+
+var ATOM = {
+	Int               : 'atom:Int',
+	Long              : 'atom:Long',
+	Float             : 'atom:Float',
+	Double            : 'atom:Double',
+	Bool              : 'atom:Bool',
+	URID              : 'atom:URID',
+	String            : 'atom:String',
+	URI               : 'atom:URI',
+	Path              : 'atom:Path',
+	Property          : 'atom:Property',
+	Literal           : 'atom:Literal',
+	Chunk             : 'atom:Chunk',
+	Tuple             : 'atom:Tuple',
+	Object            : 'atom:Object',
+	Sequence          : 'atom:Sequence',
+	frameTime         : 'atom:frameTime',
+	beatTime          : 'atom:beatTime',
+	Event             : 'atom:Event',
+	Vector            : 'atom:Vector',
+	childType         : 'atom:childType',
+
+	eventTransfer     : 'atom:eventTransfer',
+	atomTransfer      : 'atom:atomTransfer'
+};
+
+var UI = {
+	portNotification  : 'ui:portNotification',
+	portEvent         : 'ui:portEvent',
+	protocol          : 'ui:protocol',
+	floatProtocol     : 'ui:floatProtocol',
+	peakProtocol      : 'ui:peakProtocol',
+	periodStart       : 'ui:periodStart',
+	periodSize        : 'ui:periodSize',
+	peak              : 'ui:peak',
+	windowTitle       : 'ui:windowTitle'
+};
+
+var PATCH = {
+	Patch             : 'patch:Patch',
+	Get               : 'patch:Get',
+	Set               : 'patch:Set',
+	subject           : 'patch:subject',
+	property          : 'patch:property',
+	value             : 'patch:value',
+	remove            : 'patch:remove',
+	add               : 'patch:add',
+	wildcard          : 'patch:wildcard',
+	writable          : 'patch:writable',
+	readable          : 'patch:readable',
+	destination       : 'patch:destination'
 };
 
 var LV2 = {
-	ATOM : {
-		Int             : LV2_ATOM_PREFIX + "Int",
-		Long            : LV2_ATOM_PREFIX + "Long",
-		Float           : LV2_ATOM_PREFIX + "Float",
-		Double          : LV2_ATOM_PREFIX + "Double",
-		Bool            : LV2_ATOM_PREFIX + "Bool",
-		URID            : LV2_ATOM_PREFIX + "URID",
-		String          : LV2_ATOM_PREFIX + "String",
-		URI             : LV2_ATOM_PREFIX + "URI",
-		Path            : LV2_ATOM_PREFIX + "Path",
-		Property        : LV2_ATOM_PREFIX + "Property",
-		Literal         : LV2_ATOM_PREFIX + "Literal",
-		Chunk           : LV2_ATOM_PREFIX + "Chunk",
-		Tuple           : LV2_ATOM_PREFIX + "Tuple",
-		Object          : LV2_ATOM_PREFIX + "Object",
-		Sequence        : LV2_ATOM_PREFIX + "Sequence",
-		frameTime       : LV2_ATOM_PREFIX + "frameTime",
-		beatTime        : LV2_ATOM_PREFIX + "beatTime",
-		Event           : LV2_ATOM_PREFIX + "Event",
-		Vector          : LV2_ATOM_PREFIX + "Vector",
-		childType       : LV2_ATOM_PREFIX + "childType",
+	minimum           : 'lv2:minimum',
+	maximum           : 'lv2:maximum',
+	scalePoint        : 'lv2:scalePoint',
+	symbol            : 'lv2:symbol'
+};
 
-		eventTransfer   : LV2_ATOM_PREFIX + "eventTransfer",
-		atomTransfer    : LV2_ATOM_PREFIX + "atomTransfer"
-	},
-	UI : {
-		protocol        : LV2_UI_PREFIX + "protocol",
-		floatProtocol   : LV2_UI_PREFIX + "floatProtocol",
-		peakProtocol    : LV2_UI_PREFIX + "peakProtocol",
-		periodStart     : LV2_UI_PREFIX + "periodStart",
-		periodSize      : LV2_UI_PREFIX + "periodSize",
-		peak            : LV2_UI_PREFIX + "peak",
-		windowTitle     : LV2_UI_PREFIX + "windowTitle"
-	},
-	PATCH : {
-		Patch             : LV2_PATCH_PREFIX + "Patch",
-		Get               : LV2_PATCH_PREFIX + "Get",
-		Set               : LV2_PATCH_PREFIX + "Set",
-		subject           : LV2_PATCH_PREFIX + "subject",
-		property          : LV2_PATCH_PREFIX + "property",
-		value             : LV2_PATCH_PREFIX + "value",
-		remove            : LV2_PATCH_PREFIX + "remove",
-		add               : LV2_PATCH_PREFIX + "add",
-		wildcard          : LV2_PATCH_PREFIX + "wildcard",
-		writable          : LV2_PATCH_PREFIX + "writable",
-		readable          : LV2_PATCH_PREFIX + "readable",
-		destination       : LV2_PATCH_PREFIX + "destination"
-	},
-	CORE : {
-		minimum           : LV2_CORE_PREFIX + "minimum",
-		maximum           : LV2_CORE_PREFIX + "maximum",
-		scalePoint        : LV2_CORE_PREFIX + "scalePoint",
-		symbol            : LV2_CORE_PREFIX + "symbol"
-	},
-	UNITS : {
-		unit              : LV2_UNITS_PREFIX + "unit",
-		s                 : LV2_UNITS_PREFIX + "s",
-		ms                : LV2_UNITS_PREFIX + "ms",
-		min               : LV2_UNITS_PREFIX + "min",
-		bar               : LV2_UNITS_PREFIX + "bar",
-		beat              : LV2_UNITS_PREFIX + "beat",
-		frame             : LV2_UNITS_PREFIX + "frame",
-		m                 : LV2_UNITS_PREFIX + "m",
-		cm                : LV2_UNITS_PREFIX + "cm",
-		mm                : LV2_UNITS_PREFIX + "mm",
-		km                : LV2_UNITS_PREFIX + "km",
-		inch              : LV2_UNITS_PREFIX + "inch",
-		mile              : LV2_UNITS_PREFIX + "mile",
-		dB                : LV2_UNITS_PREFIX + "db",
-		pc                : LV2_UNITS_PREFIX + "pc",
-		coef              : LV2_UNITS_PREFIX + "coef",
-		hz                : LV2_UNITS_PREFIX + "hz",
-		khz               : LV2_UNITS_PREFIX + "khz",
-		mhz               : LV2_UNITS_PREFIX + "mhz",
-		bpm               : LV2_UNITS_PREFIX + "bpm",
-		oct               : LV2_UNITS_PREFIX + "oct",
-		cent              : LV2_UNITS_PREFIX + "cent",
-		semitone12TET     : LV2_UNITS_PREFIX + "semitone12TET",
-		degree            : LV2_UNITS_PREFIX + "degree",
-		midiNote          : LV2_UNITS_PREFIX + "midiNote"
-	}
+var UNITS = {
+	unit              : 'units:unit',
+	s                 : 'units:s',
+	ms                : 'units:ms',
+	min               : 'units:min',
+	bar               : 'units:bar',
+	beat              : 'units:beat',
+	frame             : 'units:frame',
+	m                 : 'units:m',
+	cm                : 'units:cm',
+	mm                : 'units:mm',
+	km                : 'units:km',
+	inch              : 'units:inch',
+	mile              : 'units:mile',
+	dB                : 'units:db',
+	pc                : 'units:pc',
+	coef              : 'units:coef',
+	hz                : 'units:hz',
+	khz               : 'units:khz',
+	mhz               : 'units:mhz',
+	bpm               : 'units:bpm',
+	oct               : 'units:oct',
+	cent              : 'units:cent',
+	semitone12TET     : 'units:semitone12TET',
+	degree            : 'units:degree',
+	midiNote          : 'units:midiNote',
+	midiController    : 'units:midiController'
 };
 
 var MOONY = {
-	code                : MOONY_PREFIX + "code",
-	selection           : MOONY_PREFIX + "selection",
-	error               : MOONY_PREFIX + "error",
-	trace               : MOONY_PREFIX + "trace",
-	ui                  : MOONY_PREFIX + "ui",
-	dsp                 : MOONY_PREFIX + "dsp"
+	code              : 'moony:code',
+	selection         : 'moony:selection',
+	error             : 'moony:error',
+	trace             : 'moony:trace',
+	ui                : 'moony:ui',
+	dsp               : 'moony:dsp',
+	destination       : 'moony:destination'
 };
 
 var format = {
-	[LV2.UNITS.s] : 's',
-	[LV2.UNITS.ms] : 'ms',
-	[LV2.UNITS.min] : 'min',
-	[LV2.UNITS.bar] : 'bars',
-	[LV2.UNITS.beat] : 'beats',
-	[LV2.UNITS.frame] : 'frames',
-	[LV2.UNITS.m] : 'm',
-	[LV2.UNITS.cm] : 'cm',
-	[LV2.UNITS.mm] : 'mm',
-	[LV2.UNITS.km] : 'km',
-	[LV2.UNITS.inch] : 'in',
-	[LV2.UNITS.mile] : 'mi',
-	[LV2.UNITS.dB] : 'dB',
-	[LV2.UNITS.pc] : '%',
-	[LV2.UNITS.coef] : '',
-	[LV2.UNITS.hz] : 'Hz',
-	[LV2.UNITS.khz] : 'kHz',
-	[LV2.UNITS.mhz] : 'MHz',
-	[LV2.UNITS.bpm] : 'BPM',
-	[LV2.UNITS.oct] : 'oct',
-	[LV2.UNITS.cent] : 'ct',
-	[LV2.UNITS.semitone12TET] : 'semi',
-	[LV2.UNITS.degree] : 'deg',
-	[LV2.UNITS.midiNote] : 'note'
-}
+	[UNITS.s]             : 's',
+	[UNITS.ms]            : 'ms',
+	[UNITS.min]           : 'min',
+	[UNITS.bar]           : 'bars',
+	[UNITS.beat]          : 'beats',
+	[UNITS.frame]         : 'frames',
+	[UNITS.m]             : 'm',
+	[UNITS.cm]            : 'cm',
+	[UNITS.mm]            : 'mm',
+	[UNITS.km]            : 'km',
+	[UNITS.inch]          : 'in',
+	[UNITS.mile]          : 'mi',
+	[UNITS.dB]            : 'dB',
+	[UNITS.pc]            : '%',
+	[UNITS.coef]          : '',
+	[UNITS.hz]            : 'Hz',
+	[UNITS.khz]           : 'kHz',
+	[UNITS.mhz]           : 'MHz',
+	[UNITS.bpm]           : 'BPM',
+	[UNITS.oct]           : 'oct',
+	[UNITS.cent]          : 'ct',
+	[UNITS.semitone12TET] : 'semi',
+	[UNITS.degree]        : 'deg',
+	[UNITS.midiNote]      : 'note', //TODO function callback
+	[UNITS.midiController]: 'controller' //TODO function callback
+};
 
 var trim = /[^a-zA-Z0-9_]+/g;
 
+function node_is_a(node, id) {
+	var types = node[RDF.type];
+	return types && ( (types == id) || (types.indexOf(id) != -1) );
+}
+
 function lv2_get(destination, property) {
-	var props = [];
-	props.push({
-		[LV2.ATOM.Property] : LV2.PATCH.property,
-		[RDF.value] : {
-			[RDFS.range] : LV2.ATOM.URID,
-			[RDF.value] : property
-		}
-	});
-	if(SUBJECT) {
-		props.push({
-			[LV2.ATOM.Property] : LV2.PATCH.subject,
-			[RDF.value] : {
-				[RDFS.range] : LV2.ATOM.URID,
-				[RDF.value] : SUBJECT
-			}
-		});
-	}
 	var req = {
-		[LV2.PATCH.destination] : destination,
-		[LV2.UI.protocol] : LV2.ATOM.eventTransfer,
-		[LV2.CORE.symbol] : 'control',
-		[RDF.value] : {
-			[RDFS.range] : LV2.ATOM.Object,
-			[RDF.type] : LV2.PATCH.Get,
-			[RDF.value] : props
+		[RDF.type]            : [ATOM.Object, UI.portNotification],
+		[LV2.symbol] : {
+			[RDF.type]          : [ATOM.String],
+			[RDF.value]         : 'control'
+		},
+		[MOONY.destination]   : {[RDF.id] : destination},
+		[UI.protocol]         : {[RDF.id] : ATOM.eventTransfer},
+		[UI.portEvent] : {
+			[RDF.type]          : [ATOM.Object, PATCH.Get],
+			[PATCH.property]    : {[RDF.id] : property}
 		}
 	};
+	if(SUBJECT) {
+		req[UI.portEvent][PATCH.subject] = {[RDF.id] : SUBJECT}
+	}
 	lv2_write(req);
 }
 
 function lv2_get_all(destination) {
-	var props = [];
-	if(SUBJECT) {
-		props.push({
-			[LV2.ATOM.Property] : LV2.PATCH.subject,
-			[RDF.value] : {
-				[RDFS.range] : LV2.ATOM.URID,
-				[RDF.value] : SUBJECT
-			}
-		});
-	}
 	var req = {
-		[LV2.PATCH.destination] : destination,
-		[LV2.UI.protocol] : LV2.ATOM.eventTransfer,
-		[LV2.CORE.symbol] : 'control',
-		[RDF.value] : {
-			[RDFS.range] : LV2.ATOM.Object,
-			[RDF.type] : LV2.PATCH.Get,
-			[RDF.value] : props
+		[RDF.type]            : [ATOM.Object, UI.portNotification],
+		[LV2.symbol] : {
+			[RDF.type]          : [ATOM.String],
+			[RDF.value]         : 'control'
+		},
+		[MOONY.destination]   : {[RDF.id] : destination},
+		[UI.protocol]         : {[RDF.id] : ATOM.eventTransfer},
+		[UI.portEvent] : {
+			[RDF.type]          : [ATOM.Object, PATCH.Get]
 		}
 	};
+	if(SUBJECT) {
+		req[UI.portEvent][PATCH.subject] = {[RDF.id] : SUBJECT}
+	}
 	lv2_write(req);
 }
 
 function lv2_set(destination, property, range, value) {
-	var props = [];
-	props.push({
-		[LV2.ATOM.Property] : LV2.PATCH.property,
-		[RDF.value] : {
-			[RDFS.range] : LV2.ATOM.URID,
-			[RDF.value] : property
-		}
-	});
-	props.push({
-		[LV2.ATOM.Property] : LV2.PATCH.value,
-		[RDF.value] : {
-			[RDFS.range] : range,
-			[RDF.value] : value
-		}
-	})
-	if(SUBJECT) {
-		props.push({
-			[LV2.ATOM.Property] : LV2.PATCH.subject,
-			[RDF.value] : {
-				[RDFS.range] : LV2.ATOM.URID,
-				[RDF.value] : SUBJECT
-			}
-		});
-	}
 	var req = {
-		[LV2.PATCH.destination] : destination,
-		[LV2.UI.protocol] : LV2.ATOM.eventTransfer,
-		[LV2.CORE.symbol] : 'control',
-		[RDF.value] : {
-			[RDFS.range] : LV2.ATOM.Object,
-			[RDF.type] : LV2.PATCH.Set,
-			[RDF.value] : props
+		[RDF.type]            : [ATOM.Object, UI.portNotification],
+		[LV2.symbol] : {
+			[RDF.type]          : [ATOM.String],
+			[RDF.value]         : 'control'
+		},
+		[MOONY.destination]   : {[RDF.id] : destination},
+		[UI.protocol]         : {[RDF.id] : ATOM.eventTransfer},
+		[UI.portEvent] : {
+			[RDF.type]          : [ATOM.Object, PATCH.Set],
+			[PATCH.property]    : {[RDF.id] : property},
+			[PATCH.value] : {
+				[RDF.type]        : [range],
+				[RDF.value]       : value
+			}
 		}
 	};
+	if(SUBJECT) {
+		req[UI.portEvent][PATCH.subject] = {[RDF.id] : SUBJECT}
+	}
 	lv2_write(req);
 }
 
 function lv2_control(destination, symbol, value) {
 	var req = {
-		[LV2.PATCH.destination] : destination,
-		[LV2.UI.protocol] : LV2.UI.floatProtocol,
-		[LV2.CORE.symbol] : symbol,
-		[RDF.value] : value
+		[RDF.type]            : [ATOM.Object, UI.portNotification],
+		[LV2.symbol] : {
+			[RDF.type]          : [ATOM.String],
+			[RDF.value]         : symbol
+		},
+		[MOONY.destination]   : {[RDF.id] : destination},
+		[UI.protocol]         : {[RDF.id] : UI.floatProtocol},
+		[UI.portEvent] : {
+			[RDF.type]          : [ATOM.Float],
+			[RDF.value]         : value
+		}
 	};
 	lv2_write(req);
-}
-
-function lv2_object_get(atom, key) {
-	for(i in atom) {
-		if(atom[i][LV2.ATOM.Property] == key) {
-			return atom[i][RDF.value];
-		}
-	}
-	return undefined;
 }
 
 function float_wheel(e) {
@@ -305,9 +305,10 @@ function float_change(e) {
 	lv2_control(MOONY.dsp, symbol, newval);
 }
 
-function lv2_read_float(symbol, value) {
+function lv2_read_float(symbol, obj) {
 	var props = $('#properties');
 	var control = $('#' + symbol);
+	var value = obj[RDF.value];
 	if(control.length !== 0) {
 		control.val(value);
 	} else {
@@ -322,12 +323,11 @@ function lv2_read_float(symbol, value) {
 	}
 }
 
-function lv2_read_peak(symbol, value) {
-	console.log(symbol, value[LV2.UI.periodStart], value[LV2.UI.periodSize], value[LV2.UI2.peak]);
+function lv2_read_peak(symbol, obj) {
 	//TODO
 }
 
-function lv2_read_atom(symbol, value) {
+function lv2_read_atom(symbol, obj) {
 	//TODO
 }
 
@@ -371,7 +371,7 @@ function property_wheel(e) {
 	var range = item.attr('data-range');
 
 	if(item.is('input')) {
-		if(range == LV2.ATOM.Bool) {
+		if(range == ATOM.Bool) {
 			var newval = !item.prop('checked');
 			item.prop('checked', newval);
 			lv2_set(MOONY.dsp, name, range, newval);
@@ -410,12 +410,12 @@ function property_change(e) {
 	var name = item.attr('name');
 	var range = item.attr('data-range');
 	var newval;
-	if(  (range == LV2.ATOM.Int)
-		|| (range == LV2.ATOM.Long)
-		|| (range == LV2.ATOM.Float)
-		|| (range == LV2.ATOM.Double) ) {
+	if(  (range == ATOM.Int)
+		|| (range == ATOM.Long)
+		|| (range == ATOM.Float)
+		|| (range == ATOM.Double) ) {
 		newval = Number(item.val());
-	} else if(range == LV2.ATOM.Bool) {
+	} else if(range == ATOM.Bool) {
 		newval = item.prop('checked');
 	} else {
 		newval = item.val();
@@ -429,117 +429,120 @@ function update_property_step(item) {
 	var min = item.attr('min');
 	var max = item.attr('max');
 	if(range && min && max) {
-		if( (range == LV2.ATOM.Float) || (range == LV2.ATOM.Double) )
+		if( (range == ATOM.Float) || (range == ATOM.Double) )
 			item.attr('step', (Number(max) - Number(min)) / 100.0);
 	}
 }
 
 function lv2_read_event(symbol, obj) {
-	var range = obj[RDFS.range];
-	var type = obj[RDF.type];
-	var atom = obj[RDF.value];
-
 	if( ( (symbol == 'notify') || (symbol == 'control') )
-	  && (range == LV2.ATOM.Object) )
+	  && node_is_a(obj, ATOM.Object) )
 	{
-		if(type == LV2.PATCH.Patch)
-		{
-			var subject = lv2_object_get(atom, LV2.PATCH.subject);
-			var remove = lv2_object_get(atom, LV2.PATCH.remove);
-			var add = lv2_object_get(atom, LV2.PATCH.add);
+		if(node_is_a(obj, PATCH.Patch)) {
+			var subject = obj[PATCH.subject];
+			var remove = obj[PATCH.remove];
+			var add = obj[PATCH.add];
 
-			if(remove && add) {
-				if(remove[RDFS.range] == LV2.ATOM.Object) {
-					for(var i in remove[RDF.value]) {
-						var item = remove[RDF.value][i];
-						var key = item[LV2.ATOM.Property];
-						var prop = item[RDF.value];
+			if(remove && node_is_a(remove, ATOM.Object) && add && node_is_a(add, ATOM.Object)) {
+				for(var key in remove) {
+					var value = remove[key];
 
-						if(key == LV2.PATCH.writable) {
-							//TODO check subject
-							if(prop[RDF.value] == LV2.PATCH.wildcard) {
-								$('.writable').remove();
-							} else {
-								var id = prop[RDF.value].replace(trim, '');
-								$('#' + id).remove();
-							}
-						} else if(key == LV2.PATCH.readable) {
-							//TODO check subject
-							if(prop[RDF.value] == LV2.PATCH.wildcard) {
-								$('.readable').remove();
-							} else {
-								var id = prop[RDF.value].replace(trim, '');
-								$('#' + id).remove();
-							}
+					if( (key == RDF.type) || (key == RDF.id) )
+						continue; // skip
+
+					if(key == PATCH.writable) {
+						var uri = value[RDF.id];
+						//TODO check subject
+						if(uri == PATCH.wildcard) {
+							$('.writable').remove();
+						} else {
+							var id = uri.replace(trim, '');
+							$('#' + id).remove();
 						}
-						else {
-							//TODO
+					} else if(key == PATCH.readable) {
+						var uri = value[RDF.id];
+						//TODO check subject
+						if(uri == PATCH.wildcard) {
+							$('.readable').remove();
+						} else {
+							var id = uri.replace(trim, '');
+							$('#' + id).remove();
 						}
 					}
+					else {
+						//TODO
+					}
 				}
-				if(add[RDFS.range] == LV2.ATOM.Object) {
-					for(var i in add[RDF.value]) {
-						var item = add[RDF.value][i];
-						var key = item[LV2.ATOM.Property];
-						var prop = item[RDF.value];
 
-						if(key == LV2.PATCH.writable) {
-							//TODO check subject
-							var id = prop[RDF.value].replace(trim, '');
-							var props = $('#properties');
+				console.log(add);
+				for(var key in add) {
+					var value = add[key];
 
-							props.append('<tr class="writable" data-id="'+id+'"><td class="label"></td><td><input id="'+id+'" name="'+prop[RDF.value]+'" /></td><td class="unit"></td></tr>');
-							sort_properties();
+					if( (key == RDF.type) || (key == RDF.id) )
+						continue; // skip
 
-							$('#' + id).bind('wheel', property_wheel).change(property_change);
-							
-							lv2_get(MOONY.dsp, prop[RDF.value]);
-						} else if(key == LV2.PATCH.readable) {
-							//TODO check subject
-							var id = prop[RDF.value].replace(trim, '');
-							var props = $('#properties');
+					if(key == PATCH.writable) {
+						//TODO check subject
+						var uri = value[RDF.id];
+						var id = uri.replace(trim, '');
+						var props = $('#properties');
 
-							props.append('<tr class="readable" data-id="'+id+'"><td class="label"></td><td><input id="'+id+'" name="'+prop[RDF.value]+'" disabled /></td><td class="unit"></td></tr>');
-							sort_properties();
+						props.append('<tr class="writable" data-id="'+id+'"><td class="label"></td><td><input id="'+id+'" name="'+uri+'" /></td><td class="unit"></td></tr>');
+						sort_properties();
 
-							lv2_get(MOONY.dsp, prop[RDF.value]);
-						} else {
-							var id = subject[RDF.value].replace(trim, '');
-							var item = $('#' + id);
-							if(key == RDFS.label) {
-								item.parent().parent().children('.label').html(prop[RDF.value]);
-							} else if(key == RDFS.comment) {
-								item.attr('title', prop[RDF.value]).attr('alt', prop[RDF.value])
-							} else if(key == RDFS.range) {
-								item.attr('data-range', prop[RDF.value]);
-								if(  (prop[RDF.value] == LV2.ATOM.Int)
-									|| (prop[RDF.value] == LV2.ATOM.Long) ) {
-									item.attr('type', 'number').attr('step', 1);
-								} else if( (prop[RDF.value] == LV2.ATOM.Float)
-									|| (prop[RDF.value] == LV2.ATOM.Double) ) {
-									item.attr('type', 'number').attr('step', 'any');
-								} else if(prop[RDF.value] == LV2.ATOM.Bool) {
-									item.attr('type', 'checkbox');
-								} else if(prop[RDF.value] == LV2.ATOM.Path) {
-									item.attr('type', 'file');
-								} else if( (prop[RDF.value] == LV2.ATOM.URI)
-									|| (prop[RDF.value] == LV2.ATOM.URID) ) {
-									item.attr('type', 'url');
-								} else if( (prop[RDF.value] == LV2.ATOM.String)
-									|| (prop[RDF.value] == LV2.ATOM.Literal)
-									|| (prop[RDF.value] == LV2.ATOM.Chunk) ) {
-									item.attr('type', 'text');
-								}
-							} else if(key == LV2.CORE.minimum) {
-								item.attr('min', prop[RDF.value]);
-								update_property_step(item);
-							} else if(key == LV2.CORE.maximum) {
-								item.attr('max', prop[RDF.value]);
-								update_property_step(item);
-							} else if(key == LV2.CORE.scalePoint) {
-								var point = prop[RDF.value];
-								var label = lv2_object_get(point, RDFS.label);
-								var value = lv2_object_get(point, RDF.value);
+						$('#' + id).bind('wheel', property_wheel).change(property_change);
+						
+						lv2_get(MOONY.dsp, uri);
+					} else if(key == PATCH.readable) {
+						//TODO check subject
+						var uri = value[RDF.id];
+						var id = uri.replace(trim, '');
+						var props = $('#properties');
+
+						props.append('<tr class="readable" data-id="'+id+'"><td class="label"></td><td><input id="'+id+'" name="'+uri+'" disabled /></td><td class="unit"></td></tr>');
+						sort_properties();
+
+						lv2_get(MOONY.dsp, uri);
+					} else {
+						var id = subject[RDF.id].replace(trim, '');
+						var item = $('#' + id);
+						if(key == RDFS.label) {
+							item.parent().parent().children('.label').html(value[RDF.value]);
+						} else if(key == RDFS.comment) {
+							item.attr('title', value[RDF.value]).attr('alt', value[RDF.value])
+						} else if(key == RDFS.range) {
+							var range = value[RDF.id];
+							item.attr('data-range', range);
+							if(  (range == ATOM.Int)
+								|| (range == ATOM.Long) ) {
+								item.attr('type', 'number').attr('step', 1);
+							} else if( (range == ATOM.Float)
+								|| (range == ATOM.Double) ) {
+								item.attr('type', 'number').attr('step', 'any');
+							} else if(range == ATOM.Bool) {
+								item.attr('type', 'checkbox');
+							} else if(range == ATOM.Path) {
+								item.attr('type', 'file');
+							} else if( (range == ATOM.URI)
+								|| (range == ATOM.URID) ) {
+								item.attr('type', 'url');
+							} else if( (range == ATOM.String)
+								|| (range == ATOM.Literal)
+								|| (range == ATOM.Chunk) ) {
+								item.attr('type', 'text');
+							}
+						} else if(key == LV2.minimum) {
+							item.attr('min', value[RDF.value]);
+							update_property_step(item);
+						} else if(key == LV2.maximum) {
+							item.attr('max', value[RDF.value]);
+							update_property_step(item);
+						} else if(key == LV2.scalePoint) {
+							var list = value[RDF.list];
+							for(i in list) {
+								var itm = list[i];
+								var label = itm[RDFS.label];
+								var val = itm['rdf:value']; //FIXME
 					
 								if(item.is('input')) { // change type from input -> select
 									var name = item.attr('name');
@@ -557,47 +560,47 @@ function lv2_read_event(symbol, obj) {
 									item.bind('wheel', property_wheel).change(property_change);
 								}
 
-								item.append('<option value="'+value[RDF.value]+'">'+label[RDF.value]+'</option>');
+								item.append('<option value="'+val[RDF.value]+'">'+label[RDF.value]+'</option>');
 								sort_options(item);
-								if(Number(item.attr('min')) > value[RDF.value])
-									item.attr('min', value[RDF.value]);
-								if(Number(item.attr('max')) < value[RDF.value])
-									item.attr('max', value[RDF.value]);
-							} else if(key == LV2.UNITS.unit) {
-								item.parent().parent().children('.unit').html(format[prop[RDF.value]]);
+								if(Number(item.attr('min')) > val[RDF.value])
+									item.attr('min', val[RDF.value]);
+								if(Number(item.attr('max')) < val[RDF.value])
+									item.attr('max', val[RDF.value]);
 							}
+						} else if(key == UNITS.unit) {
+							item.parent().parent().children('.unit').html(format[value[RDF.id]]);
 						}
 					}
 				}
 			}
 		}
-		else if(type == LV2.PATCH.Set)
+		else if(node_is_a(obj, PATCH.Set))
 		{
-			var subject = lv2_object_get(atom, LV2.PATCH.subject);
-			var property = lv2_object_get(atom, LV2.PATCH.property);
-			var value = lv2_object_get(atom, LV2.PATCH.value);
+			//var subject = obj[PATCH.subject];
+			var property = obj[PATCH.property][RDF.id];
+			var value = obj[PATCH.value]
 
 			//TODO check for matching subject
 
-			if(property && (property[RDFS.range] == LV2.ATOM.URID) && value) {
-				if( (property[RDF.value] == LV2.UI.windowTitle) && (value[RDFS.range] == LV2.ATOM.String) ) {
+			if(property && value) {
+				if( (property == UI.windowTitle) && node_is_a(value, ATOM.String) ) {
 					document.title = value[RDF.value];
-				} else if( (property[RDF.value] == LV2.PATCH.subject) && (value[RDFS.range] == LV2.ATOM.String) ) { //FIXME URI
-					SUBJECT = value[RDF.value];
-				} else if( (property[RDF.value] == MOONY.code) && (value[RDFS.range] == LV2.ATOM.String) ) {
+				} else if( (property == PATCH.subject) && value[RDF.id] ) {
+					SUBJECT = value[RDF.id];
+				} else if( (property == MOONY.code) && node_is_a(value, ATOM.String) ) {
 					editor.setValue(value[RDF.value], 1);
 					lv2_get_all(MOONY.dsp); // update properties
-				} else if( (property[RDF.value] == MOONY.error) && (value[RDFS.range] == LV2.ATOM.String) ) {
+				} else if( (property == MOONY.error) && node_is_a(value, ATOM.String) ) {
 					var errmsg = $('#errmsg');
 					errmsg.html(value[RDF.value]).fadeIn(300);
-				} else if( (property[RDF.value] == MOONY.trace) && (value[RDFS.range] == LV2.ATOM.String) ) {
+				} else if( (property == MOONY.trace) && node_is_a(value, ATOM.String) ) {
 					var tracemsg = $('#tracemsg');
 					tracemsg.append(tracecnt + ': ' + value[RDF.value] + '<br />').scrollTop(tracemsg.prop('scrollHeight'));
 					tracecnt += 1;
 				} else {
-					var item = $('#' + property[RDF.value].replace(trim, ''));
+					var item = $('#' + property.replace(trim, ''));
 					var range = item.attr('data-range');
-					if(range == LV2.ATOM.Bool) {
+					if(range == ATOM.Bool) {
 						item.prop('checked', value[RDF.value]);
 					} else {
 						item.val(value[RDF.value]);
@@ -609,34 +612,45 @@ function lv2_read_event(symbol, obj) {
 }
 
 var lv2_read = {
-	[LV2.UI.floatProtocol]  : lv2_read_float,
-	[LV2.UI.peakProtocol]   : lv2_read_peak,
-	[LV2.ATOM.atomTransfer] : lv2_read_atom,
-	[LV2.ATOM.eventTransfer] : lv2_read_event
+	[UI.floatProtocol]  : lv2_read_float,
+	[UI.peakProtocol]   : lv2_read_peak,
+	[ATOM.atomTransfer] : lv2_read_atom,
+	[ATOM.eventTransfer] : lv2_read_event
 };
 
 function lv2_success(data) {
-	var symbol = data[LV2.CORE.symbol];
-	var prot = data[LV2.UI.protocol];
-	var value = data[RDF.value];
+	jsonld.compact(data, context, options, function(err, compacted, ctx) {
+		if(err)
+			return;
+		
+		if(node_is_a(compacted, UI.portNotification)) {
+			var symbol = compacted[LV2.symbol][RDF.value];
+			var prot = compacted[UI.protocol][RDF.id];
+			var value = compacted[UI.portEvent];
 
-	if(symbol && prot)
-	{
-		var callback = lv2_read[prot];
-		if(callback)
-			callback(symbol, value);
-	}
+			if(symbol && prot)
+			{
+				var callback = lv2_read[prot];
+				if(callback)
+					callback(symbol, value);
+			}
+		}
+	})
 }
 
 function lv2_write(o) {
-	socket_di.send(JSON.stringify(o));
+	jsonld.expand(o, options, function(err, expanded) {
+		if(err)
+			return;
+		socket_di.send(JSON.stringify(expanded));
+	})
 }
 
 function compile(editor) {
 	var sel_range = editor.getSelectionRange();
 	if(sel_range.isEmpty()) {
 		var selection = editor.getValue();
-		lv2_set(MOONY.dsp, MOONY.code, LV2.ATOM.String, selection);
+		lv2_set(MOONY.dsp, MOONY.code, ATOM.String, selection);
 	} else {
 		var start_line = sel_range.start.row;
 		var end_line = sel_range.end.row;
@@ -644,7 +658,7 @@ function compile(editor) {
 		for(var i=0; i<start_line; i++)
 			selection = selection + '\n';
 		selection = selection + editor.getSession().getTextRange(sel_range);
-		lv2_set(MOONY.dsp, MOONY.selection, LV2.ATOM.String, selection);
+		lv2_set(MOONY.dsp, MOONY.selection, ATOM.String, selection);
 		editor.clearSelection();
 	}
 	$('#errmsg').html('<br />').fadeOut(100);
@@ -658,7 +672,7 @@ function compile_line(editor) {
 		for(var i=0; i<cur_line; i++)
 			selection = selection + '\n';
 		selection = selection + editor.getSession().getLine(cur_line);
-		lv2_set(MOONY.dsp, MOONY.selection, LV2.ATOM.String, selection);
+		lv2_set(MOONY.dsp, MOONY.selection, ATOM.String, selection);
 		editor.clearSelection();
 	}
 	$('#errmsg').html('<br />').fadeOut(100);
@@ -699,8 +713,8 @@ function ws_connect() {
 			$('.clip').show();
 
 			// query initial props
-			lv2_get(MOONY.ui, LV2.UI.windowTitle);
-			lv2_get(MOONY.ui, LV2.PATCH.subject);
+			lv2_get(MOONY.ui, UI.windowTitle);
+			lv2_get(MOONY.ui, PATCH.subject);
 			lv2_get(MOONY.dsp, MOONY.code);
 			lv2_get(MOONY.dsp, MOONY.error);
 			lv2_get_all(MOONY.dsp);

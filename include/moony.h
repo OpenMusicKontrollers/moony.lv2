@@ -67,6 +67,7 @@
 
 #define MOONY_UI_URI					MOONY_URI"#ui"
 #define MOONY_DSP_URI					MOONY_URI"#dsp"
+#define MOONY_DESTINATION_URI	MOONY_URI"#destination"
 
 #define MOONY_COMMON_UI_URI		MOONY_URI"#ui_3_common_1_ui"
 #define MOONY_COMMON_KX_URI		MOONY_URI"#ui_3_common_2_kx"

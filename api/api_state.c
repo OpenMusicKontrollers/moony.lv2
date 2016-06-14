@@ -158,6 +158,11 @@ _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 
 				if(lua_geti(L, -1, moony->uris.core_scale_point) != LUA_TNIL)
 				{
+					LV2_Atom_Forge_Frame tuple_frame;
+					if(  !lv2_atom_forge_key(lforge->forge, moony->uris.core_scale_point)
+						|| !lv2_atom_forge_tuple(lforge->forge, &tuple_frame) )
+						luaL_error(L, forge_buffer_overflow);
+
 					// iterate over properties
 					lua_pushnil(L);  // first key 
 					while(lua_next(L, -2))
@@ -167,8 +172,7 @@ _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 						const char *point = luaL_checklstring(L, -2, &point_size);
 						LV2_Atom_Forge_Frame scale_point_frame;
 
-						if(  !lv2_atom_forge_key(lforge->forge, moony->uris.core_scale_point)
-							|| !lv2_atom_forge_object(lforge->forge, &scale_point_frame, 0, 0)
+						if(  !lv2_atom_forge_object(lforge->forge, &scale_point_frame, 0, 0)
 
 							|| !lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_label)
 							|| !lv2_atom_forge_string(lforge->forge, point, point_size)
@@ -182,6 +186,8 @@ _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 						// removes 'value'; keeps 'key' for next iteration
 						lua_pop(L, 1);
 					}
+
+					lv2_atom_forge_pop(lforge->forge, &tuple_frame);
 				}
 				lua_pop(L, 1); // scale_points
 			}

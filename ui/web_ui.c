@@ -26,7 +26,7 @@
 
 #include <moony.h>
 #include <private_ui.h>
-#include <base64.h>
+#include <jsatom.h>
 
 #include <lv2_external_ui.h> // kxstudio external-ui extension
 
@@ -34,11 +34,7 @@
 
 #define BUF_SIZE 0x100000 // 1M
 
-#define RDF_PREFIX "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 #define RDFS_PREFIX "http://www.w3.org/2000/01/rdf-schema#"
-
-#define RDF__value RDF_PREFIX"value"
-#define RDF__type RDF_PREFIX"type"
 
 #define RDFS__label RDFS_PREFIX"label"
 #define RDFS__range RDFS_PREFIX"range"
@@ -48,8 +44,30 @@
 
 #ifndef LV2_UI__protocol
 #	define LV2_UI__protocol         LV2_UI_PREFIX "protocol"
+#endif
+
+#ifndef LV2_UI__floatProtocol
 #	define LV2_UI__floatProtocol    LV2_UI_PREFIX "floatProtocol"
+#endif
+
+#ifndef LV2_UI__peakProtocol
 #	define LV2_UI__peakProtocol     LV2_UI_PREFIX "peakProtocol"
+#endif
+
+#ifndef LV2_UI__portEvent
+#	define LV2_UI__portEvent     LV2_UI_PREFIX "portEvent"
+#endif
+
+#ifndef LV2_UI__periodStart
+#	define LV2_UI__periodStart     LV2_UI_PREFIX "periodStart"
+#endif
+
+#ifndef LV2_UI__periodSize
+#	define LV2_UI__periodSize     LV2_UI_PREFIX "periodSize"
+#endif
+
+#ifndef LV2_UI__peak
+#	define LV2_UI__peak     LV2_UI_PREFIX "peak"
 #endif
 
 #ifdef LV2_ATOM_TUPLE_FOREACH
@@ -82,14 +100,24 @@ struct _ui_t {
 		LV2_URID moony_selection;
 		LV2_URID moony_error;
 		LV2_URID moony_trace;
+		LV2_URID moony_ui;
+		LV2_URID moony_dsp;
+		LV2_URID moony_destination;
 		LV2_URID window_title;
 
 		LV2_URID subject;
 
 		patch_t patch;
 
+		LV2_URID core_symbol;
+		LV2_URID ui_protocol;
+		LV2_URID ui_port_notification;
+		LV2_URID ui_port_event;
 		LV2_URID ui_float_protocol;
 		LV2_URID ui_peak_protocol;
+		LV2_URID ui_period_start;
+		LV2_URID ui_period_size;
+		LV2_URID ui_peak;
 		LV2_URID atom_event_transfer;
 		LV2_URID atom_atom_transfer;
 	} uris;
@@ -125,6 +153,8 @@ struct _ui_t {
 
 	struct lws_context *context;
 	client_t *client;
+
+	jsatom_t jsatom;
 };
 
 static inline const char *
@@ -402,263 +432,6 @@ _moony_message_forge(ui_t *ui, LV2_URID key,
 	return NULL;
 }
 
-static inline LV2_Atom_Forge_Ref
-_json_to_atom(ui_t *ui, cJSON *root, LV2_Atom_Forge *forge)
-{
-	assert(root->type == cJSON_Object);
-
-	cJSON *range = cJSON_GetObjectItem(root, RDFS__range);
-	cJSON *value = cJSON_GetObjectItem(root, RDF__value);
-
-	assert(range->type == cJSON_String);
-
-	if(!strcmp(range->valuestring, LV2_ATOM__Int) && (value->type == cJSON_Number) )
-		return lv2_atom_forge_int(forge, value->valueint);
-	else if(!strcmp(range->valuestring, LV2_ATOM__Long) && (value->type == cJSON_Number) )
-		return lv2_atom_forge_long(forge, value->valueint);
-	else if(!strcmp(range->valuestring, LV2_ATOM__Float) && (value->type == cJSON_Number) )
-		return lv2_atom_forge_float(forge, value->valuedouble);
-	else if(!strcmp(range->valuestring, LV2_ATOM__Double) && (value->type == cJSON_Number))
-		return lv2_atom_forge_double(forge, value->valuedouble);
-	else if(!strcmp(range->valuestring, LV2_ATOM__Bool) && (value->type == cJSON_True) )
-		return lv2_atom_forge_bool(forge, 1);
-	else if(!strcmp(range->valuestring, LV2_ATOM__Bool) && (value->type == cJSON_False) )
-		return lv2_atom_forge_bool(forge, 0);
-	else if(!strcmp(range->valuestring, LV2_ATOM__URID) && (value->type == cJSON_String) )
-		return lv2_atom_forge_urid(forge, ui->map->map(ui->map->handle, value->valuestring));
-	else if(!strcmp(range->valuestring, LV2_ATOM__String) && (value->type == cJSON_String) )
-		return lv2_atom_forge_string(forge, value->valuestring, strlen(value->valuestring));
-	else if(!strcmp(range->valuestring, LV2_ATOM__URI) && (value->type == cJSON_String) )
-		return lv2_atom_forge_uri(forge, value->valuestring, strlen(value->valuestring));
-	else if(!strcmp(range->valuestring, LV2_ATOM__Path) && (value->type == cJSON_String) )
-		return lv2_atom_forge_path(forge, value->valuestring, strlen(value->valuestring));
-	else if(!strcmp(range->valuestring, LV2_ATOM__Chunk) && (value->type == cJSON_String) )
-	{
-		LV2_Atom_Forge_Ref ref = 0;
-		size_t size;
-		uint8_t *body = base64_decode(value->valuestring, strlen(value->valuestring), &size);
-		if(body)
-		{
-			if(  (ref = lv2_atom_forge_atom(forge, size, forge->Chunk))
-				&& (ref = lv2_atom_forge_raw(forge, body, size)) )
-			{
-				lv2_atom_forge_pad(forge, size);
-			}
-		}
-		return ref;
-	}
-	//TODO literal
-	else if(!strcmp(range->valuestring, LV2_ATOM__Tuple) && (value->type == cJSON_Array) )
-	{
-		LV2_Atom_Forge_Frame frame;
-		LV2_Atom_Forge_Ref ref = lv2_atom_forge_tuple(forge, &frame);
-		for(cJSON *child = value->child; ref && child; child = child->next)
-		{
-			ref = _json_to_atom(ui, child, forge);
-		}
-		if(ref)
-			lv2_atom_forge_pop(forge, &frame);
-		return ref;
-	}
-	else if(!strcmp(range->valuestring, LV2_ATOM__Object) && (value->type == cJSON_Array) )
-	{
-		cJSON *type = cJSON_GetObjectItem(root, RDF__type);
-		const LV2_URID otype = type && (type->type == cJSON_String)
-			? ui->map->map(ui->map->handle, type->valuestring)
-			: 0;
-
-		LV2_Atom_Forge_Frame frame;
-		LV2_Atom_Forge_Ref ref = lv2_atom_forge_object(forge, &frame, 0, otype);
-		for(cJSON *item = value->child; ref && item; item = item->next)
-		{
-			cJSON *_key = cJSON_GetObjectItem(item, LV2_ATOM__Property);
-			cJSON *child = cJSON_GetObjectItem(item, RDF__value);
-
-			if(_key && child)
-			{
-				const LV2_URID key = ui->map->map(ui->map->handle, _key->valuestring);
-				ref = lv2_atom_forge_key(forge, key)
-					&& _json_to_atom(ui, child, forge);
-			}
-		}
-		if(ref)
-			lv2_atom_forge_pop(forge, &frame);
-		return ref;
-	}
-	else if(!strcmp(range->valuestring, LV2_ATOM__Sequence) && (value->type == cJSON_Array) )
-	{
-		LV2_Atom_Forge_Frame frame;
-		LV2_Atom_Forge_Ref ref = lv2_atom_forge_sequence_head(forge, &frame, 0);
-		for(cJSON *child = value->child; ref && child; child = child->next)
-		{
-			assert(child->type == cJSON_Object);
-			for(cJSON *item = child->child; ref && item; item = item->next)
-			{
-				cJSON *frames = cJSON_GetObjectItem(item, LV2_ATOM__frameTime);
-				cJSON *beats = cJSON_GetObjectItem(item, LV2_ATOM__beatTime);
-				cJSON *event = cJSON_GetObjectItem(item, LV2_ATOM__Event);
-				if(ref && frames && (frames->type == cJSON_Number) )
-					ref = lv2_atom_forge_frame_time(forge, frames->valueint);
-				else if(ref && beats && (beats->type == cJSON_Number) )
-					ref = lv2_atom_forge_beat_time(forge, beats->valuedouble);
-
-				if(ref && event)
-					ref = _json_to_atom(ui, event, forge);
-			}
-		}
-		if(ref)
-			lv2_atom_forge_pop(forge, &frame);
-		return ref;
-	}
-	//TODO vector
-
-	return 0;
-}
-
-static inline cJSON *
-_atom_to_json(ui_t *ui, const LV2_Atom *atom)
-{
-	cJSON *range = NULL;
-	cJSON *value = NULL;
-	cJSON *type = NULL;
-
-	if(atom->type == ui->forge.Int)
-	{
-		range = cJSON_CreateString(LV2_ATOM__Int);
-		value = cJSON_CreateNumber(((const LV2_Atom_Int *)atom)->body);
-	}
-	else if(atom->type == ui->forge.Long)
-	{
-		range = cJSON_CreateString(LV2_ATOM__Long);
-		value = cJSON_CreateNumber(((const LV2_Atom_Long *)atom)->body);
-	}
-	else if(atom->type == ui->forge.Float)
-	{
-		range = cJSON_CreateString(LV2_ATOM__Float);
-		value = cJSON_CreateNumber(((const LV2_Atom_Float *)atom)->body);
-	}
-	else if(atom->type == ui->forge.Double)
-	{
-		range = cJSON_CreateString(LV2_ATOM__Double);
-		value = cJSON_CreateNumber(((const LV2_Atom_Double *)atom)->body);
-	}
-	else if(atom->type == ui->forge.Bool)
-	{
-		range = cJSON_CreateString(LV2_ATOM__Bool);
-		if(((const LV2_Atom_Bool *)atom)->body)
-			value = cJSON_CreateTrue();
-		else
-			value = cJSON_CreateFalse();
-	}
-	else if(atom->type == ui->forge.URID) // URID -> URI
-	{
-		range = cJSON_CreateString(LV2_ATOM__URID);
-		value = cJSON_CreateString(ui->unmap->unmap(ui->unmap->handle, ((const LV2_Atom_URID *)atom)->body));
-	}
-	else if(atom->type == ui->forge.String)
-	{
-		range = cJSON_CreateString(LV2_ATOM__String);
-		value = cJSON_CreateString(LV2_ATOM_BODY_CONST(atom));
-	}
-	else if(atom->type == ui->forge.URI)
-	{
-		range = cJSON_CreateString(LV2_ATOM__URI);
-		value = cJSON_CreateString(LV2_ATOM_BODY_CONST(atom));
-	}
-	else if(atom->type == ui->forge.Path)
-	{
-		range = cJSON_CreateString(LV2_ATOM__Path);
-		value = cJSON_CreateString(LV2_ATOM_BODY_CONST(atom));
-	}
-	else if(atom->type == ui->forge.Chunk)
-	{
-		char *str = base64_encode(LV2_ATOM_BODY_CONST(atom), atom->size);
-		if(str)
-		{
-			range = cJSON_CreateString(LV2_ATOM__Chunk);
-			value = cJSON_CreateString(str);
-			free(str);
-		}
-	}
-	//TODO literal 
-	else if(atom->type == ui->forge.Tuple)
-	{
-		const LV2_Atom_Tuple *tup = (const LV2_Atom_Tuple *)atom;
-		range = cJSON_CreateString(LV2_ATOM__Tuple);
-		value = cJSON_CreateArray();
-		LV2_ATOM_TUPLE_FOREACH(tup, item)
-		{
-			cJSON *child = _atom_to_json(ui, item);
-			if(value && child)
-				cJSON_AddItemToArray(value, child);
-		}
-	}
-	else if(atom->type == ui->forge.Object)
-	{
-		const LV2_Atom_Object *obj = (const LV2_Atom_Object *)atom;
-		range = cJSON_CreateString(LV2_ATOM__Object);
-		const char *otype = ui->unmap->unmap(ui->unmap->handle, obj->body.otype);
-		if(otype)
-			type = cJSON_CreateString(otype);
-		value = cJSON_CreateArray();
-		if(value)
-		{
-			LV2_ATOM_OBJECT_FOREACH(obj, prop)
-			{
-				cJSON *item = cJSON_CreateObject();
-				if(item)
-				{
-					const char *key = ui->unmap->unmap(ui->unmap->handle, prop->key);
-					cJSON *_key = key ? cJSON_CreateString(key) : NULL;
-					cJSON *child = _atom_to_json(ui, &prop->value);
-					if(_key)
-						cJSON_AddItemToObject(item, LV2_ATOM__Property, _key);
-					if(child)
-						cJSON_AddItemToObject(item, RDF__value, child);
-					cJSON_AddItemToArray(value, item);
-				}
-			}
-		}
-	}
-	else if(atom->type == ui->forge.Sequence)
-	{
-		const LV2_Atom_Sequence *seq = (const LV2_Atom_Sequence *)atom;
-		range = cJSON_CreateString(LV2_ATOM__Sequence);
-		value = cJSON_CreateArray();
-		LV2_ATOM_SEQUENCE_FOREACH(seq, ev)
-		{
-			cJSON *event = cJSON_CreateObject();
-			cJSON *time = NULL;
-			if(seq->body.unit == 0)
-				time = cJSON_CreateNumber(ev->time.frames);
-			else
-				time = cJSON_CreateNumber(ev->time.beats);
-			cJSON *child = _atom_to_json(ui, &ev->body);
-			if(value && event && time && child)
-			{
-				if(seq->body.unit == 0)
-					cJSON_AddItemToObject(event, LV2_ATOM__frameTime, time);
-				else
-					cJSON_AddItemToObject(event, LV2_ATOM__beatTime, time);
-				cJSON_AddItemToObject(event, LV2_ATOM__Event, child);
-				cJSON_AddItemToArray(value, event);
-			}
-		}
-	}
-	//TODO vector
-
-	cJSON *root = cJSON_CreateObject();
-	if(root && range && value)
-	{
-		cJSON_AddItemToObject(root, RDFS__range, range);
-		if(type)
-			cJSON_AddItemToObject(root, RDF__type, type);
-		cJSON_AddItemToObject(root, RDF__value, value);
-	}
-
-	return root;
-}
-
 static int
 _pmap_cmp(const void *data1, const void *data2)
 {
@@ -681,48 +454,51 @@ _pmap_get(ui_t *ui, uint32_t idx)
 }
 
 static inline void
-_moony_dsp(ui_t *ui, cJSON *root)
+_moony_dsp(ui_t *ui, const LV2_Atom_Object *obj)
 {
-	cJSON *protocol = cJSON_GetObjectItem(root, LV2_UI__protocol);
-	cJSON *symbol = cJSON_GetObjectItem(root, LV2_CORE__symbol);
-	cJSON *value = cJSON_GetObjectItem(root, RDF__value);
+	const LV2_Atom_URID *protocol = NULL;
+	const LV2_Atom_String *symbol = NULL;
+	const LV2_Atom *event = NULL;
 
-	if(  protocol && symbol && value
-		&& (protocol->type == cJSON_String)
-		&& (symbol->type == cJSON_String) )
+	LV2_Atom_Object_Query q [] = {
+		{ ui->uris.ui_protocol, (const LV2_Atom **)&protocol },
+		{ ui->uris.core_symbol, (const LV2_Atom **)&symbol },
+		{ ui->uris.ui_port_event, &event },
+		{ 0, NULL}
+	};
+
+	lv2_atom_object_query(obj, q);
+
+	if(  !protocol || (protocol->atom.type != ui->forge.URID)
+		|| !symbol || (symbol->atom.type != ui->forge.String)
+		|| !event)
 	{
-		if(!strcmp(protocol->valuestring, LV2_UI__floatProtocol)
-			&& (value->type == cJSON_Number) )
-		{
-			uint32_t idx = ui->port_map->port_index(ui->port_map->handle, symbol->valuestring);
-			const float val = value->valuedouble;
-			ui->write_function(ui->controller, idx, sizeof(float),
-				0, &val);
+		return;
+	}
+	
+	const uint32_t idx = ui->port_map->port_index(ui->port_map->handle, LV2_ATOM_BODY_CONST(symbol));
 
-			// intercept control port changes
-			pmap_t *pmap = _pmap_get(ui, idx);
-			if(pmap)
-				pmap->val = val;
-		}
-		else if(!strcmp(protocol->valuestring, LV2_ATOM__eventTransfer)
-			&& (value->type == cJSON_Object) )
-		{
-			uint32_t idx = ui->port_map->port_index(ui->port_map->handle, symbol->valuestring);
-			lv2_atom_forge_set_buffer(&ui->forge, ui->buf, BUF_SIZE);
-			if(_json_to_atom(ui, value, &ui->forge))
-			{
-				const LV2_Atom *atom = (const LV2_Atom *)ui->buf;
-				ui->write_function(ui->controller, idx, lv2_atom_total_size(atom),
-					ui->uris.atom_event_transfer, atom);
-			}
-			else if(ui->log)
-				lv2_log_error(&ui->logger, "_moony_dsp: forge buffer overflow");
-		}
-		else if(!strcmp(protocol->valuestring, LV2_ATOM__atomTransfer)
-			&& (value->type == cJSON_Object) )
-		{
-			//FIXME
-		}
+	if(  (protocol->body == ui->uris.ui_float_protocol)
+		&& (event->type == ui->forge.Float) )
+	{
+		const float val = ((const LV2_Atom_Float *)event)->body;
+		ui->write_function(ui->controller, idx, sizeof(float),
+			0, &val);
+
+		// intercept control port changes
+		pmap_t *pmap = _pmap_get(ui, idx);
+		if(pmap)
+			pmap->val = val;
+	}
+	else if(protocol->body == ui->uris.atom_event_transfer)
+	{
+		ui->write_function(ui->controller, idx, lv2_atom_total_size(event),
+			ui->uris.atom_event_transfer, event);
+	}
+	else if(protocol->body == ui->uris.atom_atom_transfer)
+	{
+		ui->write_function(ui->controller, idx, lv2_atom_total_size(event),
+			ui->uris.atom_atom_transfer, event);
 	}
 	else if(ui->log)
 		lv2_log_error(&ui->logger, "_moony_dsp: missing protocol, symbol or value");
@@ -759,163 +535,183 @@ _schedule(ui_t *ui, cJSON *job)
 static inline cJSON * 
 _moony_send(ui_t *ui, uint32_t idx, uint32_t size, uint32_t prot, const void *buf)
 {
-	cJSON *protocol = NULL;
-	cJSON *value = NULL;
+	uint8_t raw [BUF_SIZE]; //FIXME
+	lv2_atom_forge_set_buffer(&ui->forge, raw, BUF_SIZE);
 
-	if( ((prot == ui->uris.ui_float_protocol) || (prot == 0)) && (size == sizeof(float)) )
+	LV2_Atom_Forge_Frame frame;
+	lv2_atom_forge_object(&ui->forge, &frame, 0, ui->uris.ui_port_notification);
+
+	if(prot == 0)
+		prot = ui->uris.ui_float_protocol;
+
+	lv2_atom_forge_key(&ui->forge, ui->uris.ui_protocol);
+	lv2_atom_forge_urid(&ui->forge, prot);
+
+	pmap_t *pmap = _pmap_get(ui, idx);
+	if(pmap)
+	{
+		lv2_atom_forge_key(&ui->forge, ui->uris.core_symbol);
+		lv2_atom_forge_string(&ui->forge, pmap->symbol, strlen(pmap->symbol));
+	}
+
+	lv2_atom_forge_key(&ui->forge, ui->uris.ui_port_event);
+	if( (prot == ui->uris.ui_float_protocol) && (size == sizeof(float)) )
 	{
 		const float *val = buf;
-		protocol = cJSON_CreateString(LV2_UI__floatProtocol);
-		value = cJSON_CreateNumber(*val);
+		lv2_atom_forge_float(&ui->forge, *val);
 	}
 	else if( (prot == ui->uris.ui_peak_protocol) && (size == sizeof(LV2UI_Peak_Data)) )
 	{
 		const LV2UI_Peak_Data *peak_data = buf;
-		protocol = cJSON_CreateString(LV2_UI__peakProtocol);
-		value = cJSON_CreateObject();
-		if(value)
-		{
-			cJSON *period_start = cJSON_CreateNumber(peak_data->period_start);
-			cJSON *period_size = cJSON_CreateNumber(peak_data->period_size);
-			cJSON *peak = cJSON_CreateNumber(peak_data->peak);
-			if(period_start)
-				cJSON_AddItemToObject(value, LV2_UI_PREFIX"periodStart", period_start);
-			if(period_size)
-				cJSON_AddItemToObject(value, LV2_UI_PREFIX"periodSize", period_size);
-			if(peak)
-				cJSON_AddItemToObject(value, LV2_UI_PREFIX"peak", peak);
-		}
+		LV2_Atom_Forge_Frame peak_frame;
+		lv2_atom_forge_object(&ui->forge, &peak_frame, 0, 0);
+		lv2_atom_forge_key(&ui->forge, ui->uris.ui_period_start);
+			lv2_atom_forge_int(&ui->forge, peak_data->period_start);
+		lv2_atom_forge_key(&ui->forge, ui->uris.ui_period_size);
+			lv2_atom_forge_int(&ui->forge, peak_data->period_size);
+		lv2_atom_forge_key(&ui->forge, ui->uris.ui_peak);
+			lv2_atom_forge_float(&ui->forge, peak_data->peak);
+		lv2_atom_forge_pop(&ui->forge, &peak_frame);
 	}
 	else if(prot == ui->uris.atom_event_transfer)
 	{
 		const LV2_Atom *atom = buf;
-		protocol = cJSON_CreateString(LV2_ATOM__eventTransfer);
-		value = _atom_to_json(ui, atom);
+		lv2_atom_forge_write(&ui->forge, atom, lv2_atom_total_size(atom));
 	}
 	else if(prot == ui->uris.atom_atom_transfer)
 	{
 		const LV2_Atom *atom = buf;
-		protocol = cJSON_CreateString(LV2_ATOM__atomTransfer);
-		value = _atom_to_json(ui, atom);
+		lv2_atom_forge_write(&ui->forge, atom, lv2_atom_total_size(atom));
 	}
 	else
-		return NULL;
-
-	cJSON *root = cJSON_CreateObject();
-	if(root)
 	{
-		cJSON *symbol = NULL;
-
-		pmap_t *pmap = _pmap_get(ui, idx);
-		if(pmap)
-			symbol = cJSON_CreateString(pmap->symbol);
-
-		if(symbol)
-			cJSON_AddItemToObject(root, LV2_CORE__symbol, symbol);
-
-		cJSON_AddItemToObject(root, LV2_UI__protocol, protocol);
-		cJSON_AddItemToObject(root, RDF__value, value);
+		return NULL;
 	}
 
-	return root;
+	lv2_atom_forge_pop(&ui->forge, &frame);
+
+	const LV2_Atom *atom = (const LV2_Atom *)raw;
+	return jsatom_encode(&ui->jsatom, atom->size, atom->type, LV2_ATOM_BODY_CONST(atom));
 }
 
 static inline void
-_moony_ui(ui_t *ui, cJSON *root)
+_moony_ui(ui_t *ui, const LV2_Atom_Object *obj)
 {
-	cJSON *protocol = cJSON_GetObjectItem(root, LV2_UI__protocol);
-	cJSON *value = cJSON_GetObjectItem(root, RDF__value);
+	const LV2_Atom_URID *protocol = NULL;
+	const LV2_Atom *event = NULL;
 
-	if(  protocol && value
-		&& (protocol->type == cJSON_String) )
+	LV2_Atom_Object_Query q [] = {
+		{ ui->uris.ui_protocol, (const LV2_Atom **)&protocol },
+		{ ui->uris.ui_port_event, &event },
+		{ 0, NULL}
+	};
+
+	lv2_atom_object_query(obj, q);
+
+	if(  !protocol || (protocol->atom.type != ui->forge.URID)
+		|| !event)
 	{
-		if(!strcmp(protocol->valuestring, LV2_ATOM__eventTransfer)
-			&& (value->type == cJSON_Object) )
+		return;
+	}
+
+	if(  (protocol->body == ui->uris.atom_event_transfer)
+		&& lv2_atom_forge_is_object_type(&ui->forge, event->type) )
+	{
+		const LV2_Atom_Object *eobj = (const LV2_Atom_Object *)event;
+
+		if(lv2_atom_forge_is_object_type(&ui->forge, eobj->atom.type))
 		{
-			lv2_atom_forge_set_buffer(&ui->forge, ui->buf, BUF_SIZE);
-			if(_json_to_atom(ui, value, &ui->forge))
+			if(eobj->body.otype == ui->uris.patch.get)
 			{
-				const LV2_Atom_Object *obj = (const LV2_Atom_Object *)ui->buf;
+				const LV2_Atom_URID *property = NULL;
 
-				if(obj->atom.type == ui->forge.Object)
+				lv2_atom_object_get(eobj,
+					ui->uris.patch.property, &property,
+					0);
+
+				if(property && (property->atom.type == ui->forge.URID) )
 				{
-					if(obj->body.otype == ui->uris.patch.get)
+					if(property->body == ui->uris.window_title)
 					{
-						const LV2_Atom_URID *property = NULL;
-
-						lv2_atom_object_get(obj,
-							ui->uris.patch.property, &property,
-							0);
-						
-						if(property && (property->atom.type == ui->forge.URID) )
+						LV2_Atom_Object *obj_out = _moony_message_forge(ui, ui->uris.window_title,
+							ui->title, strlen(ui->title));
+						if(obj_out)
 						{
-							if(property->body == ui->uris.window_title)
-							{
-								LV2_Atom_Object *obj_out = _moony_message_forge(ui, ui->uris.window_title,
-									ui->title, strlen(ui->title));
-								if(obj_out)
-								{
-									cJSON *job = _moony_send(ui, ui->control_port,
-										lv2_atom_total_size(&obj_out->atom), ui->uris.atom_event_transfer, obj_out);
-									if(job)
-										_schedule(ui, job);
-								}
+							cJSON *job = _moony_send(ui, ui->control_port,
+								lv2_atom_total_size(&obj_out->atom), ui->uris.atom_event_transfer, obj_out);
+							if(job)
+								_schedule(ui, job);
+						}
 
-								// resend control port values
-								for(unsigned i=0; i<MAX_PORTS; i++) // iterate over all ports
-								{
-									if(  (ui->pmap[i].index != LV2UI_INVALID_PORT_INDEX )
-										&& (ui->pmap[i].val != HUGE_VAL) ) // skip invalid ports
-									{
-										cJSON *job = _moony_send(ui, ui->pmap[i].index, sizeof(float),
-											ui->uris.ui_float_protocol, &ui->pmap[i].val);
-										if(job)
-											_schedule(ui, job);
-									}
-								}
-							}
-							if(property->body == ui->uris.patch.subject) //FIXME rename property?
+						// resend control port values
+						for(unsigned i=0; i<MAX_PORTS; i++) // iterate over all ports
+						{
+							if(  (ui->pmap[i].index != LV2UI_INVALID_PORT_INDEX )
+								&& (ui->pmap[i].val != HUGE_VAL) ) // skip invalid ports
 							{
-								const char *self = ui->unmap->unmap(ui->unmap->handle, ui->uris.patch.self);
-								LV2_Atom_Object *obj_out = _moony_message_forge(ui, ui->uris.patch.subject,
-									self, strlen(self)); //FIXME URI
-								if(obj_out)
-								{
-									cJSON *job = _moony_send(ui, ui->control_port,
-										lv2_atom_total_size(&obj_out->atom), ui->uris.atom_event_transfer, obj_out);
-									if(job)
-										_schedule(ui, job);
-								}
+								cJSON *job = _moony_send(ui, ui->pmap[i].index, sizeof(float),
+									ui->uris.ui_float_protocol, &ui->pmap[i].val);
+								if(job)
+									_schedule(ui, job);
 							}
+						}
+					}
+					if(property->body == ui->uris.patch.subject) //FIXME rename property?
+					{
+						const char *self = ui->unmap->unmap(ui->unmap->handle, ui->uris.patch.self);
+						LV2_Atom_Object *obj_out = _moony_message_forge(ui, ui->uris.patch.subject,
+							self, strlen(self)); //FIXME URI
+						if(obj_out)
+						{
+							cJSON *job = _moony_send(ui, ui->control_port,
+								lv2_atom_total_size(&obj_out->atom), ui->uris.atom_event_transfer, obj_out);
+							if(job)
+								_schedule(ui, job);
 						}
 					}
 				}
 			}
-			else if(ui->log)
-				lv2_log_error(&ui->logger, "_moony_ui: forge buffer overflow");
 		}
 	}
 	else if(ui->log)
-		lv2_log_error(&ui->logger, "_moony_ui: missing protocol or value");
+		lv2_log_error(&ui->logger, "_moony_ui: missing protocol, symbol or value");
 }
 
 static inline void
 _moony_cb(ui_t *ui, const char *json)
 {
 	cJSON *root = cJSON_Parse(json);
-	if(root)
-	{
-		cJSON *destination= cJSON_GetObjectItem(root, LV2_PATCH__destination);
-		if(destination)
-		{
-			if( (destination->type == cJSON_String) && !strcmp(destination->valuestring, MOONY_UI_URI))
-				_moony_ui(ui, root);
-			else if( (destination->type == cJSON_String) && !strcmp(destination->valuestring, MOONY_DSP_URI))
-				_moony_dsp(ui, root);
-		}
+	if(!root)
+		return;
 
-		cJSON_Delete(root);
+	lv2_atom_forge_set_buffer(&ui->forge, ui->buf, BUF_SIZE);
+	if(!jsatom_decode(&ui->jsatom, &ui->forge, root))
+		return;
+	cJSON_Delete(root);
+
+	const LV2_Atom_Object *obj = (const LV2_Atom_Object *)ui->buf;
+	if(  !lv2_atom_forge_is_object_type(&ui->forge, obj->atom.type)
+		|| (obj->body.otype != ui->uris.ui_port_notification) )
+	{
+		return;
 	}
+
+	const LV2_Atom_URID *destination = NULL;
+
+	LV2_Atom_Object_Query q [] = {
+		{ ui->uris.moony_destination, (const LV2_Atom **)&destination},
+		{ 0, NULL }
+	};
+
+	lv2_atom_object_query(obj, q);
+
+	if(!destination || (destination->atom.type != ui->forge.URID) )
+		return;
+
+	if(destination->body == ui->uris.moony_ui)
+		_moony_ui(ui, obj);
+	else if(destination->body == ui->uris.moony_dsp)
+		_moony_dsp(ui, obj);
 }
 
 // Show Interface
@@ -1169,6 +965,9 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	ui->uris.moony_selection = ui->map->map(ui->map->handle, MOONY_SELECTION_URI);
 	ui->uris.moony_error = ui->map->map(ui->map->handle, MOONY_ERROR_URI);
 	ui->uris.moony_trace = ui->map->map(ui->map->handle, MOONY_TRACE_URI);
+	ui->uris.moony_ui = ui->map->map(ui->map->handle, MOONY_UI_URI);
+	ui->uris.moony_dsp = ui->map->map(ui->map->handle, MOONY_DSP_URI);
+	ui->uris.moony_destination = ui->map->map(ui->map->handle, MOONY_DESTINATION_URI);
 	ui->uris.window_title = ui->map->map(ui->map->handle, LV2_UI__windowTitle);
 
 	ui->uris.patch.self = ui->map->map(ui->map->handle, plugin_uri);
@@ -1187,8 +986,15 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	ui->uris.patch.readable = ui->map->map(ui->map->handle, LV2_PATCH__readable);
 	ui->uris.patch.destination = ui->map->map(ui->map->handle, LV2_PATCH__destination);
 
+	ui->uris.core_symbol = ui->map->map(ui->map->handle, LV2_CORE__symbol);
+	ui->uris.ui_protocol = ui->map->map(ui->map->handle, LV2_UI__protocol);
+	ui->uris.ui_port_notification= ui->map->map(ui->map->handle, LV2_UI__portNotification);
+	ui->uris.ui_port_event = ui->map->map(ui->map->handle, LV2_UI__portEvent);
 	ui->uris.ui_float_protocol = ui->map->map(ui->map->handle, LV2_UI__floatProtocol);
 	ui->uris.ui_peak_protocol = ui->map->map(ui->map->handle, LV2_UI__peakProtocol);
+	ui->uris.ui_period_start = ui->map->map(ui->map->handle, LV2_UI__periodStart);
+	ui->uris.ui_period_size = ui->map->map(ui->map->handle, LV2_UI__periodSize);
+	ui->uris.ui_peak = ui->map->map(ui->map->handle, LV2_UI__peak);
 	ui->uris.atom_atom_transfer = ui->map->map(ui->map->handle, LV2_ATOM__atomTransfer);
 	ui->uris.atom_event_transfer = ui->map->map(ui->map->handle, LV2_ATOM__eventTransfer);
 
@@ -1246,6 +1052,8 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 
 	if(ui->log)
 		lv2_log_note(&ui->logger, "moony web_ui url: %s", ui->url);
+
+	jsatom_init(&ui->jsatom, ui->map, ui->unmap);
 
 	_spawn_invalidate_child(&ui->spawn);
 	ui->done = 1;

@@ -8,6 +8,7 @@
 		<link rel="icon" type="image/png" href="/favicon.png" />
 		<link rel="stylesheet" type="text/css" href="/style.css" />
 		<script type="text/javascript" src="/jquery-3.0.0.min.js" charset="utf-8"></script>
+		<script type="text/javascript" src="/jsonld.js" charset="utf-8"></script>
 		<script type="text/javascript" src="/moony.js" charset="utf-8"></script>
 		<script type="text/javascript" src="/ace.js" charset="utf-8"></script>
 		<script type="text/javascript" src="/keybinding-vim.js" charset="utf-8"></script>
