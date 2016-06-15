@@ -723,11 +723,8 @@ function ws_connect() {
 			if(msg && msg.data) {
 				var data = JSON.parse(msg.data);
 
-				if(data && data.jobs) {
-					for(i in data.jobs) {
-						lv2_success(data.jobs[i]);
-					}
-				}
+				if(data)
+					lv2_success(data);
 			}
 		} 
 

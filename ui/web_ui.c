@@ -331,21 +331,24 @@ callback_lv2(struct lws *wsi, enum lws_callback_reasons reason,
 		{
 			if(client->root)
 			{
-				char *json = cJSON_PrintUnformatted(client->root);
-				if(json)
+				for(cJSON *job = client->root->child; job; job = job->next)
 				{
-					const int n = strlen(json);
-
-					json = realloc(json, n + LWS_SEND_BUFFER_PRE_PADDING + LWS_SEND_BUFFER_POST_PADDING);
-					memmove(&json[LWS_SEND_BUFFER_PRE_PADDING], json, n);
-
-					const int m = lws_write(wsi, (uint8_t *)&json[LWS_SEND_BUFFER_PRE_PADDING], n, LWS_WRITE_TEXT);
-					free(json);
-
-					if(m < n)
+					char *json = cJSON_PrintUnformatted(job);
+					if(json)
 					{
-						lwsl_err("ERROR %d writing to di socket\n", n);
-						return -1;
+						const int n = strlen(json);
+
+						json = realloc(json, n + LWS_SEND_BUFFER_PRE_PADDING + LWS_SEND_BUFFER_POST_PADDING);
+						memmove(&json[LWS_SEND_BUFFER_PRE_PADDING], json, n);
+
+						const int m = lws_write(wsi, (uint8_t *)&json[LWS_SEND_BUFFER_PRE_PADDING], n, LWS_WRITE_TEXT);
+						free(json);
+
+						if(m < n)
+						{
+							lwsl_err("ERROR %d writing to di socket\n", n);
+							return -1;
+						}
 					}
 				}
 
@@ -514,18 +517,13 @@ _schedule(ui_t *ui, cJSON *job)
 		if(!client->root)
 		{
 			// create root object
-			client->root = cJSON_CreateObject();
-			cJSON *jobs = cJSON_CreateArray();
-			if(client->root && jobs)
-				cJSON_AddItemToObject(client->root, "jobs", jobs);
+			client->root = cJSON_CreateArray();
 		}
 
 		if(client->root)
 		{
 			// add job to jobs array
-			cJSON *jobs = cJSON_GetObjectItem(client->root, "jobs");
-			if(jobs)
-				cJSON_AddItemToArray(jobs, job);
+			cJSON_AddItemToArray(client->root, job);
 		}
 	}
 
