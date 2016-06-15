@@ -474,7 +474,6 @@ function lv2_read_event(symbol, obj) {
 					}
 				}
 
-				console.log(add);
 				for(var key in add) {
 					var value = add[key];
 

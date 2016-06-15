@@ -254,10 +254,14 @@ static inline cJSON *
 _jsatom_encode_base64(jsatom_t *jsatom, uint32_t size, const char *uri, const void *body)
 {
 	cJSON *obj = cJSON_CreateObject();
-	cJSON_AddItemToObject(obj, "@type", _jsatom_encode_types(uri, NS_XSD"base64Binary", NULL));
+	//cJSON_AddItemToObject(obj, "@type", _jsatom_encode_types(uri, NS_XSD"base64Binary", NULL));
+	cJSON_AddItemToObject(obj, "@type", _jsatom_encode_types(uri, NULL));
 	char *base64 = base64_encode(body, size);
 	if(base64)
+	{
 		cJSON_AddItemToObject(obj, "@value", cJSON_CreateString(base64));
+		free(base64);
+	}
 	return obj;
 }
 
@@ -278,7 +282,8 @@ static inline cJSON *
 _jsatom_encode_midi(jsatom_t *jsatom, uint32_t size, LV2_URID type, const void *body)
 {
 	cJSON *obj = cJSON_CreateObject();
-	cJSON_AddItemToObject(obj, "@type", _jsatom_encode_types(LV2_MIDI__MidiEvent, NS_XSD"hexBinary", NULL));
+	//cJSON_AddItemToObject(obj, "@type", _jsatom_encode_types(LV2_MIDI__MidiEvent, NS_XSD"hexBinary", NULL));
+	cJSON_AddItemToObject(obj, "@type", _jsatom_encode_types(LV2_MIDI__MidiEvent, NULL));
 	char *hex = malloc(size*2+1);
 	const uint8_t *m = body;
 	for(unsigned i = 0; i < size; i++)
