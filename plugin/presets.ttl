@@ -160,7 +160,7 @@ end"""
 
 moony:bank-midi_midi-responder
 	state:state [
-		moony:code """midi_responder = MIDIResponder({
+		moony:code """midiR = MIDIResponder({
 	[MIDI.NoteOn] = function(self, frames, forge, chan, note, vel)
 		forge:time(frames):midi(MIDI.NoteOn | chan, note, vel)
 	end,
@@ -171,14 +171,14 @@ moony:bank-midi_midi-responder
 
 function run(n, seq, forge)
 	for frames, atom in seq:foreach() do
-		local handled = midi_responder(frames, forge, atom)
+		local handled = midiR(frames, forge, atom)
 	end
 end"""
 	] .
 
 moony:bank-time_midi-sequencer
 	state:state [
-		moony:code """time_responder = TimeResponder({
+		moony:code """timeR = TimeResponder({
   [Time.speed] = function(self, frames, forge, speed)
     self.rolling = speed > 0.0
     if not self.rolling and forge then
@@ -201,26 +201,26 @@ moony:bank-time_midi-sequencer
 })
 
 function stash(forge)
-  time_responder:stash(forge)
+  timeR:stash(forge)
 end
 
 function apply(atom)
-  time_responder:apply(atom)
+  timeR:apply(atom)
 end
 
 function run(n, seq, forge)
   local from = 0
   for frames, atom in seq:foreach() do
-    time_responder(from, frames, forge, atom)
+    timeR(from, frames, forge, atom)
     from = frames
   end
-  time_responder(from, n, forge)
+  timeR(from, n, forge)
 end"""
 	] .
 
 moony:bank-osc_osc-responder
 	state:state [
-		moony:code """osc_responder = OSCResponder({
+		moony:code """oscR = OSCResponder({
 	['/ping'] = function(self, frames, forge, fmt, ...)
 		forge:time(frames):message('/pong', fmt, ...)
 	end,
@@ -231,7 +231,7 @@ moony:bank-osc_osc-responder
 
 function run(n, seq, forge)
   for frames, atom in seq:foreach() do
-    local handled = osc_responder(frames, forge, atom)
+    local handled = oscR(frames, forge, atom)
   end
 end"""
 	] .
@@ -296,7 +296,7 @@ delta = {
   [RDF.value] = true 
 }
 
-state = StateResponder({
+stateR = StateResponder({
   [Patch.writable] = {
     [urid.alpha] = alpha,
     [urid.gamma] = gamma,
@@ -308,20 +308,20 @@ state = StateResponder({
 })
 
 function save(forge)
-  state:stash(forge)
+  stateR:stash(forge)
 end
 
 function restore(atom)
-  state:apply(atom)
+  stateR:apply(atom)
   beta[RDF.value] = alpha_stringify(alpha[RDF.value])
 end
 
 function run(n, seq, forge, control, notify)
-  state:register(0, notify)
+  stateR:register(0, notify)
 
   run = function(n, seq, forge, control, notify)
     for frames, atom in control:foreach() do
-      state(frames, notify, atom)
+      stateR(frames, notify, atom)
     end
   end
 

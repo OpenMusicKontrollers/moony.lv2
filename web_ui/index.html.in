@@ -17,13 +17,17 @@
 
 	<body>
 		<div class="heading">
-			<h1>moony</h1>
+			<table><tr style="vertical-align:bottom;"><td>
+				<h1>moony</h1>
+			</td><td>
+				v@MOONY_VERSION@
+			</td></tr></table>
 		</div>
 
 		<div class="container">
 			<div class="sticky-top">
 				<div class="heading">
-					v@MOONY_VERSION@ | <span id="status">disconnected</span>
+					<span id="status">disconnected</span>
 					<span class="clip">|
 						<label><input class="narrow" type="radio" id="emacs" name="mode" value="ace/keyboard/emacs" />emacs</label>
 						<label><input class="narrow" type="radio" id="vim" name="mode" value="ace/keyboard/vim" />vim</label>

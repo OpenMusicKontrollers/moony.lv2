@@ -235,6 +235,18 @@ function lv2_get_all(destination) {
 }
 
 function lv2_set(destination, property, range, value) {
+	var val;
+	// URI/URID need special handling
+	if( (range == ATOM.URI) || (range == ATOM.URID) ) {
+		val = {
+			[RDF.id]            : value
+		};
+	} else {
+		val = {
+			[RDF.type]          : [range],
+			[RDF.value]         : value
+		};
+	}
 	var req = {
 		[RDF.type]            : [ATOM.Object, UI.portNotification],
 		[LV2.symbol] : {
@@ -246,10 +258,7 @@ function lv2_set(destination, property, range, value) {
 		[UI.portEvent] : {
 			[RDF.type]          : [ATOM.Object, PATCH.Set],
 			[PATCH.property]    : {[RDF.id] : property},
-			[PATCH.value] : {
-				[RDF.type]        : [range],
-				[RDF.value]       : value
-			}
+			[PATCH.value]       : val
 		}
 	};
 	if(SUBJECT) {
@@ -417,6 +426,17 @@ function property_change(e) {
 		newval = Number(item.val());
 	} else if(range == ATOM.Bool) {
 		newval = item.prop('checked');
+	} else if(range == ATOM.Chunk) {
+		var file = item[0].files[0];
+		var reader = new FileReader();
+		reader.onloadend = function(ev) {
+			var arr = new Uint8Array(ev.target.result); // TODO may overflow
+			var str = String.fromCharCode.apply(null, arr);
+			newval = btoa(str); // base64 encoding
+			lv2_set(MOONY.dsp, name, range, newval);
+		}
+		reader.readAsArrayBuffer(file);
+		return;
 	} else {
 		newval = item.val();
 	}
@@ -515,19 +535,21 @@ function lv2_read_event(symbol, obj) {
 							if(  (range == ATOM.Int)
 								|| (range == ATOM.Long) ) {
 								item.attr('type', 'number').attr('step', 1);
+								update_property_step(item);
 							} else if( (range == ATOM.Float)
 								|| (range == ATOM.Double) ) {
 								item.attr('type', 'number').attr('step', 'any');
+								update_property_step(item);
 							} else if(range == ATOM.Bool) {
 								item.attr('type', 'checkbox');
-							} else if(range == ATOM.Path) {
+							} else if( (range == ATOM.Path)
+								|| (range == ATOM.Chunk) ){
 								item.attr('type', 'file');
 							} else if( (range == ATOM.URI)
 								|| (range == ATOM.URID) ) {
 								item.attr('type', 'url');
 							} else if( (range == ATOM.String)
-								|| (range == ATOM.Literal)
-								|| (range == ATOM.Chunk) ) {
+								|| (range == ATOM.Literal) ) {
 								item.attr('type', 'text');
 							}
 						} else if(key == LV2.minimum) {
@@ -601,6 +623,10 @@ function lv2_read_event(symbol, obj) {
 					var range = item.attr('data-range');
 					if(range == ATOM.Bool) {
 						item.prop('checked', value[RDF.value]);
+					} else if( (range == ATOM.URI) || (range == ATOM.URID) ) {
+						item.val(value[RDF.id]);
+					} else if( (range == ATOM.Path) || (range == ATOM.Chunk) ) {
+						// we cannot set the value of a file picker
 					} else {
 						item.val(value[RDF.value]);
 					}
