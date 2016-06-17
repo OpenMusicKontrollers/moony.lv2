@@ -33,12 +33,28 @@ h1 {
   padding:0px;
 }
 
-input {
-	width:100px;
+input.narrow {
+	width:auto;
 }
 
-input.narrow {
-	width: auto;
+input.wide {
+	width:100%;
+}
+
+select.wide {
+	width:100%;
+}
+
+td.writable {
+	padding-right:5px;
+}
+
+td.readable {
+	padding-right:5px;
+}
+
+td.unit {
+	padding-left:5px;
 }
 
 div.trace {
@@ -49,7 +65,7 @@ div.trace {
 }
 
 div.container {
-	width:80%;
+	width:100%;
 }
 
 div.sticky-top {
@@ -87,33 +103,15 @@ div.error {
 	border:2px solid #b00;
 }
 
-div.button {
-	font-size:16px;
-  background-color:#fff;
-	padding:10px;
-	margin:5px 0px 0px 0px;
-}
-
-div.box {
-	text-align:right;
-	position:fixed;
-	top:0%;
-	max-width:20%;
-	overflow:hidden;
-	right:0;
-	z-index:9999;
-}
-
 div.props {
 	text-align:left;
 	position:fixed;
-	bottom:0%;
-	padding-right:14px;
-	max-width:20%;
+	top:12.5%;
+	/*max-width:40%;*/
 	max-height:75%;
 	overflow-y:auto;
 	overflow-x:hidden;
-	right:0;
+	right:2%;
 	z-index:9999;
 	background-color:#222;
 	border:2px solid #666;
@@ -126,89 +124,3 @@ a {
 a:link {color:#b00;}
 a:visited {color:#b00;}
 a:hover {color:#fff; background-color:#b00;}
-
-input[type=range] {
-  -webkit-appearance: none;
-  width: 100%;
-  margin: 4px 0;
-}
-input[type=range]:focus {
-  outline: none;
-}
-input[type=range]::-webkit-slider-runnable-track {
-  width: 100%;
-  height: 8px;
-  cursor: pointer;
-  box-shadow: 0px 0px 0px rgba(0, 0, 0, 0), 0px 0px 0px rgba(13, 13, 13, 0);
-  background: rgba(255, 255, 255, 0.98);
-  border-radius: 0px;
-  border: 0px solid rgba(0, 0, 0, 0);
-}
-input[type=range]::-webkit-slider-thumb {
-  box-shadow: 0px 0px 0px rgba(0, 0, 0, 0), 0px 0px 0px rgba(13, 13, 13, 0);
-  border: 0px solid rgba(0, 0, 0, 0);
-  height: 16px;
-  width: 24px;
-  border-radius: 12px;
-  background: #bb0000;
-  cursor: pointer;
-  -webkit-appearance: none;
-  margin-top: -4px;
-}
-input[type=range]:focus::-webkit-slider-runnable-track {
-  background: rgba(255, 255, 255, 0.98);
-}
-input[type=range]::-moz-range-track {
-  width: 100%;
-  height: 8px;
-  cursor: pointer;
-  box-shadow: 0px 0px 0px rgba(0, 0, 0, 0), 0px 0px 0px rgba(13, 13, 13, 0);
-  background: rgba(255, 255, 255, 0.98);
-  border-radius: 0px;
-  border: 0px solid rgba(0, 0, 0, 0);
-}
-input[type=range]::-moz-range-thumb {
-  box-shadow: 0px 0px 0px rgba(0, 0, 0, 0), 0px 0px 0px rgba(13, 13, 13, 0);
-  border: 0px solid rgba(0, 0, 0, 0);
-  height: 16px;
-  width: 24px;
-  border-radius: 12px;
-  background: #bb0000;
-  cursor: pointer;
-}
-input[type=range]::-ms-track {
-  width: 100%;
-  height: 8px;
-  cursor: pointer;
-  background: transparent;
-  border-color: transparent;
-  color: transparent;
-}
-input[type=range]::-ms-fill-lower {
-  background: rgba(255, 255, 255, 0.98);
-  border: 0px solid rgba(0, 0, 0, 0);
-  border-radius: 0px;
-  box-shadow: 0px 0px 0px rgba(0, 0, 0, 0), 0px 0px 0px rgba(13, 13, 13, 0);
-}
-input[type=range]::-ms-fill-upper {
-  background: rgba(255, 255, 255, 0.98);
-  border: 0px solid rgba(0, 0, 0, 0);
-  border-radius: 0px;
-  box-shadow: 0px 0px 0px rgba(0, 0, 0, 0), 0px 0px 0px rgba(13, 13, 13, 0);
-}
-input[type=range]::-ms-thumb {
-  box-shadow: 0px 0px 0px rgba(0, 0, 0, 0), 0px 0px 0px rgba(13, 13, 13, 0);
-  border: 0px solid rgba(0, 0, 0, 0);
-  height: 16px;
-  width: 24px;
-  border-radius: 12px;
-  background: #bb0000;
-  cursor: pointer;
-  height: 8px;
-}
-input[type=range]:focus::-ms-fill-lower {
-  background: rgba(255, 255, 255, 0.98);
-}
-input[type=range]:focus::-ms-fill-upper {
-  background: rgba(255, 255, 255, 0.98);
-}

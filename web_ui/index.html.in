@@ -28,9 +28,12 @@
 			<div class="sticky-top">
 				<div class="heading">
 					<span id="status">disconnected</span>
-					<span class="clip">|
-						<label><input class="narrow" type="radio" id="emacs" name="mode" value="ace/keyboard/emacs" />emacs</label>
-						<label><input class="narrow" type="radio" id="vim" name="mode" value="ace/keyboard/vim" />vim</label>
+					<span class="clip">
+						| <label><input class="narrow" type="radio" id="emacs" name="mode" value="ace/keyboard/emacs" />emacs</label>
+						  <label><input class="narrow" type="radio" id="vim" name="mode" value="ace/keyboard/vim" />vim</label>
+						| <a id="compile" href="#" alt="Shift+Return" title="Shift+Return">send chunk</a>
+						| <a id="compile_line" href="#" alt="Ctrl+Shift+Return" title="Ctrl+Shift+Return">send line</a>
+						| <a id="clear" href="#" alt="Ctrl+L" title="Ctrl+L">clear log</a>
 					</span>
 				</div>
 			</div>
@@ -57,12 +60,6 @@
 		<div class="clip" hidden>
 			<div class="props">
 				<table id="properties"></table>
-			</div>
-
-			<div class="box">
-				<div class="button"><a id="compile" href="#" alt="Shift+Return" title="Shift+Return">send chunk</a></div>
-				<div class="button"><a id="compile_line" href="#" alt="Ctrl+Shift+Return" title="Ctrl+Shift+Return">send line</a></div>
-				<div class="button"><a id="clear" href="#" alt="Ctrl+L" title="Ctrl+L">clear log</a></div>
 			</div>
 		</div>
 

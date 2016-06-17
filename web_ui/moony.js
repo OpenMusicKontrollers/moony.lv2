@@ -321,7 +321,7 @@ function lv2_read_float(symbol, obj) {
 	if(control.length !== 0) {
 		control.val(value);
 	} else {
-		props.append('<tr class="control" data-id="'+symbol+'"><td class="label">'+symbol+'</td><td><input id="'+symbol+'" min="0" max="1" step="0.001" type="number" /></td></tr>');
+		props.append('<tr class="control" data-id="'+symbol+'"><td class="label">'+symbol+'</td><td><input class="wide" id="'+symbol+'" min="0" max="1" step="0.001" type="number" /></td></tr>');
 		control = $('#' + symbol);
 		if(symbol.indexOf('output') !== -1)
 			control.prop('disabled', true);
@@ -506,7 +506,7 @@ function lv2_read_event(symbol, obj) {
 						var id = uri.replace(trim, '');
 						var props = $('#properties');
 
-						props.append('<tr class="writable" data-id="'+id+'"><td class="label"></td><td><input id="'+id+'" name="'+uri+'" /></td><td class="unit"></td></tr>');
+						props.append('<tr class="writable" data-id="'+id+'"><td class="label"></td><td><input class="wide" id="'+id+'" name="'+uri+'" /></td><td class="unit"></td></tr>');
 						sort_properties();
 
 						$('#' + id).bind('wheel', property_wheel).change(property_change);
@@ -518,7 +518,7 @@ function lv2_read_event(symbol, obj) {
 						var id = uri.replace(trim, '');
 						var props = $('#properties');
 
-						props.append('<tr class="readable" data-id="'+id+'"><td class="label"></td><td><input id="'+id+'" name="'+uri+'" disabled /></td><td class="unit"></td></tr>');
+						props.append('<tr class="readable" data-id="'+id+'"><td class="label"></td><td><input class="wide" id="'+id+'" name="'+uri+'" disabled /></td><td class="unit"></td></tr>');
 						sort_properties();
 
 						lv2_get(MOONY.dsp, uri);
@@ -574,7 +574,7 @@ function lv2_read_event(symbol, obj) {
 									var min = item.attr('min');
 									var max = item.attr('max');
 									var step = item.attr('step');
-									item.replaceWith('<select id="'+id+'" />');
+									item.replaceWith('<select class="wide" id="'+id+'" />');
 									item = $('#' + id);
 									item.attr('name', name).attr('title', title).attr('alt', alt);
 									item.attr('min', min).attr('max', max).attr('step', step).attr('data-range', range);
@@ -687,7 +687,7 @@ function compile(editor) {
 		editor.clearSelection();
 	}
 	$('#errmsg').html('<br />').fadeOut(100);
-	$('#compile').parent().fadeOut(100).fadeIn(300);
+	$('#compile').fadeOut(100).fadeIn(300);
 }
 
 function compile_line(editor) {
@@ -701,12 +701,12 @@ function compile_line(editor) {
 		editor.clearSelection();
 	}
 	$('#errmsg').html('<br />').fadeOut(100);
-	$("#compile_line").parent().fadeOut(100).fadeIn(300);
+	$("#compile_line").fadeOut(100).fadeIn(300);
 }
 
 function clear_log() {
 	$('#tracemsg').empty();
-	$("#clear").parent().fadeOut(100).fadeIn(300);
+	$("#clear").fadeOut(100).fadeIn(300);
 	tracecnt = 0;
 }
 
