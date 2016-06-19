@@ -80,7 +80,7 @@ var LuaHighlightRules = function() {
 				"coroutine|string|utf8|table|math|"+
 				// moony
 				"Atom|MIDI|Time|OSC|Core|Buf_Size|Patch|RDF|RDFS|Units|Options|"+
-				"MIDIResponder|OSCResponder|TimeResponder|StateResponder|Map|Unmap|VoiceMap|Stash");
+				"MIDIResponder|OSCResponder|TimeResponder|StateResponder|Map|Unmap|VoiceMap|Stash|Note");
 
     var keywordMapper = this.createKeywordMapper({
         "keyword": keywords,

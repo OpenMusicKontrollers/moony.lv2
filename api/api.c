@@ -198,13 +198,13 @@ _lcps2midi(lua_State *L)
 }
 
 static const char *note_keys [12] = {
-	"C", "C#",
-	"D", "D#",
-	"E",
-	"F", "F#",
-	"G", "G#",
-	"A", "A#",
-	"H"
+	"C-", "C#-",
+	"D-", "D#-",
+	"E-",
+	"F-", "F#-",
+	"G-", "G#-",
+	"A-", "A#-",
+	"H-"
 };
 
 static int
@@ -221,10 +221,10 @@ _lnote__index(lua_State *L)
 
 		if( (note >= 0) && (note < 0x80) )
 		{
-			char name [8];
+			char name [16];
 			const unsigned octave = note / 12;
 			const unsigned key = note % 12;
-			snprintf(name, 8, "%s%"PRIu32, note_keys[key], octave);
+			snprintf(name, 16, "%s%"PRIu32, note_keys[key], octave);
 
 			lua_pushstring(L, name);
 			return 1;
@@ -235,41 +235,19 @@ _lnote__index(lua_State *L)
 		size_t str_len;
 		const char *str = lua_tolstring(L, 2, &str_len);
 
-		if(str_len == 2)
+		for(int i=0; i<12; i++)
 		{
-			for(int i=0; i<12; i++)
-			{
-				const char *key = note_keys[i];
-				const size_t key_len = strlen(key);
+			const char *key = note_keys[i];
+			const size_t key_len = strlen(key);
 
-				if( (key_len == 1) && (str[0] == key[0]) )
-				{
-					const int octave = atoi(str + key_len);
-					const int note = octave*12 + i;
-					if( (note >= 0) && (note < 0x80) )
-					{
-						lua_pushinteger(L, note);
-						return 1;
-					}
-				}
-			}
-		}
-		else if(str_len == 3)
-		{
-			for(int i=0; i<12; i++)
+			if(!strncmp(str, key, key_len))
 			{
-				const char *key = note_keys[i];
-				const size_t key_len = strlen(key);
-
-				if( (key_len == 2) && (str[0] == key[0]) && (str[1] == key[1]) )
+				const int octave = atoi(str + key_len);
+				const int note = octave*12 + i;
+				if( (note >= 0) && (note < 0x80) )
 				{
-					const int octave = atoi(str + key_len);
-					const int note = octave*12 + i;
-					if( (note >= 0) && (note < 0x80) )
-					{
-						lua_pushinteger(L, note);
-						return 1;
-					}
+					lua_pushinteger(L, note);
+					return 1;
 				}
 			}
 		}
@@ -1092,34 +1070,6 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 		}
 	}
 	lua_setglobal(L, "MIDI");
-
-	lua_createtable(L, 0x80, 0x80);
-	{
-		const char *keys [12] = {
-			"C", "C#",
-			"D", "D#",
-			"E",
-			"F", "F#",
-			"G", "G#",
-			"A", "A#",
-			"H"
-		};
-		char name [8];
-
-		for(unsigned i=0; i<0x80; i++)
-		{
-			const unsigned octave = i / 12;
-			const unsigned key = i % 12;
-			snprintf(name, 8, "%s%"PRIu32, keys[key], octave);
-
-			lua_pushinteger(L, i);
-			lua_setfield(L, -2, name);
-
-			lua_pushstring(L, name);
-			lua_rawseti(L, -2, i);
-		}
-	}
-	lua_setglobal(L, "Note");
 
 	// Note 
 	lua_newtable(L);

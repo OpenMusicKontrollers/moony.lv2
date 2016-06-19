@@ -1352,18 +1352,18 @@ end
 -- Note 
 print('[test] Note')
 do
-	assert(Note[0] == 'C0')
-	assert(Note[1] == 'C#0')
-	assert(Note(12) == 'C1')
-	assert(Note(13) == 'C#1')
+	assert(Note[0] == 'C-0')
+	assert(Note[1] == 'C#-0')
+	assert(Note(12) == 'C-1')
+	assert(Note(13) == 'C#-1')
 
-	assert(Note.C0 == 0)
-	assert(Note['C#0'] == 1)
-	assert(Note.C1 == 12)
-	assert(Note('C#1') == 13)
+	assert(Note['C-0'] == 0)
+	assert(Note['C#-0'] == 1)
+	assert(Note['C-1'] == 12)
+	assert(Note('C#-1') == 13)
 
-	assert(Note.C5 == 60)
-	assert(Note[60] == 'C5')
+	assert(Note['C-5'] == 60)
+	assert(Note[60] == 'C-5')
 
 	assert(Note[-1] == nil)
 	assert(Note(0x80) == nil)
@@ -1376,7 +1376,7 @@ do
 		return coroutine.wrap(function()
 			for octave = 0, 9 do
 				for i, key in ipairs(keys) do
-					coroutine.yield(octave * #keys + i - 1, key .. octave)
+					coroutine.yield(octave * #keys + i - 1, key .. '-' .. octave)
 				end
 			end
 		end)

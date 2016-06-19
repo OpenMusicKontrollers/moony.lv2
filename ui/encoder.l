@@ -407,6 +407,9 @@ checkKw(char*s)
 			CHECK(not, NOT);
 			CHECK(next, CALLER);
 			break;
+		case 'N':
+			CHECK(Note, CALLER);
+			break;
 		case 'o':
 			CHECK(or, OR);
 			//TODO os
