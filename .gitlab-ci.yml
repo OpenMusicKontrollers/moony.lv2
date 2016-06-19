@@ -1,6 +1,5 @@
 stages:
   - build
-  - test
   - deploy
 
 .variables_template: &variables_definition
@@ -44,7 +43,7 @@ stages:
 
 .arm_linux_template: &arm_linux_definition
   image: ventosus/arm-linux-gnueabihf
-  <<: *build_definition
+  <<: *test_definition
 
 .universal_w64_template: &universal_w64_definition
   image: ventosus/universal-w64-mingw32

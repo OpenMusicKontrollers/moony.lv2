@@ -18,3 +18,5 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
 set(STATIC_LWS "/opt/${TOOLCHAIN}/lib/libwebsockets.a")
+
+set(QEMU qemu-arm)
