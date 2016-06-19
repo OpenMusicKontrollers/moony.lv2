@@ -266,12 +266,12 @@ if(${BUILD_TESTING})
 	set_target_properties(moony_test PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 	target_link_libraries(moony_test "-lm")
 
-	if(DEFINED ${WINE})
-		add_test(NAME API-Test COMMAND ${WINE} moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
-	elseif(DEFINED ${QEMU})
-		add_test(NAME API-Test COMMAND ${QEMU} moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
+	if(DEFINED WINE)
+		add_test(NAME API-Test COMMAND ARGS='-VV' ${WINE} moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
+	elseif(DEFINED QEMU)
+		add_test(NAME API-Test COMMAND ARGS='-VV' ${QEMU} moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
 	else()
-		add_test(NAME API-Test COMMAND moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
+		add_test(NAME API-Test COMMAND ARGS='-VV' moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
 	endif()
 endif()
 
