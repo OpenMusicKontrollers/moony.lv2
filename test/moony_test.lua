@@ -1530,3 +1530,14 @@ do
 	assert(69.0 == cps2midi(440.0))
 	assert(440.0 == midi2cps(69.0))
 end
+
+-- midi2cps/cps2midi
+print('[test] HashMap')
+do
+	local prefix = 'http://open-music-kontrollers.ch/lv2/synthpod#'
+	local hashmap = HashMap(prefix)
+	assert(Map[prefix .. 'addModule'] == hashmap.addModule)
+	assert(Map[prefix .. 'addModule'] == hashmap.addModule)
+	assert(Map[prefix .. 'connectPort'] == hashmap.connectPort)
+	assert(Map[prefix .. 'connectPort'] == hashmap.connectPort)
+end

@@ -84,34 +84,19 @@ _lmap__index(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 
-	lua_pushvalue(L, 2);
-	lua_rawget(L, 1); // rawget(self, uri)
-
-	if(lua_isnil(L, -1)) // no yet cached
+	const char *uri = luaL_checkstring(L, 2);
+	LV2_URID urid = moony->map->map(moony->map->handle, uri); // non-rt
+	if(urid)
 	{
-		const char *uri = luaL_checkstring(L, 2);
-		LV2_URID urid = moony->map->map(moony->map->handle, uri); // non-rt
-		if(urid)
-		{
-			lua_pushinteger(L, urid);
+		lua_pushinteger(L, urid);
 
-			// cache it
-			lua_pushvalue(L, 2); // uri
-			lua_pushvalue(L, -2); // urid
-			lua_rawset(L, 1);  // self
-		}
-		else
-			lua_pushnil(L);
+		// cache it
+		lua_pushvalue(L, 2); // uri
+		lua_pushvalue(L, -2); // urid
+		lua_rawset(L, 1);  // self
 	}
-
-	return 1;
-}
-
-static int
-_lmap__call(lua_State *L)
-{
-	lua_settop(L, 2);
-	lua_gettable(L, -2); // self[uri]
+	else
+		lua_pushnil(L);
 
 	return 1;
 }
@@ -126,36 +111,20 @@ static int
 _lunmap__index(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	
-	lua_pushvalue(L, 2);
-	lua_rawget(L, 1); // rawget(self, urid)
 
-	if(lua_isnil(L, -1)) // no yet cached
+	LV2_URID urid = luaL_checkinteger(L, 2);
+	const char *uri = moony->unmap->unmap(moony->unmap->handle, urid); // non-rt
+	if(uri)
 	{
-		LV2_URID urid = luaL_checkinteger(L, 2);
-		const char *uri = moony->unmap->unmap(moony->unmap->handle, urid); // non-rt
+		lua_pushstring(L, uri);
 
-		if(uri)
-		{
-			lua_pushstring(L, uri);
-
-			// cache it
-			lua_pushvalue(L, 2); // urid
-			lua_pushvalue(L, -2); // uri
-			lua_rawset(L, 1);  // self
-		}
-		else
-			lua_pushnil(L);
+		// cache it
+		lua_pushvalue(L, 2); // urid
+		lua_pushvalue(L, -2); // uri
+		lua_rawset(L, 1);  // self
 	}
-
-	return 1;
-}
-
-static int
-_lunmap__call(lua_State *L)
-{
-	lua_settop(L, 2);
-	lua_gettable(L, -2); // self[uri]
+	else
+		lua_pushnil(L);
 
 	return 1;
 }
@@ -165,6 +134,61 @@ static const luaL_Reg lunmap_mt [] = {
 	{"__call", _lunmap__index},
 	{NULL, NULL}
 };
+
+static int
+_lhash_map__index(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	if(lua_isstring(L, 2))
+	{
+		lua_getglobal(L, "Map");
+		lua_pushvalue(L, lua_upvalueindex(2)); // uri.prefix
+		lua_pushvalue(L, 2); // uri.postfix
+		lua_concat(L, 2); // uri
+		lua_gettable(L, -2); // Map[uri];
+		if(lua_isinteger(L, -1))
+		{
+			// cache it
+			lua_pushvalue(L, 2); // uri
+			lua_pushvalue(L, -2); // urid
+			lua_rawset(L, 1);  // self
+		}
+		else
+			lua_pushnil(L);
+	}
+	else
+		lua_pushnil(L);
+
+	return 1;
+}
+
+static const luaL_Reg lhash_map_mt [] = {
+	{"__index", _lhash_map__index},
+	{"__call", _lhash_map__index},
+	{NULL, NULL}
+};
+
+static int
+_lhash_map(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	if(lua_isstring(L, 1))
+	{
+		lua_newtable(L);
+		lua_newtable(L);
+		lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+		lua_pushvalue(L, 1); // uri.prefix @ upvalueindex 2
+		luaL_setfuncs(L, lhash_map_mt, 2);
+		//_protect_metatable(L, -1); //TODO
+		lua_setmetatable(L, -2);
+	}
+	else
+		lua_pushnil(L);
+
+	return 1;
+}
 
 static int
 _lvoice_map(lua_State *L)
@@ -997,6 +1021,11 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	_protect_metatable(L, -1);
 	lua_setmetatable(L, -2);
 	lua_setglobal(L, "Unmap");
+
+	// lv2.hash
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	lua_pushcclosure(L, _lhash_map, 1);
+	lua_setglobal(L, "HashMap");
 
 	// lv2.voiceMap
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
