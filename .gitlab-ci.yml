@@ -35,7 +35,7 @@ stages:
     - cmake .. # needed for darwin
     - make
     - make install
-    - make test
+    - ARGS='-VV' make test
 
 .universal_linux_template: &universal_linux_definition
   image: ventosus/universal-linux-gnu
