@@ -16,60 +16,62 @@
 	</head>
 
 	<body>
-		<div class="heading">
-			<table><tr style="vertical-align:bottom;"><td>
-				<h1>moony</h1>
-			</td><td>
-				v@MOONY_VERSION@
-			</td></tr></table>
-		</div>
+		<div id="container">
 
-		<div class="container">
-			<div class="sticky-top">
-				<div class="heading">
+			<input id="toggle" type="checkbox"><label id="icon" for="toggle">&equiv;</label></input>
+
+			<div class="content">
+				<table><tr style="vertical-align:bottom;"><td>
+					<h1>moony</h1>
+				</td><td>
+					v@MOONY_VERSION@
+				</td></tr></table>
+
+				<div>
+					<noscript>
+						<b>moony needs JavaScript to run, please enable it in your browser
+							or add an exception rule for this site.</b>
+					</noscript>
+				</div>
+
+				<div class="sticky-top">
 					<span id="status">disconnected</span>
 					<span class="clip">
-						| <label><input class="narrow" type="radio" id="emacs" name="mode" value="ace/keyboard/emacs" />emacs</label>
-						  <label><input class="narrow" type="radio" id="vim" name="mode" value="ace/keyboard/vim" />vim</label>
+						| <label><input type="radio" id="emacs" name="mode" value="ace/keyboard/emacs" />emacs</label>
+							<label><input type="radio" id="vim" name="mode" value="ace/keyboard/vim" />vim</label>
 						| <a id="compile" href="#" alt="Shift+Return" title="Shift+Return">send chunk</a>
 						| <a id="compile_line" href="#" alt="Ctrl+Shift+Return" title="Ctrl+Shift+Return">send line</a>
 						| <a id="clear" href="#" alt="Ctrl+L" title="Ctrl+L">clear log</a>
 					</span>
 				</div>
-			</div>
+				
+				<div class="clip" hidden>
+					<div id="editor"></div>
 
-			<div>
-				<noscript>
-					<b>moony needs JavaScript to run, please enable it in your browser
-						or add an exception rule for this site.</b>
-				</noscript>
-			</div>
-			
-			<div class="clip" hidden>
-				<div id="editor"></div>
+					<div class="sticky-bottom">
+						<div id="tracemsg" class="trace"></div>
 
-				<div class="sticky-bottom">
-					<div id="tracemsg" class="trace"></div>
-
-					<div id="errmsg" class="error" hidden></div>
+						<div id="errmsg" class="error" hidden></div>
+					</div>
 				</div>
 
+				<div>
+					Copyright &#169; 2015-2016 <a href="mailto:dev@open-music-kontrollers.ch?subject=moony-v@MOONY_VERSION@">Hanspeter Portner</a><br />
+					Released under <a href="http://www.perlfoundation.org/artistic_license_2_0">Artistic License 2.0</a><br />
+					by <a href="http://open-music-kontrollers.ch">Open Music Kontrollers</a>
+				</div>
 			</div>
-		</div>
 
-		<div class="clip" hidden>
-			<div class="props">
-				<table id="properties"></table>
+			<div class="slide-menu">
+				<h1>properties</h1>
+				<div class="clip" hidden>
+					<div class="props">
+						<table id="properties"></table>
+					</div>
+				</div>
 			</div>
-		</div>
 
-		<div>
-			<br />
-			Copyright &#169; 2015-2016 <a href="mailto:dev@open-music-kontrollers.ch?subject=moony-v@MOONY_VERSION@">Hanspeter Portner</a><br />
-			Released under <a href="http://www.perlfoundation.org/artistic_license_2_0">Artistic License 2.0</a><br />
-			by <a href="http://open-music-kontrollers.ch">Open Music Kontrollers</a>
 		</div>
-
 	</body>
 
 </html>
