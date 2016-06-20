@@ -240,6 +240,9 @@ checkKw(char*s)
 		case 'g':
 			CHECK(getmetatable, CALLER);
 			break;
+		case 'H':
+			CHECK(HashMap, CALLER);
+			break;
 		case 'i':
 			CHECK(if, IF);
 			CHECK(in, IN);
