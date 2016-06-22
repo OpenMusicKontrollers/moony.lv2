@@ -16,6 +16,7 @@
 @prefix atom:		<http://lv2plug.in/ns/ext/atom#> .
 @prefix lv2:		<http://lv2plug.in/ns/lv2core#> .
 @prefix pset:		<http://lv2plug.in/ns/ext/presets#> .
+@prefix midi:		<http://lv2plug.in/ns/ext/midi#> .
 @prefix rdf:		<http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs:		<http://www.w3.org/2000/01/rdf-schema#> .
 @prefix state:	<http://lv2plug.in/ns/ext/state#> .
@@ -27,6 +28,41 @@
 moony:code
 	a rdf:Property ;
 	rdfs:label "Lua code chunk" .
+moony:state
+	a rdf:Property ;
+	rdfs:label "Lua code state" .
+moony:Bool
+	a lv2:Parameter ;
+	rdfs:label "A Bool" ;
+	rdfs:range atom:Bool .
+moony:Chunk
+	a lv2:Parameter ;
+	rdfs:label "A Chunk" ;
+	rdfs:range atom:Chunk .
+moony:Enum
+	a lv2:Parameter ;
+	rdfs:label "An Enum" ;
+	rdfs:range atom:Int .
+moony:Float
+	a lv2:Parameter ;
+	rdfs:label "A Float" ;
+	rdfs:range atom:Float .
+moony:Int
+	a lv2:Parameter ;
+	rdfs:label "An Int" ;
+	rdfs:range atom:Int .
+moony:Path
+	a lv2:Parameter ;
+	rdfs:label "A Path" ;
+	rdfs:range atom:Path .
+moony:String
+	a lv2:Parameter ;
+	rdfs:label "A String" ;
+	rdfs:range atom:String .
+moony:URID
+	a lv2:Parameter ;
+	rdfs:label "A URID" ;
+	rdfs:range atom:URI .
 
 moony:bank-through_control-through
 	state:state [
@@ -238,7 +274,7 @@ end"""
 
 moony:bank-state_state-responder
 	state:state [
-		<http://open-music-kontrollers.ch/lv2/moony#code> """prefix = 'http://open-music-kontrollers.ch/lv2/moony#a1xa1#'
+		<http://open-music-kontrollers.ch/lv2/moony#code> """prefix = 'http://open-music-kontrollers.ch/lv2/moony#'
 urid = {
   pInt = Map[prefix .. 'Int'],
   pLong = Map[prefix .. 'Long'],
@@ -417,13 +453,13 @@ function run(n, seq, forge, control, notify)
   run(n, seq, forge, control, notify)
 end""" ;
 		<http://open-music-kontrollers.ch/lv2/moony#state> [
-			<http://open-music-kontrollers.ch/lv2/moony#a1xa1#Bool> true ;
-			<http://open-music-kontrollers.ch/lv2/moony#a1xa1#Chunk> "AQIDBAUGBw=="^^xsd:base64Binary ;
-			<http://open-music-kontrollers.ch/lv2/moony#a1xa1#Enum> "0"^^xsd:int ;
-			<http://open-music-kontrollers.ch/lv2/moony#a1xa1#Float> "0.80000001"^^xsd:float ;
-			<http://open-music-kontrollers.ch/lv2/moony#a1xa1#Int> "9"^^xsd:int ;
-			<http://open-music-kontrollers.ch/lv2/moony#a1xa1#Path> <file:///tmp/file.suffix> ;
-			<http://open-music-kontrollers.ch/lv2/moony#a1xa1#String> "world hello" ;
-			<http://open-music-kontrollers.ch/lv2/moony#a1xa1#URID> <http://lv2plug.in/ns/ext/midi#MidiEvent>
+			<http://open-music-kontrollers.ch/lv2/moony#Bool> true ;
+			<http://open-music-kontrollers.ch/lv2/moony#Chunk> "AQIDBAUGBw=="^^xsd:base64Binary ;
+			<http://open-music-kontrollers.ch/lv2/moony#Enum> 0 ;
+			<http://open-music-kontrollers.ch/lv2/moony#Float> "0.80000001"^^xsd:float ;
+			<http://open-music-kontrollers.ch/lv2/moony#Int> 9 ;
+			<http://open-music-kontrollers.ch/lv2/moony#Path> <file:///tmp/file.suffix> ;
+			<http://open-music-kontrollers.ch/lv2/moony#String> "world hello" ;
+			<http://open-music-kontrollers.ch/lv2/moony#URID> <http://lv2plug.in/ns/ext/midi#MidiEvent>
 		]
 	] .
