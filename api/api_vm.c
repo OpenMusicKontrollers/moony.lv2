@@ -178,7 +178,17 @@ moony_vm_init(moony_vm_t *vm)
 	//luaL_requiref(vm->L, "debug", luaopen_debug, 1);
 	//luaL_requiref(vm->L, "package", luaopen_package, 1);
 
+#ifdef USE_MANUAL_GC
+	// manual garbage collector
 	lua_gc(vm->L, LUA_GCSTOP, 0); // disable automatic garbage collection
+	lua_gc(vm->L, LUA_GCSETPAUSE, 0); // don't wait to start a new cycle
+	lua_gc(vm->L, LUA_GCSETSTEPMUL, 100); // set step size to run 'as fast a memory allocation'
+#else
+	// automatic garbage collector
+	lua_gc(vm->L, LUA_GCRESTART, 0); // enable automatic garbage collection
+	lua_gc(vm->L, LUA_GCSETPAUSE, 105); // next step when memory increased by 5%
+	lua_gc(vm->L, LUA_GCSETSTEPMUL, 105); // run 5% faster than memory allocation
+#endif
 
 	return 0;
 }

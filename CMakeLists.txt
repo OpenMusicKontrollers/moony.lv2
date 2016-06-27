@@ -58,6 +58,11 @@ include(CMakeDependentOption)
 option(BUILD_COMMON_UI "Build common embeddable UI" OFF)
 option(BUILD_SIMPLE_UI "Build simple external UI" OFF)
 option(BUILD_WEB_UI "Build web-based external UI" ON)
+option(USE_MANUAL_GC "Use manual garbage collection" OFF)
+
+if(USE_MANUAL_GC)
+	add_definitions("-DUSE_MANUAL_GC")
+endif()
 
 if(BUILD_COMMON_UI)
 	pkg_search_module(ELM REQUIRED elementary>=1.8)

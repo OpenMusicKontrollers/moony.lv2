@@ -217,7 +217,9 @@ run(LV2_Handle instance, uint32_t nsamples)
 				moony_error(&handle->moony);
 
 			moony_freeuserdata(&handle->moony);
+#ifdef USE_MANUAL_GC
 			lua_gc(L, LUA_GCSTEP, 0);
+#endif
 		}
 
 		if(handle->stashed)

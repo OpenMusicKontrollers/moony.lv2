@@ -532,7 +532,9 @@ _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 				lv2_log_error(&moony->logger, "%s", lua_tostring(L, -1));
 			lua_pop(L, 1);
 		}
+#ifdef USE_MANUAL_GC
 		lua_gc(L, LUA_GCSTEP, 0);
+#endif
 
 		_unlock(&moony->lock.state);
 
@@ -652,7 +654,9 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 					lv2_log_error(&moony->logger, "%s", lua_tostring(L, -1));
 				lua_pop(L, 1);
 			}
+#ifdef USE_MANUAL_GC
 			lua_gc(L, LUA_GCSTEP, 0);
+#endif
 		}
 	}
 
@@ -1575,7 +1579,9 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 					lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_STASH);
 					if(lua_pcall(L, 0, 0, 0))
 						moony_error(moony);
+#ifdef USE_MANUAL_GC
 					lua_gc(L, LUA_GCSTEP, 0);
+#endif
 
 					// load chunk
 					const char *str = LV2_ATOM_BODY_CONST(value);
@@ -1594,7 +1600,9 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 							lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_RESTORE);
 							if(lua_pcall(L, 0, 0, 0))
 								moony_error(moony);
+#ifdef USE_MANUAL_GC
 							lua_gc(L, LUA_GCSTEP, 0);
+#endif
 						}
 					}
 
@@ -1604,7 +1612,9 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 						lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_APPLY);
 						if(lua_pcall(L, 0, 0, 0))
 							moony_error(moony);
+#ifdef USE_MANUAL_GC
 						lua_gc(L, LUA_GCSTEP, 0);
+#endif
 
 						moony_free(moony, moony->stash_atom, moony->stash_size);
 						moony->stash_atom = NULL;

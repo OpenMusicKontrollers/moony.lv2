@@ -190,7 +190,17 @@ _lforge_basic_bytes(lua_State *L, int pos, LV2_Atom_Forge *forge, LV2_URID type)
 {
 	int ltype = lua_type(L, pos);
 
-	if(ltype == LUA_TTABLE)
+	if(ltype == LUA_TSTRING)
+	{
+		size_t size;
+		const char *str = lua_tolstring(L, pos, &size);
+		if(!lv2_atom_forge_atom(forge, size, type))
+			luaL_error(L, forge_buffer_overflow);
+		if(!lv2_atom_forge_raw(forge, str, size))
+			luaL_error(L, forge_buffer_overflow);
+		lv2_atom_forge_pad(forge, size);
+	}
+	else if(ltype == LUA_TTABLE)
 	{
 		int size = lua_rawlen(L, pos);
 		if(!lv2_atom_forge_atom(forge, size, type))
@@ -205,16 +215,6 @@ _lforge_basic_bytes(lua_State *L, int pos, LV2_Atom_Forge *forge, LV2_URID type)
 		}
 		lv2_atom_forge_pad(forge, size);
 	}
-	else if(ltype == LUA_TSTRING)
-	{
-		size_t size;
-		const char *str = lua_tolstring(L, pos, &size);
-		if(!lv2_atom_forge_atom(forge, size, type))
-			luaL_error(L, forge_buffer_overflow);
-		if(!lv2_atom_forge_raw(forge, str, size))
-			luaL_error(L, forge_buffer_overflow);
-		lv2_atom_forge_pad(forge, size);
-	}
 	else if(luaL_testudata(L, pos, "latom")) //to convert between chunk <-> midi
 	{
 		latom_t *latom = lua_touserdata(L, pos);
@@ -227,7 +227,7 @@ _lforge_basic_bytes(lua_State *L, int pos, LV2_Atom_Forge *forge, LV2_URID type)
 	}
 	else // bytes as individual function arguments
 	{
-		const uint32_t size = lua_gettop(L) - 1;
+		const uint32_t size = lua_gettop(L) - (pos - 1);
 		if(!lv2_atom_forge_atom(forge, size, type))
 			luaL_error(L, forge_buffer_overflow);
 		for(unsigned i=0; i<size; i++)
