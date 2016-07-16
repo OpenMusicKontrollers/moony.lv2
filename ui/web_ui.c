@@ -70,14 +70,6 @@
 #	define LV2_UI__peak     LV2_UI_PREFIX "peak"
 #endif
 
-#ifdef LV2_ATOM_TUPLE_FOREACH
-#	undef LV2_ATOM_TUPLE_FOREACH
-#	define LV2_ATOM_TUPLE_FOREACH(tuple, iter) \
-	for (LV2_Atom* (iter) = lv2_atom_tuple_begin(tuple); \
-	     !lv2_atom_tuple_is_end(LV2_ATOM_BODY(tuple), (tuple)->atom.size, (iter)); \
-	     (iter) = lv2_atom_tuple_next(iter))
-#endif
-
 typedef struct _ui_t ui_t;
 typedef struct _client_t client_t;
 typedef struct _pmap_t pmap_t;
