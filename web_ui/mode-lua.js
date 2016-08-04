@@ -65,7 +65,6 @@ var LuaHighlightRules = function() {
 				// moony Buf_Size
 				"minBlockLength|maxBlockLength|sequenceSize|"+
 				// moony Patch
-				"Get|Set|Put|subject|property|value|writable|readable|body|"+
 				"Ack|Delete|Copy|Error|Get|Message|Move|Patch|Post|Put|Request|Response|Set|"+
 				"add|body|destination|property|readable|remove|request|subject|sequenceNumber|value|wildcard|writable|"+
 				// moony RDF
