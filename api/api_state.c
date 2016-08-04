@@ -21,7 +21,7 @@
 
 static inline void
 _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
-	lforge_t *lforge, const LV2_Atom_URID *subject, LV2_URID access)
+	lforge_t *lforge, const LV2_Atom_URID *subject, LV2_URID access, int32_t sequence_num)
 {
 	LV2_Atom_Forge_Frame obj_frame;
 	LV2_Atom_Forge_Frame add_frame;
@@ -56,6 +56,13 @@ _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 					luaL_error(L, forge_buffer_overflow);
 			}
 
+			if(sequence_num)
+			{
+				if(  !lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence)
+					|| !lv2_atom_forge_int(lforge->forge, sequence_num) )
+					luaL_error(L, forge_buffer_overflow);
+			}
+
 			if(  !lv2_atom_forge_key(lforge->forge, moony->uris.patch.remove)
 				|| !lv2_atom_forge_object(lforge->forge, &rem_frame, 0, 0)
 
@@ -81,6 +88,13 @@ _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 			if(  !lv2_atom_forge_key(lforge->forge, moony->uris.patch.subject)
 				|| !lv2_atom_forge_urid(lforge->forge, key) )
 				luaL_error(L, forge_buffer_overflow);
+
+			if(sequence_num)
+			{
+				if(  !lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence)
+					|| !lv2_atom_forge_int(lforge->forge, sequence_num) )
+					luaL_error(L, forge_buffer_overflow);
+			}
 
 			if(  !lv2_atom_forge_key(lforge->forge, moony->uris.patch.remove)
 				|| !lv2_atom_forge_object(lforge->forge, &rem_frame, 0, 0) )
@@ -204,7 +218,7 @@ _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 
 static inline void
 _lstateresponder_register(lua_State *L, moony_t *moony, int64_t frames,
-	lforge_t *lforge, const LV2_Atom_URID *subject)
+	lforge_t *lforge, const LV2_Atom_URID *subject, int32_t sequence_num)
 {
 	LV2_Atom_Forge_Frame obj_frame;
 	LV2_Atom_Forge_Frame add_frame;
@@ -219,6 +233,13 @@ _lstateresponder_register(lua_State *L, moony_t *moony, int64_t frames,
 		{
 			if(  !lv2_atom_forge_key(lforge->forge, moony->uris.patch.subject)
 				|| !lv2_atom_forge_urid(lforge->forge, subject->body) )
+				luaL_error(L, forge_buffer_overflow);
+		}
+
+		if(sequence_num)
+		{
+			if(  !lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence)
+				|| !lv2_atom_forge_int(lforge->forge, sequence_num) )
 				luaL_error(L, forge_buffer_overflow);
 		}
 
@@ -243,16 +264,38 @@ _lstateresponder_register(lua_State *L, moony_t *moony, int64_t frames,
 	if(lua_geti(L, 1, moony->uris.patch.writable) != LUA_TNIL)
 	{
 		_lstateresponder_register_access(L, moony, frames, lforge, subject,
-			moony->uris.patch.writable);
+			moony->uris.patch.writable, sequence_num);
 	}
 	lua_pop(L, 1); // nil || table
 
 	if(lua_geti(L, 1, moony->uris.patch.readable) != LUA_TNIL)
 	{
 		_lstateresponder_register_access(L, moony, frames, lforge, subject,
-			moony->uris.patch.readable);
+			moony->uris.patch.readable, sequence_num);
 	}
 	lua_pop(L, 1); // nil || table
+}
+
+static void
+_lstateresponder_error(lua_State *L, lforge_t *lforge, moony_t *moony,
+	int64_t frames, int32_t sequence_num)
+{
+	LV2_Atom_Forge_Frame obj_frame;
+	if(  !lv2_atom_forge_frame_time(lforge->forge, frames)
+		|| !lv2_atom_forge_object(lforge->forge, &obj_frame, 0, moony->uris.patch.error) )
+		luaL_error(L, forge_buffer_overflow);
+	lv2_atom_forge_pop(lforge->forge, &obj_frame);
+}
+
+static void
+_lstateresponder_ack(lua_State *L, lforge_t *lforge, moony_t *moony,
+	int64_t frames, int32_t sequence_num)
+{
+	LV2_Atom_Forge_Frame obj_frame;
+	if(  !lv2_atom_forge_frame_time(lforge->forge, frames)
+		|| !lv2_atom_forge_object(lforge->forge, &obj_frame, 0, moony->uris.patch.ack) )
+		luaL_error(L, forge_buffer_overflow);
+	lv2_atom_forge_pop(lforge->forge, &obj_frame);
 }
 
 static int
@@ -287,18 +330,24 @@ _lstateresponder__call(lua_State *L)
 	{
 		const LV2_Atom_URID *subject = NULL;
 		const LV2_Atom_URID *property = NULL;
+		const LV2_Atom_Int *sequence = NULL;
 
 		lv2_atom_object_body_get(latom->atom->size, latom->body.obj,
 			moony->uris.patch.subject, &subject,
 			moony->uris.patch.property, &property,
+			moony->uris.patch.sequence, &sequence,
 			0);
+
+		int32_t sequence_num = 0;
+		if(sequence && (sequence->atom.type == moony->forge.Int) )
+			sequence_num = sequence->body;
 
 		if(!subject || ((subject->atom.type == moony->forge.URID) && (subject->body == moony->uris.patch.self)) )
 		{
 			if(!property)
 			{
 				// register state
-				_lstateresponder_register(L, moony, frames, lforge, subject);
+				_lstateresponder_register(L, moony, frames, lforge, subject, sequence_num);
 
 				lua_pushboolean(L, 1); // handled
 				return 1;
@@ -352,6 +401,13 @@ _lstateresponder__call(lua_State *L)
 								luaL_error(L, forge_buffer_overflow);
 						}
 
+						if(sequence_num)
+						{
+							if(  !lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence)
+								|| !lv2_atom_forge_int(lforge->forge, sequence_num) )
+								luaL_error(L, forge_buffer_overflow);
+						}
+
 						if(  !lv2_atom_forge_key(lforge->forge, moony->uris.patch.property)
 							|| !lv2_atom_forge_urid(lforge->forge, property->body) )
 							luaL_error(L, forge_buffer_overflow);
@@ -382,19 +438,28 @@ _lstateresponder__call(lua_State *L)
 					return 1;
 				}
 			}
+
+			if(sequence_num)
+				_lstateresponder_error(L, lforge, moony, frames, sequence_num);
 		}
 	}
 	else if(latom->body.obj->otype == moony->uris.patch.set)
 	{
 		const LV2_Atom_URID *subject = NULL;
 		const LV2_Atom_URID *property = NULL;
+		const LV2_Atom_Int *sequence = NULL;
 		const LV2_Atom *value = NULL;
 
 		lv2_atom_object_body_get(latom->atom->size, latom->body.obj,
 			moony->uris.patch.subject, &subject,
 			moony->uris.patch.property, &property,
+			moony->uris.patch.sequence, &sequence,
 			moony->uris.patch.value, &value,
 			0);
+
+		int32_t sequence_num = 0;
+		if(sequence && (sequence->atom.type == moony->forge.Int) )
+			sequence_num = sequence->body;
 
 		if(!subject || ((subject->atom.type == moony->forge.URID) && (subject->body == moony->uris.patch.self)) )
 		{
@@ -418,11 +483,20 @@ _lstateresponder__call(lua_State *L)
 						lua_seti(L, -2, moony->uris.rdf_value); // self[property].value = value
 					}
 
+					_lstateresponder_ack(L, lforge, moony, frames, sequence_num);
+
 					lua_pushboolean(L, 1); // handled
 					return 1;
 				}
 			}
+
+			if(sequence_num)
+				_lstateresponder_error(L, lforge, moony, frames, sequence_num);
 		}
+	}
+	else if(latom->body.obj->otype == moony->uris.patch.put)
+	{
+		//TODO implement this
 	}
 
 	lua_pushboolean(L, 0); // not handled
@@ -456,7 +530,7 @@ _lstateresponder_reg(lua_State *L)
 	};
 
 	// register state
-	_lstateresponder_register(L, moony, frames, lforge, &subject);
+	_lstateresponder_register(L, moony, frames, lforge, &subject, 0); //TODO use patch:sequenceNumber
 
 	return 0;
 }

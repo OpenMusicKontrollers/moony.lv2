@@ -1157,24 +1157,25 @@ do
 	local subject = Map['http://open-music-kontrollers.ch/lv2/moony#subject']
 	local property = Map['http://open-music-kontrollers.ch/lv2/moony#property']
 	local access = Patch.writable
+	local rtid = VoiceMap() & 0x7fffffff
 
 	local function producer(forge)
-		forge:time(0):get(subject, property)
+		forge:time(0):get(subject, property, rtid)
 
-		forge:time(1):get(nil, property)
+		forge:time(1):get(nil, property, rtid)
 
-		local set = forge:time(2):set(subject, property)
+		local set = forge:time(2):set(subject, property, rtid)
 		set:string('hello world'):pop()
 		
-		local set = forge:time(3):set(nil, property)
+		local set = forge:time(3):set(nil, property, rtid)
 		set:string('hello world'):pop()
 
-		local patch = forge:time(4):patch(subject)
+		local patch = forge:time(4):patch(subject, rtid)
 		patch:remove():key(access):urid(Patch.wildcard):pop()
 		patch:add():key(access):urid(property):pop()
 		patch:pop()
 
-		patch = forge:time(5):patch(property)
+		patch = forge:time(5):patch(property, rtid)
 		local remove = patch:remove()
 		remove:key(RDFS.label):urid(Patch.wildcard)
 		remove:key(RDFS.range):urid(Patch.wildcard)
@@ -1189,7 +1190,7 @@ do
 		add:pop()
 		patch:pop()
 
-		local put = forge:time(6):put(subject)
+		local put = forge:time(6):put(subject, rtid)
 		put:key(property):string('hello world')
 		put:pop()
 	end
@@ -1200,46 +1201,52 @@ do
 		local get = seq[1]
 		assert(get.type == Atom.Object)
 		assert(get.otype == Patch.Get)
-		assert(#get == 2)
+		assert(#get == 3)
 		assert(get[Patch.subject].body == subject)
 		assert(get[Patch.property].body == property)
+		assert(get[Patch.sequenceNumber].body == rtid)
 
 		get = seq[2]
 		assert(get.type == Atom.Object)
 		assert(get.otype == Patch.Get)
-		assert(#get == 1)
+		assert(#get == 2)
 		assert(get[Patch.subject] == nil)
 		assert(get[Patch.property].body == property)
+		assert(get[Patch.sequenceNumber].body == rtid)
 
 		local set = seq[3]
 		assert(set.type == Atom.Object)
 		assert(set.otype == Patch.Set)
-		assert(#set == 3)
+		assert(#set == 4)
 		assert(set[Patch.subject].body == subject)
 		assert(set[Patch.property].body == property)
 		assert(set[Patch.value].body == 'hello world')
+		assert(set[Patch.sequenceNumber].body == rtid)
 
 		set = seq[4]
 		assert(set.type == Atom.Object)
 		assert(set.otype == Patch.Set)
-		assert(#set == 2)
+		assert(#set == 3)
 		assert(set[Patch.subject] == nil)
 		assert(set[Patch.property].body == property)
 		assert(set[Patch.value].body == 'hello world')
+		assert(set[Patch.sequenceNumber].body == rtid)
 
 		local patch = seq[5]
 		assert(patch.type == Atom.Object)
 		assert(patch.otype == Patch.Patch)
-		assert(#patch == 3)
+		assert(#patch == 4)
 		assert(patch[Patch.subject].body == subject)
+		assert(patch[Patch.sequenceNumber].body == rtid)
 		assert(patch[Patch.remove][access].body == Patch.wildcard) 
 		assert(patch[Patch.add][access].body == property) 
 
 		patch = seq[6]
 		assert(patch.type == Atom.Object)
 		assert(patch.otype == Patch.Patch)
-		assert(#patch == 3)
+		assert(#patch == 4)
 		assert(patch[Patch.subject].body == property)
+		assert(patch[Patch.sequenceNumber].body == rtid)
 		assert(patch[Patch.remove][RDFS.label].body == Patch.wildcard)
 		assert(patch[Patch.remove][RDFS.range].body == Patch.wildcard) 
 		assert(patch[Patch.remove][Core.minimum].body == Patch.wildcard) 
@@ -1252,8 +1259,9 @@ do
 		local put = seq[7]
 		assert(put.type == Atom.Object)
 		assert(put.otype == Patch.Put)
-		assert(#put == 2)
+		assert(#put == 3)
 		assert(put[Patch.subject].body == subject)
+		assert(put[Patch.sequenceNumber].body == rtid)
 		local body = put[Patch.body]
 		assert(body)
 		assert(#body == 1)

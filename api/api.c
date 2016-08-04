@@ -853,6 +853,10 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->uris.patch.wildcard = moony->map->map(moony->map->handle, LV2_PATCH__wildcard);
 	moony->uris.patch.writable = moony->map->map(moony->map->handle, LV2_PATCH__writable);
 	moony->uris.patch.readable = moony->map->map(moony->map->handle, LV2_PATCH__readable);
+	moony->uris.patch.destination = moony->map->map(moony->map->handle, LV2_PATCH__destination);
+	moony->uris.patch.sequence = moony->map->map(moony->map->handle, LV2_PATCH__sequenceNumber);
+	moony->uris.patch.error = moony->map->map(moony->map->handle, LV2_PATCH__Error);
+	moony->uris.patch.ack = moony->map->map(moony->map->handle, LV2_PATCH__Ack);
 
 	moony->uris.rdfs_label = moony->map->map(moony->map->handle, RDFS__label);
 	moony->uris.rdfs_range = moony->map->map(moony->map->handle, RDFS__range);
@@ -1520,13 +1524,19 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 		{
 			const LV2_Atom_URID *subject = NULL;
 			const LV2_Atom_URID *property = NULL;
+			const LV2_Atom_Int *sequence= NULL;
 
 			LV2_Atom_Object_Query q[] = {
 				{ moony->uris.patch.subject, (const LV2_Atom **)&subject },
 				{ moony->uris.patch.property, (const LV2_Atom **)&property },
+				{ moony->uris.patch.sequence, (const LV2_Atom **)&sequence},
 				{ 0, NULL }
 			};
 			lv2_atom_object_query(obj, q);
+
+			int32_t sequence_num = 0;
+			if(sequence && (sequence->atom.type == moony->forge.Int))
+				sequence_num = sequence->body; //FIXME use
 
 			if(  subject
 				&& (subject->atom.type == moony->forge.URID)
@@ -1554,15 +1564,21 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 		{
 			const LV2_Atom_URID *subject = NULL;
 			const LV2_Atom_URID *property = NULL;
+			const LV2_Atom_Int *sequence = NULL;
 			const LV2_Atom *value = NULL;
 
 			LV2_Atom_Object_Query q[] = {
 				{ moony->uris.patch.subject, (const LV2_Atom **)&subject },
 				{ moony->uris.patch.property, (const LV2_Atom **)&property },
+				{ moony->uris.patch.sequence, (const LV2_Atom **)&sequence },
 				{ moony->uris.patch.value, &value },
 				{ 0, NULL }
 			};
 			lv2_atom_object_query(obj, q);
+
+			int32_t sequence_num = 0;
+			if(sequence && (sequence->atom.type == moony->forge.Int))
+				sequence_num = sequence->body; //FIXME use
 
 			if(  subject
 				&& (subject->atom.type == moony->forge.URID)
@@ -1653,6 +1669,10 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 			ref = lv2_atom_forge_key(forge, moony->uris.patch.subject);
 		if(ref)
 			ref = lv2_atom_forge_urid(forge, moony->uris.patch.self);
+		if(ref)
+			ref = lv2_atom_forge_key(forge, moony->uris.patch.sequence);
+		if(ref)
+			ref = lv2_atom_forge_int(forge, 0); // we don't expect a reply
 		if(ref)
 			ref = lv2_atom_forge_key(forge, moony->uris.patch.remove);
 		if(ref)

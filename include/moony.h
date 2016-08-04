@@ -202,6 +202,9 @@ struct _patch_t {
 	LV2_URID writable;
 	LV2_URID readable;
 	LV2_URID destination;
+	LV2_URID sequence;
+	LV2_URID error;
+	LV2_URID ack;
 };
 
 struct _moony_t {

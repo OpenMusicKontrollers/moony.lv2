@@ -909,8 +909,9 @@ _lforge_get(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_URID subject = luaL_optinteger(L, 2, 0);
-	LV2_URID property = luaL_checkinteger(L, 3);
+	const LV2_URID subject = luaL_optinteger(L, 2, 0);
+	const LV2_URID property = luaL_checkinteger(L, 3);
+	const int32_t sequence_num = luaL_optinteger(L, 4, 0);
 
 	LV2_Atom_Forge_Frame frame;
 
@@ -922,6 +923,14 @@ _lforge_get(lua_State *L)
 		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.subject))
 			luaL_error(L, forge_buffer_overflow);
 		if(!lv2_atom_forge_urid(lforge->forge, subject))
+			luaL_error(L, forge_buffer_overflow);
+	}
+
+	if(sequence_num) // is optional
+	{
+		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence))
+			luaL_error(L, forge_buffer_overflow);
+		if(!lv2_atom_forge_int(lforge->forge, sequence_num))
 			luaL_error(L, forge_buffer_overflow);
 	}
 
@@ -941,8 +950,9 @@ _lforge_set(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_URID subject = luaL_optinteger(L, 2, 0);
-	LV2_URID property = luaL_checkinteger(L, 3);
+	const LV2_URID subject = luaL_optinteger(L, 2, 0);
+	const LV2_URID property = luaL_checkinteger(L, 3);
+	const int32_t sequence_num = luaL_optinteger(L, 4, 0);
 	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
 	lframe->depth = 1;
 	lframe->last.frames = lforge->last.frames;
@@ -956,6 +966,14 @@ _lforge_set(lua_State *L)
 		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.subject))
 			luaL_error(L, forge_buffer_overflow);
 		if(!lv2_atom_forge_urid(lforge->forge, subject))
+			luaL_error(L, forge_buffer_overflow);
+	}
+
+	if(sequence_num) // is optional
+	{
+		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence))
+			luaL_error(L, forge_buffer_overflow);
+		if(!lv2_atom_forge_int(lforge->forge, sequence_num))
 			luaL_error(L, forge_buffer_overflow);
 	}
 
@@ -975,7 +993,8 @@ _lforge_put(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_URID subject = luaL_optinteger(L, 2, 0);
+	const LV2_URID subject = luaL_optinteger(L, 2, 0);
+	const LV2_URID sequence_num = luaL_optinteger(L, 3, 0);
 	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
 	lframe->depth = 2;
 	lframe->last.frames = lforge->last.frames;
@@ -992,6 +1011,14 @@ _lforge_put(lua_State *L)
 			luaL_error(L, forge_buffer_overflow);
 	}
 
+	if(sequence_num) // is optional
+	{
+		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence))
+			luaL_error(L, forge_buffer_overflow);
+		if(!lv2_atom_forge_int(lforge->forge, sequence_num))
+			luaL_error(L, forge_buffer_overflow);
+	}
+
 	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.body))
 		luaL_error(L, forge_buffer_overflow);
 	if(!lv2_atom_forge_object(lforge->forge, &lframe->frame[1], 0, 0))
@@ -1005,7 +1032,8 @@ _lforge_patch(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_URID subject = luaL_optinteger(L, 2, 0);
+	const LV2_URID subject = luaL_optinteger(L, 2, 0);
+	const int32_t sequence_num = luaL_optinteger(L, 3, 0);
 	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
 	lframe->depth = 1;
 	lframe->last.frames = lforge->last.frames;
@@ -1019,6 +1047,14 @@ _lforge_patch(lua_State *L)
 		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.subject))
 			luaL_error(L, forge_buffer_overflow);
 		if(!lv2_atom_forge_urid(lforge->forge, subject))
+			luaL_error(L, forge_buffer_overflow);
+	}
+
+	if(sequence_num) // is optional
+	{
+		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence))
+			luaL_error(L, forge_buffer_overflow);
+		if(!lv2_atom_forge_int(lforge->forge, sequence_num))
 			luaL_error(L, forge_buffer_overflow);
 	}
 
