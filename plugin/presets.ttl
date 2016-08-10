@@ -118,28 +118,8 @@ end"""
 
 moony:bank-multiplex_atom-multiplex2
 	state:state [
-		moony:code """function multiplex(seq1, seq2)
-  return coroutine.wrap(function()
-    local iterator1 = seq1:foreach()
-    local iterator2 = seq2:foreach()
-
-    local frames1, atom1 = iterator1(seq1)
-    local frames2, atom2 = iterator2(seq2)
-
-    while frames1 or frames2 do
-      if frames1 and (frames1 <= frames2) then
-        coroutine.yield(frames1, atom1)
-        frames1, atom1 = iterator1(seq1)
-      else
-        coroutine.yield(frames2, atom2)
-        frames2, atom2 = iterator2(seq2)
-      end
-    end
-  end)
-end
-
-function run(n, seq1, forge1, seq2, forge2)
-	for frames, atom in multiplex(seq1, seq2) do
+		moony:code """function run(n, seq1, forge1, seq2, forge2)
+	for frames, atom in seq1:multiplex(seq2) do
 		forge1:time(frames):atom(atom)
 		forge2:time(frames):atom(atom)
 	end
@@ -148,44 +128,8 @@ end"""
 
 moony:bank-multiplex_atom-multiplex4
 	state:state [
-		moony:code """function nxt(frames)
-	local I = nil
-	local F = math.huge
-
-	for i, f in pairs(frames) do
-		if f and f < F then
-			I, F = i, f
-		end
-	end
-
-	return I, F
-end
-
-seq = {}
-itr = {}
-frames = {}
-atom = {}
-
-function multiplex(...)
-	seq[1], seq[2], seq[3], seq[4] = ...
-
-  return coroutine.wrap(function()
-		for i, s in ipairs(seq) do
-			itr[i] = s:foreach()
-			frames[i], atom[i] = itr[i](s)
-		end
-
-		local i, f = nxt(frames)
-		while i do
-			coroutine.yield(f, atom[i])
-			frames[i], atom[i] = itr[i](seq[i])
-			i, f = nxt(frames)
-		end
-  end)
-end
-
-function run(n, seq1, forge1, seq2, forge2, seq3, forge3, seq4, forge4)
-	for frames, atom in multiplex(seq1, seq2, seq3, seq4) do
+		moony:code """function run(n, seq1, forge1, seq2, forge2, seq3, forge3, seq4, forge4)
+	for frames, atom in seq1:multiplex(seq2, seq3, seq4) do
 		forge1:time(frames):atom(atom)
 		forge2:time(frames):atom(atom)
 		forge3:time(frames):atom(atom)

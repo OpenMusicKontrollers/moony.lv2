@@ -43,7 +43,7 @@ var LuaHighlightRules = function() {
 				"chunk|midi|bundle|message|tuple|object|key|property|vector|sequence|"+
 				"typed|get|set|put|patch|remove|add|pop|"+
 				// moony sequence
-				"foreach|unpack|new|stash|apply|register|"+
+				"foreach|unpack|new|stash|apply|register|multiplex|"+
 				// moony stash
 				"write|read");
 
