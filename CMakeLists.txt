@@ -4,8 +4,7 @@ project(moony.lv2)
 
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/tlsf-3.0)
-include_directories(${PROJECT_SOURCE_DIR}/sandbox_ui.lv2)
-include_directories(${PROJECT_SOURCE_DIR}/symap)
+include_directories(${PROJECT_SOURCE_DIR}/kx.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/osc.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/timely.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/xpress.lv2)
@@ -55,76 +54,12 @@ set(LIBS ${LIBS} ${LV2_LDFLAGS})
 
 # options
 include(CMakeDependentOption)
-option(BUILD_COMMON_UI "Build common embeddable UI" OFF)
 option(BUILD_SIMPLE_UI "Build simple external UI" OFF)
 option(BUILD_WEB_UI "Build web-based external UI" ON)
 option(USE_MANUAL_GC "Use manual garbage collection" OFF)
 
 if(USE_MANUAL_GC)
 	add_definitions("-DUSE_MANUAL_GC")
-endif()
-
-if(BUILD_COMMON_UI)
-	pkg_search_module(ELM REQUIRED elementary>=1.8)
-	include_directories(${ELM_INCLUDE_DIRS})
-
-	pkg_search_module(NANOMSG REQUIRED libnanomsg nanomsg)
-	include_directories(${NANOMSG_INCLUDE_DIRS})
-
-	pkg_search_module(SRATOM REQUIRED sratom-0>=0.4.0)
-	include_directories(${SRATOM_INCLUDE_DIRS})
-
-	pkg_search_module(LILV REQUIRED lilv-0>=0.20.0)
-	include_directories(${LILV_INCLUDE_DIRS})
-	if((${LILV_VERSION} VERSION_EQUAL "0.22.0") OR (${LILV_VERSION} VERSION_GREATER "0.22.0"))
-		add_definitions("-DLILV_0_22")
-	endif()
-
-	if((${ELM_VERSION} VERSION_EQUAL "1.9.0") OR (${ELM_VERSION} VERSION_GREATER "1.9.0"))
-		add_definitions("-DELM_1_9")
-	endif()
-
-	find_package(FLEX)
-	flex_target(encoder ${PROJECT_SOURCE_DIR}/ui/encoder.l ${PROJECT_BINARY_DIR}/encoder.c
-		COMPILE_FLAGS	"--header-file=${PROJECT_BINARY_DIR}/encoder.h --prefix=enc")
-
-	add_library(moony_ui MODULE
-		${PROJECT_SOURCE_DIR}/sandbox_ui.lv2/sandbox_ui.c
-		${PROJECT_SOURCE_DIR}/sandbox_ui.lv2/sandbox_master.c
-		${PROJECT_SOURCE_DIR}/ui/moony_ui.c)
-	target_link_libraries(moony_ui
-		${NANOMSG_LDFLAGS}
-		${SRATOM_LDFLAGS})
-	set_target_properties(moony_ui PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
-	set_target_properties(moony_ui PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
-	set_target_properties(moony_ui PROPERTIES PREFIX "")
-	install(TARGETS moony_ui DESTINATION ${PLUGIN_DEST})
-
-	add_library(moony_eo MODULE
-		${PROJECT_SOURCE_DIR}/ui/moony_eo.c
-		${PROJECT_SOURCE_DIR}/ui/common_ui.c
-		${FLEX_encoder_OUTPUTS})
-	target_link_libraries(moony_eo
-		${ELM_LDFLAGS})
-	set_target_properties(moony_eo PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
-	set_target_properties(moony_eo PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
-	set_target_properties(moony_eo PROPERTIES PREFIX "")
-	install(TARGETS moony_eo DESTINATION ${PLUGIN_DEST})
-
-	add_executable(sandbox_efl
-		${PROJECT_SOURCE_DIR}/sandbox_ui.lv2/sandbox_slave.c
-		${PROJECT_SOURCE_DIR}/sandbox_ui.lv2/sandbox_efl.c
-		${PROJECT_SOURCE_DIR}/symap/symap.c)
-	target_link_libraries(sandbox_efl
-		${ELM_LDFLAGS}
-		${NANOMSG_LDFLAGS}
-		${LILV_LDFLAGS})
-	install(TARGETS sandbox_efl DESTINATION ${PLUGIN_DEST})
-
-
-	install(FILES ${PROJECT_SOURCE_DIR}/ui/omk_logo_256x256.png DESTINATION ${PLUGIN_DEST})
-else()
-	set(COMMON_WRAP "#")
 endif()
 
 if(BUILD_SIMPLE_UI)
