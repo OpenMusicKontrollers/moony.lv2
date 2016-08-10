@@ -38,6 +38,7 @@ struct _latom_driver_t {
 	latom_driver_function_t value;
 	int unpack;
 	int foreach;
+	int multiplex;
 };
 
 struct _latom_t {
@@ -66,6 +67,13 @@ struct _latom_t {
 		struct _lseq_t {
 			const LV2_Atom_Event *ev;
 		} seq;
+
+		struct _lmul_t {
+			int count;
+			const LV2_Atom *atom [5];
+			const LV2_Atom_Sequence_Body *seq [5];
+			const LV2_Atom_Event *ev [5];
+		} mul;
 
 		struct _lobj_t {
 			const LV2_Atom_Property_Body *prop;
@@ -135,6 +143,11 @@ int
 _latom_seq_foreach_itr(lua_State *L);
 int
 _latom_vec_foreach_itr(lua_State *L);
+
+int
+_latom_seq_multiplex(lua_State *L);
+int
+_latom_seq_multiplex_itr(lua_State *L);
 
 static inline latom_t *
 _latom_new(lua_State *L, const LV2_Atom *atom, bool cache)

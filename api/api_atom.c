@@ -27,7 +27,8 @@ static const lua_CFunction upclosures [MOONY_UPCLOSURE_COUNT] = {
 	[MOONY_UPCLOSURE_TUPLE_FOREACH] = _latom_tuple_foreach_itr,
 	[MOONY_UPCLOSURE_VECTOR_FOREACH] = _latom_vec_foreach_itr,
 	[MOONY_UPCLOSURE_OBJECT_FOREACH] = _latom_obj_foreach_itr,
-	[MOONY_UPCLOSURE_SEQUENCE_FOREACH] = _latom_seq_foreach_itr
+	[MOONY_UPCLOSURE_SEQUENCE_FOREACH] = _latom_seq_foreach_itr,
+	[MOONY_UPCLOSURE_SEQUENCE_MULTIPLEX] = _latom_seq_multiplex_itr
 };
 
 static inline void
@@ -622,6 +623,81 @@ _latom_seq__tostring(lua_State *L, latom_t *latom)
 }
 
 int
+_latom_seq_multiplex_itr(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	latom_t *latom = lua_touserdata(L, 1);
+
+	int64_t huge = INT64_MAX; //FIXME handle beattime
+	int nxt = -1;
+
+	for(int i=0; i<latom->iter.mul.count; i++)
+	{
+		if(lv2_atom_sequence_is_end(latom->iter.mul.seq[i], latom->iter.mul.atom[i]->size, latom->iter.mul.ev[i]))
+			continue;
+
+		if(latom->iter.mul.ev[i]->time.frames < huge)
+		{
+			huge = latom->iter.mul.ev[i]->time.frames;
+			nxt = i;
+		}
+	}
+
+	if(nxt >= 0) // is there a valid next event?
+	{
+		if(latom->body.seq->unit == moony->uris.atom_beat_time)
+			lua_pushnumber(L, latom->iter.mul.ev[nxt]->time.beats);
+		else
+			lua_pushinteger(L, latom->iter.mul.ev[nxt]->time.frames);
+
+		// push atom
+		lua_pushvalue(L, lua_upvalueindex(2));
+		latom_t *litem = lua_touserdata(L, lua_upvalueindex(2));
+		litem->atom = &latom->iter.mul.ev[nxt]->body;
+		litem->body.raw = LV2_ATOM_BODY_CONST(litem->atom);
+	
+		// advance iterator
+		latom->iter.mul.ev[nxt] = lv2_atom_sequence_next(latom->iter.mul.ev[nxt]);
+
+		return 2;
+	}
+
+	// end of sequence reached
+	lua_pushnil(L);
+	return 1;
+}
+
+int
+_latom_seq_multiplex(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	latom_t *latom = lua_touserdata(L, 1);
+
+	// get number of sequences to multiplex over
+	latom->iter.mul.count = lua_gettop(L); //FIXME assert count <= 5
+
+	// reset iterator to beginning of sequence
+	latom->iter.mul.atom[0] = latom->atom;
+	latom->iter.mul.seq[0] = latom->body.seq;
+	latom->iter.mul.ev[0] = lv2_atom_sequence_begin(latom->body.seq);
+
+	for(int i=1; i<latom->iter.mul.count; i++)
+	{
+		latom_t *lmux = lua_touserdata(L, 1 + i);
+
+		// reset iterator to beginning of sequence
+		latom->iter.mul.atom[i] = lmux->atom;
+		latom->iter.mul.seq[i] = lmux->body.seq;
+		latom->iter.mul.ev[i] = lv2_atom_sequence_begin(lmux->body.seq);
+	}
+
+	_pushupclosure(L, moony, MOONY_UPCLOSURE_SEQUENCE_MULTIPLEX, latom->lheader.cache);
+	lua_pushvalue(L, 1);
+
+	return 2;
+}
+
+int
 _latom_seq_foreach_itr(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -670,7 +746,8 @@ const latom_driver_t latom_sequence_driver = {
 	.__indexi = _latom_seq__indexi,
 	.__len = _latom_seq__len,
 	.__tostring = _latom_seq__tostring,
-	.foreach = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_SEQUENCE_FOREACH
+	.foreach = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_SEQUENCE_FOREACH,
+	.multiplex = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_SEQUENCE_MULTIPLEX
 };
 
 static int
@@ -922,6 +999,11 @@ _latom__index(lua_State *L)
 			else if(driver->foreach && !strcmp(key, "foreach"))
 			{
 				lua_rawgeti(L, LUA_REGISTRYINDEX, driver->foreach);
+				return 1;
+			}
+			else if(driver->foreach && !strcmp(key, "multiplex"))
+			{
+				lua_rawgeti(L, LUA_REGISTRYINDEX, driver->multiplex);
 				return 1;
 			}
 			else if(driver->unpack && !strcmp(key, "unpack"))

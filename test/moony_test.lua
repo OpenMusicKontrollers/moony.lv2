@@ -1549,3 +1549,37 @@ do
 	assert(Map[prefix .. 'connectPort'] == hashmap.connectPort)
 	assert(Map[prefix .. 'connectPort'] == hashmap.connectPort)
 end
+
+-- multiplex
+print('[test] multiplex')
+do
+	local stash1 = Stash()
+	local stash2 = Stash()
+
+	local seq1 = stash1:sequence()
+	seq1:time(0):int(0)
+	seq1:time(2):int(2)
+	seq1:time(4):int(4)
+	seq1:pop()
+
+	local seq2 = stash2:sequence()
+	seq2:time(1):int(1)
+	seq2:time(3):int(3)
+	seq2:time(5):int(5)
+	seq2:pop()
+
+	stash1:read()
+	stash2:read()
+
+	assert(#stash1 == 3)
+	assert(#stash2 == 3)
+
+	local i = 0
+	for frames, atom in stash1:multiplex(stash2) do
+		assert(frames == i)
+		assert(atom.type == Atom.Int)
+		assert(atom.body == i)
+
+		i = i + 1
+	end
+end
