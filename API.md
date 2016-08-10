@@ -1,6 +1,6 @@
 # Moony.lv2
 
-## Lua API (0.2.1)
+## Lua API (0.19.x)
 
 ### General usage
 	
@@ -45,10 +45,18 @@ print('hello', 'world', 2015, true)
 	
 ### URI/URID (un)Mapping
 
-#### Tables
+#### Global hash tables
 
 ``` lua
 urid = Map['http://foo.org#bar'] -- Map URI to URID
+uri = Unmap[urid] -- Unmap URID to URI
+```
+
+#### Local hash tables
+
+``` lua
+map1 = HashMap('http://foo.org#') -- create hash map with prefix
+urid = map1.bar -- Map URI to URID with prefix of hash map
 uri = Unmap[urid] -- Unmap URID to URI
 ```
 
@@ -702,11 +710,7 @@ end
 #### StateResponder
 
 ``` lua
-prefix = 'http://open-music-kontrollers.ch/lv2/moony#a1xa1'
-urid = {
-	prop1 = Map[prefix .. '#prop1'],
-	prop2 = Map[prefix .. '#prop2']
-}
+prefix = HashMap('http://open-music-kontrollers.ch/lv2/moony#')
 
 prop1 = {
   [RDFS.label] = 'Property 1',
@@ -715,7 +719,7 @@ prop1 = {
   [Core.minimum] = -96,
   [Core.maximum] = 96,
   [Units.unit] = Units.db,
-	[RDF.value] = 0
+  [RDF.value] = 0
 }
 
 prop2 = {
@@ -725,33 +729,33 @@ prop2 = {
   [Core.minimum] = 0.0,
   [Core.maximum] = 1.0,
   [Units.unit] = Units.mm,
-	[RDF.value] = 0.5
+  [RDF.value] = 0.5
 }
 
 state = StateResponder:new({
-	[Patch.writable] = {
-		[urid.prop1] = prop1,
-		[urid.prop2] = prop2
-	}
+  [Patch.writable] = {
+    [prefix.prop1] = prop1,
+    [prefix.prop2] = prop2
+  }
 })
 
 function save(store)
-	state:save(store)
+  state:save(store)
 end
 
 function restore(retrieve)
-	state:restore(retrieve)
+  state:restore(retrieve)
 end
 
-function default(n, seq, forge)
+function _run(n, seq, forge)
   for frames, atom in seq:foreach() do
     local handled = state(frames, forge, atom)
   end
 end
 
-function once(n, seq, forge)
+function run(n, seq, forge)
   state:register(0, forge)
-	run = default
+	run = _run 
 	run(n, seq, forge)
 end
 ```
