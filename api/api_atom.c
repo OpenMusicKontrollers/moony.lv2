@@ -19,6 +19,7 @@
 #include <api_stash.h>
 
 #include <inttypes.h>
+#include <math.h>
 
 #define LV2_ATOM_VECTOR_BODY_ITEM_CONST(body, i) \
 	(LV2_ATOM_CONTENTS_CONST(LV2_Atom_Vector_Body, (body)) + (i)*(body)->child_size)
@@ -637,17 +638,28 @@ _latom_seq_multiplex_itr(lua_State *L)
 	}
 	lua_pop(L, n);
 
-	int64_t huge = INT64_MAX; //FIXME handle beattime
+	double huge = HUGE_VAL;
 	int nxt = -1;
 	for(unsigned i=0; i<n; i++)
 	{
 		if(lv2_atom_sequence_is_end(latom[i]->body.seq, latom[i]->atom->size, latom[i]->iter.seq.ev))
 			continue;
 
-		if(latom[i]->iter.seq.ev->time.frames < huge)
+		if(latom[i]->body.seq->unit == moony->uris.atom_beat_time)
 		{
-			huge = latom[i]->iter.seq.ev->time.frames;
-			nxt = i;
+			if(latom[i]->iter.seq.ev->time.beats < huge)
+			{
+				huge = latom[i]->iter.seq.ev->time.beats;
+				nxt = i;
+			}
+		}
+		else
+		{
+			if(latom[i]->iter.seq.ev->time.frames < huge)
+			{
+				huge = latom[i]->iter.seq.ev->time.frames;
+				nxt = i;
+			}
 		}
 	}
 
