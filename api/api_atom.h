@@ -68,13 +68,6 @@ struct _latom_t {
 			const LV2_Atom_Event *ev;
 		} seq;
 
-		struct _lmul_t {
-			int count;
-			const LV2_Atom *atom [5];
-			const LV2_Atom_Sequence_Body *seq [5];
-			const LV2_Atom_Event *ev [5];
-		} mul;
-
 		struct _lobj_t {
 			const LV2_Atom_Property_Body *prop;
 		} obj;

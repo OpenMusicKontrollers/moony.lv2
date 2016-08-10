@@ -199,6 +199,11 @@ atom = seq[#seq] -- get last event atom
 for frames, atom in seq:foreach() do -- iterate over all events in sequence
 end
 ```
+
+``` lua
+for frames, atom, seq in seq1:multiplex(seq2, seq3) do -- iterate and multiplex over all events in sequences 1-3
+end
+```
 	
 ### Atom Forge
 

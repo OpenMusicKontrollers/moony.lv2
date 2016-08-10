@@ -626,40 +626,49 @@ int
 _latom_seq_multiplex_itr(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	latom_t *latom = lua_touserdata(L, 1);
+	const unsigned n = lua_rawlen(L, 1);
+	latom_t *latom [n];
+
+	// fill latom* array
+	for(unsigned i=0; i<n; i++)
+	{
+		lua_rawgeti(L, 1, 1+i);
+		latom[i] = lua_touserdata(L, -1);
+	}
+	lua_pop(L, n);
 
 	int64_t huge = INT64_MAX; //FIXME handle beattime
 	int nxt = -1;
-
-	for(int i=0; i<latom->iter.mul.count; i++)
+	for(unsigned i=0; i<n; i++)
 	{
-		if(lv2_atom_sequence_is_end(latom->iter.mul.seq[i], latom->iter.mul.atom[i]->size, latom->iter.mul.ev[i]))
+		if(lv2_atom_sequence_is_end(latom[i]->body.seq, latom[i]->atom->size, latom[i]->iter.seq.ev))
 			continue;
 
-		if(latom->iter.mul.ev[i]->time.frames < huge)
+		if(latom[i]->iter.seq.ev->time.frames < huge)
 		{
-			huge = latom->iter.mul.ev[i]->time.frames;
+			huge = latom[i]->iter.seq.ev->time.frames;
 			nxt = i;
 		}
 	}
 
 	if(nxt >= 0) // is there a valid next event?
 	{
-		if(latom->body.seq->unit == moony->uris.atom_beat_time)
-			lua_pushnumber(L, latom->iter.mul.ev[nxt]->time.beats);
+		if(latom[nxt]->body.seq->unit == moony->uris.atom_beat_time)
+			lua_pushnumber(L, latom[nxt]->iter.seq.ev->time.beats);
 		else
-			lua_pushinteger(L, latom->iter.mul.ev[nxt]->time.frames);
+			lua_pushinteger(L, latom[nxt]->iter.seq.ev->time.frames);
 
 		// push atom
 		lua_pushvalue(L, lua_upvalueindex(2));
 		latom_t *litem = lua_touserdata(L, lua_upvalueindex(2));
-		litem->atom = &latom->iter.mul.ev[nxt]->body;
+		litem->atom = &latom[nxt]->iter.seq.ev->body;
 		litem->body.raw = LV2_ATOM_BODY_CONST(litem->atom);
+		lua_rawgeti(L, 1, 1+nxt);
 	
 		// advance iterator
-		latom->iter.mul.ev[nxt] = lv2_atom_sequence_next(latom->iter.mul.ev[nxt]);
+		latom[nxt]->iter.seq.ev = lv2_atom_sequence_next(latom[nxt]->iter.seq.ev);
 
-		return 2;
+		return 3;
 	}
 
 	// end of sequence reached
@@ -672,27 +681,24 @@ _latom_seq_multiplex(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	latom_t *latom = lua_touserdata(L, 1);
+	const unsigned n = lua_gettop(L);
 
-	// get number of sequences to multiplex over
-	latom->iter.mul.count = lua_gettop(L); //FIXME assert count <= 5
-
-	// reset iterator to beginning of sequence
-	latom->iter.mul.atom[0] = latom->atom;
-	latom->iter.mul.seq[0] = latom->body.seq;
-	latom->iter.mul.ev[0] = lv2_atom_sequence_begin(latom->body.seq);
-
-	for(int i=1; i<latom->iter.mul.count; i++)
+	for(unsigned i=1; i<=n; i++)
 	{
-		latom_t *lmux = lua_touserdata(L, 1 + i);
+		latom_t *lmux = lua_touserdata(L, i);
 
 		// reset iterator to beginning of sequence
-		latom->iter.mul.atom[i] = lmux->atom;
-		latom->iter.mul.seq[i] = lmux->body.seq;
-		latom->iter.mul.ev[i] = lv2_atom_sequence_begin(lmux->body.seq);
+		lmux->iter.seq.ev = lv2_atom_sequence_begin(lmux->body.seq);
 	}
 
 	_pushupclosure(L, moony, MOONY_UPCLOSURE_SEQUENCE_MULTIPLEX, latom->lheader.cache);
-	lua_pushvalue(L, 1);
+
+	lua_createtable(L, n, 0); //FIXME cache this?
+	for(unsigned i=1; i<=n; i++)
+	{
+		lua_pushvalue(L, i);
+		lua_rawseti(L, -2, i);
+	}
 
 	return 2;
 }

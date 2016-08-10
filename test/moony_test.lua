@@ -1575,10 +1575,15 @@ do
 	assert(#stash2 == 3)
 
 	local i = 0
-	for frames, atom in stash1:multiplex(stash2) do
+	for frames, atom, seq in stash1:multiplex(stash2) do
 		assert(frames == i)
 		assert(atom.type == Atom.Int)
 		assert(atom.body == i)
+		if i % 2 == 0 then
+			assert(seq == stash1)
+		else
+			assert(seq == stash2)
+		end
 
 		i = i + 1
 	end
