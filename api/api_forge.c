@@ -926,13 +926,10 @@ _lforge_get(lua_State *L)
 			luaL_error(L, forge_buffer_overflow);
 	}
 
-	if(sequence_num) // is optional
-	{
-		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence))
-			luaL_error(L, forge_buffer_overflow);
-		if(!lv2_atom_forge_int(lforge->forge, sequence_num))
-			luaL_error(L, forge_buffer_overflow);
-	}
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence))
+		luaL_error(L, forge_buffer_overflow);
+	if(!lv2_atom_forge_int(lforge->forge, sequence_num))
+		luaL_error(L, forge_buffer_overflow);
 
 	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.property))
 		luaL_error(L, forge_buffer_overflow);
@@ -969,13 +966,10 @@ _lforge_set(lua_State *L)
 			luaL_error(L, forge_buffer_overflow);
 	}
 
-	if(sequence_num) // is optional
-	{
-		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence))
-			luaL_error(L, forge_buffer_overflow);
-		if(!lv2_atom_forge_int(lforge->forge, sequence_num))
-			luaL_error(L, forge_buffer_overflow);
-	}
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence))
+		luaL_error(L, forge_buffer_overflow);
+	if(!lv2_atom_forge_int(lforge->forge, sequence_num))
+		luaL_error(L, forge_buffer_overflow);
 
 	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.property))
 		luaL_error(L, forge_buffer_overflow);
@@ -1011,13 +1005,10 @@ _lforge_put(lua_State *L)
 			luaL_error(L, forge_buffer_overflow);
 	}
 
-	if(sequence_num) // is optional
-	{
-		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence))
-			luaL_error(L, forge_buffer_overflow);
-		if(!lv2_atom_forge_int(lforge->forge, sequence_num))
-			luaL_error(L, forge_buffer_overflow);
-	}
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence))
+		luaL_error(L, forge_buffer_overflow);
+	if(!lv2_atom_forge_int(lforge->forge, sequence_num))
+		luaL_error(L, forge_buffer_overflow);
 
 	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.body))
 		luaL_error(L, forge_buffer_overflow);
@@ -1050,13 +1041,10 @@ _lforge_patch(lua_State *L)
 			luaL_error(L, forge_buffer_overflow);
 	}
 
-	if(sequence_num) // is optional
-	{
-		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence))
-			luaL_error(L, forge_buffer_overflow);
-		if(!lv2_atom_forge_int(lforge->forge, sequence_num))
-			luaL_error(L, forge_buffer_overflow);
-	}
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence))
+		luaL_error(L, forge_buffer_overflow);
+	if(!lv2_atom_forge_int(lforge->forge, sequence_num))
+		luaL_error(L, forge_buffer_overflow);
 
 	return 1; // derived forge
 }

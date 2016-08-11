@@ -103,6 +103,8 @@ var PATCH = {
 	Patch             : 'patch:Patch',
 	Get               : 'patch:Get',
 	Set               : 'patch:Set',
+	Ack               : 'patch:Ack',
+	Error             : 'patch:Error',
 	subject           : 'patch:subject',
 	property          : 'patch:property',
 	value             : 'patch:value',
@@ -111,7 +113,8 @@ var PATCH = {
 	wildcard          : 'patch:wildcard',
 	writable          : 'patch:writable',
 	readable          : 'patch:readable',
-	destination       : 'patch:destination'
+	destination       : 'patch:destination',
+	sequenceNumber    : 'patch:sequenceNumber'
 };
 
 var LV2 = {
@@ -188,6 +191,13 @@ var format = {
 	[UNITS.midiController]: 'controller' //TODO function callback
 };
 
+function sequence_number(seq_num) {
+	return {
+		[RDF.type]  : [ATOM.Int],
+		[RDF.value] : seq_num
+	}
+}
+
 var trim = /[^a-zA-Z0-9_]+/g;
 
 function node_is_a(node, id) {
@@ -197,16 +207,17 @@ function node_is_a(node, id) {
 
 function lv2_get(destination, property) {
 	var req = {
-		[RDF.type]            : [ATOM.Object, UI.portNotification],
+		[RDF.type]               : [ATOM.Object, UI.portNotification],
 		[LV2.symbol] : {
-			[RDF.type]          : [ATOM.String],
-			[RDF.value]         : 'control'
+			[RDF.type]             : [ATOM.String],
+			[RDF.value]            : 'control'
 		},
-		[MOONY.destination]   : {[RDF.id] : destination},
-		[UI.protocol]         : {[RDF.id] : ATOM.eventTransfer},
+		[MOONY.destination]      : {[RDF.id] : destination},
+		[UI.protocol]            : {[RDF.id] : ATOM.eventTransfer},
 		[UI.portEvent] : {
-			[RDF.type]          : [ATOM.Object, PATCH.Get],
-			[PATCH.property]    : {[RDF.id] : property}
+			[RDF.type]             : [ATOM.Object, PATCH.Get],
+			[PATCH.property]       : {[RDF.id] : property},
+			[PATCH.sequenceNumber] : sequence_number(0)
 		}
 	};
 	if(SUBJECT) {
@@ -217,15 +228,16 @@ function lv2_get(destination, property) {
 
 function lv2_get_all(destination) {
 	var req = {
-		[RDF.type]            : [ATOM.Object, UI.portNotification],
+		[RDF.type]               : [ATOM.Object, UI.portNotification],
 		[LV2.symbol] : {
-			[RDF.type]          : [ATOM.String],
-			[RDF.value]         : 'control'
+			[RDF.type]             : [ATOM.String],
+			[RDF.value]            : 'control'
 		},
-		[MOONY.destination]   : {[RDF.id] : destination},
-		[UI.protocol]         : {[RDF.id] : ATOM.eventTransfer},
+		[MOONY.destination]      : {[RDF.id] : destination},
+		[UI.protocol]            : {[RDF.id] : ATOM.eventTransfer},
 		[UI.portEvent] : {
-			[RDF.type]          : [ATOM.Object, PATCH.Get]
+			[RDF.type]             : [ATOM.Object, PATCH.Get],
+			[PATCH.sequenceNumber] : sequence_number(0)
 		}
 	};
 	if(SUBJECT) {
@@ -239,26 +251,67 @@ function lv2_set(destination, property, range, value) {
 	// URI/URID need special handling
 	if( (range == ATOM.URI) || (range == ATOM.URID) ) {
 		val = {
-			[RDF.id]            : value
+			[RDF.id]               : value
 		};
 	} else {
 		val = {
-			[RDF.type]          : [range],
-			[RDF.value]         : value
+			[RDF.type]             : [range],
+			[RDF.value]            : value
 		};
 	}
 	var req = {
-		[RDF.type]            : [ATOM.Object, UI.portNotification],
+		[RDF.type]               : [ATOM.Object, UI.portNotification],
 		[LV2.symbol] : {
-			[RDF.type]          : [ATOM.String],
-			[RDF.value]         : 'control'
+			[RDF.type]             : [ATOM.String],
+			[RDF.value]            : 'control'
 		},
-		[MOONY.destination]   : {[RDF.id] : destination},
-		[UI.protocol]         : {[RDF.id] : ATOM.eventTransfer},
+		[MOONY.destination]      : {[RDF.id] : destination},
+		[UI.protocol]            : {[RDF.id] : ATOM.eventTransfer},
 		[UI.portEvent] : {
-			[RDF.type]          : [ATOM.Object, PATCH.Set],
-			[PATCH.property]    : {[RDF.id] : property},
-			[PATCH.value]       : val
+			[RDF.type]             : [ATOM.Object, PATCH.Set],
+			[PATCH.property]       : {[RDF.id] : property},
+			[PATCH.sequenceNumber] : sequence_number(0),
+			[PATCH.value]          : val
+		}
+	};
+	if(SUBJECT) {
+		req[UI.portEvent][PATCH.subject] = {[RDF.id] : SUBJECT}
+	}
+	lv2_write(req);
+}
+
+function lv2_ack(destination, num) {
+	var req = {
+		[RDF.type]               : [ATOM.Object, UI.portNotification],
+		[LV2.symbol] : {
+			[RDF.type]             : [ATOM.String],
+			[RDF.value]            : 'control'
+		},
+		[MOONY.destination]      : {[RDF.id] : destination},
+		[UI.protocol]            : {[RDF.id] : ATOM.eventTransfer},
+		[UI.portEvent] : {
+			[RDF.type]             : [ATOM.Object, PATCH.Ack],
+			[PATCH.sequenceNumber] : sequence_number(num)
+		}
+	};
+	if(SUBJECT) {
+		req[UI.portEvent][PATCH.subject] = {[RDF.id] : SUBJECT}
+	}
+	lv2_write(req);
+}
+
+function lv2_error(destination, num) {
+	var req = {
+		[RDF.type]               : [ATOM.Object, UI.portNotification],
+		[LV2.symbol] : {
+			[RDF.type]             : [ATOM.String],
+			[RDF.value]            : 'control'
+		},
+		[MOONY.destination]      : {[RDF.id] : destination},
+		[UI.protocol]            : {[RDF.id] : ATOM.eventTransfer},
+		[UI.portEvent] : {
+			[RDF.type]             : [ATOM.Object, PATCH.Error],
+			[PATCH.sequenceNumber] : sequence_number(num)
 		}
 	};
 	if(SUBJECT) {
@@ -462,6 +515,8 @@ function lv2_read_event(symbol, obj) {
 			var subject = obj[PATCH.subject];
 			var remove = obj[PATCH.remove];
 			var add = obj[PATCH.add];
+			var seq_num = obj[PATCH.sequenceNumber];
+			var failed = false;
 
 			if(remove && node_is_a(remove, ATOM.Object) && add && node_is_a(add, ATOM.Object)) {
 				for(var key in remove) {
@@ -488,9 +543,8 @@ function lv2_read_event(symbol, obj) {
 							var id = uri.replace(trim, '');
 							$('#' + id).remove();
 						}
-					}
-					else {
-						//TODO
+					} else {
+						failed = true;
 					}
 				}
 
@@ -525,6 +579,7 @@ function lv2_read_event(symbol, obj) {
 					} else {
 						var id = subject[RDF.id].replace(trim, '');
 						var item = $('#' + id);
+
 						if(key == RDFS.label) {
 							item.parent().parent().children('.label').html(value[RDF.value]);
 						} else if(key == RDFS.comment) {
@@ -590,8 +645,20 @@ function lv2_read_event(symbol, obj) {
 							}
 						} else if(key == UNITS.unit) {
 							item.parent().parent().children('.unit').html(format[value[RDF.id]]);
+						} else {
+							failed = true;
 						}
 					}
+				}
+			} else {
+				failed = true;
+			}
+
+			if(seq_num) {
+				if(failed) {
+					lv2_error(MOONY.dsp, seq_num);
+				} else {
+					lv2_ack(MOONY.dsp, seq_num);
 				}
 			}
 		}
@@ -599,7 +666,9 @@ function lv2_read_event(symbol, obj) {
 		{
 			//var subject = obj[PATCH.subject];
 			var property = obj[PATCH.property][RDF.id];
-			var value = obj[PATCH.value]
+			var value = obj[PATCH.value];
+			var seq_num = obj[PATCH.sequenceNumber];
+			var failed = false;
 
 			//TODO check for matching subject
 
@@ -630,6 +699,16 @@ function lv2_read_event(symbol, obj) {
 					} else {
 						item.val(value[RDF.value]);
 					}
+				}
+			} else {
+				failed = true;
+			}
+
+			if(seq_num) {
+				if(failed) {
+					lv2_error(MOONY.dsp, seq_num);
+				} else {
+					lv2_ack(MOONY.dsp, seq_num);
 				}
 			}
 		}

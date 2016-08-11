@@ -284,6 +284,14 @@ _lstateresponder_error(lua_State *L, lforge_t *lforge, moony_t *moony,
 	if(  !lv2_atom_forge_frame_time(lforge->forge, frames)
 		|| !lv2_atom_forge_object(lforge->forge, &obj_frame, 0, moony->uris.patch.error) )
 		luaL_error(L, forge_buffer_overflow);
+
+	if(sequence_num)
+	{
+		if(  !lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence)
+			|| !lv2_atom_forge_int(lforge->forge, sequence_num) )
+			luaL_error(L, forge_buffer_overflow);
+	}
+
 	lv2_atom_forge_pop(lforge->forge, &obj_frame);
 }
 
@@ -295,6 +303,14 @@ _lstateresponder_ack(lua_State *L, lforge_t *lforge, moony_t *moony,
 	if(  !lv2_atom_forge_frame_time(lforge->forge, frames)
 		|| !lv2_atom_forge_object(lforge->forge, &obj_frame, 0, moony->uris.patch.ack) )
 		luaL_error(L, forge_buffer_overflow);
+
+	if(sequence_num)
+	{
+		if(  !lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence)
+			|| !lv2_atom_forge_int(lforge->forge, sequence_num) )
+			luaL_error(L, forge_buffer_overflow);
+	}
+
 	lv2_atom_forge_pop(lforge->forge, &obj_frame);
 }
 
@@ -483,7 +499,8 @@ _lstateresponder__call(lua_State *L)
 						lua_seti(L, -2, moony->uris.rdf_value); // self[property].value = value
 					}
 
-					_lstateresponder_ack(L, lforge, moony, frames, sequence_num);
+					if(sequence_num)
+						_lstateresponder_ack(L, lforge, moony, frames, sequence_num);
 
 					lua_pushboolean(L, 1); // handled
 					return 1;
