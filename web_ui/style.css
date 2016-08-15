@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Hanspeter Portner (dev@open-music-kontrollers.ch)
+ * Copyright (c) 2015-2016 Hanspeter Portner (dev@open-music-kontrollers.ch)
  * 
  * This theme and its accompanying resources are released under a
  * Creative Commons Attribution Share-Alike License 4.0
@@ -100,6 +100,7 @@ body {
 	transition:all .4s;
 	z-index:9999;
 	border-left:2px solid #666;
+	overflow-y:auto;
 }
 .slide-menu h1 {
 	text-shadow:1px 1px 1px #000;
