@@ -61,7 +61,6 @@ color: #404040;\
 color:#00698F;\
 }\
 .ace-chaos .ace_keyword.ace_operator {\
-//moony color:#FF308F;\
 color:#CC0000;\
 }\
 .ace-chaos .ace_constant {\
