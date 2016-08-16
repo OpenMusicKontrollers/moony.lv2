@@ -23,6 +23,7 @@
 @prefix xsd:		<http://www.w3.org/2001/XMLSchema#> .
 
 @prefix moony:	<http://open-music-kontrollers.ch/lv2/moony#> .
+@prefix lic:    <http://opensource.org/licenses/> .
 
 # to please sord_validate
 moony:code
@@ -65,6 +66,8 @@ moony:URID
 	rdfs:range atom:URI .
 
 moony:bank-through_control-through
+	a pset:Preset ;
+	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:code """function run(n, ...)
 	return ...
@@ -72,6 +75,8 @@ end"""
 	] .
 
 moony:bank-through_atom-through
+	a pset:Preset ;
+	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:code """function run(n, seq, forge, ...)
 	for frames, atom in seq:foreach() do
@@ -83,6 +88,8 @@ end"""
 	] .
 
 moony:bank-through_atom-through2
+	a pset:Preset ;
+	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:code """function run(n, seq1, forge1, seq2, forge2)
 	for frames, atom in seq1:foreach() do
@@ -96,6 +103,8 @@ end"""
 	] .
 
 moony:bank-through_atom-through4
+	a pset:Preset ;
+	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:code """function run(n, seq1, forge1, seq2, forge2, seq3, forge3, seq4, forge4)
 	for frames, atom in seq1:foreach() do
@@ -117,6 +126,8 @@ end"""
 	] .
 
 moony:bank-multiplex_atom-multiplex2
+	a pset:Preset ;
+	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:code """function run(n, seq1, forge1, seq2, forge2)
 	for frames, atom in seq1:multiplex(seq2) do
@@ -127,6 +138,8 @@ end"""
 	] .
 
 moony:bank-multiplex_atom-multiplex4
+	a pset:Preset ;
+	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:code """function run(n, seq1, forge1, seq2, forge2, seq3, forge3, seq4, forge4)
 	for frames, atom in seq1:multiplex(seq2, seq3, seq4) do
@@ -139,6 +152,8 @@ end"""
 	] .
 
 moony:bank-midi_midi-responder
+	a pset:Preset ;
+	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:code """midiR = MIDIResponder({
 	[MIDI.NoteOn] = function(self, frames, forge, chan, note, vel)
@@ -157,6 +172,8 @@ end"""
 	] .
 
 moony:bank-time_midi-sequencer
+	a pset:Preset ;
+	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:code """timeR = TimeResponder({
   [Time.speed] = function(self, frames, forge, speed)
@@ -199,6 +216,8 @@ end"""
 	] .
 
 moony:bank-osc_osc-responder
+	a pset:Preset ;
+	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:code """oscR = OSCResponder({
 	['/ping'] = function(self, frames, forge, fmt, ...)
@@ -217,6 +236,8 @@ end"""
 	] .
 
 moony:bank-state_state-responder
+	a pset:Preset ;
+	doap:license lic:Artistic-2.0 ;
 	state:state [
 		<http://open-music-kontrollers.ch/lv2/moony#code> """prefix = 'http://open-music-kontrollers.ch/lv2/moony#'
 urid = {

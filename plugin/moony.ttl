@@ -57,6 +57,7 @@ omk:me
 proj:moony
 	a doap:Project ;
 	doap:maintainer omk:me ;
+	doap:developer omk:me ;
 	doap:name "Moony Bundle" .
 
 # C1XC1 Plugin
