@@ -1511,9 +1511,11 @@ moony_pre(moony_t *moony, LV2_Atom_Sequence *notify)
 	moony->notify_ref = lv2_atom_forge_sequence_head(&moony->notify_forge, &moony->notify_frame, 0);
 }
 
-void
+bool
 moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *notify)
 {
+	bool once = false;
+
 	lua_State *L = moony->vm.L;
 	LV2_Atom_Forge *forge = &moony->notify_forge;
 	LV2_Atom_Forge_Ref ref = moony->notify_ref;
@@ -1626,6 +1628,8 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 							lua_gc(L, LUA_GCSTEP, 0);
 #endif
 						}
+
+						once = true;
 					}
 
 					// apply stash
@@ -1728,6 +1732,8 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 	}
 
 	moony->notify_ref = ref;
+
+	return once;
 }
 
 void

@@ -26,6 +26,7 @@ typedef struct _Handle Handle;
 
 struct _Handle {
 	moony_t moony;
+	bool once;
 
 	unsigned max_val;
 
@@ -87,11 +88,11 @@ connect_port(LV2_Handle instance, uint32_t port, void *data)
 }
 
 static inline void
-_run_period(lua_State *L, Handle *handle, uint32_t nsamples,
+_run_period(lua_State *L, const char *cmd, Handle *handle, uint32_t nsamples,
 	const LV2_Atom_Sequence *control)
 {
 	int top = lua_gettop(L);
-	if(lua_getglobal(L, "run") != LUA_TNIL)
+	if(lua_getglobal(L, cmd) != LUA_TNIL)
 	{
 		lua_pushinteger(L, nsamples);
 
@@ -131,13 +132,19 @@ _run(lua_State *L)
 	{
 		const LV2_Atom_Sequence *control = &handle->stash.seq;
 
-		_run_period(L, handle, handle->stash_nsamples, control);
+		_run_period(L, "run", handle, handle->stash_nsamples, control);
 
 		LV2_ATOM_SEQUENCE_FOREACH(handle->notify, ev)
 			ev->time.frames = 0; // overwrite time stamps
 	}
 
-	_run_period(L, handle, handle->sample_count, handle->control);
+	if(handle->once)
+	{
+		_run_period(L, "once", handle, handle->sample_count, handle->control);
+		handle->once = false;
+	}
+
+	_run_period(L, "run", handle, handle->sample_count, handle->control);
 
 	return 0;
 }
@@ -158,14 +165,15 @@ run(LV2_Handle instance, uint32_t nsamples)
 		if(handle->stashed)
 		{
 			lock_stash_t *stash = &handle->stash;
-			moony_in(&handle->moony, &stash->seq, handle->notify);
+			handle->once = moony_in(&handle->moony, &stash->seq, handle->notify);
 
 			LV2_ATOM_SEQUENCE_FOREACH(handle->notify, ev)
 				ev->time.frames = 0; // overwrite time stamps
 		}
 
 		// handle UI comm
-		moony_in(&handle->moony, handle->control, handle->notify);
+		handle->once = moony_in(&handle->moony, handle->control, handle->notify)
+			|| handle->once;
 
 		// run
 		if(!moony_bypass(&handle->moony))

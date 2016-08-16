@@ -385,16 +385,14 @@ function restore(atom)
   pURI[RDF.value] = Unmap[pURID[RDF.value]]
 end
 
-function run(n, seq, forge, control, notify)
+function once(n, seq, forge, control, notify)
   stateR:register(0, notify)
+end
 
-  run = function(n, seq, forge, control, notify)
-    for frames, atom in control:foreach() do
-      stateR(frames, notify, atom)
-    end
+run = function(n, seq, forge, control, notify)
+  for frames, atom in control:foreach() do
+    stateR(frames, notify, atom)
   end
-
-  run(n, seq, forge, control, notify)
 end""" ;
 		<http://open-music-kontrollers.ch/lv2/moony#state> [
 			<http://open-music-kontrollers.ch/lv2/moony#Bool> true ;

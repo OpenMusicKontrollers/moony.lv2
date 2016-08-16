@@ -303,7 +303,7 @@ int moony_init(moony_t *moony, const char *subject, double sample_rate,
 void moony_deinit(moony_t *moony);
 void moony_open(moony_t *moony, lua_State *L, bool use_assert);
 void moony_pre(moony_t *moony, LV2_Atom_Sequence *notify);
-void moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *notify);
+bool moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *notify);
 void moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames);
 const void* extension_data(const char* uri);
 void *moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type, bool cache);
