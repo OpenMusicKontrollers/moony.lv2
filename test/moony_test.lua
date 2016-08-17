@@ -409,6 +409,58 @@ do
 	test(producer, consumer)
 end
 
+local function consumer_chunk(seq, c, atype)
+	assert(#seq == 3)
+
+	local atom = seq[1]
+	assert(atom.type == atype)
+	assert(type(atom.body) == 'string')
+	assert(#atom == #c)
+	assert(#atom.body == #c)
+	assert(atom.body:byte(0) == nil)
+	assert(atom.body:byte(1, 6) == 0x01, 0x02, 0x03, 0x04, 0x05, 0x06)
+	assert(atom.body:byte(7) == nil)
+
+	atom = seq[2]
+	assert(atom.type == atype)
+	assert(#atom == #c)
+	assert(atom[0] == nil)
+	assert(atom[1] == 0x01)
+	assert(atom[2] == 0x02)
+	assert(atom[3] == 0x03)
+	assert(atom[4] == 0x04)
+	assert(atom[5] == 0x05)
+	assert(atom[6] == 0x06)
+	assert(atom[7] == nil)
+
+	local c1, c2, c3, c4, c5, c6 = atom:unpack()
+	assert(c1 == c[1])
+	assert(c2 == c[2])
+	assert(c3 == c[3])
+	assert(c4 == c[4])
+	assert(c5 == c[5])
+	assert(c6 == c[6])
+
+	c1, c2 = atom:unpack(1, 2)
+	c4, c5, c6 = atom:unpack(4, 6)
+	assert(c1 == c[1])
+	assert(c2 == c[2])
+	assert(c3 == c[3])
+	assert(c4 == c[4])
+	assert(c5 == c[5])
+	assert(c6 == c[6])
+
+	assert(atom:unpack(-1) == atom:unpack(0))
+	assert(atom:unpack(0) == atom:unpack(1))
+	
+	assert(#{atom:unpack()} == #{atom:unpack(-100, 100)})
+	assert(#{atom:unpack(1, 2)} == #{atom:unpack(2, 3)})
+
+	atom = seq[3]
+	assert(atom.type == atype)
+	assert(atom.body == string.char(table.unpack(c)))
+end
+
 -- Chunk
 print('[test] Chunk')
 do
@@ -426,55 +478,31 @@ do
 	end
 
 	local function consumer(seq)
-		assert(#seq == 3)
+		consumer_chunk(seq, c, Atom.Chunk)
+	end
 
-		local atom = seq[1]
-		assert(atom.type == Atom.Chunk)
-		assert(type(atom.body) == 'string')
-		assert(#atom == #c)
-		assert(#atom.body == #c)
-		assert(atom.body:byte(0) == nil)
-		assert(atom.body:byte(1, 6) == 0x01, 0x02, 0x03, 0x04, 0x05, 0x06)
-		assert(atom.body:byte(7) == nil)
+	test(producer, consumer)
+end
 
-		atom = seq[2]
-		assert(atom.type == Atom.Chunk)
-		assert(#atom == #c)
-		assert(atom[0] == nil)
-		assert(atom[1] == 0x01)
-		assert(atom[2] == 0x02)
-		assert(atom[3] == 0x03)
-		assert(atom[4] == 0x04)
-		assert(atom[5] == 0x05)
-		assert(atom[6] == 0x06)
-		assert(atom[7] == nil)
+-- Raw 
+print('[test] Raw')
+do
+	local u = Map['http://open-music-kontrollers.ch/lv2/moony#raw']
+	local c = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06}
 
-		local c1, c2, c3, c4, c5, c6 = atom:unpack()
-		assert(c1 == c[1])
-		assert(c2 == c[2])
-		assert(c3 == c[3])
-		assert(c4 == c[4])
-		assert(c5 == c[5])
-		assert(c6 == c[6])
+	local function producer(forge)
+		forge:frame_time(0)
+		forge:raw(u, c)
 
-		c1, c2 = atom:unpack(1, 2)
-		c4, c5, c6 = atom:unpack(4, 6)
-		assert(c1 == c[1])
-		assert(c2 == c[2])
-		assert(c3 == c[3])
-		assert(c4 == c[4])
-		assert(c5 == c[5])
-		assert(c6 == c[6])
+		forge:frame_time(0)
+		forge:raw(u, string.char(table.unpack(c)))
 
-		assert(atom:unpack(-1) == atom:unpack(0))
-		assert(atom:unpack(0) == atom:unpack(1))
-		
-		assert(#{atom:unpack()} == #{atom:unpack(-100, 100)})
-		assert(#{atom:unpack(1, 2)} == #{atom:unpack(2, 3)})
+		forge:frame_time(0)
+		forge:raw(u, table.unpack(c))
+	end
 
-		atom = seq[3]
-		assert(atom.type == Atom.Chunk)
-		assert(atom.body == string.char(table.unpack(c)))
+	local function consumer(seq)
+		consumer_chunk(seq, c, u)
 	end
 
 	test(producer, consumer)

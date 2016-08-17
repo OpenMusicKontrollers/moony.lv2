@@ -436,6 +436,19 @@ _lforge_midi(lua_State *L)
 	return 1;
 }
 
+static int
+_lforge_raw(lua_State *L)
+{
+	lforge_t *lforge = lua_touserdata(L, 1);
+	const LV2_URID type = luaL_checkinteger(L, 2);
+
+	if(!_lforge_basic_bytes(L, 3, lforge->forge, type))
+		luaL_error(L, forge_buffer_overflow);
+
+	lua_settop(L, 1);
+	return 1;
+}
+
 static inline uint64_t
 _lforge_to_timetag(lua_State *L, moony_t *moony, lforge_t *lforge, int pos)
 {
@@ -1151,6 +1164,7 @@ const luaL_Reg lforge_mt [] = {
 
 	{"chunk", _lforge_chunk},
 	{"midi", _lforge_midi},
+	{"raw", _lforge_raw},
 	{"bundle", _lforge_osc_bundle},
 	{"message", _lforge_osc_message},
 	{"tuple", _lforge_tuple},
