@@ -13,17 +13,18 @@
 # along the source as a COPYING file. If not, obtain it from
 # http://www.perlfoundation.org/artistic_license_2_0.
 
-@prefix atom:		<http://lv2plug.in/ns/ext/atom#> .
-@prefix lv2:		<http://lv2plug.in/ns/lv2core#> .
-@prefix pset:		<http://lv2plug.in/ns/ext/presets#> .
-@prefix midi:		<http://lv2plug.in/ns/ext/midi#> .
-@prefix rdf:		<http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix rdfs:		<http://www.w3.org/2000/01/rdf-schema#> .
-@prefix state:	<http://lv2plug.in/ns/ext/state#> .
-@prefix xsd:		<http://www.w3.org/2001/XMLSchema#> .
+@prefix doap: <http://usefulinc.com/ns/doap#> .
+@prefix atom: <http://lv2plug.in/ns/ext/atom#> .
+@prefix lv2: <http://lv2plug.in/ns/lv2core#> .
+@prefix pset: <http://lv2plug.in/ns/ext/presets#> .
+@prefix midi: <http://lv2plug.in/ns/ext/midi#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix state: <http://lv2plug.in/ns/ext/state#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-@prefix moony:	<http://open-music-kontrollers.ch/lv2/moony#> .
-@prefix lic:    <http://opensource.org/licenses/> .
+@prefix moony: <http://open-music-kontrollers.ch/lv2/moony#> .
+@prefix lic: <http://opensource.org/licenses/> .
 
 # to please sord_validate
 moony:code
