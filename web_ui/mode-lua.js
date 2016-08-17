@@ -40,10 +40,12 @@ var LuaHighlightRules = function() {
 				"rad|random|randomseed|sin|sqrt|tan|tointeger|type|ult|"+
 				// moony forge
 				"frame_time|beat_time|time|atom|int|long|float|double|bool|urid|string|literal|uri|path|"+
-				"chunk|midi|bundle|message|tuple|object|key|property|vector|sequence|"+
+				"chunk|midi|raw|bundle|message|tuple|object|key|property|vector|sequence|"+
 				"typed|get|set|put|patch|remove|add|pop|"+
+				// moony common
+				"foreach|unpack|clone|stash|apply|register|"+
 				// moony sequence
-				"foreach|unpack|new|stash|apply|register|multiplex|"+
+				"multiplex|"+
 				// moony stash
 				"write|read");
 
@@ -72,7 +74,18 @@ var LuaHighlightRules = function() {
 				// moony RDFS
 				"label|range|comment|"+
 				// moony Units
-				"Conversion|Unit|bar|beat|bpm|cent|cm|coef|conversion|db|degree|frame|hz|inch|khz|km|m|mhz|midiNote|mile|min|mm|ms|name|oct|pc|prefixConversion|render|s|semitone12TET|symbol|unit");
+				"Conversion|Unit|bar|beat|bpm|cent|cm|coef|conversion|db|degree|frame|hz|inch|khz|km|m|mhz|midiNote|mile|min|mm|ms|name|oct|pc|prefixConversion|render|s|semitone12TET|symbol|unit|"+
+
+				// moony common
+				"type|body|"+
+				// moony sequence
+				"unit|pad|"+
+				// moony object
+				"id|otype|"+
+				// moony vector
+				"child_type|child_size|"+
+				// moony literal
+				"datatype|lang");
 
     var libraries = (
 				// Lua
