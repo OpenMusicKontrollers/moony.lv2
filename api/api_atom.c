@@ -587,6 +587,19 @@ const latom_driver_t latom_object_driver = {
 };
 
 static int
+_latom_seq__indexk(lua_State *L, latom_t *latom)
+{
+	const char *key = lua_tostring(L, 2);
+	if(!strcmp(key, "unit"))
+		lua_pushinteger(L, latom->body.seq->unit);
+	else if(!strcmp(key, "pad"))
+		lua_pushinteger(L, latom->body.seq->pad);
+	else
+		lua_pushnil(L);
+	return 1;
+}
+
+static int
 _latom_seq__indexi(lua_State *L, latom_t *latom)
 {
 	int index = lua_tointeger(L, 2); // indexing start from 1
@@ -761,6 +774,7 @@ _latom_seq_foreach(lua_State *L)
 }
 
 const latom_driver_t latom_sequence_driver = {
+	.__indexk = _latom_seq__indexk,
 	.__indexi = _latom_seq__indexi,
 	.__len = _latom_seq__len,
 	.__tostring = _latom_seq__tostring,

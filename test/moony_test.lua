@@ -1030,6 +1030,8 @@ do
 		assert(#seq == 2)
 		local subseq = seq[1]
 		assert(subseq.type == Atom.Sequence)
+		assert(subseq.pad == 0)
+		assert(subseq.unit == Atom.beatTime)
 		assert(#subseq == 2)
 
 		for frames, atom in subseq:foreach() do
@@ -1039,6 +1041,9 @@ do
 		end
 
 		subseq = seq[2]
+		assert(subseq.type == Atom.Sequence)
+		assert(subseq.pad == 0)
+		assert(subseq.unit == 0)
 		assert(#subseq == 0)
 		assert(subseq[0] == nil)
 		assert(subseq[1] == nil)
@@ -1576,7 +1581,6 @@ do
 
 	local i = 0
 	for frames, atom, seq in stash1:multiplex(stash2) do
-		print(frames, i)
 		assert(frames == i)
 		assert(atom.type == Atom.Int)
 		assert(atom.body == i)
