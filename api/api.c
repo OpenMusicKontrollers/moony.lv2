@@ -931,12 +931,6 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	latom_driver_hash[pos].type = moony->forge.Sequence;
 	latom_driver_hash[pos++].driver = &latom_sequence_driver;
 
-	latom_driver_hash[pos].type = moony->forge.Chunk;
-	latom_driver_hash[pos++].driver = &latom_chunk_driver;
-
-	latom_driver_hash[pos].type = moony->uris.midi_event;
-	latom_driver_hash[pos++].driver = &latom_chunk_driver;
-
 	assert(pos++ == DRIVER_HASH_MAX);
 	qsort(latom_driver_hash, DRIVER_HASH_MAX, sizeof(latom_driver_hash_t), _hash_sort);
 	

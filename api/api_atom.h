@@ -177,7 +177,7 @@ _latom_driver(moony_t *moony, LV2_URID type)
 		}
 	}
 
-	return NULL;
+	return &latom_chunk_driver;
 }
 
 static void

@@ -181,7 +181,7 @@ struct _latom_driver_hash_t {
 };
 
 #define UDATA_OFFSET (LUA_RIDX_LAST + 1)
-#define DRIVER_HASH_MAX 17
+#define DRIVER_HASH_MAX 15
 
 // from moony.c
 typedef struct _patch_t patch_t;
