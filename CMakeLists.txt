@@ -87,6 +87,7 @@ if(BUILD_WEB_UI)
 	endif()
 
 	configure_file(${PROJECT_SOURCE_DIR}/web_ui/index.html.in ${PROJECT_BINARY_DIR}/index.html)
+	configure_file(${PROJECT_SOURCE_DIR}/web_ui/manual.html.in ${PROJECT_BINARY_DIR}/manual.html)
 
 	add_library(moony_web MODULE
 		cJSON/cJSON.c
@@ -98,6 +99,7 @@ if(BUILD_WEB_UI)
 	set_target_properties(moony_web PROPERTIES PREFIX "")
 	install(TARGETS moony_web DESTINATION ${PLUGIN_DEST})
 	install(FILES ${PROJECT_BINARY_DIR}/index.html DESTINATION ${PLUGIN_DEST}/web_ui)
+	install(FILES ${PROJECT_BINARY_DIR}/manual.html DESTINATION ${PLUGIN_DEST}/web_ui)
 	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/libreJS.html DESTINATION ${PLUGIN_DEST}/web_ui)
 	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/favicon.png DESTINATION ${PLUGIN_DEST}/web_ui)
 	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/jquery-3.1.0.min.js DESTINATION ${PLUGIN_DEST}/web_ui)

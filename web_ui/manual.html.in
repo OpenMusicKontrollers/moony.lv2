@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Moony Manual</title>
+	<meta name="author" content="Hanspeter Portner" />
+	<meta charset="UTF-8" />
+	<link rel="icon" type="image/png" href="/favicon.png" />
+	<link rel="stylesheet" type="text/css" href="style.css" />
+	<script type="text/javascript" src="jquery-3.1.0.min.js" charset="utf-8"></script>
+	<script type="text/javascript" src="ace.js" charset="utf-8"></script>
+</head>
+
+<body>
+
+<div class="api-menu">
+	<h1>moony - manual</h1>
+	<h4>v@MOONY_VERSION@</h4>
+
+	<ul>
+		<li><a href="#introduction">Introduction</a>
+		</li>
+
+		<li><a href="#variants">Plugin Variants</a>
+			<ul>
+				<li><a href="#variants-c1xc1">C1 x C1</a></li>
+				<li><a href="#variants-c2xc2">C2 x C2</a></li>
+				<li><a href="#variants-c4xc4">C4 x C4</a></li>
+				<li><a href="#variants-a1xa1">A1 x A1</a></li>
+				<li><a href="#variants-a2xa2">A2 x A2</a></li>
+				<li><a href="#variants-a4xa4">A4 x A4</a></li>
+				<li><a href="#variants-c1a1xc1a1">C1+A1 x C1+A1</a></li>
+				<li><a href="#variants-c2a1xc2a1">C2+A1 x C2+A1</a></li>
+				<li><a href="#variants-c4a1xc4a1">C4+A1 x C4+A1</a></li>
+			</ul>
+		</li>
+
+		<li><a href="#log-and-debug">Log &amp; Debug</a>
+		</li>
+
+		<li><a href="#callbacks">Callbacks</a>
+			<ul>
+				<li><a href="#callbacks-run">run</a>
+				<li><a href="#callbacks-once">once</a>
+				<li><a href="#callbacks-stash">stash</a>
+				<li><a href="#callbacks-apply">apply</a>
+				<li><a href="#callbacks-save">save</a>
+				<li><a href="#callbacks-restore">restore</a>
+			</ul>
+		</li>
+
+		<li><a href="#license">License</a>
+		</li>
+	</ul>
+</div>
+
+<div class="api-content">
+
+	<h1 id="introduction">Introduction</h1>
+		<p>The design goal of the plugin bundle was to create a tool to easily add realtime programmable logic glue in LV2 plugin graphs.</p>
+
+		<p>To have plugins which do a specific task efficiently is great, especially for audio plugins. LV2 stands apart from other audio plugin specifications with its extentable event system based on Atoms. As events can be much more varied in nature and represent pretty much anything (NOT ONLY MIDI), it would be useful to have a tool to create arbitrary event filters for a given setup on-the-fly.</p>
+
+		<p>For a given setup, one may need a special event filter only once and it seems to be overkill to write a native LV2 event filter in C/C++ just for that. It would also be nice to have a tool for fast prototyping of new event filters.</p>
+
+		<p>A scripting language seems to be ideal for these cases, where the user can write an event filter on a higher level of abstraction on-the-fly. The scripting language needs to be realtime safe, though, which restricts the choices dramatically.</p>
+
+		<p>One such scripting language is Lua. It is small, fast, easily embeddable and realtime-safe if coupled to a realtime-safe memory allocator like TLSF.</p>
+
+		<p>The Moony plugins can handle LV2 control and atom event ports, only. They do not handle LV2 audio ports. They may eventually handle LV2 control-voltage ports in the future, though. Control port values are internally handled as simple floating point numbers, whereas the atom event ports build on top of the LV2 atom and atom forge C headers.</p>
+
+	<h1 id="variants">Plugin Variants</h1>
+		<p>...</p>
+
+		<h2 id="variants-c1xc1">C1 x C1</h2>
+		<p>...</p>
+
+		<h2 id="variants-c2xc2">C2 x C2</h2>
+		<p>...</p>
+
+		<h2 id="variants-c4xc4">C4 x C4</h2>
+		<p>...</p>
+
+		<h2 id="variants-a1xa1">A1 x A1</h2>
+		<p>...</p>
+
+		<h2 id="variants-a2xa2">A2 x A2</h2>
+		<p>...</p>
+
+		<h2 id="variants-a4xa4">A4 x A4</h2>
+		<p>...</p>
+
+		<h2 id="variants-c1a1xc1a1">C1+A1 x C1+A1</h2>
+		<p>...</p>
+
+		<h2 id="variants-c2a1xc2a1">C2+A1 x C2+A1</h2>
+		<p>...</p>
+
+		<h2 id="variants-c4a1xc4a1">C4+A1 x C4+A1</h2>
+		<p>...</p>
+
+	<h1 id="log-and-debug">Log &amp; Debug</h1>
+		<p>Whener you want to log or debug something while developing your scripts, you can easily dump any value via Lua's <b>print</b> function. The print's output will be shown on the UI and also be sent to the host's log backend, e.g. to a log window or console.</p>
+
+		<a class="api-snippet" href="#snippet-print" data-snippet="snippet-print">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-print">-- sends 'hello world' to the UI and the host's log backend
+
+print('hello world')</code></pre>
+
+	<h1 id="callbacks">Callbacks</h1>
+		<h2 id="callbacks-run">run</h2>
+		<p>...</p>
+
+		<a class="api-snippet" href="#snippet-run" data-snippet="snippet-run">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-run">-- 'run' callback prototype for moony#a1xa1
+
+function run(n, seq, forge, control, notify)
+	-- here we will process events
+end</code></pre>
+
+		<h2 id="callbacks-once">once</h2>
+		<p>...</p>
+
+		<h2 id="callbacks-stash">stash</h2>
+		<p>...</p>
+
+		<h2 id="callbacks-apply">apply</h2>
+		<p>...</p>
+
+		<h2 id="callbacks-save">save</h2>
+		<p>...</p>
+
+		<h2 id="callbacks-restore">restore</h2>
+		<p>...</p>
+
+	<h1 id="license">License</h1>
+		<p>Copyright &copy; 2015-2016 Hanspeter Portner
+		(<a href="mailto:dev@open-music-kontrollers.ch">dev@open-music-kontrollers.ch</a>)</p>
+
+		<p>This is free software: you can redistribute it and/or modify
+		it under the terms of the Artistic License 2.0 as published by
+		The Perl Foundation.</p>
+
+		<p>This source is distributed in the hope that it will be useful,
+		but WITHOUT ANY WARRANTY; without even the implied warranty of
+		MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+		Artistic License 2.0 for more details.</p>
+
+		<p>You should have received a copy of the Artistic License 2.0
+		along the source as a COPYING file. If not, obtain it from
+		<a href="http://www.perlfoundation.org/artistic_license_2_0"> http://www.perlfoundation.org/artistic_license_2_0</a>.</p>
+
+<div class="api-editor">
+	<div id="editor">-- moony manual
+	
+-- load a code snippet from the left!</div>
+</div>
+
+<script type="text/javascript">
+	// @license magnet:?xt=urn:btih:54fd2283f9dbdf29466d2df1a98bf8f65cafe314&dn=artistic-2.0.txt Artistic-2.0
+	$(document).ready(function() {
+		// configure editor
+		var session = null;
+		editor = ace.edit("editor");
+		session = editor.getSession();
+
+		editor.setTheme("ace/theme/chaos");
+		editor.setReadOnly(true);
+		session.setUseWorker(false);
+		session.setMode("ace/mode/lua");
+
+		editor.$blockScrolling = Infinity
+		editor.setOptions({
+			minLines: 1,
+			maxLines: Infinity,
+			showPrintMargin: false,
+			fontSize: 14,
+			tabSize: 2,
+			displayIndentGuides: false
+		});
+
+		// show editor container
+		$('.api-editor').show();
+
+		// show snippet links
+		$('.api-snippet').show();
+
+		// hide code snippets
+		$('.api-hidden').hide();
+
+		// wire snippet links with code editor
+		$('.api-snippet').on('click', function(e) {
+			var snippet_id = $(this).data('snippet');
+			if(snippet_id) {
+				var snippet_body = $('#'+snippet_id).html();
+				if(snippet_body) {
+					editor.setValue(snippet_body);
+					editor.clearSelection();
+				}
+			}
+			e.preventDefault();
+		});
+	});
+	// @license-end
+</script>
+
+</html>
