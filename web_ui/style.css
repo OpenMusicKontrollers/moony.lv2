@@ -7,7 +7,7 @@
 
 @font-face {
 	font-family:"Chango";
-	src:url("/Chango-Regular.ttf") format("truetype");
+	src:url("./Chango-Regular.ttf") format("truetype");
 	font-weight:bold;
 	font-style:normal;
 }
