@@ -90,6 +90,8 @@ pages:
     - cp web_ui/style.css public/.
     - cp web_ui/jquery*.js public/.
     - cp web_ui/ace.js public/.
+    - cp web_ui/mode-lua.js public/.
+    - cp web_ui/theme-chaos.js public/.
   artifacts:
     paths:
       - public/
