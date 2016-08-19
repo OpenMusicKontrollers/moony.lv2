@@ -93,6 +93,7 @@ pages:
     - cp web_ui/mode-lua.js public/.
     - cp web_ui/theme-chaos.js public/.
     - cp web_ui/Chango-Regular.ttf public/.
+    - cp web_ui/favicon.png public/.
   artifacts:
     paths:
       - public/
