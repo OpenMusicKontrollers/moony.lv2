@@ -100,7 +100,7 @@
 		<p>...</p>
 
 	<h1 id="log-and-debug">Log &amp; Debug</h1>
-		<p>Whener you want to log or debug something while developing your scripts, you can easily dump any value via Lua's <b>print</b> function. The print's output will be shown on the UI and also be sent to the host's log backend, e.g. to a log window or console.</p>
+		<p>Whenever you want to log or debug something while developing your scripts, you can easily dump any value via Lua's <b>print</b> function. The print's output will be shown on the UI and also be sent to the host's log backend, e.g. to a log window or console.</p>
 
 		<a class="api-snippet" href="#snippet-print" data-snippet="snippet-print">&rArr; show snippet</a>
 		<pre class="api-hidden"><code id="snippet-print">-- sends 'hello world' to the UI and the host's log backend
