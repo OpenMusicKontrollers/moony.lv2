@@ -199,10 +199,17 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 				goto try_to_reuse;
 			}
 
-			/* this server has no concept of directories */
-			if(strchr(in_str+ 1, '/'))
+			// skip root slash if present
+			if(in_str[0] == '/')
 			{
-				lws_return_http_status(wsi, HTTP_STATUS_FORBIDDEN, NULL);
+				in_str++;
+				len--;
+			}
+
+			/* this server has no concept of directories */
+			if(strchr(in_str, '/'))
+			{
+				lws_return_http_status(wsi, HTTP_STATUS_NOT_ACCEPTABLE, NULL);
 
 				goto try_to_reuse;
 			}
@@ -211,9 +218,9 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 			if(lws_hdr_total_length(wsi, WSI_TOKEN_POST_URI))
 				return 0;
 
-			const char *file_path= strcmp(in_str, "/")
+			const char *file_path = len > 0
 				? in_str
-				: "/index.html";
+				: "index.html";
 
 			/* refuse to serve files we don't understand */
 			const char *mimetype = get_mimetype(file_path);
@@ -221,6 +228,7 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 			{
 				lwsl_err("Unknown mimetype for %s\n", file_path);
 				lws_return_http_status(wsi, HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE, NULL);
+
 				return -1;
 			}
 
@@ -233,9 +241,10 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 #endif
 
 			char *full_path;
-			if(asprintf(&full_path, "%s%sweb_ui%s%s", ui->bundle_path, sep, sep2, &file_path[1]) == -1)
+			if(asprintf(&full_path, "%s%sweb_ui%s%s", ui->bundle_path, sep, sep2, file_path) == -1)
 			{
 				lws_return_http_status(wsi, HTTP_STATUS_NOT_FOUND, NULL);
+
 				return -1;
 			}
 
@@ -243,7 +252,9 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 			free(full_path);
 
 			if( (n < 0) || ( (n > 0) && lws_http_transaction_completed(wsi)))
+			{
 				return -1; /* error or can't reuse connection: close the socket */
+			}
 
 			// we'll get a LWS_CALLBACK_HTTP_FILE_COMPLETION callback asynchronously
 			break;
@@ -1014,6 +1025,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 
 	// LWS
 	lws_set_log_level(0, NULL);
+	//lws_set_log_level( (1 << LLL_COUNT) - 1, NULL);
 
 	struct lws_context_creation_info info;
 	memset(&info, 0x0, sizeof(info));
