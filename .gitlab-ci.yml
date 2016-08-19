@@ -81,3 +81,15 @@ pack:
     name: "${BASE_NAME}-$(cat VERSION)"
     paths:
       - "${BASE_NAME}-$(cat VERSION)/"
+
+pages:
+  stage: deploy
+  script:
+    - mkdir -p public
+    - sed -e "s/@MOONY_VERSION@/$(cat VERSION)/g" web_ui/manual.html > public.index.html
+    - cp web_ui/style.css public/.
+    - cp web_ui/jquery*.js public/.
+    - cp web_ui/ace.js public/.
+  artifacts:
+    paths:
+      - public/
