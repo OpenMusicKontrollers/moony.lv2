@@ -40,12 +40,12 @@
 
 		<li><a href="#callbacks">Callbacks</a>
 			<ul>
-				<li><a href="#callbacks-run">run</a>
-				<li><a href="#callbacks-once">once</a>
-				<li><a href="#callbacks-stash">stash</a>
-				<li><a href="#callbacks-apply">apply</a>
-				<li><a href="#callbacks-save">save</a>
-				<li><a href="#callbacks-restore">restore</a>
+				<li><a href="#callbacks-run">run</a></li>
+				<li><a href="#callbacks-once">once</a></li>
+				<li><a href="#callbacks-stash">stash</a></li>
+				<li><a href="#callbacks-apply">apply</a></li>
+				<li><a href="#callbacks-save">save</a></li>
+				<li><a href="#callbacks-restore">restore</a></li>
 			</ul>
 		</li>
 

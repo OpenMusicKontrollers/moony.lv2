@@ -195,6 +195,25 @@ install(FILES ${PROJECT_SOURCE_DIR}/plugin/presets.ttl DESTINATION ${PLUGIN_DEST
 include(CTest)
 
 if(${BUILD_TESTING})
+	find_program(XSLTPROC NAMES xsltproc)
+	if(XSLTPROC_NOTFOUND)
+		message(SEND_ERROR "xsltproc not found")
+	else(XSLTPROC_NOTFOUND)
+		message(STATUS "xsltproc found: " ${XSLTPROC})
+	endif(XSLTPROC_NOTFOUND)
+
+	add_custom_command(
+		OUTPUT ${PROJECT_BINARY_DIR}/moony_manual.lua
+		COMMAND ${XSLTPROC} ARGS
+			"--html"
+			"--output" ${PROJECT_BINARY_DIR}/moony_manual.lua
+			${PROJECT_SOURCE_DIR}/web_ui/manual.xslt
+			${PROJECT_BINARY_DIR}/manual.html
+		DEPENDS
+			${PROJECT_SOURCE_DIR}/web_ui/manual.xslt
+			${PROJECT_BINARY_DIR}/manual.html)
+		add_custom_target(MOONY_MANUAL_TEST ALL DEPENDS ${PROJECT_BINARY_DIR}/moony_manual.lua)
+
 	add_executable(moony_test
 		test/moony_test.c
 		$<TARGET_OBJECTS:api>
@@ -215,6 +234,7 @@ if(${BUILD_TESTING})
 		add_test(NAME API-Test COMMAND ${QEMU} moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
 	else()
 		add_test(NAME API-Test COMMAND moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
+		add_test(NAME Manual-Test COMMAND moony_test ${PROJECT_BINARY_DIR}/moony_manual.lua)
 	endif()
 endif()
 

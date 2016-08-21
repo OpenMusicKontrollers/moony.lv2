@@ -28,6 +28,9 @@ stages:
 
 .test_template: &test_definition
   <<: *common_definition
+  before_script:
+    - apt-get update
+    - apt-get install -y -q xsltproc
   script:
     - mkdir build
     - pushd build
