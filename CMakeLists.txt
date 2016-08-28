@@ -231,26 +231,12 @@ if(${BUILD_TESTING})
 
 	if(DEFINED WINE)
 		add_test(NAME API-Test COMMAND ${WINE} moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
+		add_test(NAME Manual-Test COMMAND ${WINE} moony_test ${PROJECT_BINARY_DIR}/moony_manual.lua)
 	elseif(DEFINED QEMU)
 		add_test(NAME API-Test COMMAND ${QEMU} moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
+		add_test(NAME Manual-Test COMMAND ${QEMU} moony_test ${PROJECT_BINARY_DIR}/moony_manual.lua)
 	else()
 		add_test(NAME API-Test COMMAND moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
 		add_test(NAME Manual-Test COMMAND moony_test ${PROJECT_BINARY_DIR}/moony_manual.lua)
 	endif()
 endif()
-
-# CPack
-set(CPACK_GENERATOR "ZIP")
-
-set(CPACK_PACKAGE_NAME "moony-lv2")
-set(CPACK_PACKAGE_VERSION "${MOONY_VERSION}")
-SET(CPACK_PACKAGE_VERSION_MAJOR ${MOONY_MAJOR_VERSION})
-SET(CPACK_PACKAGE_VERSION_MINOR ${MOONY_MINOR_VERSION})
-SET(CPACK_PACKAGE_VERSION_PATCH ${MOONY_MICRO_VERSION})
-set(CPACK_PACKAGE_CONTACT "Hanspeter Portner <dev@open-music-kontrollers.ch>")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Realtime Lua as programmable glue in LV2")
-SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/README.md")
-SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/COPYING")
-SET(CPACK_STRIP_FILES "lib/lv2/moony.lv2/moony.so;lib/lv2/moony.lv2/moon_ui.so;lib/lv2/moony.lv2/moony_simple.so;lib/lv2/moony.lv2/moony_web.so")
-
-include(CPack)
