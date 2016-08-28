@@ -244,6 +244,7 @@ moony:bank-state_state-responder
 	state:state [
 		<http://open-music-kontrollers.ch/lv2/moony#code> """local urid = HashMap('urn:moony:stateR#')
 
+local pLong
 local pInt = {
   [RDFS.label] = 'Integer',
   [RDFS.comment] = 'This is an Integer',
@@ -261,7 +262,7 @@ local pInt = {
   end
 }
 
-local pLong = {
+pLong = {
   [RDFS.label] = 'Long',
   [RDFS.comment] = 'This is a Long',
   [RDFS.range] = Atom.Long,
@@ -271,6 +272,7 @@ local pLong = {
   [RDF.value] = pInt[RDF.value] * 2
 }
 
+local pDouble
 local pFloat = {
   [RDFS.label] = 'Float',
   [RDFS.comment] = 'This is a Float',
@@ -288,7 +290,7 @@ local pFloat = {
   end
 }
 
-local pDouble = {
+pDouble = {
   [RDFS.label] = 'Double',
   [RDFS.comment] = 'This is a Double',
   [RDFS.range] = Atom.Double,
@@ -305,6 +307,7 @@ local pBool = {
   [RDF.value] = true
 }
 
+local pURI
 local pURID = {
   [RDFS.label] = 'URID',
   [RDFS.comment] = 'This is an URID',
@@ -319,7 +322,7 @@ local pURID = {
   end
 }
 
-local pURI = {
+pURI = {
   [RDFS.label] = 'URI',
   [RDFS.comment] = 'This is an URI',
   [RDFS.range] = Atom.URI,
