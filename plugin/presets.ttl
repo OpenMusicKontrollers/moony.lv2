@@ -25,6 +25,7 @@
 
 @prefix moony: <http://open-music-kontrollers.ch/lv2/moony#> .
 @prefix lic: <http://opensource.org/licenses/> .
+@prefix stateR: <urn:moony:stateR#> .
 
 # to please sord_validate
 moony:code
@@ -33,35 +34,36 @@ moony:code
 moony:state
 	a rdf:Property ;
 	rdfs:label "Lua code state" .
-moony:Bool
+
+stateR:Bool
 	a lv2:Parameter ;
 	rdfs:label "A Bool" ;
 	rdfs:range atom:Bool .
-moony:Chunk
+stateR:Chunk
 	a lv2:Parameter ;
 	rdfs:label "A Chunk" ;
 	rdfs:range atom:Chunk .
-moony:Enum
+stateR:Enum
 	a lv2:Parameter ;
 	rdfs:label "An Enum" ;
 	rdfs:range atom:Int .
-moony:Float
+stateR:Float
 	a lv2:Parameter ;
 	rdfs:label "A Float" ;
 	rdfs:range atom:Float .
-moony:Int
+stateR:Int
 	a lv2:Parameter ;
 	rdfs:label "An Int" ;
 	rdfs:range atom:Int .
-moony:Path
+stateR:Path
 	a lv2:Parameter ;
 	rdfs:label "A Path" ;
 	rdfs:range atom:Path .
-moony:String
+stateR:String
 	a lv2:Parameter ;
 	rdfs:label "A String" ;
 	rdfs:range atom:String .
-moony:URID
+stateR:URID
 	a lv2:Parameter ;
 	rdfs:label "A URID" ;
 	rdfs:range atom:URI .
@@ -156,7 +158,7 @@ moony:bank-midi_midi-responder
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
-		moony:code """midiR = MIDIResponder({
+		moony:code """local midiR = MIDIResponder({
 	[MIDI.NoteOn] = function(self, frames, forge, chan, note, vel)
 		forge:time(frames):midi(MIDI.NoteOn | chan, note, vel)
 	end,
@@ -176,7 +178,7 @@ moony:bank-time_midi-sequencer
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
-		moony:code """timeR = TimeResponder({
+		moony:code """local timeR = TimeResponder({
   [Time.speed] = function(self, frames, forge, speed)
     self.rolling = speed > 0.0
     if not self.rolling and forge then
@@ -220,7 +222,7 @@ moony:bank-osc_osc-responder
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
-		moony:code """oscR = OSCResponder({
+		moony:code """local oscR = OSCResponder({
 	['/ping'] = function(self, frames, forge, fmt, ...)
 		forge:time(frames):message('/pong', fmt, ...)
 	end,
@@ -240,22 +242,9 @@ moony:bank-state_state-responder
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
-		<http://open-music-kontrollers.ch/lv2/moony#code> """prefix = 'http://open-music-kontrollers.ch/lv2/moony#'
-urid = {
-  pInt = Map[prefix .. 'Int'],
-  pLong = Map[prefix .. 'Long'],
-  pFloat = Map[prefix .. 'Float'],
-  pDouble = Map[prefix .. 'Double'],
-  pBool = Map[prefix .. 'Bool'],
-  pURID = Map[prefix .. 'URID'],
-  pURI = Map[prefix .. 'URI'],
-  pString = Map[prefix .. 'String'],
-  pChunk = Map[prefix .. 'Chunk'],
-  pPath = Map[prefix .. 'Path'],
-  pEnum = Map[prefix .. 'Enum']
-}
+		<http://open-music-kontrollers.ch/lv2/moony#code> """local urid = HashMap('urn:moony:stateR#')
 
-pInt = {
+local pInt = {
   [RDFS.label] = 'Integer',
   [RDFS.comment] = 'This is an Integer',
   [RDFS.range] = Atom.Int,
@@ -272,7 +261,7 @@ pInt = {
   end
 }
 
-pLong = {
+local pLong = {
   [RDFS.label] = 'Long',
   [RDFS.comment] = 'This is a Long',
   [RDFS.range] = Atom.Long,
@@ -282,7 +271,7 @@ pLong = {
   [RDF.value] = pInt[RDF.value] * 2
 }
 
-pFloat = {
+local pFloat = {
   [RDFS.label] = 'Float',
   [RDFS.comment] = 'This is a Float',
   [RDFS.range] = Atom.Float,
@@ -299,7 +288,7 @@ pFloat = {
   end
 }
 
-pDouble = {
+local pDouble = {
   [RDFS.label] = 'Double',
   [RDFS.comment] = 'This is a Double',
   [RDFS.range] = Atom.Double,
@@ -309,14 +298,14 @@ pDouble = {
   [RDF.value] = pFloat[RDF.value] * 2
 }
 
-pBool = {
+local pBool = {
   [RDFS.label] = 'Bool',
   [RDFS.comment] = 'This is a Boolean',
   [RDFS.range] = Atom.Bool,
   [RDF.value] = true
 }
 
-pURID = {
+local pURID = {
   [RDFS.label] = 'URID',
   [RDFS.comment] = 'This is an URID',
   [RDFS.range] = Atom.URID,
@@ -330,21 +319,21 @@ pURID = {
   end
 }
 
-pURI = {
+local pURI = {
   [RDFS.label] = 'URI',
   [RDFS.comment] = 'This is an URI',
   [RDFS.range] = Atom.URI,
   [RDF.value] = Unmap(MIDI.MidiEvent)
 }
 
-pString = {
+local pString = {
   [RDFS.label] = 'String',
   [RDFS.comment] = 'This is a String',
   [RDFS.range] = Atom.String,
   [RDF.value] = 'hello world'
 }
 
-pChunk = {
+local pChunk = {
   [RDFS.label] = 'Chunk',
   [RDFS.comment] = 'This is a Chunk',
   [RDFS.range] = Atom.Chunk,
@@ -357,14 +346,14 @@ pChunk = {
   end
 }
 
-pPath = {
+local pPath = {
   [RDFS.label] = 'Path',
   [RDFS.comment] = 'This is a Path',
   [RDFS.range] = Atom.Path,
   [RDF.value] = '/tmp/file.suffix'
 }
 
-pEnum = {
+local pEnum = {
   [RDFS.label] = 'Enum',
   [RDFS.comment] = 'This is an Enum',
   [RDFS.range] = Atom.Int,
@@ -378,7 +367,7 @@ pEnum = {
   }
 }
 
-stateR = StateResponder({
+local stateR = StateResponder({
   [Patch.writable] = {
     [urid.pInt] = pInt,
     [urid.pFloat] = pFloat,
@@ -411,19 +400,19 @@ function once(n, seq, forge, control, notify)
   stateR:register(0, notify)
 end
 
-run = function(n, seq, forge, control, notify)
+function run(n, seq, forge, control, notify)
   for frames, atom in control:foreach() do
     stateR(frames, notify, atom)
   end
 end""" ;
 		<http://open-music-kontrollers.ch/lv2/moony#state> [
-			<http://open-music-kontrollers.ch/lv2/moony#Bool> true ;
-			<http://open-music-kontrollers.ch/lv2/moony#Chunk> "AQIDBAUGBw=="^^xsd:base64Binary ;
-			<http://open-music-kontrollers.ch/lv2/moony#Enum> 0 ;
-			<http://open-music-kontrollers.ch/lv2/moony#Float> "0.80000001"^^xsd:float ;
-			<http://open-music-kontrollers.ch/lv2/moony#Int> 9 ;
-			<http://open-music-kontrollers.ch/lv2/moony#Path> <file:///tmp/file.suffix> ;
-			<http://open-music-kontrollers.ch/lv2/moony#String> "world hello" ;
-			<http://open-music-kontrollers.ch/lv2/moony#URID> <http://lv2plug.in/ns/ext/midi#MidiEvent>
+			stateR:Bool true ;
+			stateR:Chunk "AQIDBAUGBw=="^^xsd:base64Binary ;
+			stateR:Enum 0 ;
+			stateR:Float "0.80000001"^^xsd:float ;
+			stateR:Int 9 ;
+			stateR:Path <file:///tmp/file.suffix> ;
+			stateR:String "world hello" ;
+			stateR:URID <http://lv2plug.in/ns/ext/midi#MidiEvent>
 		]
 	] .
