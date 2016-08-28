@@ -589,11 +589,11 @@ function lv2_read_event(symbol, obj) {
 							item.attr('data-range', range);
 							if(  (range == ATOM.Int)
 								|| (range == ATOM.Long) ) {
-								//FIXME
-								//item.attr('type', 'number').attr('step', 1);
+								item.attr('type', 'number').attr('step', 1);
+								/* FIXME jquery.knob
 								item.knob({
 									change: function(v) {
-										console.log(v); //FIXME
+										console.log(v); //TODO
 									}
 								});
 								item.trigger(
@@ -612,7 +612,7 @@ function lv2_read_event(symbol, obj) {
 										displayInput: false
 									}
 								);
-								//FIXME
+								*/
 								update_property_step(item);
 							} else if( (range == ATOM.Float)
 								|| (range == ATOM.Double) ) {
@@ -631,16 +631,16 @@ function lv2_read_event(symbol, obj) {
 								item.attr('type', 'text');
 							}
 						} else if(key == LV2.minimum) {
-							//FIXME
-							//item.attr('min', value[RDF.value]);
+							item.attr('min', value[RDF.value]);
+							/* FIXME jquery.knob
 							item.trigger('configure', {min: value[RDF.value]});
-							//FIXME
+							*/
 							update_property_step(item);
 						} else if(key == LV2.maximum) {
-							//FIXME
-							//item.attr('max', value[RDF.value]);
+							item.attr('max', value[RDF.value]);
+							/* FIXME jquery.knob
 							item.trigger('configure', {max: value[RDF.value]});
-							//FIXME
+							*/
 							update_property_step(item);
 						} else if(key == LV2.scalePoint) {
 							var list = value[RDF.list];
