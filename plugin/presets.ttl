@@ -35,35 +35,35 @@ moony:state
 	a rdf:Property ;
 	rdfs:label "Lua code state" .
 
-stateR:Bool
+stateR:pBool
 	a lv2:Parameter ;
 	rdfs:label "A Bool" ;
 	rdfs:range atom:Bool .
-stateR:Chunk
+stateR:pChunk
 	a lv2:Parameter ;
 	rdfs:label "A Chunk" ;
 	rdfs:range atom:Chunk .
-stateR:Enum
+stateR:pEnum
 	a lv2:Parameter ;
 	rdfs:label "An Enum" ;
 	rdfs:range atom:Int .
-stateR:Float
+stateR:pFloat
 	a lv2:Parameter ;
 	rdfs:label "A Float" ;
 	rdfs:range atom:Float .
-stateR:Int
+stateR:pInt
 	a lv2:Parameter ;
 	rdfs:label "An Int" ;
 	rdfs:range atom:Int .
-stateR:Path
+stateR:pPath
 	a lv2:Parameter ;
 	rdfs:label "A Path" ;
 	rdfs:range atom:Path .
-stateR:String
+stateR:pString
 	a lv2:Parameter ;
 	rdfs:label "A String" ;
 	rdfs:range atom:String .
-stateR:URID
+stateR:pURID
 	a lv2:Parameter ;
 	rdfs:label "A URID" ;
 	rdfs:range atom:URI .
@@ -242,7 +242,7 @@ moony:bank-state_state-responder
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
-		<http://open-music-kontrollers.ch/lv2/moony#code> """local urid = HashMap('urn:moony:stateR#')
+		moony:code """local urid = HashMap('urn:moony:stateR#')
 
 local pLong
 local pInt = {
@@ -408,14 +408,14 @@ function run(n, seq, forge, control, notify)
     stateR(frames, notify, atom)
   end
 end""" ;
-		<http://open-music-kontrollers.ch/lv2/moony#state> [
-			stateR:Bool true ;
-			stateR:Chunk "AQIDBAUGBw=="^^xsd:base64Binary ;
-			stateR:Enum 0 ;
-			stateR:Float "0.80000001"^^xsd:float ;
-			stateR:Int 9 ;
-			stateR:Path <file:///tmp/file.suffix> ;
-			stateR:String "world hello" ;
-			stateR:URID <http://lv2plug.in/ns/ext/midi#MidiEvent>
+		moony:state [
+			stateR:pBool true ;
+			stateR:pChunk "AQIDBAUGBw=="^^xsd:base64Binary ;
+			stateR:pEnum 0 ;
+			stateR:pFloat "8e-1"^^xsd:float ;
+			stateR:pInt 9 ;
+			stateR:pPath <file:///tmp/file.suffix> ;
+			stateR:pString "world hello" ;
+			stateR:pURID <http://lv2plug.in/ns/ext/midi#MidiEvent>
 		]
 	] .
