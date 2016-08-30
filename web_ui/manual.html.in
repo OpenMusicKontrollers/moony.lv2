@@ -73,31 +73,91 @@
 		<p>...</p>
 
 		<h2 id="variants-c1xc1">C1 x C1</h2>
-		<p>...</p>
+		<p>This plugin variant features a single control port input and a single control port output.</p>
+
+		<a class="api-snippet" href="#snippet-run-c1xc1" data-snippet="snippet-run-c1xc1">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-run-c1xc1">-- C1 x C1 prototype 'run' function
+
+function run(n, c, control, notify)
+	return c
+end</code></pre>
 
 		<h2 id="variants-c2xc2">C2 x C2</h2>
-		<p>...</p>
+		<p>This plugin variant features two control port inputs and two control port outputs.</p>
+
+		<a class="api-snippet" href="#snippet-run-c2xc2" data-snippet="snippet-run-c2xc2">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-run-c2xc2">-- C2 x C2 prototype 'run' function
+
+function run(n, c1, c2, control, notify)
+	return c1, c2
+end</code></pre>
 
 		<h2 id="variants-c4xc4">C4 x C4</h2>
-		<p>...</p>
+		<p>This plugin variant features four control port inputs and four control port outputs.</p>
+
+		<a class="api-snippet" href="#snippet-run-c4xc4" data-snippet="snippet-run-c4xc4">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-run-c4xc4">-- C4 x C4 prototype 'run' function
+
+function run(n, c1, c2, c3, c4, control, notify)
+	return c1, c2, c3, c4
+end</code></pre>
 
 		<h2 id="variants-a1xa1">A1 x A1</h2>
-		<p>...</p>
+		<p>This plugin variant features a single atom port input and a single atom port output.</p>
+
+		<a class="api-snippet" href="#snippet-run-a1xa1" data-snippet="snippet-run-a1xa1">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-run-a1xa1">-- C4 x C4 prototype 'run' function
+
+function run(n, seq, forge, control, notify)
+end</code></pre>
 
 		<h2 id="variants-a2xa2">A2 x A2</h2>
-		<p>...</p>
+		<p>This plugin variant features two atom port inputs and two atom port outputs.</p>
+
+		<a class="api-snippet" href="#snippet-run-a2xa2" data-snippet="snippet-run-a2xa2">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-run-a2xa2">-- C4 x C4 prototype 'run' function
+
+function run(n, seq1, forge1, seq2, forge2, control, notify)
+end</code></pre>
 
 		<h2 id="variants-a4xa4">A4 x A4</h2>
-		<p>...</p>
+		<p>This plugin variant features four atom port inputs and four atom port outputs.</p>
+
+		<a class="api-snippet" href="#snippet-run-a4xa4" data-snippet="snippet-run-a4xa4">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-run-a4xa4">-- C4 x C4 prototype 'run' function
+
+function run(n, seq1, forge1, seq2, forge2, seq3, forge3, seq4, forge4, control, notify)
+end</code></pre>
 
 		<h2 id="variants-c1a1xc1a1">C1+A1 x C1+A1</h2>
-		<p>...</p>
+		<p>This plugin variant features a single control port input and a single control port output
+			with a single atom port input and a single atom port output.</p>
+
+		<a class="api-snippet" href="#snippet-run-c1a1xc1a1" data-snippet="snippet-run-c1a1xc1a1">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-run-c1a1xc1a1">-- C4 x C4 prototype 'run' function
+
+function run(n, seq, forge, c, control, notify)
+end</code></pre>
 
 		<h2 id="variants-c2a1xc2a1">C2+A1 x C2+A1</h2>
-		<p>...</p>
+		<p>This plugin variant features two control port inputs and two control port outputs
+			with a single atom port input and a single atom port output.</p>
+
+		<a class="api-snippet" href="#snippet-run-c2a1xc2a1" data-snippet="snippet-run-c2a1xc2a1">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-run-c2a1xc2a1">-- C4 x C4 prototype 'run' function
+
+function run(n, seq, forge, c1, c2, control, notify)
+end</code></pre>
 
 		<h2 id="variants-c4a1xc4a1">C4+A1 x C4+A1</h2>
-		<p>...</p>
+		<p>This plugin variant features four control port inputs and four control port outputs
+			with a single atom port input and a single atom port output.</p>
+
+		<a class="api-snippet" href="#snippet-run-c4a1xc4a1" data-snippet="snippet-run-c4a1xc4a1">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-run-c4a1xc4a1">-- C4 x C4 prototype 'run' function
+
+function run(n, seq, forge, c1, c2, c3, c4, control, notify)
+end</code></pre>
 
 	<h1 id="log-and-debug">Log &amp; Debug</h1>
 		<p>Whenever you want to log or debug something while developing your scripts, you can easily dump any value via Lua's <b>print</b> function. The print's output will be shown on the UI and also be sent to the host's log backend, e.g. to a log window or console.</p>
