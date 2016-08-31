@@ -54,8 +54,9 @@
 	</ul>
 </div>
 
-<div class="api-content">
+<div class="api-body">
 
+	<div class="api-section"><div class="api-content">
 	<h1 id="introduction">Introduction</h1>
 		<p>The design goal of the plugin bundle was to create a tool to easily add realtime programmable logic glue in LV2 plugin graphs.</p>
 
@@ -68,10 +69,18 @@
 		<p>One such scripting language is Lua. It is small, fast, easily embeddable and realtime-safe if coupled to a realtime-safe memory allocator like TLSF.</p>
 
 		<p>The Moony plugins can handle LV2 control and atom event ports, only. They do not handle LV2 audio ports. They may eventually handle LV2 control-voltage ports in the future, though. Control port values are internally handled as simple floating point numbers, whereas the atom event ports build on top of the LV2 atom and atom forge C headers.</p>
+	</div></div>
 
+	<div class="api-section"><div class="api-content">
 	<h1 id="variants">Plugin Variants</h1>
-		<p>...</p>
+		<p>The Moony plugin bundle ships with multiple plugin variants, whereas all of them share the same
+			API but with different configurations of input and output ports. Depending on the users's usage
+			scenario, one or the other variant may be preferable.</p>
+		<p>Plugin variants only differ in number of control and atom event input and output ports. Apart
+			from this difference, they can often be used interchangeably.</p>
+	</div></div>
 
+		<div class="api-section"><div class="api-content">
 		<h2 id="variants-c1xc1">C1 x C1</h2>
 		<p>This plugin variant features a single control port input and a single control port output.</p>
 
@@ -81,7 +90,9 @@
 function run(n, c, control, notify)
 	return c
 end</code></pre>
+		</div></div>
 
+		<div class="api-section"><div class="api-content">
 		<h2 id="variants-c2xc2">C2 x C2</h2>
 		<p>This plugin variant features two control port inputs and two control port outputs.</p>
 
@@ -91,7 +102,9 @@ end</code></pre>
 function run(n, c1, c2, control, notify)
 	return c1, c2
 end</code></pre>
+		</div></div>
 
+		<div class="api-section"><div class="api-content">
 		<h2 id="variants-c4xc4">C4 x C4</h2>
 		<p>This plugin variant features four control port inputs and four control port outputs.</p>
 
@@ -101,75 +114,128 @@ end</code></pre>
 function run(n, c1, c2, c3, c4, control, notify)
 	return c1, c2, c3, c4
 end</code></pre>
+		</div></div>
 
+		<div class="api-section"><div class="api-content">
 		<h2 id="variants-a1xa1">A1 x A1</h2>
 		<p>This plugin variant features a single atom port input and a single atom port output.</p>
 
 		<a class="api-snippet" href="#snippet-run-a1xa1" data-snippet="snippet-run-a1xa1">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-run-a1xa1">-- C4 x C4 prototype 'run' function
+		<pre class="api-hidden"><code id="snippet-run-a1xa1">-- A1 x A1 prototype 'run' function
 
 function run(n, seq, forge, control, notify)
 end</code></pre>
+		</div></div>
 
+		<div class="api-section"><div class="api-content">
 		<h2 id="variants-a2xa2">A2 x A2</h2>
 		<p>This plugin variant features two atom port inputs and two atom port outputs.</p>
 
 		<a class="api-snippet" href="#snippet-run-a2xa2" data-snippet="snippet-run-a2xa2">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-run-a2xa2">-- C4 x C4 prototype 'run' function
+		<pre class="api-hidden"><code id="snippet-run-a2xa2">-- A2 x A2 prototype 'run' function
 
 function run(n, seq1, forge1, seq2, forge2, control, notify)
 end</code></pre>
+		</div></div>
 
+		<div class="api-section"><div class="api-content">
 		<h2 id="variants-a4xa4">A4 x A4</h2>
 		<p>This plugin variant features four atom port inputs and four atom port outputs.</p>
 
 		<a class="api-snippet" href="#snippet-run-a4xa4" data-snippet="snippet-run-a4xa4">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-run-a4xa4">-- C4 x C4 prototype 'run' function
+		<pre class="api-hidden"><code id="snippet-run-a4xa4">-- A4 x A4 prototype 'run' function
 
 function run(n, seq1, forge1, seq2, forge2, seq3, forge3, seq4, forge4, control, notify)
 end</code></pre>
+		</div></div>
 
+		<div class="api-section"><div class="api-content">
 		<h2 id="variants-c1a1xc1a1">C1+A1 x C1+A1</h2>
 		<p>This plugin variant features a single control port input and a single control port output
 			with a single atom port input and a single atom port output.</p>
 
 		<a class="api-snippet" href="#snippet-run-c1a1xc1a1" data-snippet="snippet-run-c1a1xc1a1">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-run-c1a1xc1a1">-- C4 x C4 prototype 'run' function
+		<pre class="api-hidden"><code id="snippet-run-c1a1xc1a1">-- C1+A1 x C1+A1 prototype 'run' function
 
 function run(n, seq, forge, c, control, notify)
 end</code></pre>
+		</div></div>
 
+		<div class="api-section"><div class="api-content">
 		<h2 id="variants-c2a1xc2a1">C2+A1 x C2+A1</h2>
 		<p>This plugin variant features two control port inputs and two control port outputs
 			with a single atom port input and a single atom port output.</p>
 
 		<a class="api-snippet" href="#snippet-run-c2a1xc2a1" data-snippet="snippet-run-c2a1xc2a1">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-run-c2a1xc2a1">-- C4 x C4 prototype 'run' function
+		<pre class="api-hidden"><code id="snippet-run-c2a1xc2a1">-- C2+A1 x C2+A1 prototype 'run' function
 
 function run(n, seq, forge, c1, c2, control, notify)
 end</code></pre>
+		</div></div>
 
+		<div class="api-section"><div class="api-content">
 		<h2 id="variants-c4a1xc4a1">C4+A1 x C4+A1</h2>
 		<p>This plugin variant features four control port inputs and four control port outputs
 			with a single atom port input and a single atom port output.</p>
 
 		<a class="api-snippet" href="#snippet-run-c4a1xc4a1" data-snippet="snippet-run-c4a1xc4a1">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-run-c4a1xc4a1">-- C4 x C4 prototype 'run' function
+		<pre class="api-hidden"><code id="snippet-run-c4a1xc4a1">-- C4+A1 x C4+A1 prototype 'run' function
 
 function run(n, seq, forge, c1, c2, c3, c4, control, notify)
 end</code></pre>
+		</div></div>
 
+	<div class="api-section"><div class="api-content">
 	<h1 id="log-and-debug">Log &amp; Debug</h1>
 		<p>Whenever you want to log or debug something while developing your scripts, you can easily dump any value via Lua's <b>print</b> function. The print's output will be shown on the UI and also be sent to the host's log backend, e.g. to a log window or console.</p>
 
-		<a class="api-snippet" href="#snippet-print" data-snippet="snippet-print">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-print">-- sends 'hello world' to the UI and the host's log backend
+	<a class="api-snippet" href="#snippet-print" data-snippet="snippet-print">&rArr; show snippet</a>
+	<pre class="api-hidden"><code id="snippet-print">-- sends 'hello world' to the UI and the host's log backend
 
 print('hello world')</code></pre>
+	</div></div>
 
+	<div class="api-section"><div class="api-content">
 	<h1 id="callbacks">Callbacks</h1>
+	<p>...</p>
+	</div></div>
+
+		<div class="api-section"><div class="api-content">
 		<h2 id="callbacks-run">run</h2>
-		<p>...</p>
+		<p>The <b>run</b> callback function is the main callback function and thus the most
+		important one. It is called once per period by the plugin host. The period size,
+		e.g. the number of audio samples the function is called for may be chosen
+		arbitrary by the host. Do not expect it to be constant.</p>
+
+		<p>Depending on the plugin variant, the <b>run</b> function takes variable amount
+		of arguments. All variants have the first and last two arguments in common, though.</p>
+		
+		<p>If a plugin has input event ports, sequence objects (Lua userdata) will be
+		given to the <b>run</b> function whose events can be iterated over.</p>
+
+		<p>If a plugin has output event ports, forge objects (Lua userdata) will be
+		given to the <b>run</b> function which can be filled with arbitrary atom event
+		structures.</p>
+
+		<p>If a plugin has input control ports, those values will be given to the <b>run</b>
+		function as native Lua numbers.</p>
+
+		<p>If a plugin has output control ports, the <b>run</b> function is expected to 
+		return native Lua numbers, missing return values will be set to 0.0.</p>
+
+		<dl>
+			<dt class="func">function run(n, seq1, forge1, ..., c1, ..., control, notify)</dt>
+			<dt>n</dt>
+				<dd>number of audio samples of current period</dd>
+			<dt>(seq, forge) [x]</dt>
+				<dd>pairs of atom sequence and atom forge objects, with x=[0, 1, 2, 4]</dd>
+			<dt>c [x]</dt>
+				<dd>control port inputs, with x=[0, 1, 2, 4]</dd>
+			<dt>(control, notify)</dt>
+				<dd>pair of atom sequence and atom forge object for communication with UI</dd>
+			<dt class="ret">o [x]</dt>
+				<dd>control port outputs, with x=[0, 1, 2, 4]</dd>
+		</dl>
 
 		<a class="api-snippet" href="#snippet-run" data-snippet="snippet-run">&rArr; show snippet</a>
 		<pre class="api-hidden"><code id="snippet-run">-- 'run' callback prototype for moony#a1xa1
@@ -177,22 +243,155 @@ print('hello world')</code></pre>
 function run(n, seq, forge, control, notify)
 	-- here we will process events
 end</code></pre>
+		</div></div>
 
+		<div class="api-section"><div class="api-content">
 		<h2 id="callbacks-once">once</h2>
-		<p>...</p>
+		<p>The <b>once</b> function exists for pure convenience only. It has exactly the
+		same form as the <b>run</b> function, but is called only once after the whole
+		script code is loaded or updated.</p>
 
+		<p>The <b>once</b> function will run directly before the <b>run</b> function,
+		it therefore is no replacement for the latter in a given update period, but
+		and extension to it.</p>
+
+		<p>Put logic here that needs to run once after script code update, e.g. registering
+		a new <a href="#state-responder">StateResponder</a>.</p>
+
+		<dl>
+			<dt class="func">function once(n, seq1, forge1, ..., c1, ..., control, notify)</dt>
+			<dt>n</dt>
+				<dd>number of audio samples of current period</dd>
+			<dt>(seq, forge) [x]</dt>
+				<dd>pairs of atom sequence and atom forge objects, with x=[0, 1, 2, 4]</dd>
+			<dt>c [x]</dt>
+				<dd>control port inputs, with x=[0, 1, 2, 4]</dd>
+			<dt>(control, notify)</dt>
+				<dd>pair of atom sequence and atom forge object for communication with UI</dd>
+		</dl>
+
+		<a class="api-snippet" href="#snippet-once" data-snippet="snippet-once">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-once">-- 'once' callback prototype for moony#a1xa1
+
+local stateR = StateResponder({})
+
+function once(n, seq, forge, control, notify)
+	-- here we will run logic once right after a code update
+
+	-- register state parameters with the plugin's UI
+	stateR:register(0, notify)
+end</code></pre>
+		</div></div>
+
+		<div class="api-section"><div class="api-content">
 		<h2 id="callbacks-stash">stash</h2>
-		<p>...</p>
+		<p>When script code is reloaded, plugin state inside Lua virtual machine
+		potentially is lost. In order to preserve state across a script code reload,
+		arbitrary state can be serialized and parked in temporary memory.
+		Such a temporary serialized state can later be deserialized via
+		<a href="callbacks-apply">apply</a>.</p>
 
+		<p>The <b>stash</b> function is directly called before parsing and loading
+		the new script code.</p>
+
+		<dl>
+			<dt class="func">function stash(forge)</dt>
+			<dt>forge</dt>
+				<dd>atom forge object to serialize to</dd>
+		</dl>
+
+		<a class="api-snippet" href="#snippet-stash" data-snippet="snippet-stash">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-stash">-- 'stash' callback prototype for moony#a1xa1
+
+local timeR = TimeResponder({})
+
+function stash(forge)
+	-- here we can serialize arbitrary data to an atom forge object
+
+	timeR:stash(forge)
+end</code></pre>
+		</div></div>
+
+		<div class="api-section"><div class="api-content">
 		<h2 id="callbacks-apply">apply</h2>
-		<p>...</p>
+		<p>When script code is reloaded, plugin state inside Lua virtual machine
+		potentially is lost. In order to preserve state across a script code reload,
+		arbitrary state previously serialized by <a href="#callbacks-stash">stash</a>
+		can be deserialized from temporary memory.</p>
 
+		<p>The <b>apply</b> function is directly called after parsing and loading
+		the new script code.</p>
+
+		<dl>
+			<dt class="func">function apply(atom)</dt>
+			<dt>atom</dt>
+				<dd>atom object to deserialize from</dd>
+		</dl>
+
+		<a class="api-snippet" href="#snippet-apply" data-snippet="snippet-apply">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-apply">-- 'apply' callback prototype for moony#a1xa1
+
+local timeR = TimeResponder({})
+
+function apply(atom)
+	-- here we can deserialize arbitrary data to an atom forge object
+
+	timeR:apply(timeR)
+end</code></pre>
+		</div></div>
+
+		<div class="api-section"><div class="api-content">
 		<h2 id="callbacks-save">save</h2>
-		<p>...</p>
+		<p>The <b>save</b> function works analogously to <a href="#callbacks-stash">stash</a>,
+		but instead of serializing to temporary memory before a script code reload,
+		<b>save</b> serializes to disk upon a state save request issued by the host.</p>
 
+		<p>State serialized to disk by <b>save</b> is preserved across plugin instantiations
+		and truly is the same as a preset.</p>
+
+		<dl>
+			<dt class="func">function save(forge)</dt>
+			<dt>forge</dt>
+				<dd>atom forge object to serialize to</dd>
+		</dl>
+
+		<a class="api-snippet" href="#snippet-save" data-snippet="snippet-save">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-save">-- 'save' callback prototype for moony#a1xa1
+
+local stateR = StateResponder({})
+
+function save(forge)
+	-- here we can serialize arbitrary data to an atom forge object
+
+	stateR:stash(forge)
+end</code></pre>
+		</div></div>
+
+		<div class="api-section"><div class="api-content">
 		<h2 id="callbacks-restore">restore</h2>
-		<p>...</p>
+		<p>The <b>restore</b> function works analogously to <a href="#callbacks-apply">apply</a>,
+		but instead of deserializing from temporary memory after a script code reload,
+		<b>restore</b> deserializes from disk upon a state reload request issued by the host.</p>
 
+		<dl>
+			<dt class="func">function restore(atom)</dt>
+			<dt>atom</dt>
+				<dd>atom object to deserialize from</dd>
+		</dl>
+
+		<a class="api-snippet" href="#snippet-restore" data-snippet="snippet-restore">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-restore">-- 'restore' callback prototype for moony#a1xa1
+
+local stateR = StateResponder({})
+
+function restore(atom)
+	-- here we can deserialize arbitrary data to an atom forge object
+
+	stateR:apply(atom)
+end</code></pre>
+		</div></div>
+
+	<div class="api-section"><div class="api-content">
 	<h1 id="license">License</h1>
 		<p>Copyright &copy; 2015-2016 Hanspeter Portner
 		(<a href="mailto:dev@open-music-kontrollers.ch">dev@open-music-kontrollers.ch</a>)</p>
@@ -209,6 +408,7 @@ end</code></pre>
 		<p>You should have received a copy of the Artistic License 2.0
 		along the source as a COPYING file. If not, obtain it from
 		<a href="http://www.perlfoundation.org/artistic_license_2_0"> http://www.perlfoundation.org/artistic_license_2_0</a>.</p>
+	</div></div>
 
 <div class="api-editor">
 	<div id="editor">-- moony manual
