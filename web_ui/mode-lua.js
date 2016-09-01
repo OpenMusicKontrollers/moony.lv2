@@ -17,7 +17,7 @@ var LuaHighlightRules = function() {
     var functions = (
 				// Lua basic
 				"collectgarbage|error|getmetatable|ipairs|load|next|pairs|pcall|print|"+
-				"rawequal|rawget|rawlen|rawset|select|setmetatable|tonumber|tostring|type|xpcall|"+
+				"rawequal|rawget|rawlen|rawset|select|setmetatable|tonumber|tostring|type|xpcall|assert|"+
 				// Lua metamethods
 				"__add|__sub|__mul|__div|__mod|__pow|__unm|__idiv|"+
 				"__band|__bor|__bxor|__bnot|__shl|__shr|"+

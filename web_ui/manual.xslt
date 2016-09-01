@@ -3,7 +3,7 @@
 	<xsl:output method="text" omit-xml-declaration="yes"/>
 	<xsl:template match="/">
 local snippets = {
-	<xsl:for-each select="html/body/div/pre/code">
+	<xsl:for-each select="html/body/div/div/div/pre/code">
 	{
 		'<xsl:value-of select="current()/@id"/>',
 		[[

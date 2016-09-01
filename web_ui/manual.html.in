@@ -49,6 +49,114 @@
 			</ul>
 		</li>
 
+		<li><a href="#urid">Map &amp; Unmap</a>
+			<ul>
+				<li><a href="#urid-map">Map</a></li>
+				<li><a href="#urid-unap">Unmap</a></li>
+				<li><a href="#urid-hashmap">HashMap</a></li>
+				<li><a href="#urid-voicemap">VoiceMap</a></li>
+			</ul>
+		</li>
+
+		<li><a href="#atom">Atom</a>
+			<ul>
+				<li><a href="#atom-primitive">Primitive</a>
+					<ul>
+						<li><a href="#atom-nil">Nil</a></li>
+						<li><a href="#atom-bool">Bool</a></li>
+						<li><a href="#atom-int">Int</a></li>
+						<li><a href="#atom-long">Long</a></li>
+						<li><a href="#atom-float">Float</a></li>
+						<li><a href="#atom-double">Double</a></li>
+						<li><a href="#atom-URID">URID</a></li>
+						<li><a href="#atom-URI">URI</a></li>
+						<li><a href="#atom-string">String</a></li>
+						<li><a href="#atom-path">Path</a></li>
+						<li><a href="#atom-literal">Literal</a></li>
+						<li><a href="#atom-chunk">Chunk</a></li>
+						<li><a href="#atom-midi">MIDI</a></li>
+					</ul>
+				</li>
+				<li><a href="#atom-container">Container</a>
+					<ul>
+						<li><a href="#atom-sequence">Sequence</a></li>
+						<li><a href="#atom-tuple">Tuple</a></li>
+						<li><a href="#atom-object">Object</a></li>
+						<li><a href="#atom-vector">Vector</a></li>
+					</ul>
+				</li>
+			</ul>
+		</li>
+
+		<li><a href="#forge">Forge</a>
+			<ul>
+				<li><a href="#forge-primitive">Primitive</a>
+					<ul>
+						<li><a href="#forge-atom">Atom</a></li>
+						<li><a href="#forge-bool">Bool</a></li>
+						<li><a href="#forge-int">Int</a></li>
+						<li><a href="#forge-long">Long</a></li>
+						<li><a href="#forge-float">Float</a></li>
+						<li><a href="#forge-double">Double</a></li>
+						<li><a href="#forge-URID">URID</a></li>
+						<li><a href="#forge-URI">URI</a></li>
+						<li><a href="#forge-string">String</a></li>
+						<li><a href="#forge-path">Path</a></li>
+						<li><a href="#forge-literal">Literal</a></li>
+						<li><a href="#forge-chunk">Chunk</a></li>
+						<li><a href="#forge-midi">MIDI</a></li>
+						<li><a href="#forge-raw">Raw</a></li>
+						<li><a href="#forge-typed">Typed</a></li>
+					</ul>
+				</li>
+				<li><a href="#forge-container">Container</a>
+					<ul>
+						<li><a href="#forge-sequence">Sequence</a>
+							<ul>
+								<li><a href="#forge-frame-time">Frame Time</a></li>
+								<li><a href="#forge-beat-time">Beat Time</a></li>
+								<li><a href="#forge-time">Time</a></li>
+							</ul>
+						</li>
+						<li><a href="#forge-object">Object</a>
+							<ul>
+								<li><a href="#forge-key">Key</a></li>
+								<li><a href="#forge-property">Property</a></li>
+							</ul>
+						</li>
+						<li><a href="#forge-tuple">Tuple</a></li>
+						<li><a href="#forge-vector">Vector</a></li>
+						<li><a href="#forge-pop">Pop</a></li>
+					</ul>
+				</li>
+				<li><a href="#forge-osc">OSC</a>
+					<ul>
+						<li><a href="#forge-bundle">Bundle</a></li>
+						<li><a href="#forge-message">Message</a></li>
+					</ul>
+				</li>
+				<li><a href="#forge-patch">Patch</a>
+					<ul>
+						<li><a href="#forge-get">Get</a></li>
+						<li><a href="#forge-set">Set</a></li>
+						<li><a href="#forge-put">Put</a></li>
+						<li><a href="#forge-patch">Patch</a></li>
+						<li><a href="#forge-add">Add</a></li>
+						<li><a href="#forge-remove">Remove</a></li>
+					</ul>
+				</li>
+			</ul>
+		</li>
+
+		<li><a href="#responder">Responder</a>
+			<ul>
+				<li><a href="#responder-midi">MIDIResponder</a></li>
+				<li><a href="#responder-osc">OSCResponder</a></li>
+				<li><a href="#responder-time">TimeResponder</a></li>
+				<li><a href="#responder-state">StateResponder</a></li>
+			</ul>
+		</li>
+
 		<li><a href="#license">License</a>
 		</li>
 	</ul>
@@ -289,7 +397,7 @@ end</code></pre>
 		potentially is lost. In order to preserve state across a script code reload,
 		arbitrary state can be serialized and parked in temporary memory.
 		Such a temporary serialized state can later be deserialized via
-		<a href="callbacks-apply">apply</a>.</p>
+		<a href="#callbacks-apply">apply</a>.</p>
 
 		<p>The <b>stash</b> function is directly called before parsing and loading
 		the new script code.</p>
@@ -389,6 +497,187 @@ function restore(atom)
 
 	stateR:apply(atom)
 end</code></pre>
+		</div></div>
+
+		<div class="api-section"><div class="api-content">
+		<h1 id="">Map &amp; Unmap</h1>
+		</div></div>
+
+		<div class="api-section"><div class="api-content">
+		<h2 id="urid-map">Map</h2>
+		<p>...</p>
+
+		<dl>
+			<dt class="func">function Map(URI)</dt>
+			<dt>URI</dt>
+				<dd>URI to be mapped</dd>
+			<dt class="ret">URID</dt>
+				<dd>mapped URID</dd>
+		</dl>
+
+		<a class="api-snippet" href="#snippet-map" data-snippet="snippet-map">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-map">-- Map can be indexed or called as function
+
+local prefix = 'http://example.com#'
+
+local foo_urid = Map(prefix .. 'foo')
+local bar_urid = Map[prefix .. 'bar']</code></pre>
+		</div></div>
+
+		<div class="api-section"><div class="api-content">
+		<h2 id="urid-unmap">Unmap</h2>
+		<p>...</p>
+
+		<dl>
+			<dt class="func">function Unmap(URID)</dt>
+			<dt>URID</dt>
+				<dd>URID to be unmapped</dd>
+			<dt class="ret">URI</dt>
+				<dd>unmapped URi</dd>
+		</dl>
+
+		<a class="api-snippet" href="#snippet-unmap" data-snippet="snippet-unmap">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-unmap">-- Unmap can be indexed or called as function
+
+local prefix = 'http://example.com#'
+
+local foo_urid= Map(prefix .. 'foo')
+local bar_urid = Map[prefix .. 'bar']
+
+local foo_uri = Unmap(foo_urid)
+local bar_uri = Unmap[bar_urid]
+
+assert(prefix .. 'foo' == foo_uri)
+assert(prefix .. 'bar' == bar_uri)</code></pre>
+		</div></div>
+
+		<div class="api-section"><div class="api-content">
+		<h2 id="urid-hashmap">HashMap</h2>
+		<p>...</p>
+
+		<dl>
+			<dt class="func">function HashMap(prefix)</dt>
+			<dt>prefix</dt>
+				<dd>prefix string to be appended to</dd>
+			<dt class="ret">hashmap</dt>
+				<dd>HashMap object</dd>
+		</dl>
+
+		<a class="api-snippet" href="#snippet-hashmap" data-snippet="snippet-hashmap">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-hashmap">-- HashMap is a convenience wrapper over Map
+
+local prefix = 'http://example.com#'
+local hashmap = HashMap(prefix)
+
+local bar_urid = Map[prefix .. 'bar']
+
+assert(hashmap.bar == bar_urid)</code></pre>
+		</div></div>
+
+		<div class="api-section"><div class="api-content">
+		<h2 id="urid-voicemap">VoiceMap</h2>
+		<p>...</p>
+
+		<dl>
+			<dt class="func">function VoiceMap()</dt>
+			<dt class="ret">ID</dt>
+				<dd>unique integer ID</dd>
+		</dl>
+
+		<a class="api-snippet" href="#snippet-voicemap" data-snippet="snippet-voicemap">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-voicemap">-- VoiceMap returns unique integer IDs
+
+local cache = {}
+
+for i = 1, 100 do
+	local id = VoiceMap()
+
+	assert(not cache[id])
+	cache[id] = true
+end</code></pre>
+		</div></div>
+
+	<div class="api-section"><div class="api-content">
+	<h1 id="atom">Atom</h1>
+	<p>...</p>
+	</div></div>
+
+		<div class="api-section"><div class="api-content">
+		<h2 id="atom-primitive">Primitive</h2>
+		<p>...</p>
+		</div></div>
+
+			<div class="api-section"><div class="api-content">
+			<h3 id="atom-nil">Nil</h3>
+			<p>...</p>
+			</div></div>
+
+			<!-- FIXME -->
+
+		<div class="api-section"><div class="api-content">
+		<h2 id="atom-container">Container</h2>
+		<p>...</p>
+		</div></div>
+
+			<div class="api-section"><div class="api-content">
+			<h3 id="atom-sequence">Sequence</h3>
+			<p>...</p>
+			</div></div>
+
+			<!-- FIXME -->
+
+	<div class="api-section"><div class="api-content">
+	<h1 id="forge">Forge</h1>
+	<p>...</p>
+	</div></div>
+
+		<div class="api-section"><div class="api-content">
+		<h2 id="forge-primitive">Primitive</h2>
+		<p>...</p>
+		</div></div>
+
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-atom">Atom</h3>
+			<p>...</p>
+			</div></div>
+
+			<!-- FIXME -->
+
+		<div class="api-section"><div class="api-content">
+		<h2 id="forge-container">Container</h2>
+		<p>...</p>
+		</div></div>
+
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-sequence">sequence</h3>
+			<p>...</p>
+			</div></div>
+
+			<!-- FIXME -->
+
+	<div class="api-section"><div class="api-content">
+	<h1 id="responder">Responder</h1>
+	<p>...</p>
+	</div></div>
+
+		<div class="api-section"><div class="api-content">
+		<h2 id="responder-midi">MIDIResponder</h2>
+		<p>...</p>
+		</div></div>
+
+		<div class="api-section"><div class="api-content">
+		<h2 id="responder-osc">OSCResponder</h2>
+		<p>...</p>
+		</div></div>
+
+		<div class="api-section"><div class="api-content">
+		<h2 id="responder-time">TimeResponder</h2>
+		<p>...</p>
+		</div></div>
+
+		<div class="api-section"><div class="api-content">
+		<h2 id="responder-state">StateResponder</h2>
+		<p>...</p>
 		</div></div>
 
 	<div class="api-section"><div class="api-content">
