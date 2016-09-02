@@ -140,7 +140,7 @@
 						<li><a href="#forge-get">Get</a></li>
 						<li><a href="#forge-set">Set</a></li>
 						<li><a href="#forge-put">Put</a></li>
-						<li><a href="#forge-patch">Patch</a></li>
+						<li><a href="#forge-patch-patch">Patch</a></li>
 						<li><a href="#forge-add">Add</a></li>
 						<li><a href="#forge-remove">Remove</a></li>
 					</ul>
@@ -305,7 +305,11 @@ print('hello world')</code></pre>
 
 	<div class="api-section"><div class="api-content">
 	<h1 id="callbacks">Callbacks</h1>
-	<p>...</p>
+	<p>Moony can run user defined callbacks at different positions in its
+	processing graph. If the user provides an implementation for a specific
+	callback, Moony will run the latter. If the plugin does not need a specific
+	callback, the latter can simply be omitted. The implementations of all
+	callbacks are thus optional.</p>
 	</div></div>
 
 		<div class="api-section"><div class="api-content">
@@ -333,15 +337,15 @@ print('hello world')</code></pre>
 
 		<dl>
 			<dt class="func">function run(n, seq1, forge1, ..., c1, ..., control, notify)</dt>
-			<dt>n</dt>
+			<dt>n (integer)</dt>
 				<dd>number of audio samples of current period</dd>
-			<dt>(seq, forge) [x]</dt>
+			<dt>{seq, forge} [x] (userdata, userdata)</dt>
 				<dd>pairs of atom sequence and atom forge objects, with x=[0, 1, 2, 4]</dd>
-			<dt>c [x]</dt>
+			<dt>c [x] (number)</dt>
 				<dd>control port inputs, with x=[0, 1, 2, 4]</dd>
-			<dt>(control, notify)</dt>
+			<dt>{control, notify} (userdata, userdata)</dt>
 				<dd>pair of atom sequence and atom forge object for communication with UI</dd>
-			<dt class="ret">o [x]</dt>
+			<dt class="ret">o [x] (number)</dt>
 				<dd>control port outputs, with x=[0, 1, 2, 4]</dd>
 		</dl>
 
@@ -368,13 +372,13 @@ end</code></pre>
 
 		<dl>
 			<dt class="func">function once(n, seq1, forge1, ..., c1, ..., control, notify)</dt>
-			<dt>n</dt>
+			<dt>n (integer)</dt>
 				<dd>number of audio samples of current period</dd>
-			<dt>(seq, forge) [x]</dt>
+			<dt>{seq, forge} [x] (userdata, userdata)</dt>
 				<dd>pairs of atom sequence and atom forge objects, with x=[0, 1, 2, 4]</dd>
-			<dt>c [x]</dt>
+			<dt>c [x] (number)</dt>
 				<dd>control port inputs, with x=[0, 1, 2, 4]</dd>
-			<dt>(control, notify)</dt>
+			<dt>{control, notify} (userdata, userdata)</dt>
 				<dd>pair of atom sequence and atom forge object for communication with UI</dd>
 		</dl>
 
@@ -404,7 +408,7 @@ end</code></pre>
 
 		<dl>
 			<dt class="func">function stash(forge)</dt>
-			<dt>forge</dt>
+			<dt>forge (userdata)</dt>
 				<dd>atom forge object to serialize to</dd>
 		</dl>
 
@@ -432,7 +436,7 @@ end</code></pre>
 
 		<dl>
 			<dt class="func">function apply(atom)</dt>
-			<dt>atom</dt>
+			<dt>atom (userdata)</dt>
 				<dd>atom object to deserialize from</dd>
 		</dl>
 
@@ -459,7 +463,7 @@ end</code></pre>
 
 		<dl>
 			<dt class="func">function save(forge)</dt>
-			<dt>forge</dt>
+			<dt>forge (userdata)</dt>
 				<dd>atom forge object to serialize to</dd>
 		</dl>
 
@@ -483,7 +487,7 @@ end</code></pre>
 
 		<dl>
 			<dt class="func">function restore(atom)</dt>
-			<dt>atom</dt>
+			<dt>atom (userdata)</dt>
 				<dd>atom object to deserialize from</dd>
 		</dl>
 
@@ -500,18 +504,30 @@ end</code></pre>
 		</div></div>
 
 		<div class="api-section"><div class="api-content">
-		<h1 id="">Map &amp; Unmap</h1>
+		<h1 id="urid">Map &amp; Unmap</h1>
+		<p>LV2 references objects and their properties by URIs, usually rather long,
+		unique string identifiers. When comparing URIs, whole strings need to be
+		compared, which is inefficient. In LV2, an URI thus can be mapped to a simple
+		integer URID, greatly increasing efficiency of comparisons. Unmapping from
+		URID to original URI is supported, too.</p>
+
+		<p>Moony directly mirrors mapping and unmapping of the underlying low-level
+		implementation, but additionally caches every newly queried URI or URID
+		for faster lookup inside script code. Cached URIs and URIDs are preserved
+		across script code updates.</p>
 		</div></div>
 
 		<div class="api-section"><div class="api-content">
 		<h2 id="urid-map">Map</h2>
-		<p>...</p>
+		<p>Map an URI to its corresponding URID. <b>Map</b> is a first-class Lua
+		table acting as a cache for all queried URIDs and can also be called as
+		function.</p>
 
 		<dl>
 			<dt class="func">function Map(URI)</dt>
-			<dt>URI</dt>
+			<dt>URI (string)</dt>
 				<dd>URI to be mapped</dd>
-			<dt class="ret">URID</dt>
+			<dt class="ret">URID (integer)</dt>
 				<dd>mapped URID</dd>
 		</dl>
 
@@ -526,13 +542,15 @@ local bar_urid = Map[prefix .. 'bar']</code></pre>
 
 		<div class="api-section"><div class="api-content">
 		<h2 id="urid-unmap">Unmap</h2>
-		<p>...</p>
+		<p>Unmap an URID to its original URI. <b>Unmap</b> is a first-class Lua
+		table acting as a cache for all queried URIs and can also be called as
+		function.</p>
 
 		<dl>
 			<dt class="func">function Unmap(URID)</dt>
-			<dt>URID</dt>
+			<dt>URID (integer)</dt>
 				<dd>URID to be unmapped</dd>
-			<dt class="ret">URI</dt>
+			<dt class="ret">URI (string)</dt>
 				<dd>unmapped URi</dd>
 		</dl>
 
@@ -553,14 +571,21 @@ assert(prefix .. 'bar' == bar_uri)</code></pre>
 
 		<div class="api-section"><div class="api-content">
 		<h2 id="urid-hashmap">HashMap</h2>
-		<p>...</p>
+		<p>A convenience wrapper and syntactic sugar around <a href="#urid-map">Map</a>.
+		Simplifies creating multiple mappings which share a common URI prefix.</p>
+		
+		<p>Returns a table which can be queried by indexing with the URI postfix.
+		The query is equivalent to a mapping of concatenated URI prefix and postfix.</p>
+
+		<p>This is especially useful when dealing with custom properties and the
+		<a href="#responder-state">StateResponder</a>.</p>
 
 		<dl>
 			<dt class="func">function HashMap(prefix)</dt>
-			<dt>prefix</dt>
+			<dt>prefix (string)</dt>
 				<dd>prefix string to be appended to</dd>
-			<dt class="ret">hashmap</dt>
-				<dd>HashMap object</dd>
+			<dt class="ret">hashmap (table)</dt>
+				<dd>HashMap table</dd>
 		</dl>
 
 		<a class="api-snippet" href="#snippet-hashmap" data-snippet="snippet-hashmap">&rArr; show snippet</a>
@@ -576,11 +601,14 @@ assert(hashmap.bar == bar_urid)</code></pre>
 
 		<div class="api-section"><div class="api-content">
 		<h2 id="urid-voicemap">VoiceMap</h2>
-		<p>...</p>
+		<p>Returns a unique, non-colliding integer ID to be used in event messaging.
+		Especially useful for <a href="#forge-patch">Patch</a> messages or custom
+		event systems where there is a need to track event properties over space
+		and time.</p>
 
 		<dl>
 			<dt class="func">function VoiceMap()</dt>
-			<dt class="ret">ID</dt>
+			<dt class="ret">ID (integer)</dt>
 				<dd>unique integer ID</dd>
 		</dl>
 
