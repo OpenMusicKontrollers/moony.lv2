@@ -52,7 +52,7 @@
 		<li><a href="#urid">Map &amp; Unmap</a>
 			<ul>
 				<li><a href="#urid-map">Map</a></li>
-				<li><a href="#urid-unap">Unmap</a></li>
+				<li><a href="#urid-unmap">Unmap</a></li>
 				<li><a href="#urid-hashmap">HashMap</a></li>
 				<li><a href="#urid-voicemap">VoiceMap</a></li>
 			</ul>
@@ -735,6 +735,18 @@ end</code></pre>
 
 <script type="text/javascript">
 	// @license magnet:?xt=urn:btih:54fd2283f9dbdf29466d2df1a98bf8f65cafe314&dn=artistic-2.0.txt Artistic-2.0
+	var old_body = undefined;
+	function set_snippet(snippet_id) {
+		if(snippet_id) {
+			var snippet_body = $('#'+snippet_id).html();
+			if(snippet_body && (snippet_body != old_body)) {
+				editor.setValue(snippet_body);
+				editor.clearSelection();
+				old_body = snippet_body;
+			}
+		}
+	}
+
 	$(document).ready(function() {
 		// configure editor
 		var session = null;
@@ -768,14 +780,25 @@ end</code></pre>
 		// wire snippet links with code editor
 		$('.api-snippet').on('click', function(e) {
 			var snippet_id = $(this).data('snippet');
-			if(snippet_id) {
-				var snippet_body = $('#'+snippet_id).html();
-				if(snippet_body) {
-					editor.setValue(snippet_body);
-					editor.clearSelection();
-				}
-			}
+			set_snippet(snippet_id);
 			e.preventDefault();
+		});
+
+		// show matching code snippet
+		$(window).on('scroll', function() {
+			var snippet_id = undefined;
+			var stop = $(window).scrollTop();
+			var ytop = -1;
+
+			$('.api-snippet').each(function() {
+				var dtop = $(this).offset().top;
+
+				if( (stop <= dtop) && ( (dtop <= ytop) || (ytop < 0) ) ) {
+					snippet_id = $(this).data('snippet');
+					ytop = dtop;
+				}
+			});
+			set_snippet(snippet_id);
 		});
 	});
 	// @license-end
