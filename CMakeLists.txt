@@ -10,6 +10,7 @@ include_directories(${PROJECT_SOURCE_DIR}/timely.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/xpress.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/lua-5.3.3)
 include_directories(${PROJECT_SOURCE_DIR}/cJSON)
+include_directories(${PROJECT_SOURCE_DIR}/tiny-AES128-C)
 include_directories(${PROJECT_SOURCE_DIR}/api)
 include_directories(${PROJECT_SOURCE_DIR}/ui)
 include_directories(${PROJECT_SOURCE_DIR}/include)
@@ -164,7 +165,8 @@ add_library(api OBJECT
 	api/api_time.c
 	api/api_state.c
 	api/api_vm.c
-	tlsf-3.0/tlsf.c)
+	tlsf-3.0/tlsf.c
+	tiny-AES128-C/aes.c)
 set_target_properties(api PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
 
 add_library(moony MODULE

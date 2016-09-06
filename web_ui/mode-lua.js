@@ -24,7 +24,7 @@ var LuaHighlightRules = function() {
 				"__concat|__len|__eq|__lt|__le|__index|__newindex|__call|"+
 				"__gc|__mode|__name|__tostring|__metatable|__pairs|"+
 				// moony basic
-				"run|once|save|restore|stash|apply|register|midi2cps|cps2midi");
+				"run|once|save|restore|stash|apply|register|midi2cps|cps2midi|encrypt|decrypt");
 
 		var field_functions = (
 				// Lua coroutine

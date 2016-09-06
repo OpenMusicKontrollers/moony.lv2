@@ -20,6 +20,10 @@
 #include <inttypes.h>
 #include <stdatomic.h>
 
+#define ECB 1
+#define CBC 0
+#include <aes.h>
+
 #include <api_atom.h>
 #include <api_forge.h>
 #include <api_stash.h>
@@ -339,6 +343,122 @@ _log(lua_State *L)
 	}
 
 	return 0;
+}
+
+static bool 
+_parse_key(lua_State *L, int idx, uint8_t key [16])
+{
+	size_t key_len;
+	const char *pass = luaL_checklstring(L, idx, &key_len);
+
+	switch(key_len)
+	{
+		case 16: // raw key
+			memcpy(key, pass, 16);
+			break;
+		case 32: // hex-encoded key
+			for(unsigned i=0; i<16; i++)
+			{
+				if(sscanf(&pass[i*2], "%02"SCNx8, &key[i]) != 1)
+					return false; // sscanf failed
+			}
+			break;
+		default: // invalid key
+			return false;
+	}
+
+	return true; // success
+}
+
+static int
+_lencrypt(lua_State *L)
+{
+	size_t input_len;
+	const uint8_t *input = (const uint8_t *)luaL_checklstring(L, 1, &input_len);
+
+	uint8_t key [16];
+	if(!_parse_key(L, 2, key))
+	{
+		lua_pushnil(L);
+		return 1;
+	}
+
+	const size_t offset_len = sizeof(uint32_t); // length of size prefix
+	const uint32_t output_len = ((input_len + 15) & (~15)) + offset_len; // round to next 16 byte boundary
+
+	luaL_Buffer buf;
+	uint8_t *dst = (uint8_t *)luaL_buffinitsize(L, &buf, output_len);
+
+	*(uint32_t *)dst = htobe32(input_len); // write chunk size
+
+	aes_t aes;
+	for(unsigned i=0; i<input_len; i+=16)
+	{
+		uint8_t temp [16];
+		const unsigned rem = input_len - i;
+		const unsigned len = rem < 16 ? rem : 16;
+
+		if(len < 16)
+			memset(temp, 0x0, 16); // pad remainder
+
+		memcpy(temp, &input[i], 16);
+		AES128_ECB_encrypt(&aes, temp, key, &dst[offset_len + i]);
+	}
+	luaL_addsize(&buf, output_len);
+	luaL_pushresult(&buf);
+
+	return 1;
+}
+
+static int
+_ldecrypt(lua_State *L)
+{
+	size_t input_len;
+	const uint8_t *input = (const uint8_t *)luaL_checklstring(L, 1, &input_len);
+
+	uint8_t key [16];
+	if(!_parse_key(L, 2, key))
+	{
+		lua_pushnil(L);
+		return 1;
+	}
+
+	const uint32_t output_len = be32toh(*(uint32_t *)input); // read chunk size
+	const size_t offset_len = sizeof(uint32_t); // length of size prefix
+
+	luaL_Buffer buf;
+	uint8_t *dst = (uint8_t *)luaL_buffinitsize(L, &buf, output_len);
+
+	aes_t aes;
+	for(unsigned i=0; i<output_len; i+=16)
+	{
+		uint8_t temp [16];
+
+		memcpy(temp, &input[offset_len + i], 16);
+		AES128_ECB_decrypt(&aes, temp, key, &dst[i]);
+	}
+	luaL_addsize(&buf, output_len);
+	luaL_pushresult(&buf);
+
+	// discriminate between code and string
+	if(lua_isstring(L, -1))
+	{
+		size_t str_len;
+		const char *str = lua_tolstring(L, -1, &str_len);
+
+		if(luaL_loadbuffer(L, str, str_len, "decrypt") == LUA_OK)
+		{
+			return 1; // return code parsed from decrypted string
+		}
+		else
+		{
+			lua_pop(L, 1); // pop error code;
+			return 1; // return decrypted string
+		}
+	}
+
+	lua_pushnil(L);
+	return 1;
 }
 
 LV2_Atom_Forge_Ref
@@ -1443,6 +1563,12 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_COUNT + MOONY_UPCLOSURE_SEQUENCE_FOREACH);
 	lua_newtable(L);
 		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_COUNT + MOONY_UPCLOSURE_SEQUENCE_MULTIPLEX);
+
+	lua_pushcclosure(L, _lencrypt, 0);
+	lua_setglobal(L, "encrypt");
+
+	lua_pushcclosure(L, _ldecrypt, 0);
+	lua_setglobal(L, "decrypt");
 
 #undef SET_MAP
 }
