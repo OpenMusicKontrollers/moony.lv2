@@ -51,7 +51,7 @@ find_package(PkgConfig) # ${PKG_CONFIG_FOUND}
 
 pkg_search_module(LV2 REQUIRED lv2>=1.10)
 include_directories(${LV2_INCLUDE_DIRS})
-set(LIBS ${LIBS} ${LV2_LDFLAGS})
+set(LIBS ${LIBS} ${LV2_LDFLAGS} m)
 
 # options
 include(CMakeDependentOption)
@@ -183,7 +183,7 @@ elseif(WIN32)
 elseif(APPLE)
 	target_compile_definitions(moony PUBLIC -DLUA_USE_MACOSX)
 endif()
-target_link_libraries(moony ${LIBS} "-lm")
+target_link_libraries(moony ${LIBS})
 set_target_properties(moony PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
 set_target_properties(moony PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 set_target_properties(moony PROPERTIES PREFIX "")
@@ -229,7 +229,7 @@ if(${BUILD_TESTING})
 		target_compile_definitions(moony_test PUBLIC -DLUA_USE_MACOSX)
 	endif()
 	set_target_properties(moony_test PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
-	target_link_libraries(moony_test "-lm")
+	target_link_libraries(moony_test ${LIBS})
 
 	if(DEFINED WINE)
 		add_test(NAME API-Test COMMAND ${WINE} moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
