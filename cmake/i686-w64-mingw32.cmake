@@ -19,6 +19,7 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
 set(STATIC_LWS "/opt/${TOOLCHAIN}/lib/libwebsockets_static.a")
+set(LIBS ${LIBS} "-static-libgcc -lws2_32 -Wl,-Bstatic -lwinpthread -luserenv")
 set(LIBS_WEB ${LIBS_WEB} "-static-libgcc -lws2_32 -Wl,-Bstatic -lwinpthread -luserenv")
 
 set(WINE wine32)
