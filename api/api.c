@@ -23,6 +23,7 @@
 #define ECB 1
 #define CBC 0
 #include <aes.h>
+#include <osc.lv2/endian.h>
 
 #include <api_atom.h>
 #include <api_forge.h>
