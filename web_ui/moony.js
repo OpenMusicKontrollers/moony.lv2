@@ -842,7 +842,7 @@ function ws_connect() {
 
 	try {
 		socket_di.onopen = function() {
-			$('#status').html('connected');
+			$('#status').hide();
 			$('.clip').show();
 
 			// query initial props
@@ -863,7 +863,7 @@ function ws_connect() {
 		} 
 
 		socket_di.onclose = function(){
-			$('#status').html('disconnected');
+			$('#status').show();
 			$('.clip').hide();
 			clear_log();
 		}
@@ -904,6 +904,23 @@ $(document).ready(function() {
 		bindKey: {win: 'Ctrl-L',  mac: 'Ctrl-L'},
 		exec: function(editor) {
 			clear_log();
+		},
+		readOnly: true // false if this command should not apply in readOnly mode
+	});
+	editor.commands.addCommand({
+		name: 'open manual',
+		bindKey: {win: 'Ctrl-M',  mac: 'Ctrl-M'},
+		exec: function(editor) {
+			window.open('/manual.html', '_blank');
+		},
+		readOnly: true // false if this command should not apply in readOnly mode
+	});
+	editor.commands.addCommand({
+		name: 'show properties',
+		bindKey: {win: 'Ctrl-Shift-P',  mac: 'Ctrl-Shift-P'},
+		exec: function(editor) {
+			var state = $('#toggle').prop('checked');
+			$('#toggle').prop('checked', !state);
 		},
 		readOnly: true // false if this command should not apply in readOnly mode
 	});

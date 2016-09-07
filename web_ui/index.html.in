@@ -19,7 +19,7 @@
 	<body>
 		<div id="container">
 
-			<input id="toggle" type="checkbox"><label id="icon" for="toggle">&equiv;</label></input>
+			<input id="toggle" type="checkbox"><label id="icon" for="toggle" alt="Ctrl+Shift+P" title="Ctrl+Shift+P">&equiv;</label></input>
 
 			<div class="content">
 				<table><tr style="vertical-align:bottom;"><td>
@@ -38,12 +38,12 @@
 				<div class="sticky-top">
 					<span id="status">disconnected</span>
 					<span class="clip">
-						| <label><input type="radio" id="emacs" name="mode" value="ace/keyboard/emacs" />emacs</label>
-							<label><input type="radio" id="vim" name="mode" value="ace/keyboard/vim" />vim</label>
-						| <a id="compile" href="#" alt="Shift+Return" title="Shift+Return">send chunk</a>
-						| <a id="compile_line" href="#" alt="Ctrl+Shift+Return" title="Ctrl+Shift+Return">send line</a>
-						| <a id="clear" href="#" alt="Ctrl+L" title="Ctrl+L">clear log</a>
-						| <a href="/manual.html" alt="open manual">manual</a>
+						<a class="button" id="compile" href="#" alt="Shift+Return" title="Shift+Return">send chunk</a>
+						<a class="button" id="compile_line" href="#" alt="Ctrl+Shift+Return" title="Ctrl+Shift+Return">send line</a>
+						<a class="button" id="clear" href="#" alt="Ctrl+L" title="Ctrl+L">clear log</a>
+						<a class="button" href="/manual.html" target="_blank" alt="Ctrl+M" title="Ctrl+M">manual</a>
+						<label><input type="radio" id="emacs" name="mode" value="ace/keyboard/emacs" />emacs</label>
+						<label><input type="radio" id="vim" name="mode" value="ace/keyboard/vim" />vim</label>
 					</span>
 				</div>
 				
