@@ -58,8 +58,8 @@
 				</div>
 
 				<div>
-					Copyright &#169; 2015-2016 <a href="mailto:dev@open-music-kontrollers.ch?subject=moony-v@MOONY_VERSION@">Hanspeter Portner</a><br />
-					Released under <a href="http://www.perlfoundation.org/artistic_license_2_0">Artistic License 2.0</a><br />
+					copyright &#169; 2015-2016 <a href="mailto:dev@open-music-kontrollers.ch?subject=moony-v@MOONY_VERSION@">Hanspeter Portner</a><br />
+					released under <a href="http://www.perlfoundation.org/artistic_license_2_0">Artistic License 2.0</a><br />
 					by <a href="https://open-music-kontrollers.ch">Open Music Kontrollers</a><br />
 					using <a href="http://www.gnu.org/software/librejs">libre</a> <a href="/libreJS.html" data-jslicense="1">javascript</a>
 				</div>
