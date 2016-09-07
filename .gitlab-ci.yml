@@ -92,6 +92,7 @@ pages:
     - sed -e "s/@MOONY_VERSION@/$(cat VERSION)/g" web_ui/manual.html.in > public/index.html
     - cp web_ui/style.css public/.
     - cp web_ui/jquery*.js public/.
+    - cp web_ui/libreJS.html public/.
     - cp web_ui/ace.js public/.
     - cp web_ui/mode-lua.js public/.
     - cp web_ui/theme-chaos.js public/.
