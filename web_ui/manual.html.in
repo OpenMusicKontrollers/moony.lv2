@@ -157,6 +157,15 @@
 			</ul>
 		</li>
 
+		<li><a href="#utils">Utilities</a>
+			<ul>
+				<li><a href="#util-midi2cps">midi2cps</a></li>
+				<li><a href="#util-cps2midi">cps2midi</a></li>
+				<li><a href="#util-encrypt">Encrypt</a></li>
+				<li><a href="#util-decrypt">Decrypt</a></li>
+			</ul>
+		</li>
+
 		<li><a href="#license">License</a>
 		</li>
 	</ul>

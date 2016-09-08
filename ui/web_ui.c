@@ -25,6 +25,7 @@
 #include <libwebsockets.h>
 
 #include <moony.h>
+#include <api_stash.h>
 #include <private_ui.h>
 #include <jsatom.h>
 
@@ -138,7 +139,7 @@ struct _ui_t {
 		const LV2_External_UI_Host *host;
 	} kx;
 
-	uint8_t buf [BUF_SIZE];
+	atom_ser_t ser [2];
 
 	char title [512];
 	char *bundle_path;
@@ -148,6 +149,42 @@ struct _ui_t {
 
 	jsatom_t jsatom;
 };
+
+static LV2_Atom_Forge_Ref
+_sink_ui(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
+{
+	atom_ser_t *ser = handle;
+
+	const LV2_Atom_Forge_Ref ref = ser->offset + 1;
+
+	const uint32_t new_offset = ser->offset + size;
+	if(new_offset > ser->size)
+	{
+		uint32_t new_size = ser->size << 1;
+		while(new_offset > new_size)
+			new_size <<= 1;
+
+		if(!(ser->buf = realloc(ser->buf, new_size)))
+			return 0; // realloc failed
+
+		ser->size = new_size;
+	}
+
+	memcpy(ser->buf + ser->offset, buf, size);
+	ser->offset = new_offset;
+
+	return ref;
+}
+
+static LV2_Atom *
+_deref_ui(LV2_Atom_Forge_Sink_Handle handle, LV2_Atom_Forge_Ref ref)
+{
+	atom_ser_t *ser = handle;
+
+	const uint32_t offset = ref - 1;
+
+	return (LV2_Atom *)(ser->buf + offset);
+}
 
 static inline const char *
 get_mimetype(const char *file)
@@ -427,9 +464,12 @@ static inline LV2_Atom_Object *
 _moony_message_forge(ui_t *ui, LV2_URID key,
 	const char *str, uint32_t size)
 {
-	LV2_Atom_Object *obj = (LV2_Atom_Object *)ui->buf;
+	atom_ser_t *ser = &ui->ser[0];
+	LV2_Atom_Object *obj = (LV2_Atom_Object *)ser->buf;
 
-	lv2_atom_forge_set_buffer(&ui->forge, ui->buf, BUF_SIZE);
+	ser->offset = 0;
+	lv2_atom_forge_set_sink(&ui->forge, _sink_ui, _deref_ui, ser);
+
 	if(_moony_patch(&ui->uris.patch, &ui->forge, key, str, size))
 		return obj;
 
@@ -536,8 +576,11 @@ _schedule(ui_t *ui, cJSON *job)
 static inline cJSON * 
 _moony_send(ui_t *ui, uint32_t idx, uint32_t size, uint32_t prot, const void *buf)
 {
-	uint8_t raw [BUF_SIZE]; //FIXME
-	lv2_atom_forge_set_buffer(&ui->forge, raw, BUF_SIZE);
+	atom_ser_t *ser = &ui->ser[1];
+	const LV2_Atom *atom = (const LV2_Atom *)ser->buf;
+
+	ser->offset = 0;
+	lv2_atom_forge_set_sink(&ui->forge, _sink_ui, _deref_ui, ser);
 
 	LV2_Atom_Forge_Frame frame;
 	lv2_atom_forge_object(&ui->forge, &frame, 0, ui->uris.ui_port_notification);
@@ -576,13 +619,13 @@ _moony_send(ui_t *ui, uint32_t idx, uint32_t size, uint32_t prot, const void *bu
 	}
 	else if(prot == ui->uris.atom_event_transfer)
 	{
-		const LV2_Atom *atom = buf;
-		lv2_atom_forge_write(&ui->forge, atom, lv2_atom_total_size(atom));
+		const LV2_Atom *_atom = buf;
+		lv2_atom_forge_write(&ui->forge, _atom, lv2_atom_total_size(_atom));
 	}
 	else if(prot == ui->uris.atom_atom_transfer)
 	{
-		const LV2_Atom *atom = buf;
-		lv2_atom_forge_write(&ui->forge, atom, lv2_atom_total_size(atom));
+		const LV2_Atom *_atom = buf;
+		lv2_atom_forge_write(&ui->forge, _atom, lv2_atom_total_size(_atom));
 	}
 	else
 	{
@@ -591,7 +634,6 @@ _moony_send(ui_t *ui, uint32_t idx, uint32_t size, uint32_t prot, const void *bu
 
 	lv2_atom_forge_pop(&ui->forge, &frame);
 
-	const LV2_Atom *atom = (const LV2_Atom *)raw;
 	return jsatom_encode(&ui->jsatom, atom->size, atom->type, LV2_ATOM_BODY_CONST(atom));
 }
 
@@ -685,12 +727,16 @@ _moony_cb(ui_t *ui, const char *json)
 	if(!root)
 		return;
 
-	lv2_atom_forge_set_buffer(&ui->forge, ui->buf, BUF_SIZE);
+	atom_ser_t *ser = &ui->ser[0];
+	const LV2_Atom_Object *obj = (const LV2_Atom_Object *)ser->buf;
+
+	ser->offset = 0;
+	lv2_atom_forge_set_sink(&ui->forge, _sink_ui, _deref_ui, ser);
+
 	if(!jsatom_decode(&ui->jsatom, &ui->forge, root))
 		return;
 	cJSON_Delete(root);
 
-	const LV2_Atom_Object *obj = (const LV2_Atom_Object *)ui->buf;
 	if(  !lv2_atom_forge_is_object_type(&ui->forge, obj->atom.type)
 		|| (obj->body.otype != ui->uris.ui_port_notification) )
 	{
@@ -1060,6 +1106,13 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	_spawn_invalidate_child(&ui->spawn);
 	ui->done = 1;
 
+	for(unsigned i=0; i<2; i++)
+	{
+		ui->ser[i].moony = NULL;
+		ui->ser[i].size = 1024;
+		ui->ser[i].buf = malloc(ui->ser[i].size);
+	}
+
 	return ui;
 }
 
@@ -1067,6 +1120,12 @@ static void
 cleanup(LV2UI_Handle handle)
 {
 	ui_t *ui = handle;
+
+	for(unsigned i=0; i<2; i++)
+	{
+		if(ui->ser[i].buf)
+			free(ui->ser[i].buf);
+	}
 
 	if(ui->url)
 		free(ui->url);
