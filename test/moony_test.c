@@ -261,7 +261,5 @@ main(int argc, char **argv)
 
 	moony_deinit(&handle.moony);
 
-	printf("\n[test] Sucessful\n");
-
 	return 0;
 }

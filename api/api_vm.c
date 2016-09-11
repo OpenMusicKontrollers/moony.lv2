@@ -168,14 +168,14 @@ moony_vm_init(moony_vm_t *vm)
 	luaL_requiref(vm->L, "coroutine", luaopen_coroutine, 1);
 	luaL_requiref(vm->L, "table", luaopen_table, 1);
 	luaL_requiref(vm->L, "string", luaopen_string, 1);
-	luaL_requiref(vm->L, "utf8", luaopen_utf8, 1);
 	luaL_requiref(vm->L, "math", luaopen_math, 1);
-	lua_pop(vm->L, 6);
+	luaL_requiref(vm->L, "utf8", luaopen_utf8, 1);
+	luaL_requiref(vm->L, "debug", luaopen_debug, 1);
+	lua_pop(vm->L, 7);
 
 	//luaL_requiref(vm->L, "io", luaopen_io, 1);
 	//luaL_requiref(vm->L, "os", luaopen_os, 1);
 	//luaL_requiref(vm->L, "bit32", luaopen_bit32, 1);
-	//luaL_requiref(vm->L, "debug", luaopen_debug, 1);
 	//luaL_requiref(vm->L, "package", luaopen_package, 1);
 
 #ifdef USE_MANUAL_GC

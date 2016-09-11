@@ -141,11 +141,11 @@ add_library(lua OBJECT
 	lua-5.3.3/lzio.c
 
 	#lua-5.3.3/lbitlib.c
-	#lua-5.3.3/ldblib.c
 	#lua-5.3.3/liolib.c
 	#lua-5.3.3/loslib.c
 	#lua-5.3.3/loadlib.c
 	#lua-5.3.3/linit.c
+	lua-5.3.3/ldblib.c
 	lua-5.3.3/lbaselib.c
 	lua-5.3.3/lauxlib.c
 	lua-5.3.3/lcorolib.c
