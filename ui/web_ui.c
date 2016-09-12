@@ -139,7 +139,7 @@ struct _ui_t {
 		const LV2_External_UI_Host *host;
 	} kx;
 
-	atom_ser_t ser [2];
+	atom_ser_t ser [3];
 
 	char title [512];
 	char *bundle_path;
@@ -460,12 +460,12 @@ static const struct lws_protocols protocols [] = {
 	{ .name = NULL, .callback = NULL, .per_session_data_size = 0, .rx_buffer_size = 0 }
 };
 
-static inline LV2_Atom_Object *
+static inline const LV2_Atom_Object *
 _moony_message_forge(ui_t *ui, LV2_URID key,
 	const char *str, uint32_t size)
 {
 	atom_ser_t *ser = &ui->ser[0];
-	LV2_Atom_Object *obj = (LV2_Atom_Object *)ser->buf;
+	const LV2_Atom_Object *obj = (const LV2_Atom_Object *)ser->buf;
 
 	ser->offset = 0;
 	lv2_atom_forge_set_sink(&ui->forge, _sink_ui, _deref_ui, ser);
@@ -676,7 +676,7 @@ _moony_ui(ui_t *ui, const LV2_Atom_Object *obj)
 				{
 					if(property->body == ui->uris.window_title)
 					{
-						LV2_Atom_Object *obj_out = _moony_message_forge(ui, ui->uris.window_title,
+						const LV2_Atom_Object *obj_out = _moony_message_forge(ui, ui->uris.window_title,
 							ui->title, strlen(ui->title));
 						if(obj_out)
 						{
@@ -702,7 +702,7 @@ _moony_ui(ui_t *ui, const LV2_Atom_Object *obj)
 					if(property->body == ui->uris.patch.subject) //FIXME rename property?
 					{
 						const char *self = ui->unmap->unmap(ui->unmap->handle, ui->uris.patch.self);
-						LV2_Atom_Object *obj_out = _moony_message_forge(ui, ui->uris.patch.subject,
+						const LV2_Atom_Object *obj_out = _moony_message_forge(ui, ui->uris.patch.subject,
 							self, strlen(self)); //FIXME URI
 						if(obj_out)
 						{
@@ -727,7 +727,7 @@ _moony_cb(ui_t *ui, const char *json)
 	if(!root)
 		return;
 
-	atom_ser_t *ser = &ui->ser[0];
+	atom_ser_t *ser = &ui->ser[2];
 	const LV2_Atom_Object *obj = (const LV2_Atom_Object *)ser->buf;
 
 	ser->offset = 0;
@@ -1106,7 +1106,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	_spawn_invalidate_child(&ui->spawn);
 	ui->done = 1;
 
-	for(unsigned i=0; i<2; i++)
+	for(unsigned i=0; i<3; i++)
 	{
 		ui->ser[i].moony = NULL;
 		ui->ser[i].size = 1024;
@@ -1121,7 +1121,7 @@ cleanup(LV2UI_Handle handle)
 {
 	ui_t *ui = handle;
 
-	for(unsigned i=0; i<2; i++)
+	for(unsigned i=0; i<3; i++)
 	{
 		if(ui->ser[i].buf)
 			free(ui->ser[i].buf);

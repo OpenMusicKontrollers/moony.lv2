@@ -38,6 +38,10 @@ var LuaHighlightRules = function() {
 				// Lua math
 				"abs|acos|asin|atan|ceil|cos|deg|exp|floor|fmod|log|max|min|modf|"+
 				"rad|random|randomseed|sin|sqrt|tan|tointeger|type|ult|"+
+				// Lua debug
+				"debug|getuservalue|gethook|getinfo|getlocal|getregistry|getmetatable|"+
+				"getupvalue|upvaluejoin|upvalueid|setuservalue|sethook|setlocal|"+
+				"setmetatable|setupvalue|traceback|"+
 				// moony forge
 				"frame_time|beat_time|time|atom|int|long|float|double|bool|urid|string|literal|uri|path|"+
 				"chunk|midi|raw|bundle|message|tuple|object|key|property|vector|sequence|"+
@@ -89,7 +93,7 @@ var LuaHighlightRules = function() {
 
     var libraries = (
 				// Lua
-				"coroutine|string|utf8|table|math|"+
+				"coroutine|string|utf8|table|math|debug|"+
 				// moony
 				"Atom|MIDI|Time|OSC|Core|Buf_Size|Patch|RDF|RDFS|Units|Options|"+
 				"MIDIResponder|OSCResponder|TimeResponder|StateResponder|Map|Unmap|VoiceMap|Stash|Note|HashMap");
