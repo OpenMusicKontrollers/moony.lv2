@@ -1550,10 +1550,6 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	lua_pushcclosure(L, _latom_seq_foreach, 1);
 	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_SEQUENCE_FOREACH);
 
-	lua_pushlightuserdata(L, moony);
-	lua_pushcclosure(L, _latom_seq_multiplex, 1);
-	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_SEQUENCE_MULTIPLEX);
-
 	lua_newtable(L);
 		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_COUNT + MOONY_UPCLOSURE_TUPLE_FOREACH);
 	lua_newtable(L);

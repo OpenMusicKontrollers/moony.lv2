@@ -38,7 +38,6 @@ struct _latom_driver_t {
 	latom_driver_function_t value;
 	int unpack;
 	int foreach;
-	int multiplex;
 };
 
 struct _latom_t {
@@ -137,8 +136,6 @@ _latom_seq_foreach_itr(lua_State *L);
 int
 _latom_vec_foreach_itr(lua_State *L);
 
-int
-_latom_seq_multiplex(lua_State *L);
 int
 _latom_seq_multiplex_itr(lua_State *L);
 

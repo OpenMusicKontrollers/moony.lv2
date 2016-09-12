@@ -133,7 +133,7 @@ moony:bank-multiplex_atom-multiplex2
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:code """function run(n, seq1, forge1, seq2, forge2)
-	for frames, atom in seq1:multiplex(seq2) do
+	for frames, atom in seq1:foreach(seq2) do
 		forge1:time(frames):atom(atom)
 		forge2:time(frames):atom(atom)
 	end
@@ -145,7 +145,7 @@ moony:bank-multiplex_atom-multiplex4
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:code """function run(n, seq1, forge1, seq2, forge2, seq3, forge3, seq4, forge4)
-	for frames, atom in seq1:multiplex(seq2, seq3, seq4) do
+	for frames, atom in seq1:foreach(seq2, seq3, seq4) do
 		forge1:time(frames):atom(atom)
 		forge2:time(frames):atom(atom)
 		forge3:time(frames):atom(atom)

@@ -1608,7 +1608,7 @@ do
 	assert(#stash2 == 3)
 
 	local i = 0
-	for frames, atom, seq in stash1:multiplex(stash2) do
+	for frames, atom, seq in stash1:foreach(stash2) do
 		assert(frames == i)
 		assert(atom.type == Atom.Int)
 		assert(atom.body == i)

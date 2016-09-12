@@ -48,8 +48,6 @@ var LuaHighlightRules = function() {
 				"typed|get|set|put|patch|remove|add|pop|"+
 				// moony common
 				"foreach|unpack|clone|stash|apply|register|"+
-				// moony sequence
-				"multiplex|"+
 				// moony stash
 				"write|read");
 

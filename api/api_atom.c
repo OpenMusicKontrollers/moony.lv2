@@ -701,12 +701,11 @@ _latom_seq_multiplex_itr(lua_State *L)
 	return 1;
 }
 
-int
-_latom_seq_multiplex(lua_State *L)
+static int
+_latom_seq_multiplex(lua_State *L, unsigned n)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	latom_t *latom = lua_touserdata(L, 1);
-	const unsigned n = lua_gettop(L);
 
 	for(unsigned i=1; i<=n; i++)
 	{
@@ -761,6 +760,10 @@ _latom_seq_foreach_itr(lua_State *L)
 int
 _latom_seq_foreach(lua_State *L)
 {
+	const unsigned n = lua_gettop(L);
+	if(n > 1) // multiplex if given any function arguments
+		return _latom_seq_multiplex(L, n);
+
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	latom_t *latom = lua_touserdata(L, 1);
 
@@ -778,8 +781,7 @@ const latom_driver_t latom_sequence_driver = {
 	.__indexi = _latom_seq__indexi,
 	.__len = _latom_seq__len,
 	.__tostring = _latom_seq__tostring,
-	.foreach = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_SEQUENCE_FOREACH,
-	.multiplex = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_SEQUENCE_MULTIPLEX
+	.foreach = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_SEQUENCE_FOREACH
 };
 
 static int
@@ -1031,11 +1033,6 @@ _latom__index(lua_State *L)
 			else if(driver->foreach && !strcmp(key, "foreach"))
 			{
 				lua_rawgeti(L, LUA_REGISTRYINDEX, driver->foreach);
-				return 1;
-			}
-			else if(driver->foreach && !strcmp(key, "multiplex"))
-			{
-				lua_rawgeti(L, LUA_REGISTRYINDEX, driver->multiplex);
 				return 1;
 			}
 			else if(driver->unpack && !strcmp(key, "unpack"))
