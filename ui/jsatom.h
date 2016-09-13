@@ -300,11 +300,14 @@ _jsatom_encode_midi(jsatom_t *jsatom, uint32_t size, LV2_URID type, const void *
 	//cJSON_AddItemToObject(obj, JSON_LD_TYPE, _jsatom_encode_types(LV2_MIDI__MidiEvent, NS_XSD"hexBinary", NULL));
 	cJSON_AddItemToObject(obj, JSON_LD_TYPE, _jsatom_encode_types(LV2_MIDI__MidiEvent, NULL));
 	char *hex = malloc(size*2+1);
-	const uint8_t *m = body;
-	for(unsigned i = 0; i < size; i++)
-		sprintf(&hex[i*2], "%02"PRIx8, m[i]);
-	cJSON_AddItemToObject(obj, JSON_LD_VALUE, cJSON_CreateString(hex));
-	free(hex);
+	if(hex)
+	{
+		const uint8_t *m = body;
+		for(unsigned i = 0; i < size; i++)
+			sprintf(&hex[i*2], "%02"PRIx8, m[i]);
+		cJSON_AddItemToObject(obj, JSON_LD_VALUE, cJSON_CreateString(hex));
+		free(hex);
+	}
 	return obj;
 }
 
@@ -363,10 +366,9 @@ _jsatom_encode_raw(jsatom_t *jsatom, uint32_t size, LV2_URID type, const void *b
 static inline cJSON *
 jsatom_encode(jsatom_t *jsatom, uint32_t size, LV2_URID type, const void *body)
 {
-	cJSON *obj = _jsatom_encode_raw(jsatom, size, type, body);
 	cJSON *arr = cJSON_CreateArray();
-	if(obj)
-		cJSON_AddItemToArray(arr, obj);
+	cJSON *obj = _jsatom_encode_raw(jsatom, size, type, body);
+	cJSON_AddItemToArray(arr, obj);
 	return arr;
 }
 

@@ -81,7 +81,6 @@ struct _pmap_t {
 };
 
 struct _client_t {
-	client_t *next;
 	cJSON *root;
 };
 
@@ -448,13 +447,15 @@ static const struct lws_protocols protocols [] = {
 		.name = "http-only",
 		.callback = callback_http,
 		.per_session_data_size = 0,
-		.rx_buffer_size = BUF_SIZE,
+		//.rx_buffer_size = BUF_SIZE,
+		.rx_buffer_size = 0
 	},
 	[PROTOCOL_LV2] = {
 		.name = "lv2-protocol",
 		.callback = callback_lv2,
 		.per_session_data_size = sizeof(client_t),
-		.rx_buffer_size = BUF_SIZE,
+		//.rx_buffer_size = BUF_SIZE
+		.rx_buffer_size = 0
 	},
 	{ .name = NULL, .callback = NULL, .per_session_data_size = 0, .rx_buffer_size = 0 }
 };
@@ -467,6 +468,7 @@ _moony_message_forge(ui_t *ui, LV2_URID key,
 
 	ser->offset = 0;
 	lv2_atom_forge_set_sink(&ui->forge, _sink_ui, _deref_ui, ser);
+	memset(ser->buf, 0x0, sizeof(LV2_Atom));
 
 	if(_moony_patch(&ui->uris.patch, &ui->forge, key, str, size))
 	{
@@ -581,6 +583,7 @@ _moony_send(ui_t *ui, uint32_t idx, uint32_t size, uint32_t prot, const void *bu
 
 	ser->offset = 0;
 	lv2_atom_forge_set_sink(&ui->forge, _sink_ui, _deref_ui, ser);
+	memset(ser->buf, 0x0, sizeof(LV2_Atom));
 
 	LV2_Atom_Forge_Frame frame;
 	lv2_atom_forge_object(&ui->forge, &frame, 0, ui->uris.ui_port_notification);
@@ -732,10 +735,12 @@ _moony_cb(ui_t *ui, const char *json)
 
 	ser->offset = 0;
 	lv2_atom_forge_set_sink(&ui->forge, _sink_ui, _deref_ui, ser);
+	memset(ser->buf, 0x0, sizeof(LV2_Atom));
 
-	if(!jsatom_decode(&ui->jsatom, &ui->forge, root))
-		return;
+	const LV2_Atom_Forge_Ref ref = jsatom_decode(&ui->jsatom, &ui->forge, root);
 	cJSON_Delete(root);
+	if(!ref)
+		return;
 
 	const LV2_Atom_Object *obj = (const LV2_Atom_Object *)ser->buf;
 	if(  !lv2_atom_forge_is_object_type(&ui->forge, obj->atom.type)

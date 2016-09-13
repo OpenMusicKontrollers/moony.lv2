@@ -759,7 +759,7 @@ function lv2_success(data) {
 	jsonld.compact(data, context, options, function(err, compacted, ctx) {
 		if(err)
 			return;
-		
+
 		if(node_is_a(compacted, UI.portNotification)) {
 			var symbol = compacted[LV2.symbol][RDF.value];
 			var prot = compacted[UI.protocol][RDF.id];
