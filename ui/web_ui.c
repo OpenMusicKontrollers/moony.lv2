@@ -25,7 +25,6 @@
 #include <libwebsockets.h>
 
 #include <moony.h>
-#include <api_stash.h>
 #include <private_ui.h>
 #include <jsatom.h>
 

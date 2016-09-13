@@ -275,7 +275,7 @@ static inline cJSON *
 _jsatom_encode_fallback(jsatom_t *jsatom, uint32_t size, LV2_URID type, const void *body)
 {
 	const char *uri = jsatom->unmap->unmap(jsatom->unmap->handle, type);
-	return _jsatom_encode_base64(jsatom, size, uri, body);
+	return uri ? _jsatom_encode_base64(jsatom, size, uri, body) : NULL;
 }
 
 static inline cJSON *
@@ -348,7 +348,8 @@ jsatom_encode(jsatom_t *jsatom, uint32_t size, LV2_URID type, const void *body)
 {
 	cJSON *obj = _jsatom_encode_raw(jsatom, size, type, body);
 	cJSON *arr = cJSON_CreateArray();
-	cJSON_AddItemToArray(arr, obj);
+	if(obj)
+		cJSON_AddItemToArray(arr, obj);
 	return arr;
 }
 

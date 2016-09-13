@@ -396,4 +396,13 @@ _sink(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size);
 LV2_Atom *
 _deref(LV2_Atom_Forge_Sink_Handle handle, LV2_Atom_Forge_Ref ref);
 
+typedef struct _atom_ser_t atom_ser_t;
+
+struct _atom_ser_t {
+	moony_t *moony; // use rt-memory pool?
+	uint32_t size;
+	uint8_t *buf;
+	uint32_t offset;
+};
+
 #endif // _MOONY_H
