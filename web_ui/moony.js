@@ -201,8 +201,12 @@ function sequence_number(seq_num) {
 var trim = /[^a-zA-Z0-9_]+/g;
 
 function node_is_a(node, id) {
-	var types = node[RDF.type];
-	return types && ( (types == id) || (types.indexOf(id) != -1) );
+	if(node) {
+		var types = node[RDF.type];
+		return types && ( (types == id) || (types.indexOf(id) != -1) );
+	} else {
+		return false;
+	}
 }
 
 function lv2_get(destination, property) {
@@ -767,6 +771,8 @@ function lv2_success(data) {
 				if(callback)
 					callback(symbol, value);
 			}
+		} else {
+			console.log('not an ui:portNotification');
 		}
 	})
 }
@@ -855,7 +861,14 @@ function ws_connect() {
 
 		socket_di.onmessage =function got_packet(msg) {
 			if(msg && msg.data) {
-				var data = JSON.parse(msg.data);
+				var data;
+
+				try {
+					data = JSON.parse(msg.data);
+				} catch(e) {
+					console.log(e);
+					console.log(msg.data);
+				}
 
 				if(data)
 					lv2_success(data);

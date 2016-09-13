@@ -36,6 +36,12 @@
 #define JSATOM_MAX_TYPES 1
 #define NS_XSD "http://www.w3.org/2001/XMLSchema#"
 
+#define JSON_LD_TYPE     "@type"
+#define JSON_LD_ID       "@id"
+#define JSON_LD_VALUE    "@value"
+#define JSON_LD_LIST     "@list"
+#define JSON_LD_LANGUAGE "@language"
+
 typedef struct _jsatom_t jsatom_t;
 typedef struct _jsatom_encode_item_t jsatom_encode_item_t;
 typedef cJSON *(*jsatom_encode_t)(jsatom_t *jsatom, uint32_t size, LV2_URID type, const void *body);
@@ -82,17 +88,26 @@ _jsatom_encode_value_string(const char *body)
 {
 	cJSON *arr = cJSON_CreateArray();
 	cJSON *obj = cJSON_CreateObject();
-	cJSON_AddItemToObject(obj, "@value", cJSON_CreateString(body));
+	cJSON_AddItemToObject(obj, JSON_LD_VALUE, cJSON_CreateString(body));
 	cJSON_AddItemToArray(arr, obj);
 	return arr;
+}
+
+static inline cJSON *
+_jsatom_encode_nil(jsatom_t *jsatom, uint32_t size, LV2_URID type, const void *body)
+{
+	cJSON *obj = cJSON_CreateObject();
+	cJSON_AddItemToObject(obj, JSON_LD_TYPE, cJSON_CreateNull());
+	cJSON_AddItemToObject(obj, JSON_LD_VALUE, cJSON_CreateNull());
+	return obj;
 }
 
 static inline cJSON *
 _jsatom_encode_int(jsatom_t *jsatom, uint32_t size, LV2_URID type, const void *body)
 {
 	cJSON *obj = cJSON_CreateObject();
-	cJSON_AddItemToObject(obj, "@type", _jsatom_encode_types(LV2_ATOM__Int, NULL));
-	cJSON_AddItemToObject(obj, "@value", cJSON_CreateNumber(*(const int32_t *)body));
+	cJSON_AddItemToObject(obj, JSON_LD_TYPE, _jsatom_encode_types(LV2_ATOM__Int, NULL));
+	cJSON_AddItemToObject(obj, JSON_LD_VALUE, cJSON_CreateNumber(*(const int32_t *)body));
 	return obj;
 }
 
@@ -100,8 +115,8 @@ static inline cJSON *
 _jsatom_encode_long(jsatom_t *jsatom, uint32_t size, LV2_URID type, const void *body)
 {
 	cJSON *obj = cJSON_CreateObject();
-	cJSON_AddItemToObject(obj, "@type", _jsatom_encode_types(LV2_ATOM__Long, NULL));
-	cJSON_AddItemToObject(obj, "@value", cJSON_CreateNumber(*(const int64_t *)body));
+	cJSON_AddItemToObject(obj, JSON_LD_TYPE, _jsatom_encode_types(LV2_ATOM__Long, NULL));
+	cJSON_AddItemToObject(obj, JSON_LD_VALUE, cJSON_CreateNumber(*(const int64_t *)body));
 	return obj;
 }
 
@@ -109,8 +124,8 @@ static inline cJSON *
 _jsatom_encode_float(jsatom_t *jsatom, uint32_t size, LV2_URID type, const void *body)
 {
 	cJSON *obj = cJSON_CreateObject();
-	cJSON_AddItemToObject(obj, "@type", _jsatom_encode_types(LV2_ATOM__Float, NULL));
-	cJSON_AddItemToObject(obj, "@value", cJSON_CreateNumber(*(const float*)body));
+	cJSON_AddItemToObject(obj, JSON_LD_TYPE, _jsatom_encode_types(LV2_ATOM__Float, NULL));
+	cJSON_AddItemToObject(obj, JSON_LD_VALUE, cJSON_CreateNumber(*(const float*)body));
 	return obj;
 }
 
@@ -118,8 +133,8 @@ static inline cJSON *
 _jsatom_encode_double(jsatom_t *jsatom, uint32_t size, LV2_URID type, const void *body)
 {
 	cJSON *obj = cJSON_CreateObject();
-	cJSON_AddItemToObject(obj, "@type", _jsatom_encode_types(LV2_ATOM__Double, NULL));
-	cJSON_AddItemToObject(obj, "@value", cJSON_CreateNumber(*(const double *)body));
+	cJSON_AddItemToObject(obj, JSON_LD_TYPE, _jsatom_encode_types(LV2_ATOM__Double, NULL));
+	cJSON_AddItemToObject(obj, JSON_LD_VALUE, cJSON_CreateNumber(*(const double *)body));
 	return obj;
 }
 
@@ -127,8 +142,8 @@ static inline cJSON *
 _jsatom_encode_bool(jsatom_t *jsatom, uint32_t size, LV2_URID type, const void *body)
 {
 	cJSON *obj = cJSON_CreateObject();
-	cJSON_AddItemToObject(obj, "@type", _jsatom_encode_types(LV2_ATOM__Bool, NULL));
-	cJSON_AddItemToObject(obj, "@value", cJSON_CreateBool(*(const int32_t *)body ? 1 : 0));
+	cJSON_AddItemToObject(obj, JSON_LD_TYPE, _jsatom_encode_types(LV2_ATOM__Bool, NULL));
+	cJSON_AddItemToObject(obj, JSON_LD_VALUE, cJSON_CreateBool(*(const int32_t *)body ? 1 : 0));
 	return obj;
 }
 
@@ -138,7 +153,7 @@ _jsatom_encode_uri(jsatom_t *jsatom, uint32_t size, LV2_URID type, const void *b
 	cJSON *obj = cJSON_CreateObject();
 	// @type is not needed
 	// @value is not needed
-	cJSON_AddItemToObject(obj, "@id", cJSON_CreateString(body));
+	cJSON_AddItemToObject(obj, JSON_LD_ID, cJSON_CreateString(body));
 	return obj;
 }
 
@@ -153,8 +168,8 @@ static inline cJSON *
 _jsatom_encode_string(jsatom_t *jsatom, uint32_t size, LV2_URID type, const void *body)
 {
 	cJSON *obj = cJSON_CreateObject();
-	cJSON_AddItemToObject(obj, "@type", _jsatom_encode_types(LV2_ATOM__String, NULL));
-	cJSON_AddItemToObject(obj, "@value", cJSON_CreateString(body));
+	cJSON_AddItemToObject(obj, JSON_LD_TYPE, _jsatom_encode_types(LV2_ATOM__String, NULL));
+	cJSON_AddItemToObject(obj, JSON_LD_VALUE, cJSON_CreateString(body));
 	return obj;
 }
 
@@ -162,8 +177,8 @@ static inline cJSON *
 _jsatom_encode_path(jsatom_t *jsatom, uint32_t size, LV2_URID type, const void *body)
 {
 	cJSON *obj = cJSON_CreateObject();
-	cJSON_AddItemToObject(obj, "@type", _jsatom_encode_types(LV2_ATOM__Path, NULL));
-	cJSON_AddItemToObject(obj, "@value", cJSON_CreateString(body));
+	cJSON_AddItemToObject(obj, JSON_LD_TYPE, _jsatom_encode_types(LV2_ATOM__Path, NULL));
+	cJSON_AddItemToObject(obj, JSON_LD_VALUE, cJSON_CreateString(body));
 	return obj;
 }
 
@@ -175,18 +190,18 @@ _jsatom_encode_literal(jsatom_t *jsatom, uint32_t size, LV2_URID type, const voi
 	if(lit_body->datatype)
 	{
 		const char *datatype = jsatom->unmap->unmap(jsatom->unmap->handle, lit_body->datatype);
-		cJSON_AddItemToObject(obj, "@type", _jsatom_encode_types(LV2_ATOM__Literal, datatype, NULL));
+		cJSON_AddItemToObject(obj, JSON_LD_TYPE, _jsatom_encode_types(LV2_ATOM__Literal, datatype, NULL));
 	}
 	else
 	{
-		cJSON_AddItemToObject(obj, "@type", _jsatom_encode_types(LV2_ATOM__Literal, NULL));
+		cJSON_AddItemToObject(obj, JSON_LD_TYPE, _jsatom_encode_types(LV2_ATOM__Literal, NULL));
 	}
 	if(lit_body->lang)
 	{
 		const char *lang = jsatom->unmap->unmap(jsatom->unmap->handle, lit_body->lang);
-		cJSON_AddItemToObject(obj, "@language", cJSON_CreateString(lang));
+		cJSON_AddItemToObject(obj, JSON_LD_LANGUAGE, cJSON_CreateString(lang));
 	}
-	cJSON_AddItemToObject(obj, "@value", cJSON_CreateString(LV2_ATOM_CONTENTS_CONST(LV2_Atom_Literal_Body, lit_body)));
+	cJSON_AddItemToObject(obj, JSON_LD_VALUE, cJSON_CreateString(LV2_ATOM_CONTENTS_CONST(LV2_Atom_Literal_Body, lit_body)));
 	return obj;
 }
 
@@ -196,7 +211,7 @@ _jsatom_encode_vector(jsatom_t *jsatom, uint32_t size, LV2_URID type, const void
 	const LV2_Atom_Vector_Body *vec_body = body;
 	const void *vec = LV2_ATOM_CONTENTS_CONST(LV2_Atom_Vector_Body, vec_body);
 	cJSON *obj = cJSON_CreateObject();
-	cJSON_AddItemToObject(obj, "@type", _jsatom_encode_types(LV2_ATOM__Vector, NULL));
+	cJSON_AddItemToObject(obj, JSON_LD_TYPE, _jsatom_encode_types(LV2_ATOM__Vector, NULL));
 	cJSON *list = cJSON_CreateArray();
 	const unsigned nelements = (size - sizeof(LV2_Atom_Vector_Body)) / vec_body->child_size;
 	for(unsigned i = 0; i < nelements; i++)
@@ -204,7 +219,7 @@ _jsatom_encode_vector(jsatom_t *jsatom, uint32_t size, LV2_URID type, const void
 		cJSON_AddItemToArray(list, _jsatom_encode_raw(jsatom, vec_body->child_size, vec_body->child_type,
 			vec + i*vec_body->child_size));
 	}
-	cJSON_AddItemToObject(obj, "@list", list);
+	cJSON_AddItemToObject(obj, JSON_LD_LIST, list);
 	return obj;
 }
 
@@ -212,13 +227,13 @@ static inline cJSON *
 _jsatom_encode_tuple(jsatom_t *jsatom, uint32_t size, LV2_URID type, const void *body)
 {
 	cJSON *obj = cJSON_CreateObject();
-	cJSON_AddItemToObject(obj, "@type", _jsatom_encode_types(LV2_ATOM__Tuple, NULL));
+	cJSON_AddItemToObject(obj, JSON_LD_TYPE, _jsatom_encode_types(LV2_ATOM__Tuple, NULL));
 	cJSON *list = cJSON_CreateArray();
 	LV2_ATOM_TUPLE_BODY_FOREACH(body, size, atom)
 	{
 		cJSON_AddItemToArray(list, _jsatom_encode_raw(jsatom, atom->size, atom->type, LV2_ATOM_BODY_CONST(atom)));
 	}
-	cJSON_AddItemToObject(obj, "@list", list);
+	cJSON_AddItemToObject(obj, JSON_LD_LIST, list);
 	return obj;
 }
 
@@ -230,16 +245,16 @@ _jsatom_encode_object(jsatom_t *jsatom, uint32_t size, LV2_URID type, const void
 	if(obj_body->id)
 	{
 		const char *id = jsatom->unmap->unmap(jsatom->unmap->handle, obj_body->id);
-		cJSON_AddItemToObject(obj, "@id", cJSON_CreateString(id));
+		cJSON_AddItemToObject(obj, JSON_LD_ID, cJSON_CreateString(id));
 	}
 	if(obj_body->otype)
 	{
 		const char *otype = jsatom->unmap->unmap(jsatom->unmap->handle, obj_body->otype);
-		cJSON_AddItemToObject(obj, "@type", _jsatom_encode_types(LV2_ATOM__Object, otype, NULL));
+		cJSON_AddItemToObject(obj, JSON_LD_TYPE, _jsatom_encode_types(LV2_ATOM__Object, otype, NULL));
 	}
 	else
 	{
-		cJSON_AddItemToObject(obj, "@type", _jsatom_encode_types(LV2_ATOM__Object, NULL));
+		cJSON_AddItemToObject(obj, JSON_LD_TYPE, _jsatom_encode_types(LV2_ATOM__Object, NULL));
 	}
 	LV2_ATOM_OBJECT_BODY_FOREACH(body, size, prop)
 	{
@@ -254,12 +269,12 @@ static inline cJSON *
 _jsatom_encode_base64(jsatom_t *jsatom, uint32_t size, const char *uri, const void *body)
 {
 	cJSON *obj = cJSON_CreateObject();
-	//cJSON_AddItemToObject(obj, "@type", _jsatom_encode_types(uri, NS_XSD"base64Binary", NULL));
-	cJSON_AddItemToObject(obj, "@type", _jsatom_encode_types(uri, NULL));
+	//cJSON_AddItemToObject(obj, JSON_LD_TYPE, _jsatom_encode_types(uri, NS_XSD"base64Binary", NULL));
+	cJSON_AddItemToObject(obj, JSON_LD_TYPE, _jsatom_encode_types(uri, NULL));
 	char *base64 = base64_encode(body, size);
 	if(base64)
 	{
-		cJSON_AddItemToObject(obj, "@value", cJSON_CreateString(base64));
+		cJSON_AddItemToObject(obj, JSON_LD_VALUE, cJSON_CreateString(base64));
 		free(base64);
 	}
 	return obj;
@@ -282,13 +297,13 @@ static inline cJSON *
 _jsatom_encode_midi(jsatom_t *jsatom, uint32_t size, LV2_URID type, const void *body)
 {
 	cJSON *obj = cJSON_CreateObject();
-	//cJSON_AddItemToObject(obj, "@type", _jsatom_encode_types(LV2_MIDI__MidiEvent, NS_XSD"hexBinary", NULL));
-	cJSON_AddItemToObject(obj, "@type", _jsatom_encode_types(LV2_MIDI__MidiEvent, NULL));
+	//cJSON_AddItemToObject(obj, JSON_LD_TYPE, _jsatom_encode_types(LV2_MIDI__MidiEvent, NS_XSD"hexBinary", NULL));
+	cJSON_AddItemToObject(obj, JSON_LD_TYPE, _jsatom_encode_types(LV2_MIDI__MidiEvent, NULL));
 	char *hex = malloc(size*2+1);
 	const uint8_t *m = body;
 	for(unsigned i = 0; i < size; i++)
 		sprintf(&hex[i*2], "%02"PRIx8, m[i]);
-	cJSON_AddItemToObject(obj, "@value", cJSON_CreateString(hex));
+	cJSON_AddItemToObject(obj, JSON_LD_VALUE, cJSON_CreateString(hex));
 	free(hex);
 	return obj;
 }
@@ -307,7 +322,9 @@ _jsatom_encode_raw(jsatom_t *jsatom, uint32_t size, LV2_URID type, const void *b
 {
 	jsatom_encode_t encode;
 
-	if(type == jsatom->forge.Int)
+	if(type == 0)
+		encode = _jsatom_encode_nil;
+	else if(type == jsatom->forge.Int)
 		encode = _jsatom_encode_int;
 	else if(type == jsatom->forge.Long)
 		encode = _jsatom_encode_long;
@@ -420,7 +437,7 @@ _jsatom_types_is_not_a(cJSON *types, const char *uri)
 static inline LV2_Atom_Forge_Ref
 _jsatom_decode_int(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON *types)
 {
-	cJSON *value = _jsatom_node_key(node, "@value");
+	cJSON *value = _jsatom_node_key(node, JSON_LD_VALUE);
 	if( value && (value->type == cJSON_Number) )
 		return lv2_atom_forge_int(forge, value->valueint);
 
@@ -430,7 +447,7 @@ _jsatom_decode_int(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON *
 static inline LV2_Atom_Forge_Ref
 _jsatom_decode_long(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON *types)
 {
-	cJSON *value = _jsatom_node_key(node, "@value");
+	cJSON *value = _jsatom_node_key(node, JSON_LD_VALUE);
 	if( value && (value->type == cJSON_Number) )
 		return lv2_atom_forge_long(forge, value->valueint);
 
@@ -440,7 +457,7 @@ _jsatom_decode_long(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON 
 static inline LV2_Atom_Forge_Ref
 _jsatom_decode_float(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON *types)
 {
-	cJSON *value = _jsatom_node_key(node, "@value");
+	cJSON *value = _jsatom_node_key(node, JSON_LD_VALUE);
 	if( value && (value->type == cJSON_Number) )
 		return lv2_atom_forge_float(forge, value->valuedouble);
 
@@ -450,7 +467,7 @@ _jsatom_decode_float(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON
 static inline LV2_Atom_Forge_Ref
 _jsatom_decode_double(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON *types)
 {
-	cJSON *value = _jsatom_node_key(node, "@value");
+	cJSON *value = _jsatom_node_key(node, JSON_LD_VALUE);
 	if( value && (value->type == cJSON_Number) )
 		return lv2_atom_forge_double(forge, value->valuedouble);
 
@@ -460,7 +477,7 @@ _jsatom_decode_double(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSO
 static inline LV2_Atom_Forge_Ref
 _jsatom_decode_bool(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON *types)
 {
-	cJSON *value = _jsatom_node_key(node, "@value");
+	cJSON *value = _jsatom_node_key(node, JSON_LD_VALUE);
 	if(value)
 	{
 		if(value->type == cJSON_True)
@@ -475,7 +492,7 @@ _jsatom_decode_bool(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON 
 static inline LV2_Atom_Forge_Ref
 _jsatom_decode_string(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON *types)
 {
-	cJSON *value = _jsatom_node_key(node, "@value");
+	cJSON *value = _jsatom_node_key(node, JSON_LD_VALUE);
 	if( value && (value->type == cJSON_String) )
 		return lv2_atom_forge_string(forge, value->valuestring, strlen(value->valuestring));
 
@@ -485,7 +502,7 @@ _jsatom_decode_string(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSO
 static inline LV2_Atom_Forge_Ref
 _jsatom_decode_path(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON *types)
 {
-	cJSON *value = _jsatom_node_key(node, "@value");
+	cJSON *value = _jsatom_node_key(node, JSON_LD_VALUE);
 	if( value && (value->type == cJSON_String) )
 		return lv2_atom_forge_path(forge, value->valuestring, strlen(value->valuestring));
 
@@ -495,8 +512,8 @@ _jsatom_decode_path(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON 
 static inline LV2_Atom_Forge_Ref
 _jsatom_decode_literal(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON *types)
 {
-	cJSON *value = _jsatom_node_key(node, "@value");
-	cJSON *lang= _jsatom_node_key(node, "@language");
+	cJSON *value = _jsatom_node_key(node, JSON_LD_VALUE);
+	cJSON *lang= _jsatom_node_key(node, JSON_LD_LANGUAGE);
 	cJSON *datatype = _jsatom_types_is_not_a(types, LV2_ATOM__Literal);
 	const LV2_URID datatype_u = datatype && (datatype->type == cJSON_String)
 		? jsatom->map->map(jsatom->map->handle, datatype->valuestring)
@@ -513,7 +530,7 @@ _jsatom_decode_literal(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJS
 static inline LV2_Atom_Forge_Ref
 _jsatom_decode_tuple(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON *types)
 {
-	cJSON *value = _jsatom_node_key(node, "@list");
+	cJSON *value = _jsatom_node_key(node, JSON_LD_LIST);
 	if( value && (value->type == cJSON_Array) )
 	{
 		LV2_Atom_Forge_Frame frame;
@@ -533,7 +550,7 @@ _jsatom_decode_tuple(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON
 static inline LV2_Atom_Forge_Ref
 _jsatom_decode_object(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON *types)
 {
-	cJSON *id = _jsatom_node_key(node, "@id");
+	cJSON *id = _jsatom_node_key(node, JSON_LD_ID);
 	cJSON *otype = _jsatom_types_is_not_a(types, LV2_ATOM__Object);
 	const LV2_URID id_u = id && (id->type == cJSON_String)
 		? jsatom->map->map(jsatom->map->handle, id->valuestring)
@@ -550,7 +567,7 @@ _jsatom_decode_object(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSO
 		LV2_Atom_Forge_Ref ref = lv2_atom_forge_object(forge, &frame, id_u, otype_u);
 		for(cJSON *child = value->child; ref && child; child = child->next)
 		{
-			if( !strcmp(child->string, "@id") || !strcmp(child->string, "@type") )
+			if( !strcmp(child->string, JSON_LD_ID) || !strcmp(child->string, JSON_LD_TYPE) )
 				continue;
 			const LV2_URID key_u = child->string
 				? jsatom->map->map(jsatom->map->handle, child->string)
@@ -575,11 +592,11 @@ _jsatom_decode_object(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSO
 static inline LV2_Atom_Forge_Ref
 _jsatom_decode_vector(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON *types)
 {
-	cJSON *value = _jsatom_node_key(node, "@list");
+	cJSON *value = _jsatom_node_key(node, JSON_LD_LIST);
 	if( value && (value->type == cJSON_Array) )
 	{
 		LV2_Atom_Forge_Frame frame;
-		cJSON *child_types = _jsatom_object_key(value->child, "@type");
+		cJSON *child_types = _jsatom_object_key(value->child, JSON_LD_TYPE);
 		uint32_t child_size = 0;
 		LV2_URID child_type = 0;
 		if(_jsatom_types_is_a(child_types, LV2_ATOM__Int))
@@ -613,7 +630,7 @@ _jsatom_decode_vector(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSO
 			unsigned nelements = 0;
 			for(cJSON *child = value->child; ref && child; child = child->next, nelements++)
 			{
-				cJSON *child_value = _jsatom_object_key(child, "@value");
+				cJSON *child_value = _jsatom_object_key(child, JSON_LD_VALUE);
 				if(!child_value || (child_value->type != cJSON_Number) )
 					continue;
 				union {
@@ -655,7 +672,7 @@ _jsatom_decode_vector(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSO
 static inline LV2_Atom_Forge_Ref
 _jsatom_decode_chunk(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON *types)
 {
-	cJSON *value = _jsatom_node_key(node, "@value");
+	cJSON *value = _jsatom_node_key(node, JSON_LD_VALUE);
 	if( value && (value->type == cJSON_String) )
 	{
 		size_t size;
@@ -676,7 +693,7 @@ _jsatom_decode_chunk(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON
 static inline LV2_Atom_Forge_Ref
 _jsatom_decode_midi(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON *types)
 {
-	cJSON *value = _jsatom_node_key(node, "@value");
+	cJSON *value = _jsatom_node_key(node, JSON_LD_VALUE);
 	if( value && (value->type == cJSON_String) )
 	{
 		const uint32_t size = strlen(value->valuestring) / 2;
@@ -700,7 +717,7 @@ _jsatom_decode_midi(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON 
 static inline LV2_Atom_Forge_Ref
 _jsatom_decode_fallback(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON *types)
 {
-	cJSON *value = _jsatom_node_key(node, "@value");
+	cJSON *value = _jsatom_node_key(node, JSON_LD_VALUE);
 	if( value && (value->type == cJSON_String) )
 	{
 		const LV2_URID type_u = jsatom->map->map(jsatom->map->handle, types->child->valuestring);
@@ -722,7 +739,7 @@ _jsatom_decode_fallback(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJ
 static inline LV2_Atom_Forge_Ref
 _jsatom_decode_urid(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON *types)
 {
-	cJSON *id = _jsatom_node_key(node, "@id");
+	cJSON *id = _jsatom_node_key(node, JSON_LD_ID);
 	if( id && (id->type == cJSON_String) )
 	{
 		const LV2_URID id_u = jsatom->map->map(jsatom->map->handle, id->valuestring);
@@ -735,7 +752,7 @@ _jsatom_decode_urid(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node, cJSON 
 static inline LV2_Atom_Forge_Ref
 jsatom_decode(jsatom_t *jsatom, LV2_Atom_Forge *forge, cJSON *node)
 {
-	cJSON *types = _jsatom_node_key(node, "@type");
+	cJSON *types = _jsatom_node_key(node, JSON_LD_TYPE);
 
 	if(!types)
 		return _jsatom_decode_urid(jsatom, forge, node, types);

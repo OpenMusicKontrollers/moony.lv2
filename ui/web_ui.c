@@ -464,13 +464,15 @@ _moony_message_forge(ui_t *ui, LV2_URID key,
 	const char *str, uint32_t size)
 {
 	atom_ser_t *ser = &ui->ser[0];
-	const LV2_Atom_Object *obj = (const LV2_Atom_Object *)ser->buf;
 
 	ser->offset = 0;
 	lv2_atom_forge_set_sink(&ui->forge, _sink_ui, _deref_ui, ser);
 
 	if(_moony_patch(&ui->uris.patch, &ui->forge, key, str, size))
+	{
+		const LV2_Atom_Object *obj = (const LV2_Atom_Object *)ser->buf;
 		return obj;
+	}
 
 	if(ui->log)
 		lv2_log_error(&ui->logger, "code chunk too long");
@@ -576,7 +578,6 @@ static inline cJSON *
 _moony_send(ui_t *ui, uint32_t idx, uint32_t size, uint32_t prot, const void *buf)
 {
 	atom_ser_t *ser = &ui->ser[1];
-	const LV2_Atom *atom = (const LV2_Atom *)ser->buf;
 
 	ser->offset = 0;
 	lv2_atom_forge_set_sink(&ui->forge, _sink_ui, _deref_ui, ser);
@@ -633,6 +634,7 @@ _moony_send(ui_t *ui, uint32_t idx, uint32_t size, uint32_t prot, const void *bu
 
 	lv2_atom_forge_pop(&ui->forge, &frame);
 
+	const LV2_Atom *atom = (const LV2_Atom *)ser->buf;
 	return jsatom_encode(&ui->jsatom, atom->size, atom->type, LV2_ATOM_BODY_CONST(atom));
 }
 
@@ -727,7 +729,6 @@ _moony_cb(ui_t *ui, const char *json)
 		return;
 
 	atom_ser_t *ser = &ui->ser[2];
-	const LV2_Atom_Object *obj = (const LV2_Atom_Object *)ser->buf;
 
 	ser->offset = 0;
 	lv2_atom_forge_set_sink(&ui->forge, _sink_ui, _deref_ui, ser);
@@ -736,6 +737,7 @@ _moony_cb(ui_t *ui, const char *json)
 		return;
 	cJSON_Delete(root);
 
+	const LV2_Atom_Object *obj = (const LV2_Atom_Object *)ser->buf;
 	if(  !lv2_atom_forge_is_object_type(&ui->forge, obj->atom.type)
 		|| (obj->body.otype != ui->uris.ui_port_notification) )
 	{
