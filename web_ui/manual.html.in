@@ -354,7 +354,7 @@ print('hello world')</code></pre>
 				<dd>control port inputs, with x=[0, 1, 2, 4]</dd>
 			<dt>{control, notify} (userdata, userdata)</dt>
 				<dd>pair of atom sequence and atom forge object for communication with UI</dd>
-			<dt class="ret">o [x] (number)</dt>
+			<dt class="ret">(number)</dt>
 				<dd>control port outputs, with x=[0, 1, 2, 4]</dd>
 		</dl>
 
@@ -536,7 +536,7 @@ end</code></pre>
 			<dt class="func">function Map(URI)</dt>
 			<dt>URI (string)</dt>
 				<dd>URI to be mapped</dd>
-			<dt class="ret">URID (integer)</dt>
+			<dt class="ret">(integer)</dt>
 				<dd>mapped URID</dd>
 		</dl>
 
@@ -559,7 +559,7 @@ local bar_urid = Map[prefix .. 'bar']</code></pre>
 			<dt class="func">function Unmap(URID)</dt>
 			<dt>URID (integer)</dt>
 				<dd>URID to be unmapped</dd>
-			<dt class="ret">URI (string)</dt>
+			<dt class="ret">(string)</dt>
 				<dd>unmapped URi</dd>
 		</dl>
 
@@ -593,7 +593,7 @@ assert(prefix .. 'bar' == bar_uri)</code></pre>
 			<dt class="func">function HashMap(prefix)</dt>
 			<dt>prefix (string)</dt>
 				<dd>prefix string to be appended to</dd>
-			<dt class="ret">hashmap (table)</dt>
+			<dt class="ret">(table)</dt>
 				<dd>HashMap table</dd>
 		</dl>
 
@@ -617,7 +617,7 @@ assert(hashmap.bar == bar_urid)</code></pre>
 
 		<dl>
 			<dt class="func">function VoiceMap()</dt>
-			<dt class="ret">ID (integer)</dt>
+			<dt class="ret">(integer)</dt>
 				<dd>unique integer ID</dd>
 		</dl>
 
@@ -636,17 +636,677 @@ end</code></pre>
 
 	<div class="api-section"><div class="api-content">
 	<h1 id="atom">Atom</h1>
-	<p>...</p>
+	<p>Instead of deserializing all LV2 event data to corresponding Lua types,
+	Moony instead presents a proxy object to the user in form of a Lua userdata.
+	This is needed because there are more LV2 atom types than native Lua types.
+	It turns out to be more efficient, too, as the user usually wants to filter
+	events before looking at their payload.</p>
+
+	<p>Most atom types have some common attributes they can be queried for:</p>
+
+	<dl>
+		<dt class="func">atom.__len | #atom</dt>
+		<dt class="ret">(integer)</dt>
+			<dd>size of atom body</dd>
+	</dl>
+
+	<dl>
+		<dt class="func">atom.__tostring | tostring(atom)</dt>
+		<dt class="ret">(string)</dt>
+			<dd>string representation of atom</dd>
+	</dl>
+
+	<dl>
+		<dt class="func">atom.type</dt>
+		<dt class="ret">(integer)</dt>
+			<dd>URID of atom type</dd>
+	</dl>
+
+	<dl>
+		<dt class="func">atom.body</dt>
+		<dt class="ret">(nil|integer|number|string|table)</dt>
+			<dd>atom body, type of payload depends on atom type</dd>
+	</dl>
 	</div></div>
 
+		<!-- Atom Primitive -->
 		<div class="api-section"><div class="api-content">
 		<h2 id="atom-primitive">Primitive</h2>
-		<p>...</p>
+		<p>Atom types that contain single data as part of their body are referred to
+		as primitives.</p>
 		</div></div>
 
+			<!-- Atom Nil -->
 			<div class="api-section"><div class="api-content">
 			<h3 id="atom-nil">Nil</h3>
-			<p>...</p>
+			<p>An empty atom, e.g. of type and size 0.</p>
+
+			<dl>
+				<dt class="func">nil.__len | #nil</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>size of atom body</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">nil.__tostring | tostring(nil)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">nil.type</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>URID of atom type</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">nil.body</dt>
+				<dt class="ret">(nil)</dt>
+					<dd>atom body as Lua nil</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-atom-nil" data-snippet="snippet-atom-nil">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-atom-nil">-- Atom Nil
+
+local io = Stash()
+io:read()
+
+assert(#io == 0) -- query size of atom body
+print(tostring(io)) -- convert to string
+assert(io.type == 0) -- query type of atom
+assert(io.body == nil) -- get atom body</code></pre>
+			</div></div>
+
+			<!-- Atom Bool -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="atom-bool">Bool</h3>
+			<p>A boolean atom, e.g. of type Atom.Bool and size 4.</p>
+
+			<dl>
+				<dt class="func">bool.__len | #bool</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>size of atom body</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">bool.__tostring | tostring(bool)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">bool.type</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>URID of atom type</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">bool.body</dt>
+				<dt class="ret">(true | false)</dt>
+					<dd>atom body as Lua boolean</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-atom-bool" data-snippet="snippet-atom-bool">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-atom-bool">-- Atom Bool
+
+local io = Stash()
+io:bool(true)
+io:read()
+
+assert(#io == 4) -- query size of atom body
+print(tostring(io)) -- convert to string
+assert(io.type == Atom.Bool) -- query type of atom
+assert(io.body == true) -- get atom body</code></pre>
+			</div></div>
+
+			<!-- Atom Int -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="atom-int">Int</h3>
+			<p>An integer atom, e.g. of type Atom.Int and size 4.</p>
+
+			<dl>
+				<dt class="func">int.__len | #int</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>size of atom body</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">int.__tostring | tostring(int)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">int.type</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>URID of atom type</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">int.body</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>atom body as Lua integer</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-atom-int" data-snippet="snippet-atom-int">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-atom-int">-- Atom Int
+
+local io = Stash()
+io:int(12)
+io:read()
+
+assert(#io == 4) -- query size of atom body
+print(tostring(io)) -- convert to string
+assert(io.type == Atom.Int) -- query type of atom
+assert(io.body == 12) -- get atom body</code></pre>
+			</div></div>
+
+			<!-- Atom Long -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="atom-long">Long</h3>
+			<p>A long integer atom, e.g. of type Atom.Long and size 8.</p>
+
+			<dl>
+				<dt class="func">long.__len | #long</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>size of atom body</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">long.__tostring | tostring(long)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">long.type</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>URID of atom type</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">long.body</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>atom body as Lua integer</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-atom-long" data-snippet="snippet-atom-long">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-atom-long">-- Atom Long
+
+local io = Stash()
+io:long(13)
+io:read()
+
+assert(#io == 8) -- query size of atom body
+print(tostring(io)) -- convert to string
+assert(io.type == Atom.Long) -- query type of atom
+assert(io.body == 13) -- get atom body</code></pre>
+			</div></div>
+
+			<!-- Atom Float -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="atom-float">Float</h3>
+			<p>A single-precision float atom, e.g. of type Atom.Float and size 4.</p>
+
+			<dl>
+				<dt class="func">float.__len | #float</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>size of atom body</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">float.__tostring | tostring(float)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">float.type</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>URID of atom type</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">float.body</dt>
+				<dt class="ret">(number)</dt>
+					<dd>atom body as Lua number</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-atom-float" data-snippet="snippet-atom-float">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-atom-float">-- Atom Float
+
+local io = Stash()
+io:float(1.5)
+io:read()
+
+assert(#io == 4) -- query size of atom body
+print(tostring(io)) -- convert to string
+assert(io.type == Atom.Float) -- query type of atom
+assert(io.body == 1.5) -- get atom body</code></pre>
+			</div></div>
+
+			<!-- Atom Double -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="atom-double">Double</h3>
+			<p>A double-precision float atom, e.g. of type Atom.Double and size 8.</p>
+
+			<dl>
+				<dt class="func">double.__len | #double</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>size of atom body</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">double.__tostring | tostring(double)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">double.type</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>URID of atom type</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">double.body</dt>
+				<dt class="ret">(number)</dt>
+					<dd>atom body as Lua number</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-atom-double" data-snippet="snippet-atom-double">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-atom-double">-- Atom Double
+
+local io = Stash()
+io:double(1.6)
+io:read()
+
+assert(#io == 8) -- query size of atom body
+print(tostring(io)) -- convert to string
+assert(io.type == Atom.Double) -- query type of atom
+assert(io.body == 1.6) -- get atom body</code></pre>
+			</div></div>
+
+			<!-- Atom URID -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="atom-urid">URID</h3>
+			<p>An URID atom, e.g. of type Atom.URID and size 4.</p>
+
+			<dl>
+				<dt class="func">urid.__len | #urid</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>size of atom body</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">urid.__tostring | tostring(urid)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">urid.type</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>URID of atom type</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">urid.body</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>atom body as Lua integer</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-atom-urid" data-snippet="snippet-atom-urid">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-atom-urid">-- Atom URID
+
+local urn = Map['urn:moony:xyz']
+local io = Stash()
+io:urid(urn)
+io:read()
+
+assert(#io == 4) -- query size of atom body
+print(tostring(io)) -- convert to string
+assert(io.type == Atom.URID) -- query type of atom
+assert(io.body == urn) -- get atom body</code></pre>
+			</div></div>
+
+			<!-- Atom URI -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="atom-uri">URI</h3>
+			<p>An URI atom, e.g. of type Atom.URI and variable size. Atom size
+			denotes to string size plus zero byte terminator.</p>
+
+			<dl>
+				<dt class="func">uri.__len | #uri</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>size of atom body</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">uri.__tostring | tostring(uri)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">uri.type</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>URID of atom type</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">uri.body</dt>
+				<dt class="ret">(string)</dt>
+					<dd>atom body as Lua string</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-atom-uri" data-snippet="snippet-atom-uri">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-atom-uri">-- Atom URI
+
+local urn = 'urn:moony:xyz'
+local io = Stash()
+io:uri(urn)
+io:read()
+
+assert(#io == #urn + 1) -- query size of atom body
+print(tostring(io)) -- convert to string
+assert(io.type == Atom.URI) -- query type of atom
+assert(io.body == urn) -- get atom body</code></pre>
+			</div></div>
+
+			<!-- Atom String -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="atom-string">String</h3>
+			<p>A string atom, e.g. of type Atom.String and variable size. Atom size
+			denotes to string size plus zero byte terminator.</p>
+
+			<dl>
+				<dt class="func">string.__len | #string</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>size of atom body</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">string.__tostring | tostring(string)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">string.type</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>URID of atom type</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">string.body</dt>
+				<dt class="ret">(string)</dt>
+					<dd>atom body as Lua string</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-atom-string" data-snippet="snippet-atom-string">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-atom-string">-- Atom String
+
+local str = 'hello world'
+local io = Stash()
+io:string(str)
+io:read()
+
+assert(#io == #str + 1) -- query size of atom body
+print(tostring(io)) -- convert to string
+assert(io.type == Atom.String) -- query type of atom
+assert(io.body == str) -- get atom body</code></pre>
+			</div></div>
+
+			<!-- Atom Path -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="atom-path">Path</h3>
+			<p>A path atom, e.g. of type Atom.Path and variable size. Atom size
+			denotes to string size plus zero byte terminator.</p>
+
+			<dl>
+				<dt class="func">path.__len | #path</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>size of atom body</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">path.__tostring | tostring(path)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">path.type</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>URID of atom type</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">path.body</dt>
+				<dt class="ret">(string)</dt>
+					<dd>atom body as Lua string</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-atom-path" data-snippet="snippet-atom-path">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-atom-path">-- Atom Path
+
+local tmp = '/tmp/xyz'
+local io = Stash()
+io:path(tmp)
+io:read()
+
+assert(#io == #tmp + 1) -- query size of atom body
+print(tostring(io)) -- convert to string
+assert(io.type == Atom.Path) -- query type of atom
+assert(io.body == tmp) -- get atom body</code></pre>
+			</div></div>
+
+			<!-- Atom Literal -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="atom-literal">Literal</h3>
+			<p>A literal atom, e.g. of type Atom.Literal and variable size. Atom size
+			denotes to string size plus zero byte terminator. Atom literals may have
+			either a data type or language attribute.</p>
+
+			<dl>
+				<dt class="func">literal.__len | #literal</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>size of atom body</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">literal.__tostring | tostring(literal)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">literal.type</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>URID of atom type</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">literal.body</dt>
+				<dt class="ret">(string)</dt>
+					<dd>atom body as Lua string</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">literal.datatype</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>URID of data type</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">literal.body</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>URID of language</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">literal:unpack()</dt>
+				<dt class="ret">(string, integer, integer)</dt>
+					<dd>atom body as Lua string, URID of data type, URID of language</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-atom-literal" data-snippet="snippet-atom-literal">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-atom-literal">-- Atom  Literal
+
+local lit = 'Hallo Welt'
+local datatype = Map['urn:moony:xyz']
+local lang = Map['urn:moony:de']
+local io = Stash()
+io:literal(lit, datatype, lang)
+io:read()
+
+assert(#io == 4 + 4 + #lit + 1) -- query size of atom body
+print(tostring(io)) -- convert to string
+assert(io.type == Atom.Literal) -- query type of atom
+assert(io.datatype == datatype) -- query datatype of literal
+assert(io.lang == lang) -- query datatype of literal
+assert(io.body == lit) -- get atom body
+
+-- unpacking all attributes
+local lit2, datatype2, lang2 = io:unpack()
+assert(lit2 == lit)
+assert(datatype2 == datatype)
+assert(lang2 == lang)</code></pre>
+			</div></div>
+
+			<!-- Atom Chunk-->
+			<div class="api-section"><div class="api-content">
+			<h3 id="atom-chunk">Chunk</h3>
+			<p>A chunk atom, e.g. of type Atom.Chunk and variable size. Atom size
+			denotes to byte size of atom body.</p>
+
+			<dl>
+				<dt class="func">chunk.__len | #chunk</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>size of atom body</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">chunk.__tostring | tostring(chunk)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">chunk.type</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>URID of atom type</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">chunk.body</dt>
+				<dt class="ret">(string)</dt>
+					<dd>atom body as Lua byte string</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">chunk:unpack(from=1, to=#chunk)</dt>
+				<dt class="ret">(integer, integer, ...)</dt>
+					<dd>atom body unpacked bytewise as Lua integers</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">chunk:__index(idx) | chunk[idx]</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>byte at position idx of atom body as Lua integers</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-atom-chunk" data-snippet="snippet-atom-chunk">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-atom-chunk">-- Atom Chunk
+
+local byt = string.char(0x1, 0x2, 0x3)
+local io = Stash()
+io:chunk(byt)
+io:read()
+
+assert(#io == #byt) -- query size of atom body
+print(tostring(io)) -- convert to string
+assert(io.type == Atom.Chunk) -- query type of atom
+assert(io.body == byt) -- get atom body
+
+-- unpacking all bytes
+local byt1, byt2, byt3 = io:unpack() -- equivalent to io:unpack(1, #io)
+assert(byt1 == 0x1)
+assert(byt2 == 0x2)
+assert(byt3 == 0x3)
+
+-- indexing individual bytes
+assert(io[1] == 0x1)
+assert(io[2] == 0x2)
+assert(io[3] == 0x3)</code></pre>
+			</div></div>
+
+			<!-- Atom MIDI -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="atom-midi">MIDI</h3>
+			<p>A MIDI atom, e.g. of type MIDI.MidiEvent and variable size. Atom size
+			denotes to byte size of atom body.</p>
+
+			<dl>
+				<dt class="func">midi.__len | #midi</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>size of atom body</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">midi.__tostring | tostring(midi)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">midi.type</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>URID of atom type</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">midi.body</dt>
+				<dt class="ret">(string)</dt>
+					<dd>atom body as Lua byte string</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">midi:unpack(from=1, to=#midi)</dt>
+				<dt class="ret">(integer, integer, ...)</dt>
+					<dd>atom body unpacked bytewise as Lua integers</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">midi:__index(idx) | midi[idx]</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>byte at position idx of atom body as Lua integers</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-atom-midi" data-snippet="snippet-atom-midi">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-atom-midi">-- Atom MIDI
+
+local byt = string.char(MIDI.NoteOn, 69, 64)
+local io = Stash()
+io:midi(byt)
+io:read()
+
+assert(#io == #byt) -- query size of atom body
+print(tostring(io)) -- convert to string
+assert(io.type == MIDI.MidiEvent) -- query type of atom
+assert(io.body == byt) -- get atom body
+
+-- unpack all bytes
+local byt1, byt2, byt3 = io:unpack() -- equivalent to io:unpack(1, #io)
+assert(byt1 == MIDI.NoteOn)
+assert(byt2 == 69)
+assert(byt3 == 64)
+
+-- indexing individual bytes
+assert(io[1] == MIDI.NoteOn)
+assert(io[2] == 69)
+assert(io[3] == 64)</code></pre>
 			</div></div>
 
 			<!-- FIXME -->

@@ -201,7 +201,10 @@ do
 		assert(atom.body == str)
 		assert(atom.datatype == datatype)
 		assert(atom.lang == lang)
-		assert(str, datatype, lang == atom:unpack())
+		local str2, datatype2, lang2 = atom:unpack()
+		assert(str2 == str)
+		assert(datatype2 == datatype)
+		assert(lang2 == lang)
 	end
 
 	test(producer, consumer)

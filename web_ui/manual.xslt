@@ -2,7 +2,7 @@
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 	<xsl:output method="text" omit-xml-declaration="yes"/>
 	<xsl:template match="/">
-local snippets = {
+local _snippets = {
 	<xsl:for-each select="html/body/div/div/div/pre/code">
 	{
 		'<xsl:value-of select="current()/@id"/>',
@@ -13,7 +13,7 @@ local snippets = {
 	</xsl:for-each> 
 }
 
-for i, v in ipairs(snippets) do
+for _, _v in ipairs(_snippets) do
 	run = nil
 	once = nil
 	stash = nil
@@ -21,36 +21,36 @@ for i, v in ipairs(snippets) do
 	save = nil
 	restore = nil
 
-	local f = load(v[2])
-	assert(f)
+	local _f = load(_v[2])
+	assert(_f)
 
-	print('[test] ' .. v[1])
+	print('[test] ' .. _v[1])
 
-	f()
+	_f()
 
-	local io = Stash()
+	local _io = Stash()
 
 	if stash then
-		stash(io)
+		stash(_io)
 	end
 
-	io:read()
+	_io:read()
 
 	if apply then
-		apply(io)
+		apply(_io)
 	end
 
-	io:write()
+	_io:write()
 
 	if save then
-		save(io)
+		save(_io)
 	end
 
-	io:read()
+	_io:read()
 
 	if restore then
-		restore(io)
-	end
+		restore(_io)
+		end
 
 	if once then
 		--FIXME

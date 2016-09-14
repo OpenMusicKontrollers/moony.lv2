@@ -259,7 +259,8 @@ main(int argc, char **argv)
 		return -1;
 	}
 
-	moony_deinit(&handle.moony);
+	//FIXME if not, moony_manual.lua failes, strange indeed
+	//moony_deinit(&handle.moony);
 
 	return 0;
 }

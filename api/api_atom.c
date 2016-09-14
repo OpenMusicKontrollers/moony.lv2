@@ -356,7 +356,7 @@ _latom_literal_unpack(lua_State *L)
 		latom->atom->size - 1 - sizeof(LV2_Atom_Literal_Body));
 	lua_pushinteger(L, latom->body.lit->datatype);
 	lua_pushinteger(L, latom->body.lit->lang);
-	return 1;
+	return 3;
 }
 
 const latom_driver_t latom_literal_driver = {
