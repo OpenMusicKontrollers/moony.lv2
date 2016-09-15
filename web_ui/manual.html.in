@@ -645,25 +645,25 @@ end</code></pre>
 	<p>Most atom types have some common attributes they can be queried for:</p>
 
 	<dl>
-		<dt class="func">atom.__len | #atom</dt>
+		<dt class="attr">atom.__len | #atom</dt>
 		<dt class="ret">(integer)</dt>
 			<dd>size of atom body</dd>
 	</dl>
 
 	<dl>
-		<dt class="func">atom.__tostring | tostring(atom)</dt>
+		<dt class="attr">atom.__tostring | tostring(atom)</dt>
 		<dt class="ret">(string)</dt>
 			<dd>string representation of atom</dd>
 	</dl>
 
 	<dl>
-		<dt class="func">atom.type</dt>
+		<dt class="attr">atom.type</dt>
 		<dt class="ret">(integer)</dt>
 			<dd>URID of atom type</dd>
 	</dl>
 
 	<dl>
-		<dt class="func">atom.body</dt>
+		<dt class="attr">atom.body</dt>
 		<dt class="ret">(nil|integer|number|string|table)</dt>
 			<dd>atom body, type of payload depends on atom type</dd>
 	</dl>
@@ -682,25 +682,25 @@ end</code></pre>
 			<p>An empty atom, e.g. of type and size 0.</p>
 
 			<dl>
-				<dt class="func">nil.__len | #nil</dt>
+				<dt class="attr">nil.__len | #nil</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>size of atom body</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">nil.__tostring | tostring(nil)</dt>
+				<dt class="attr">nil.__tostring | tostring(nil)</dt>
 				<dt class="ret">(string)</dt>
 					<dd>string representation of atom</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">nil.type</dt>
+				<dt class="attr">nil.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">nil.body</dt>
+				<dt class="attr">nil.body</dt>
 				<dt class="ret">(nil)</dt>
 					<dd>atom body as Lua nil</dd>
 			</dl>
@@ -723,25 +723,25 @@ assert(io.body == nil) -- get atom body</code></pre>
 			<p>A boolean atom, e.g. of type Atom.Bool and size 4.</p>
 
 			<dl>
-				<dt class="func">bool.__len | #bool</dt>
+				<dt class="attr">bool.__len | #bool</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>size of atom body</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">bool.__tostring | tostring(bool)</dt>
+				<dt class="attr">bool.__tostring | tostring(bool)</dt>
 				<dt class="ret">(string)</dt>
 					<dd>string representation of atom</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">bool.type</dt>
+				<dt class="attr">bool.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">bool.body</dt>
+				<dt class="attr">bool.body</dt>
 				<dt class="ret">(true | false)</dt>
 					<dd>atom body as Lua boolean</dd>
 			</dl>
@@ -765,25 +765,25 @@ assert(io.body == true) -- get atom body</code></pre>
 			<p>An integer atom, e.g. of type Atom.Int and size 4.</p>
 
 			<dl>
-				<dt class="func">int.__len | #int</dt>
+				<dt class="attr">int.__len | #int</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>size of atom body</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">int.__tostring | tostring(int)</dt>
+				<dt class="attr">int.__tostring | tostring(int)</dt>
 				<dt class="ret">(string)</dt>
 					<dd>string representation of atom</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">int.type</dt>
+				<dt class="attr">int.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">int.body</dt>
+				<dt class="attr">int.body</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>atom body as Lua integer</dd>
 			</dl>
@@ -807,25 +807,25 @@ assert(io.body == 12) -- get atom body</code></pre>
 			<p>A long integer atom, e.g. of type Atom.Long and size 8.</p>
 
 			<dl>
-				<dt class="func">long.__len | #long</dt>
+				<dt class="attr">long.__len | #long</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>size of atom body</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">long.__tostring | tostring(long)</dt>
+				<dt class="attr">long.__tostring | tostring(long)</dt>
 				<dt class="ret">(string)</dt>
 					<dd>string representation of atom</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">long.type</dt>
+				<dt class="attr">long.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">long.body</dt>
+				<dt class="attr">long.body</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>atom body as Lua integer</dd>
 			</dl>
@@ -849,25 +849,25 @@ assert(io.body == 13) -- get atom body</code></pre>
 			<p>A single-precision float atom, e.g. of type Atom.Float and size 4.</p>
 
 			<dl>
-				<dt class="func">float.__len | #float</dt>
+				<dt class="attr">float.__len | #float</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>size of atom body</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">float.__tostring | tostring(float)</dt>
+				<dt class="attr">float.__tostring | tostring(float)</dt>
 				<dt class="ret">(string)</dt>
 					<dd>string representation of atom</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">float.type</dt>
+				<dt class="attr">float.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">float.body</dt>
+				<dt class="attr">float.body</dt>
 				<dt class="ret">(number)</dt>
 					<dd>atom body as Lua number</dd>
 			</dl>
@@ -891,25 +891,25 @@ assert(io.body == 1.5) -- get atom body</code></pre>
 			<p>A double-precision float atom, e.g. of type Atom.Double and size 8.</p>
 
 			<dl>
-				<dt class="func">double.__len | #double</dt>
+				<dt class="attr">double.__len | #double</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>size of atom body</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">double.__tostring | tostring(double)</dt>
+				<dt class="attr">double.__tostring | tostring(double)</dt>
 				<dt class="ret">(string)</dt>
 					<dd>string representation of atom</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">double.type</dt>
+				<dt class="attr">double.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">double.body</dt>
+				<dt class="attr">double.body</dt>
 				<dt class="ret">(number)</dt>
 					<dd>atom body as Lua number</dd>
 			</dl>
@@ -933,25 +933,25 @@ assert(io.body == 1.6) -- get atom body</code></pre>
 			<p>An URID atom, e.g. of type Atom.URID and size 4.</p>
 
 			<dl>
-				<dt class="func">urid.__len | #urid</dt>
+				<dt class="attr">urid.__len | #urid</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>size of atom body</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">urid.__tostring | tostring(urid)</dt>
+				<dt class="attr">urid.__tostring | tostring(urid)</dt>
 				<dt class="ret">(string)</dt>
 					<dd>string representation of atom</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">urid.type</dt>
+				<dt class="attr">urid.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">urid.body</dt>
+				<dt class="attr">urid.body</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>atom body as Lua integer</dd>
 			</dl>
@@ -977,25 +977,25 @@ assert(io.body == urn) -- get atom body</code></pre>
 			denotes to string size plus zero byte terminator.</p>
 
 			<dl>
-				<dt class="func">uri.__len | #uri</dt>
+				<dt class="attr">uri.__len | #uri</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>size of atom body</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">uri.__tostring | tostring(uri)</dt>
+				<dt class="attr">uri.__tostring | tostring(uri)</dt>
 				<dt class="ret">(string)</dt>
 					<dd>string representation of atom</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">uri.type</dt>
+				<dt class="attr">uri.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">uri.body</dt>
+				<dt class="attr">uri.body</dt>
 				<dt class="ret">(string)</dt>
 					<dd>atom body as Lua string</dd>
 			</dl>
@@ -1021,25 +1021,25 @@ assert(io.body == urn) -- get atom body</code></pre>
 			denotes to string size plus zero byte terminator.</p>
 
 			<dl>
-				<dt class="func">string.__len | #string</dt>
+				<dt class="attr">string.__len | #string</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>size of atom body</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">string.__tostring | tostring(string)</dt>
+				<dt class="atrr">string.__tostring | tostring(string)</dt>
 				<dt class="ret">(string)</dt>
 					<dd>string representation of atom</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">string.type</dt>
+				<dt class="attr">string.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">string.body</dt>
+				<dt class="attr">string.body</dt>
 				<dt class="ret">(string)</dt>
 					<dd>atom body as Lua string</dd>
 			</dl>
@@ -1065,25 +1065,25 @@ assert(io.body == str) -- get atom body</code></pre>
 			denotes to string size plus zero byte terminator.</p>
 
 			<dl>
-				<dt class="func">path.__len | #path</dt>
+				<dt class="attr">path.__len | #path</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>size of atom body</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">path.__tostring | tostring(path)</dt>
+				<dt class="attr">path.__tostring | tostring(path)</dt>
 				<dt class="ret">(string)</dt>
 					<dd>string representation of atom</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">path.type</dt>
+				<dt class="attr">path.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">path.body</dt>
+				<dt class="attr">path.body</dt>
 				<dt class="ret">(string)</dt>
 					<dd>atom body as Lua string</dd>
 			</dl>
@@ -1110,37 +1110,37 @@ assert(io.body == tmp) -- get atom body</code></pre>
 			either a data type or language attribute.</p>
 
 			<dl>
-				<dt class="func">literal.__len | #literal</dt>
+				<dt class="attr">literal.__len | #literal</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>size of atom body</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">literal.__tostring | tostring(literal)</dt>
+				<dt class="attr">literal.__tostring | tostring(literal)</dt>
 				<dt class="ret">(string)</dt>
 					<dd>string representation of atom</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">literal.type</dt>
+				<dt class="attr">literal.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">literal.body</dt>
+				<dt class="attr">literal.body</dt>
 				<dt class="ret">(string)</dt>
 					<dd>atom body as Lua string</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">literal.datatype</dt>
+				<dt class="attr">literal.datatype</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of data type</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">literal.body</dt>
+				<dt class="attr">literal.body</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of language</dd>
 			</dl>
@@ -1182,31 +1182,35 @@ assert(lang2 == lang)</code></pre>
 			denotes to byte size of atom body.</p>
 
 			<dl>
-				<dt class="func">chunk.__len | #chunk</dt>
+				<dt class="attr">chunk.__len | #chunk</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>size of atom body</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">chunk.__tostring | tostring(chunk)</dt>
+				<dt class="attr">chunk.__tostring | tostring(chunk)</dt>
 				<dt class="ret">(string)</dt>
 					<dd>string representation of atom</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">chunk.type</dt>
+				<dt class="attr">chunk.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">chunk.body</dt>
+				<dt class="attr">chunk.body</dt>
 				<dt class="ret">(string)</dt>
 					<dd>atom body as Lua byte string</dd>
 			</dl>
 
 			<dl>
 				<dt class="func">chunk:unpack(from=1, to=#chunk)</dt>
+				<dt>from (nil | integer)</dt>
+					<dd>star byte position to unpack from, defaults to 1</dd>
+				<dt>to (nil | integer)</dt>
+					<dd>end byte position to unpack from, defaults to body size<dd>
 				<dt class="ret">(integer, integer, ...)</dt>
 					<dd>atom body unpacked bytewise as Lua integers</dd>
 			</dl>
@@ -1246,28 +1250,29 @@ assert(io[3] == 0x3)</code></pre>
 			<div class="api-section"><div class="api-content">
 			<h3 id="atom-midi">MIDI</h3>
 			<p>A MIDI atom, e.g. of type MIDI.MidiEvent and variable size. Atom size
-			denotes to byte size of atom body.</p>
+			denotes to byte size of atom body. A MIDI atom is an equivalent to a
+			Chunk atom and thus features the same class attributes and methods.</p>
 
 			<dl>
-				<dt class="func">midi.__len | #midi</dt>
+				<dt class="attr">midi.__len | #midi</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>size of atom body</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">midi.__tostring | tostring(midi)</dt>
+				<dt class="attr">midi.__tostring | tostring(midi)</dt>
 				<dt class="ret">(string)</dt>
 					<dd>string representation of atom</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">midi.type</dt>
+				<dt class="attr">midi.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
 			</dl>
 
 			<dl>
-				<dt class="func">midi.body</dt>
+				<dt class="attr">midi.body</dt>
 				<dt class="ret">(string)</dt>
 					<dd>atom body as Lua byte string</dd>
 			</dl>
@@ -1280,6 +1285,10 @@ assert(io[3] == 0x3)</code></pre>
 
 			<dl>
 				<dt class="func">midi:__index(idx) | midi[idx]</dt>
+				<dt>from (nil | integer)</dt>
+					<dd>star byte position to unpack from, defaults to 1</dd>
+				<dt>to (nil | integer)</dt>
+					<dd>end byte position to unpack from, defaults to body size<dd>
 				<dt class="ret">(integer)</dt>
 					<dd>byte at position idx of atom body as Lua integers</dd>
 			</dl>

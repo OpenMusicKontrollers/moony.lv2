@@ -235,6 +235,13 @@ dt {
 
 dt.func {
 	border-bottom:3px solid #666;
+	color:#660;
+	font-weight:bold;
+}
+
+dt.attr {
+	border-bottom:3px solid #666;
+	color:#066;
 	font-weight:bold;
 }
 
