@@ -143,7 +143,7 @@ static const luaL_Reg lunmap_mt [] = {
 static int
 _lhash_map__index(lua_State *L)
 {
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 
 	if(lua_isstring(L, 2))
 	{
@@ -338,8 +338,12 @@ _log(lua_State *L)
 	if(end)
 	{
 		if(end != moony->trace)
+		{
 			*end++ = '\n'; // append to
-		snprintf(end, MOONY_MAX_ERROR_LEN - (end - moony->trace), "%s", res);
+			*end = '\0';
+		}
+		const size_t remaining = MOONY_MAX_ERROR_LEN - (end - moony->trace);
+		snprintf(end, MOONY_MAX_ERROR_LEN - remaining, "%s", res);
 		moony->trace_out = 1; // set flag
 	}
 
@@ -603,10 +607,10 @@ _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 			strlen(chunk) + 1,
 			moony->forge.String,
 			LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
+		(void)status; //TODO check status
 
 		free(chunk);
 	}
-	//TODO check status
 
 	const int32_t minor_version = MOONY_MINOR_VERSION;
 	status = store(
@@ -616,7 +620,7 @@ _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 		sizeof(int32_t),
 		moony->forge.Int,
 		LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
-	//TODO check status
+	(void)status; //TODO check status
 
 	const int32_t micro_version = MOONY_MICRO_VERSION;
 	status = store(
@@ -626,7 +630,7 @@ _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 		sizeof(int32_t),
 		moony->forge.Int,
 		LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
-	//TODO check status
+	(void)status; //TODO check status
 
 	atom_ser_t ser = {
 		.moony = NULL,
@@ -723,7 +727,7 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 	if(!micro_version || (size != sizeof(int32_t)) || (type != moony->forge.Int) )
 		micro_version = NULL;
 
-	//TODO check preset verstion with current plugin version for API compatibility
+	//TODO check preset version with current plugin version for API compatibility
 
 	// get code chunk
 	const char *chunk = retrieve(
@@ -733,7 +737,7 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 		&type,
 		&flags2);
 
-	if(chunk && size && (type == moony->forge.String) )
+	if(chunk && (size <= MOONY_MAX_CHUNK_LEN) && (type == moony->forge.String) )
 	{
 		strncpy(moony->chunk, chunk, size);
 
@@ -744,6 +748,10 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 
 		moony->dirty_out = 1; // trigger update of UI
 		moony->props_out = 1; // trigger update of UI
+	}
+	else
+	{
+		moony_err(moony, "chunk too long");
 	}
 
 	const uint8_t *body = retrieve(
@@ -1052,7 +1060,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	latom_driver_hash[pos].type = moony->forge.Sequence;
 	latom_driver_hash[pos++].driver = &latom_sequence_driver;
 
-	assert(pos++ == DRIVER_HASH_MAX);
+	assert(pos == DRIVER_HASH_MAX);
 	qsort(latom_driver_hash, DRIVER_HASH_MAX, sizeof(latom_driver_hash_t), _hash_sort);
 	
 	if(opts)
@@ -1661,7 +1669,8 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 
 			int32_t sequence_num = 0;
 			if(sequence && (sequence->atom.type == moony->forge.Int))
-				sequence_num = sequence->body; //FIXME use
+				sequence_num = sequence->body;
+			(void)sequence_num; //FIXME use
 
 			if(  subject
 				&& (subject->atom.type == moony->forge.URID)
@@ -1703,7 +1712,8 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 
 			int32_t sequence_num = 0;
 			if(sequence && (sequence->atom.type == moony->forge.Int))
-				sequence_num = sequence->body; //FIXME use
+				sequence_num = sequence->body;
+			(void)sequence_num; //FIXME use
 
 			if(  subject
 				&& (subject->atom.type == moony->forge.URID)
@@ -1726,27 +1736,34 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 
 					// load chunk
 					const char *str = LV2_ATOM_BODY_CONST(value);
-					if(luaL_dostring(L, str)) // failed loading chunk
+					if(value->size <= MOONY_MAX_CHUNK_LEN)
 					{
-						moony_error(moony);
-					}
-					else // succeeded loading chunk
-					{
-						strncpy(moony->chunk, str, value->size);
-						moony->error[0] = 0x0; // reset error flag
-
-						if(moony->state_atom)
+						if(luaL_dostring(L, str)) // failed loading chunk
 						{
-							// restore Lua defined properties
-							lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_RESTORE);
-							if(lua_pcall(L, 0, 0, 0))
-								moony_error(moony);
-#ifdef USE_MANUAL_GC
-							lua_gc(L, LUA_GCSTEP, 0);
-#endif
+							moony_error(moony);
 						}
+						else // succeeded loading chunk
+						{
+							strncpy(moony->chunk, str, value->size);
+							moony->error[0] = 0x0; // reset error flag
 
-						once = true;
+							if(moony->state_atom)
+							{
+								// restore Lua defined properties
+								lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_RESTORE);
+								if(lua_pcall(L, 0, 0, 0))
+									moony_error(moony);
+#ifdef USE_MANUAL_GC
+								lua_gc(L, LUA_GCSTEP, 0);
+#endif
+							}
+
+							once = true;
+						}
+					}
+					else
+					{
+						moony_err(moony, "chunk too long");
 					}
 
 					// apply stash

@@ -188,6 +188,13 @@ _spawn_invalidate_child(spawn_t *spawn)
 static inline int 
 _spawn_spawn(spawn_t *spawn, char **args)
 {
+	if(!args)
+	{
+		if(spawn->logger)
+			lv2_log_error(spawn->logger, "nil argument list\n");
+		return -1;
+	}
+
 	spawn->pid = fork();
 
 	if(spawn->pid == 0) // child

@@ -583,7 +583,7 @@ do
 	local id = 0
 	local otype = Map['http://test.org#type']
 	local key1 = Map['http://test.org#key1']
-	local context2 = Map['http://test.org#context2']
+	local ctx2 = Map['http://test.org#ctx2']
 	local key2 = Map['http://test.org#key2']
 
 	local function producer(forge)
@@ -593,7 +593,7 @@ do
 
 		assert(obj:key(key1):int(12) == obj)
 		
-		obj:property(key2, context2):long(13)
+		obj:property(key2, ctx2):long(13)
 
 		assert(obj:pop() == nil)
 	end
@@ -612,11 +612,11 @@ do
 		sub = atom[key2]
 		assert(sub.body == 13)
 
-		for key, context, sub in atom:foreach() do
+		for key, sub, ctx in atom:foreach() do
 			assert(atom[key].body == sub.body)
 
 			if(key == key2) then
-				assert(context == context2)
+				assert(ctx == ctx2)
 			end
 		end
 	end
@@ -1061,7 +1061,6 @@ do
 		assert(#seq == 2)
 		local subseq = seq[1]
 		assert(subseq.type == Atom.Sequence)
-		assert(subseq.pad == 0)
 		assert(subseq.unit == Atom.beatTime)
 		assert(#subseq == 2)
 
@@ -1073,7 +1072,6 @@ do
 
 		subseq = seq[2]
 		assert(subseq.type == Atom.Sequence)
-		assert(subseq.pad == 0)
 		assert(subseq.unit == 0)
 		assert(#subseq == 0)
 		assert(subseq[0] == nil)

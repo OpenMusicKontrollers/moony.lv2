@@ -27,10 +27,11 @@ typedef struct _ltuple_t ltuple_t;
 typedef struct _lvec_t lvec_t;
 
 typedef int (*latom_driver_function_t)(lua_State *L, latom_t *latom);
+typedef int (*latom_driver_function_indexk_t)(lua_State *L, latom_t *latom, const char *key);
 
 struct _latom_driver_t {
 	latom_driver_function_t __indexi;
-	latom_driver_function_t __indexk;
+	latom_driver_function_indexk_t __indexk;
 	latom_driver_function_t __len;
 	latom_driver_function_t __tostring;
 	latom_driver_function_t __call;
@@ -87,11 +88,11 @@ struct _latom_t {
 
 // in api_atom.c
 extern const latom_driver_t latom_nil_driver;
+extern const latom_driver_t latom_bool_driver;
 extern const latom_driver_t latom_int_driver;
 extern const latom_driver_t latom_long_driver;
 extern const latom_driver_t latom_float_driver;
 extern const latom_driver_t latom_double_driver;
-extern const latom_driver_t latom_bool_driver;
 extern const latom_driver_t latom_urid_driver;
 extern const latom_driver_t latom_string_driver;
 extern const latom_driver_t latom_literal_driver;
@@ -100,9 +101,6 @@ extern const latom_driver_t latom_object_driver;
 extern const latom_driver_t latom_vector_driver;
 extern const latom_driver_t latom_sequence_driver;
 extern const latom_driver_t latom_chunk_driver;
-extern const latom_driver_t latom_char_driver;
-extern const latom_driver_t latom_impulse_driver;
-extern const latom_driver_t latom_rgba_driver;
 
 extern const luaL_Reg latom_mt [];
 
@@ -158,23 +156,15 @@ static inline const latom_driver_t *
 _latom_driver(moony_t *moony, LV2_URID type)
 {
 	const latom_driver_hash_t *base = moony->atom_driver_hash;
-	const latom_driver_hash_t *p;
 
-	for(size_t lim = DRIVER_HASH_MAX; lim != 0; lim >>= 1)
+	for(unsigned N = DRIVER_HASH_MAX, half; N > 1; N -= half)
 	{
-		p = base + (lim >> 1);
-
-		if(type == p->type)
-			return p->driver;
-
-		if(type > p->type)
-		{
-			base = p + 1;
-			lim--;
-		}
+		half = N/2;
+		const latom_driver_hash_t *dst = &base[half];
+		base = (dst->type > type) ? base : dst;
 	}
 
-	return &latom_chunk_driver;
+	return (base->type == type) ? base->driver : &latom_chunk_driver;
 }
 
 static void

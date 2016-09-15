@@ -253,14 +253,15 @@ main(int argc, char **argv)
 	lua_pushcclosure(L, _test, 1);
 	lua_setglobal(L, "test");
 
-	if(luaL_dofile(L, argv[1])) // wraps around lua_pcall
-	{
+	const int ret = luaL_dofile(L, argv[1]); // wraps around lua_pcall
+
+	if(ret)
 		fprintf(stderr, "err: %s\n", lua_tostring(L, -1));
-		return -1;
-	}
 
-	//FIXME if not, moony_manual.lua failes, strange indeed
-	//moony_deinit(&handle.moony);
+	for(urid_t *itm=handle.urids; itm->urid; itm++)
+		free(itm->uri);
 
-	return 0;
+	moony_deinit(&handle.moony);
+
+	return ret;
 }

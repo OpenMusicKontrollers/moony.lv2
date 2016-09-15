@@ -70,9 +70,9 @@ _loscresponder_method(const char *path, const LV2_Atom_Tuple *arguments, void *d
 {
 	moony_t *moony = data;
 	lua_State *L = moony->vm.L;
-	LV2_Atom_Forge *forge = &moony->forge;
+	//LV2_Atom_Forge *forge = &moony->forge;
 	LV2_OSC_URID *osc_urid = &moony->osc_urid;
-	LV2_URID_Unmap *unmap = moony->unmap;
+	//LV2_URID_Unmap *unmap = moony->unmap;
 
 	// 1: uservalue
 	// 2: frames
@@ -110,7 +110,7 @@ _loscresponder_method(const char *path, const LV2_Atom_Tuple *arguments, void *d
 
 	LV2_ATOM_TUPLE_FOREACH(arguments, atom)
 	{
-		const LV2_Atom_Object *obj= (const LV2_Atom_Object *)atom;
+		//const LV2_Atom_Object *obj= (const LV2_Atom_Object *)atom;
 
 		switch(lv2_osc_argument_type(osc_urid, atom))
 		{
@@ -239,7 +239,7 @@ _loscresponder__call(lua_State *L)
 	lua_pop(L, 1); // atom
 
 	// check for valid atom and event type
-	const LV2_Atom_Object *obj = (const LV2_Atom_Object *)latom->atom;
+	const LV2_Atom_Object *obj = latom ? (const LV2_Atom_Object *)latom->atom : NULL;
 
 	if(  !latom
 		|| !lv2_atom_forge_is_object_type(&moony->forge, obj->atom.type)

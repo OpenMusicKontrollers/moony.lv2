@@ -62,8 +62,8 @@
 	     (iter) = lv2_atom_tuple_next(iter))
 #endif
 
-#define MOONY_MAX_CHUNK_LEN		0x10000 // 64KB
-#define MOONY_MAX_ERROR_LEN		0x400 // 1KB
+#define MOONY_MAX_CHUNK_LEN		0x20000 // 128KB
+#define MOONY_MAX_ERROR_LEN		0x800 // 2KB
 
 #define MOONY_URI							"http://open-music-kontrollers.ch/lv2/moony"
 
@@ -269,15 +269,14 @@ struct _moony_t {
 	LV2_Log_Log *log;
 	LV2_Log_Logger logger;
 
+	xpress_map_t *voice_map;
+
 	moony_vm_t vm;
 
-	char chunk [MOONY_MAX_CHUNK_LEN];
 	volatile int props_out;
 	volatile int dirty_out;
 	volatile int error_out;
 	volatile int trace_out;
-	char error [MOONY_MAX_ERROR_LEN];
-	char trace [MOONY_MAX_ERROR_LEN];
 
 	// udata cache
 	int itr [MOONY_UDATA_COUNT];
@@ -293,7 +292,9 @@ struct _moony_t {
 
 	latom_driver_hash_t atom_driver_hash [DRIVER_HASH_MAX];
 
-	xpress_map_t *voice_map;
+	char error [MOONY_MAX_ERROR_LEN];
+	char trace [MOONY_MAX_ERROR_LEN];
+	char chunk [MOONY_MAX_CHUNK_LEN];
 };
 
 // in api.c

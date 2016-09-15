@@ -318,9 +318,8 @@ const latom_driver_t latom_string_driver = {
 
 // Literal driver
 static int
-_latom_literal__indexk(lua_State *L, latom_t *latom)
+_latom_literal__indexk(lua_State *L, latom_t *latom, const char *key)
 {
-	const char *key = lua_tostring(L, 2);
 	if(!strcmp(key, "datatype"))
 		lua_pushinteger(L, latom->body.lit->datatype);
 	else if(!strcmp(key, "lang"))
@@ -506,9 +505,8 @@ _latom_obj__indexi(lua_State *L, latom_t *latom)
 }
 
 static int
-_latom_obj__indexk(lua_State *L, latom_t *latom)
+_latom_obj__indexk(lua_State *L, latom_t *latom, const char *key)
 {
-	const char *key = lua_tostring(L, 2);
 	if(!strcmp(key, "id"))
 		lua_pushinteger(L, latom->body.obj->id);
 	else if(!strcmp(key, "otype"))
@@ -543,14 +541,17 @@ _latom_obj_foreach_itr(lua_State *L)
 
 	if(!lv2_atom_object_is_end(latom->body.obj, latom->atom->size, latom->iter.obj.prop))
 	{
-		// push key/context
+		// push key
 		lua_pushinteger(L, latom->iter.obj.prop->key);
-		lua_pushinteger(L, latom->iter.obj.prop->context);
 		// push atom
+
 		lua_pushvalue(L, lua_upvalueindex(2));
 		latom_t *litem = lua_touserdata(L, lua_upvalueindex(2));
 		litem->atom = &latom->iter.obj.prop->value;
 		litem->body.raw = LV2_ATOM_BODY_CONST(litem->atom);
+
+		// push context
+		lua_pushinteger(L, latom->iter.obj.prop->context);
 	
 		// advance iterator
 		latom->iter.obj.prop = lv2_atom_object_next(latom->iter.obj.prop);
@@ -587,13 +588,10 @@ const latom_driver_t latom_object_driver = {
 };
 
 static int
-_latom_seq__indexk(lua_State *L, latom_t *latom)
+_latom_seq__indexk(lua_State *L, latom_t *latom, const char *key)
 {
-	const char *key = lua_tostring(L, 2);
 	if(!strcmp(key, "unit"))
 		lua_pushinteger(L, latom->body.seq->unit);
-	else if(!strcmp(key, "pad"))
-		lua_pushinteger(L, latom->body.seq->pad);
 	else
 		lua_pushnil(L);
 	return 1;
@@ -805,9 +803,8 @@ _latom_vec__indexi(lua_State *L, latom_t *latom)
 }
 
 static int
-_latom_vec__indexk(lua_State *L, latom_t *latom)
+_latom_vec__indexk(lua_State *L, latom_t *latom, const char *key)
 {
-	const char *key = lua_tostring(L, 2);
 	if(!strcmp(key, "child_type"))
 		lua_pushinteger(L, latom->body.vec->child_type);
 	else if(!strcmp(key, "child_size"))
@@ -1045,14 +1042,14 @@ _latom__index(lua_State *L)
 				lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_CLONE);
 				return 1;
 			}
-			else if(!strcmp(key, "write") && (latom->lheader.type == MOONY_UDATA_STASH) )
+			else if( (latom->lheader.type == MOONY_UDATA_STASH) && !strcmp(key, "write") )
 			{
 				lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_WRITE);
 				return 1;
 			}
 			else if(driver->__indexk)
 			{
-				return driver->__indexk(L, latom);
+				return driver->__indexk(L, latom, key);
 			}
 		}
 		else if(driver->__indexi && (type == LUA_TNUMBER) )
