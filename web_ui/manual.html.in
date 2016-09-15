@@ -68,8 +68,8 @@
 						<li><a href="#atom-long">Long</a></li>
 						<li><a href="#atom-float">Float</a></li>
 						<li><a href="#atom-double">Double</a></li>
-						<li><a href="#atom-URID">URID</a></li>
-						<li><a href="#atom-URI">URI</a></li>
+						<li><a href="#atom-urid">URID</a></li>
+						<li><a href="#atom-uri">URI</a></li>
 						<li><a href="#atom-string">String</a></li>
 						<li><a href="#atom-path">Path</a></li>
 						<li><a href="#atom-literal">Literal</a></li>
@@ -98,8 +98,8 @@
 						<li><a href="#forge-long">Long</a></li>
 						<li><a href="#forge-float">Float</a></li>
 						<li><a href="#forge-double">Double</a></li>
-						<li><a href="#forge-URID">URID</a></li>
-						<li><a href="#forge-URI">URI</a></li>
+						<li><a href="#forge-urid">URID</a></li>
+						<li><a href="#forge-uri">URI</a></li>
 						<li><a href="#forge-string">String</a></li>
 						<li><a href="#forge-path">Path</a></li>
 						<li><a href="#forge-literal">Literal</a></li>
