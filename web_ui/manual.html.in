@@ -642,7 +642,7 @@ end</code></pre>
 	It turns out to be more efficient, too, as the user usually wants to filter
 	events before looking at their payload.</p>
 
-	<p>Most atom types have some common attributes they can be queried for:</p>
+	<p>All atom types have some common attributes they can be queried for:</p>
 
 	<dl>
 		<dt class="attr">atom.__len | #atom</dt>
@@ -660,12 +660,6 @@ end</code></pre>
 		<dt class="attr">atom.type</dt>
 		<dt class="ret">(integer)</dt>
 			<dd>URID of atom type</dd>
-	</dl>
-
-	<dl>
-		<dt class="attr">atom.body</dt>
-		<dt class="ret">(nil|integer|number|string|table)</dt>
-			<dd>atom body, type of payload depends on atom type</dd>
 	</dl>
 	</div></div>
 
@@ -708,9 +702,11 @@ end</code></pre>
 			<a class="api-snippet" href="#snippet-atom-nil" data-snippet="snippet-atom-nil">&rArr; show snippet</a>
 			<pre class="api-hidden"><code id="snippet-atom-nil">-- Atom Nil
 
+-- serialize
 local io = Stash()
 io:read()
 
+-- attributes
 assert(#io == 0) -- query size of atom body
 print(tostring(io)) -- convert to string
 assert(io.type == 0) -- query type of atom
@@ -742,17 +738,19 @@ assert(io.body == nil) -- get atom body</code></pre>
 
 			<dl>
 				<dt class="attr">bool.body</dt>
-				<dt class="ret">(true | false)</dt>
+				<dt class="ret">(boolean)</dt>
 					<dd>atom body as Lua boolean</dd>
 			</dl>
 
 			<a class="api-snippet" href="#snippet-atom-bool" data-snippet="snippet-atom-bool">&rArr; show snippet</a>
 			<pre class="api-hidden"><code id="snippet-atom-bool">-- Atom Bool
 
+-- serialize
 local io = Stash()
 io:bool(true)
 io:read()
 
+-- attributes
 assert(#io == 4) -- query size of atom body
 print(tostring(io)) -- convert to string
 assert(io.type == Atom.Bool) -- query type of atom
@@ -791,10 +789,12 @@ assert(io.body == true) -- get atom body</code></pre>
 			<a class="api-snippet" href="#snippet-atom-int" data-snippet="snippet-atom-int">&rArr; show snippet</a>
 			<pre class="api-hidden"><code id="snippet-atom-int">-- Atom Int
 
+-- serialize
 local io = Stash()
 io:int(12)
 io:read()
 
+-- attributes
 assert(#io == 4) -- query size of atom body
 print(tostring(io)) -- convert to string
 assert(io.type == Atom.Int) -- query type of atom
@@ -833,10 +833,12 @@ assert(io.body == 12) -- get atom body</code></pre>
 			<a class="api-snippet" href="#snippet-atom-long" data-snippet="snippet-atom-long">&rArr; show snippet</a>
 			<pre class="api-hidden"><code id="snippet-atom-long">-- Atom Long
 
+-- serialize
 local io = Stash()
 io:long(13)
 io:read()
 
+-- attributes
 assert(#io == 8) -- query size of atom body
 print(tostring(io)) -- convert to string
 assert(io.type == Atom.Long) -- query type of atom
@@ -875,10 +877,12 @@ assert(io.body == 13) -- get atom body</code></pre>
 			<a class="api-snippet" href="#snippet-atom-float" data-snippet="snippet-atom-float">&rArr; show snippet</a>
 			<pre class="api-hidden"><code id="snippet-atom-float">-- Atom Float
 
+-- serialize
 local io = Stash()
 io:float(1.5)
 io:read()
 
+-- attributes
 assert(#io == 4) -- query size of atom body
 print(tostring(io)) -- convert to string
 assert(io.type == Atom.Float) -- query type of atom
@@ -917,10 +921,12 @@ assert(io.body == 1.5) -- get atom body</code></pre>
 			<a class="api-snippet" href="#snippet-atom-double" data-snippet="snippet-atom-double">&rArr; show snippet</a>
 			<pre class="api-hidden"><code id="snippet-atom-double">-- Atom Double
 
+-- serialize
 local io = Stash()
 io:double(1.6)
 io:read()
 
+-- attributes
 assert(#io == 8) -- query size of atom body
 print(tostring(io)) -- convert to string
 assert(io.type == Atom.Double) -- query type of atom
@@ -959,11 +965,13 @@ assert(io.body == 1.6) -- get atom body</code></pre>
 			<a class="api-snippet" href="#snippet-atom-urid" data-snippet="snippet-atom-urid">&rArr; show snippet</a>
 			<pre class="api-hidden"><code id="snippet-atom-urid">-- Atom URID
 
+-- serialize
 local urn = Map['urn:moony:xyz']
 local io = Stash()
 io:urid(urn)
 io:read()
 
+-- attributes
 assert(#io == 4) -- query size of atom body
 print(tostring(io)) -- convert to string
 assert(io.type == Atom.URID) -- query type of atom
@@ -1003,11 +1011,13 @@ assert(io.body == urn) -- get atom body</code></pre>
 			<a class="api-snippet" href="#snippet-atom-uri" data-snippet="snippet-atom-uri">&rArr; show snippet</a>
 			<pre class="api-hidden"><code id="snippet-atom-uri">-- Atom URI
 
+-- serialize
 local urn = 'urn:moony:xyz'
 local io = Stash()
 io:uri(urn)
 io:read()
 
+-- attributes
 assert(#io == #urn + 1) -- query size of atom body
 print(tostring(io)) -- convert to string
 assert(io.type == Atom.URI) -- query type of atom
@@ -1027,7 +1037,7 @@ assert(io.body == urn) -- get atom body</code></pre>
 			</dl>
 
 			<dl>
-				<dt class="atrr">string.__tostring | tostring(string)</dt>
+				<dt class="attr">string.__tostring | tostring(string)</dt>
 				<dt class="ret">(string)</dt>
 					<dd>string representation of atom</dd>
 			</dl>
@@ -1047,11 +1057,13 @@ assert(io.body == urn) -- get atom body</code></pre>
 			<a class="api-snippet" href="#snippet-atom-string" data-snippet="snippet-atom-string">&rArr; show snippet</a>
 			<pre class="api-hidden"><code id="snippet-atom-string">-- Atom String
 
+-- serialize
 local str = 'hello world'
 local io = Stash()
 io:string(str)
 io:read()
 
+-- attributes
 assert(#io == #str + 1) -- query size of atom body
 print(tostring(io)) -- convert to string
 assert(io.type == Atom.String) -- query type of atom
@@ -1091,11 +1103,13 @@ assert(io.body == str) -- get atom body</code></pre>
 			<a class="api-snippet" href="#snippet-atom-path" data-snippet="snippet-atom-path">&rArr; show snippet</a>
 			<pre class="api-hidden"><code id="snippet-atom-path">-- Atom Path
 
+-- serialize
 local tmp = '/tmp/xyz'
 local io = Stash()
 io:path(tmp)
 io:read()
 
+-- attributes
 assert(#io == #tmp + 1) -- query size of atom body
 print(tostring(io)) -- convert to string
 assert(io.type == Atom.Path) -- query type of atom
@@ -1154,6 +1168,7 @@ assert(io.body == tmp) -- get atom body</code></pre>
 			<a class="api-snippet" href="#snippet-atom-literal" data-snippet="snippet-atom-literal">&rArr; show snippet</a>
 			<pre class="api-hidden"><code id="snippet-atom-literal">-- Atom  Literal
 
+-- serialize
 local lit = 'Hallo Welt'
 local datatype = Map['urn:moony:xyz']
 local lang = Map['urn:moony:de']
@@ -1161,6 +1176,7 @@ local io = Stash()
 io:literal(lit, datatype, lang)
 io:read()
 
+-- attributes
 assert(#io == 4 + 4 + #lit + 1) -- query size of atom body
 print(tostring(io)) -- convert to string
 assert(io.type == Atom.Literal) -- query type of atom
@@ -1208,7 +1224,7 @@ assert(lang2 == lang)</code></pre>
 			<dl>
 				<dt class="func">chunk:unpack(from=1, to=#chunk)</dt>
 				<dt>from (nil | integer)</dt>
-					<dd>star byte position to unpack from, defaults to 1</dd>
+					<dd>start byte position to unpack from, defaults to 1</dd>
 				<dt>to (nil | integer)</dt>
 					<dd>end byte position to unpack from, defaults to body size<dd>
 				<dt class="ret">(integer, integer, ...)</dt>
@@ -1217,18 +1233,22 @@ assert(lang2 == lang)</code></pre>
 
 			<dl>
 				<dt class="func">chunk:__index(idx) | chunk[idx]</dt>
+				<dt>idx (integer)</dt>
+					<dd>byte position to query for</dd>
 				<dt class="ret">(integer)</dt>
-					<dd>byte at position idx of atom body as Lua integers</dd>
+					<dd>byte at position idx of atom body as Lua integer</dd>
 			</dl>
 
 			<a class="api-snippet" href="#snippet-atom-chunk" data-snippet="snippet-atom-chunk">&rArr; show snippet</a>
 			<pre class="api-hidden"><code id="snippet-atom-chunk">-- Atom Chunk
 
+-- serialize
 local byt = string.char(0x1, 0x2, 0x3)
 local io = Stash()
 io:chunk(byt)
 io:read()
 
+-- attributes
 assert(#io == #byt) -- query size of atom body
 print(tostring(io)) -- convert to string
 assert(io.type == Atom.Chunk) -- query type of atom
@@ -1279,28 +1299,32 @@ assert(io[3] == 0x3)</code></pre>
 
 			<dl>
 				<dt class="func">midi:unpack(from=1, to=#midi)</dt>
+				<dt>from (nil | integer)</dt>
+					<dd>start byte position to unpack from, defaults to 1</dd>
+				<dt>to (nil | integer)</dt>
+					<dd>end byte position to unpack from, defaults to body size<dd>
 				<dt class="ret">(integer, integer, ...)</dt>
 					<dd>atom body unpacked bytewise as Lua integers</dd>
 			</dl>
 
 			<dl>
 				<dt class="func">midi:__index(idx) | midi[idx]</dt>
-				<dt>from (nil | integer)</dt>
-					<dd>star byte position to unpack from, defaults to 1</dd>
-				<dt>to (nil | integer)</dt>
-					<dd>end byte position to unpack from, defaults to body size<dd>
+				<dt>idx (integer)</dt>
+					<dd>byte position to query for</dd>
 				<dt class="ret">(integer)</dt>
-					<dd>byte at position idx of atom body as Lua integers</dd>
+					<dd>byte at position idx of atom body as Lua integer</dd>
 			</dl>
 
 			<a class="api-snippet" href="#snippet-atom-midi" data-snippet="snippet-atom-midi">&rArr; show snippet</a>
 			<pre class="api-hidden"><code id="snippet-atom-midi">-- Atom MIDI
 
+-- serialize
 local byt = string.char(MIDI.NoteOn, 69, 64)
 local io = Stash()
 io:midi(byt)
 io:read()
 
+-- attributes
 assert(#io == #byt) -- query size of atom body
 print(tostring(io)) -- convert to string
 assert(io.type == MIDI.MidiEvent) -- query type of atom
@@ -1318,19 +1342,344 @@ assert(io[2] == 69)
 assert(io[3] == 64)</code></pre>
 			</div></div>
 
-			<!-- FIXME -->
-
 		<div class="api-section"><div class="api-content">
 		<h2 id="atom-container">Container</h2>
-		<p>...</p>
+		<p>Atom types that contain nested atoms as part of their body are referred to
+		as containers.</p>
 		</div></div>
 
+			<!-- Atom Sequence -->
 			<div class="api-section"><div class="api-content">
 			<h3 id="atom-sequence">Sequence</h3>
-			<p>...</p>
+			<p>A Sequence atom, e.g. of type Atom.Sequence and variable size. Atom size
+			denotes to number of events contained in atom body. An atom sequence
+			consists of individual atom events, each with a time stamp and event
+			pyaload.</p>
+
+			<dl>
+				<dt class="attr">seq.__len | #seq</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>number of events</dd>
+			</dl>
+
+			<dl>
+				<dt class="attr">seq.__tostring | tostring(seq)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
+			</dl>
+
+			<dl>
+				<dt class="attr">seq.type</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>URID of atom type</dd>
+			</dl>
+
+			<dl>
+				<dt class="attr">seq.unit</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>URID of event time unit</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">seq:foreach()</dt>
+				<dt class="ret">(integer | number, atom)</dt>
+					<dd>iterates over all atom events returning frame or beat time and event atom.</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">seq:foreach(seq1, ...)</dt>
+				<dt>seq1 (atom)</dt>
+					<dd>additional sequence(s) to multiplex and iterate over.</dd>
+				<dt class="ret">(integer | number, atom, atom)</dt>
+					<dd>multiplexes and iterates over all atom events from all sequences returning frame or beat time, event atom and source sequence atom.</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">seq:__index(idx) | seq[idx]</dt>
+				<dt>idx (integer)</dt>
+					<dd>event position to query for</dd>
+				<dt class="ret">(atom)</dt>
+					<dd>event atom at position idx</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-atom-seq" data-snippet="snippet-atom-seq">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-atom-seq">-- Atom Sequence
+
+-- serialize
+local io = Stash()
+io:sequence(Atom.frameTime):time(0):int(12):pop()
+io:read()
+
+-- attributes
+assert(#io == 1) -- query number of events
+print(tostring(io)) -- convert to string
+assert(io.type == Atom.Sequence) -- query type of atom
+assert(io.unit == Atom.frameTime) -- query event time unit
+
+-- iterate over
+for frames, atom in io:foreach() do
+	assert(frames == 0)
+	assert(atom.body == 12)
+end
+		
+-- indexing
+local atom = io[1]
+assert(atom.body == 12)</code></pre>
 			</div></div>
 
-			<!-- FIXME -->
+			<!-- Atom Tuple -->
+			<div class="api-tuple"><div class="api-content">
+			<h3 id="atom-tuple">Tuple</h3>
+			<p>A Tuple atom, e.g. of type Atom.Tuple and variable size. Atom size
+			denotes to number of items contained in atom body. An atom tuple 
+			consists of individual atom items.</p>
+
+			<dl>
+				<dt class="attr">tup.__len | #tup</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>number of items</dd>
+			</dl>
+
+			<dl>
+				<dt class="attr">tup.__tostring | tostring(tup)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
+			</dl>
+
+			<dl>
+				<dt class="attr">tup.type</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>URID of atom type</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">tup:unpack(from=1, to=#tup)</dt>
+				<dt>from (nil | integer)</dt>
+					<dd>start position to unpack from, defaults to 1</dd>
+				<dt>to (nil | integer)</dt>
+					<dd>end position to unpack from, defaults to body size<dd>
+				<dt class="ret">(atom, atom, ...)</dt>
+					<dd>atom items unpacked from tuple</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">tup:foreach()</dt>
+				<dt class="ret">(integer, atom)</dt>
+					<dd>iterates over all atom items returning index and atom item.</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">tup:__index(idx) | tup[idx]</dt>
+				<dt>idx (integer)</dt>
+					<dd>item position to query for</dd>
+				<dt class="ret">(atom)</dt>
+					<dd>atom item at position idx</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-atom-tuple" data-snippet="snippet-atom-tuple">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-atom-tuple">-- Atom Tuple
+
+-- serialize
+local io = Stash()
+io:tuple():int(12):pop()
+io:read()
+
+-- attributes
+assert(#io == 1) -- query number of items
+print(tostring(io)) -- convert to string
+assert(io.type == Atom.Tuple) -- query type of atom
+
+-- iterate over
+for i, atom in io:foreach() do
+	assert(i == 1)
+	assert(atom.body == 12)
+end
+
+-- unpack
+local a1 = io:unpack()
+assert(a1.body == 12)
+		
+-- indexing
+a1 = io[1]
+assert(a1.body == 12)</code></pre>
+			</div></div>
+
+			<!-- Atom Object -->
+			<div class="api-object"><div class="api-content">
+			<h3 id="atom-object">Object</h3>
+			<p>An Object atom, e.g. of type Atom.Object and variable size. Atom size
+			denotes to number of properties contained in atom body. An atom object 
+			consists of individual properties.</p>
+
+			<dl>
+				<dt class="attr">obj.__len | #obj</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>number of properties</dd>
+			</dl>
+
+			<dl>
+				<dt class="attr">obj.__tostring | tostring(obj)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
+			</dl>
+
+			<dl>
+				<dt class="attr">obj.type</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>URID of atom type</dd>
+			</dl>
+
+			<dl>
+				<dt class="attr">obj.id</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>URID of atom object ID</dd>
+			</dl>
+
+			<dl>
+				<dt class="attr">obj.otype</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>URID of atom object type</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">obj:foreach()</dt>
+				<dt class="ret">(integer, atom, integer)</dt>
+					<dd>iterates over all properties returning property key, atom and context.</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">obj:__index(key) | obj[key]</dt>
+				<dt>key (integer)</dt>
+					<dd>URID of key to query for</dd>
+				<dt class="ret">(atom)</dt>
+					<dd>property atom for key</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-atom-object" data-snippet="snippet-atom-object">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-atom-object">-- Atom Object
+
+-- serialize
+local urn = Map['urn:moony:xyz']
+local io = Stash()
+io:object():key(urn):int(12):pop()
+io:read()
+
+-- attributes
+assert(#io == 1) -- query number of properties
+print(tostring(io)) -- convert to string
+assert(io.type == Atom.Object) -- query type of atom
+
+-- iterate over
+for k, atom, ctx in io:foreach() do
+	assert(k == urn)
+	assert(atom.body == 12)
+	assert(ctx == 0)
+end
+		
+-- indexing
+local atom = io[urn]
+assert(atom.body == 12)</code></pre>
+			</div></div>
+
+			<!-- Atom Vector -->
+			<div class="api-vector"><div class="api-content">
+			<h3 id="atom-vector">Vector</h3>
+			<p>A Vector atom, e.g. of type Atom.Vector and variable size. Atom size
+			denotes to number of items contained in atom body. An atom vector 
+			consists of equally typed atom items.</p>
+
+			<dl>
+				<dt class="attr">vec.__len | #vec</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>number of items</dd>
+			</dl>
+
+			<dl>
+				<dt class="attr">vec.__tostring | tostring(vec)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
+			</dl>
+
+			<dl>
+				<dt class="attr">vec.type</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>URID of atom type</dd>
+			</dl>
+
+			<dl>
+				<dt class="attr">vec.child_size</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>atom vector child size</dd>
+			</dl>
+
+			<dl>
+				<dt class="attr">vec.child_type</dt>
+				<dt class="ret">(integer)</dt>
+					<dd>URID of atom vector child type</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">vec:unpack(from=1, to=#vec)</dt>
+				<dt>from (nil | integer)</dt>
+					<dd>start position to unpack from, defaults to 1</dd>
+				<dt>to (nil | integer)</dt>
+					<dd>end position to unpack from, defaults to body size<dd>
+				<dt class="ret">(atom, atom, ...)</dt>
+					<dd>atom items unpacked from vector</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">vec:foreach()</dt>
+				<dt class="ret">(integer, atom)</dt>
+					<dd>iterates over all vector items returning index and atom.</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">vec:__index(idx) | vec[idx]</dt>
+				<dt>idx (integer)</dt>
+					<dd>position to query for</dd>
+				<dt class="ret">(atom)</dt>
+					<dd>atom of item at position idx</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-atom-vector" data-snippet="snippet-atom-vector">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-atom-vector">-- Atom Vector
+
+-- serialize
+local io = Stash()
+io:vector(Atom.Int, 12, 13, 14)
+io:read()
+
+-- attributes
+assert(#io == 3) -- query number of items
+print(tostring(io)) -- convert to string
+assert(io.type == Atom.Vector) -- query type of atom
+assert(io.child_size == 4) -- query child size of atom
+assert(io.child_type == Atom.Int) -- query child type of atom
+
+-- iterate over
+for i, atom in io:foreach() do
+	if i == 1 then
+		assert(atom.body == 12)
+	elseif i == 2 then
+		assert(atom.body == 13)
+	elseif i == 3 then
+		assert(atom.body == 14)
+	end
+end
+
+-- unpack
+local v1, v2, v3 = io:unpack()
+assert(v1.body == 12)
+assert(v2.body == 13)
+assert(v3.body == 14)
+		
+-- indexing
+v1, v2, v3 = io[1], io[2], io[3]
+assert(v1.body == 12)
+assert(v2.body == 13)
+assert(v3.body == 14)</code></pre>
+			</div></div>
 
 	<div class="api-section"><div class="api-content">
 	<h1 id="forge">Forge</h1>
