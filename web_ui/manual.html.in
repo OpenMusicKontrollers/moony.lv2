@@ -92,7 +92,6 @@
 			<ul>
 				<li><a href="#forge-primitive">Primitive</a>
 					<ul>
-						<li><a href="#forge-atom">Atom</a></li>
 						<li><a href="#forge-bool">Bool</a></li>
 						<li><a href="#forge-int">Int</a></li>
 						<li><a href="#forge-long">Long</a></li>
@@ -107,6 +106,7 @@
 						<li><a href="#forge-midi">MIDI</a></li>
 						<li><a href="#forge-raw">Raw</a></li>
 						<li><a href="#forge-typed">Typed</a></li>
+						<li><a href="#forge-atom">Atom</a></li>
 					</ul>
 				</li>
 				<li><a href="#forge-container">Container</a>
@@ -147,6 +147,8 @@
 				</li>
 			</ul>
 		</li>
+
+		<li><a href="#stash">Stash</a></li>
 
 		<li><a href="#responder">Responder</a>
 			<ul>
@@ -358,8 +360,8 @@ print('hello world')</code></pre>
 				<dd>control port outputs, with x=[0, 1, 2, 4]</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-run" data-snippet="snippet-run">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-run">-- 'run' callback prototype for moony#a1xa1
+		<a class="api-snippet" href="#snippet-callback-run" data-snippet="snippet-callback-run">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-callback-run">-- 'run' callback prototype for moony#a1xa1
 
 function run(n, seq, forge, control, notify)
 	-- here we will process events
@@ -391,8 +393,8 @@ end</code></pre>
 				<dd>pair of atom sequence and atom forge object for communication with UI</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-once" data-snippet="snippet-once">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-once">-- 'once' callback prototype for moony#a1xa1
+		<a class="api-snippet" href="#snippet-callback-once" data-snippet="snippet-callback-once">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-callback-once">-- 'once' callback prototype for moony#a1xa1
 
 local stateR = StateResponder({})
 
@@ -421,8 +423,8 @@ end</code></pre>
 				<dd>atom forge object to serialize to</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-stash" data-snippet="snippet-stash">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-stash">-- 'stash' callback prototype for moony#a1xa1
+		<a class="api-snippet" href="#snippet-callback-stash" data-snippet="snippet-callback-stash">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-callback-stash">-- 'stash' callback prototype for moony#a1xa1
 
 local timeR = TimeResponder({})
 
@@ -449,8 +451,8 @@ end</code></pre>
 				<dd>atom object to deserialize from</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-apply" data-snippet="snippet-apply">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-apply">-- 'apply' callback prototype for moony#a1xa1
+		<a class="api-snippet" href="#snippet-callback-apply" data-snippet="snippet-callback-apply">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-callback-apply">-- 'apply' callback prototype for moony#a1xa1
 
 local timeR = TimeResponder({})
 
@@ -476,8 +478,8 @@ end</code></pre>
 				<dd>atom forge object to serialize to</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-save" data-snippet="snippet-save">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-save">-- 'save' callback prototype for moony#a1xa1
+		<a class="api-snippet" href="#snippet-callback-save" data-snippet="snippet-callback-save">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-callback-save">-- 'save' callback prototype for moony#a1xa1
 
 local stateR = StateResponder({})
 
@@ -500,8 +502,8 @@ end</code></pre>
 				<dd>atom object to deserialize from</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-restore" data-snippet="snippet-restore">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-restore">-- 'restore' callback prototype for moony#a1xa1
+		<a class="api-snippet" href="#snippet-callback-restore" data-snippet="snippet-callback-restore">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-callback-restore">-- 'restore' callback prototype for moony#a1xa1
 
 local stateR = StateResponder({})
 
@@ -1681,16 +1683,19 @@ assert(v2.body == 13)
 assert(v3.body == 14)</code></pre>
 			</div></div>
 
+	<!-- Forge -->
 	<div class="api-section"><div class="api-content">
 	<h1 id="forge">Forge</h1>
 	<p>...</p>
 	</div></div>
 
+		<!-- Forge Primitive -->
 		<div class="api-section"><div class="api-content">
 		<h2 id="forge-primitive">Primitive</h2>
 		<p>...</p>
 		</div></div>
 
+			<!-- Forge Atom -->
 			<div class="api-section"><div class="api-content">
 			<h3 id="forge-atom">Atom</h3>
 			<p>...</p>
@@ -1698,11 +1703,13 @@ assert(v3.body == 14)</code></pre>
 
 			<!-- FIXME -->
 
+		<!-- Forge Container -->
 		<div class="api-section"><div class="api-content">
 		<h2 id="forge-container">Container</h2>
 		<p>...</p>
 		</div></div>
 
+			<!-- Forge Sequencer -->
 			<div class="api-section"><div class="api-content">
 			<h3 id="forge-sequence">sequence</h3>
 			<p>...</p>
@@ -1710,28 +1717,113 @@ assert(v3.body == 14)</code></pre>
 
 			<!-- FIXME -->
 
+	<!-- Stash -->
+	<div class="api-section"><div class="api-content">
+	<h1 id="stash">Stash</h1>
+	<p>Sometimes it may be useful to not only be able to serialize atoms to forge
+	objects provided to the user via one of the callback functions, but to be able
+	to temporarily serialize some atoms to memory for later dispatch.</p>
+
+	<p>For these usage scenarios there is the stash object, which according to
+	its name, functions as temporary stash. It is a special object in the way
+	that it can either be an atom object (with all its attributes and methods)
+	or a forge object (with all its methods), depending on whether it is in its
+	reading or writing mode.</p>
+
+	<p>After creating a new stash, it is in its writing mode and thus can be used
+	just like a forge object. After finishing the serialization procedure, the
+	stash object may be switched into its reading mode and be used just like
+	an atom object.</p>
+
+		<dl>
+			<dt class="func">stash:read()</dt>
+			<dt class="ret">(atom)</dt>
+				<dd>reference to self as atom object to read from</dd>
+		</dl>
+
+		<dl>
+			<dt class="func">stash:write()</dt>
+			<dt class="ret">(forge)</dt>
+				<dd>reference to self as forge object to write to</dd>
+		</dl>
+
+		<a class="api-snippet" href="#snippet-stash" data-snippet="snippet-stash">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-stash">-- Atom Vector
+
+-- a new stash defaults to writing mode - equivalent to forge object
+local io = Stash()
+io:int(12)
+
+-- switch to reading mode - equivalent to atom object
+io:read()
+assert(io.body == 12)
+
+-- switch to writing mode - automatically clears previous content
+io:write()
+io:int(13)
+
+-- switch to reading mode
+io:read()
+assert(io.body == 13)</code></pre>
+	</div></div>
+
+	<!-- Responder -->
 	<div class="api-section"><div class="api-content">
 	<h1 id="responder">Responder</h1>
 	<p>...</p>
 	</div></div>
 
+		<!-- MIDIResponder -->
 		<div class="api-section"><div class="api-content">
 		<h2 id="responder-midi">MIDIResponder</h2>
 		<p>...</p>
 		</div></div>
 
+		<!-- OSCResponder -->
 		<div class="api-section"><div class="api-content">
 		<h2 id="responder-osc">OSCResponder</h2>
 		<p>...</p>
 		</div></div>
 
+		<!-- TimeResponder -->
 		<div class="api-section"><div class="api-content">
 		<h2 id="responder-time">TimeResponder</h2>
 		<p>...</p>
 		</div></div>
 
+		<!-- StateResponder -->
 		<div class="api-section"><div class="api-content">
 		<h2 id="responder-state">StateResponder</h2>
+		<p>...</p>
+		</div></div>
+
+	<!-- Utilities -->
+	<div class="api-section"><div class="api-content">
+	<h1 id="utils">Utilities</h1>
+	<p>...</p>
+	</div></div>
+
+		<!-- midi2cps -->
+		<div class="api-section"><div class="api-content">
+		<h2 id="utils-midi2cps">midi2cps</h2>
+		<p>...</p>
+		</div></div>
+
+		<!-- cps2midi -->
+		<div class="api-section"><div class="api-content">
+		<h2 id="utils-cps2midi">cps2midi</h2>
+		<p>...</p>
+		</div></div>
+
+		<!-- encrypt -->
+		<div class="api-section"><div class="api-content">
+		<h2 id="utils-encrypt">Encrypt</h2>
+		<p>...</p>
+		</div></div>
+
+		<!-- decrypt -->
+		<div class="api-section"><div class="api-content">
+		<h2 id="utils-decrypt">Decrypt</h2>
 		<p>...</p>
 		</div></div>
 

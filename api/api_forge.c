@@ -1145,12 +1145,6 @@ _lforge__tostring(lua_State *L)
 }
 
 const luaL_Reg lforge_mt [] = {
-	{"frame_time", _lforge_frame_time},
-	{"beat_time", _lforge_beat_time},
-	{"time", _lforge_time},
-
-	{"atom", _lforge_atom},
-
 	{"int", _lforge_int},
 	{"long", _lforge_long},
 	{"float", _lforge_float},
@@ -1164,17 +1158,26 @@ const luaL_Reg lforge_mt [] = {
 
 	{"chunk", _lforge_chunk},
 	{"midi", _lforge_midi},
+
 	{"raw", _lforge_raw},
-	{"bundle", _lforge_osc_bundle},
-	{"message", _lforge_osc_message},
+	{"typed", _lforge_typed},
+	{"atom", _lforge_atom},
+
 	{"tuple", _lforge_tuple},
+
 	{"object", _lforge_object},
 	{"key", _lforge_key},
 	{"property", _lforge_property},
-	{"vector", _lforge_vector},
-	{"sequence", _lforge_sequence},
 
-	{"typed", _lforge_typed},
+	{"vector", _lforge_vector},
+
+	{"sequence", _lforge_sequence},
+	{"frame_time", _lforge_frame_time},
+	{"beat_time", _lforge_beat_time},
+	{"time", _lforge_time},
+
+	{"bundle", _lforge_osc_bundle},
+	{"message", _lforge_osc_message},
 
 	{"get", _lforge_get},
 	{"set", _lforge_set},
