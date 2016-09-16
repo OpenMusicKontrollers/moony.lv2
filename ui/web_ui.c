@@ -184,6 +184,36 @@ _deref_ui(LV2_Atom_Forge_Sink_Handle handle, LV2_Atom_Forge_Ref ref)
 	return (LV2_Atom *)(ser->buf + offset);
 }
 
+static int
+callback_lv2(struct lws *wsi, enum lws_callback_reasons reason,
+	void *user, void *in, size_t len);
+
+static int
+callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
+	void *in, size_t len);
+
+enum demo_protocols {
+	PROTOCOL_HTTP = 0,
+	PROTOCOL_LV2,
+	DEMO_PROTOCOL_COUNT
+};
+
+static const struct lws_protocols protocols [] = {
+	[PROTOCOL_HTTP] = {
+		.name = "http-only",
+		.callback = callback_http,
+		.per_session_data_size = 0,
+		.rx_buffer_size = 0
+	},
+	[PROTOCOL_LV2] = {
+		.name = "lv2-protocol",
+		.callback = callback_lv2,
+		.per_session_data_size = sizeof(client_t),
+		.rx_buffer_size = 0
+	},
+	{ .name = NULL, .callback = NULL, .per_session_data_size = 0, .rx_buffer_size = 0 }
+};
+
 static inline const char *
 get_mimetype(const char *file)
 {
@@ -360,6 +390,10 @@ callback_lv2(struct lws *wsi, enum lws_callback_reasons reason,
 
 			memset(client, 0x0, sizeof(client_t));
 
+			client->root = cJSON_CreateArray();
+			if(!client->root)
+				return -1;
+
 			ui->client = client;
 
 			break;
@@ -367,9 +401,11 @@ callback_lv2(struct lws *wsi, enum lws_callback_reasons reason,
 
 		case LWS_CALLBACK_SERVER_WRITEABLE:
 		{
-			if(client->root)
+			const int num = cJSON_GetArraySize(client->root);
+			if(num > 0)
 			{
-				for(cJSON *job = client->root->child; job; job = job->next)
+				cJSON *job = cJSON_DetachItemFromArray(client->root, 0); // get next job
+				if(job)
 				{
 					char *json = cJSON_PrintUnformatted(job);
 					if(json)
@@ -388,10 +424,11 @@ callback_lv2(struct lws *wsi, enum lws_callback_reasons reason,
 							return -1;
 						}
 					}
-				}
+					cJSON_Delete(job);
 
-				cJSON_Delete(client->root);
-				client->root = NULL;
+					if(num > 1) // there are remaining jobs, schedule an other write callback
+						lws_callback_on_writable_all_protocol(ui->context, &protocols[PROTOCOL_LV2]);
+				}
 			}
 
 			break;
@@ -411,6 +448,12 @@ callback_lv2(struct lws *wsi, enum lws_callback_reasons reason,
 		{
 			//lwsl_notice("LWS_CALLBACK_CLOSE:\n");
 
+			if(client->root)
+			{
+				cJSON_Delete(client->root);
+				client->root = NULL;
+			}
+
 			ui->client = NULL;
 			ui->done = 1;
 
@@ -420,6 +463,12 @@ callback_lv2(struct lws *wsi, enum lws_callback_reasons reason,
 		case LWS_CALLBACK_WS_PEER_INITIATED_CLOSE:
 		{
 			//lwsl_notice("LWS_CALLBACK_WS_PEER_INITIATED_CLOSE: len %d\n", len);
+
+			if(client->root)
+			{
+				cJSON_Delete(client->root);
+				client->root = NULL;
+			}
 
 			ui->client = NULL;
 			ui->done = 1;
@@ -435,30 +484,6 @@ callback_lv2(struct lws *wsi, enum lws_callback_reasons reason,
 
 	return 0;
 }
-
-enum demo_protocols {
-	PROTOCOL_HTTP = 0,
-	PROTOCOL_LV2,
-	DEMO_PROTOCOL_COUNT
-};
-
-static const struct lws_protocols protocols [] = {
-	[PROTOCOL_HTTP] = {
-		.name = "http-only",
-		.callback = callback_http,
-		.per_session_data_size = 0,
-		//.rx_buffer_size = BUF_SIZE,
-		.rx_buffer_size = 0
-	},
-	[PROTOCOL_LV2] = {
-		.name = "lv2-protocol",
-		.callback = callback_lv2,
-		.per_session_data_size = sizeof(client_t),
-		//.rx_buffer_size = BUF_SIZE
-		.rx_buffer_size = 0
-	},
-	{ .name = NULL, .callback = NULL, .per_session_data_size = 0, .rx_buffer_size = 0 }
-};
 
 static inline const LV2_Atom_Object *
 _moony_message_forge(ui_t *ui, LV2_URID key,
@@ -560,17 +585,8 @@ _schedule(ui_t *ui, cJSON *job)
 
 	if( (client = ui->client) )
 	{
-		if(!client->root)
-		{
-			// create root object
-			client->root = cJSON_CreateArray();
-		}
-
-		if(client->root)
-		{
-			// add job to jobs array
-			cJSON_AddItemToArray(client->root, job);
-		}
+		// add job to jobs array
+		cJSON_AddItemToArray(client->root, job);
 	}
 
 	lws_callback_on_writable_all_protocol(ui->context, &protocols[PROTOCOL_LV2]);
@@ -1141,6 +1157,16 @@ cleanup(LV2UI_Handle handle)
 
 	if(ui->context)
 		lws_context_destroy(ui->context);
+
+	if(ui->client)
+	{
+		if(ui->client->root)
+			cJSON_Delete(ui->client->root);
+
+		free(ui->client);
+	}
+
+	free(ui);
 }
 
 static void
