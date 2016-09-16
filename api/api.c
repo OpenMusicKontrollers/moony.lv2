@@ -697,6 +697,28 @@ _restore(lua_State *L)
 	return 0;
 }
 
+static void
+_clear_global_callbacks(lua_State *L)
+{
+	lua_pushnil(L);
+	lua_setglobal(L, "stash");
+
+	lua_pushnil(L);
+	lua_setglobal(L, "apply");
+
+	lua_pushnil(L);
+	lua_setglobal(L, "save");
+
+	lua_pushnil(L);
+	lua_setglobal(L, "restore");
+	
+	lua_pushnil(L);
+	lua_setglobal(L, "once");
+
+	lua_pushnil(L);
+	lua_setglobal(L, "run");
+}
+
 static LV2_State_Status
 _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_State_Handle state, uint32_t flags, const LV2_Feature *const *features)
 {
@@ -741,6 +763,7 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 	{
 		strncpy(moony->chunk, chunk, size);
 
+		_clear_global_callbacks(L);
 		if(luaL_dostring(L, moony->chunk))
 			moony_error(moony);
 		else
@@ -1738,6 +1761,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 					const char *str = LV2_ATOM_BODY_CONST(value);
 					if(value->size <= MOONY_MAX_CHUNK_LEN)
 					{
+						_clear_global_callbacks(L);
 						if(luaL_dostring(L, str)) // failed loading chunk
 						{
 							moony_error(moony);
