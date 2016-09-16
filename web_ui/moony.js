@@ -564,7 +564,7 @@ function lv2_read_event(symbol, obj) {
 						var id = uri.replace(trim, '');
 						var props = $('#properties');
 
-						props.append('<tr class="writable" data-id="'+id+'"><td class="label"></td><td><input class="wide" id="'+id+'" name="'+uri+'" /></td><td class="unit"></td></tr>');
+						props.append('<tr class="writable" data-id="'+id+'"><td class="label"></td><td><input type="file" class="wide" id="'+id+'" name="'+uri+'" /></td><td class="unit"></td></tr>');
 						sort_properties();
 
 						$('#' + id).bind('wheel', property_wheel).change(property_change);
@@ -576,7 +576,7 @@ function lv2_read_event(symbol, obj) {
 						var id = uri.replace(trim, '');
 						var props = $('#properties');
 
-						props.append('<tr class="readable" data-id="'+id+'"><td class="label"></td><td><input class="wide" id="'+id+'" name="'+uri+'" disabled /></td><td class="unit"></td></tr>');
+						props.append('<tr class="readable" data-id="'+id+'"><td class="label"></td><td><input type="file" class="wide" id="'+id+'" name="'+uri+'" disabled /></td><td class="unit"></td></tr>');
 						sort_properties();
 
 						lv2_get(MOONY.dsp, uri);
