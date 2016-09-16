@@ -343,7 +343,7 @@ _log(lua_State *L)
 			*end = '\0';
 		}
 		const size_t remaining = MOONY_MAX_ERROR_LEN - (end - moony->trace);
-		snprintf(end, MOONY_MAX_ERROR_LEN - remaining, "%s", res);
+		snprintf(end, remaining, "%s", res);
 		moony->trace_out = 1; // set flag
 	}
 
