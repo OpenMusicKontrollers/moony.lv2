@@ -58,36 +58,6 @@
 			</ul>
 		</li>
 
-		<li><a href="#atom">Atom</a>
-			<ul>
-				<li><a href="#atom-primitive">Primitive</a>
-					<ul>
-						<li><a href="#atom-nil">Nil</a></li>
-						<li><a href="#atom-bool">Bool</a></li>
-						<li><a href="#atom-int">Int</a></li>
-						<li><a href="#atom-long">Long</a></li>
-						<li><a href="#atom-float">Float</a></li>
-						<li><a href="#atom-double">Double</a></li>
-						<li><a href="#atom-urid">URID</a></li>
-						<li><a href="#atom-uri">URI</a></li>
-						<li><a href="#atom-string">String</a></li>
-						<li><a href="#atom-path">Path</a></li>
-						<li><a href="#atom-literal">Literal</a></li>
-						<li><a href="#atom-chunk">Chunk</a></li>
-						<li><a href="#atom-midi">MIDI</a></li>
-					</ul>
-				</li>
-				<li><a href="#atom-container">Container</a>
-					<ul>
-						<li><a href="#atom-sequence">Sequence</a></li>
-						<li><a href="#atom-tuple">Tuple</a></li>
-						<li><a href="#atom-object">Object</a></li>
-						<li><a href="#atom-vector">Vector</a></li>
-					</ul>
-				</li>
-			</ul>
-		</li>
-
 		<li><a href="#forge">Forge</a>
 			<ul>
 				<li><a href="#forge-primitive">Primitive</a>
@@ -151,6 +121,36 @@
 			</ul>
 		</li>
 
+		<li><a href="#atom">Atom</a>
+			<ul>
+				<li><a href="#atom-primitive">Primitive</a>
+					<ul>
+						<li><a href="#atom-nil">Nil</a></li>
+						<li><a href="#atom-bool">Bool</a></li>
+						<li><a href="#atom-int">Int</a></li>
+						<li><a href="#atom-long">Long</a></li>
+						<li><a href="#atom-float">Float</a></li>
+						<li><a href="#atom-double">Double</a></li>
+						<li><a href="#atom-urid">URID</a></li>
+						<li><a href="#atom-uri">URI</a></li>
+						<li><a href="#atom-string">String</a></li>
+						<li><a href="#atom-path">Path</a></li>
+						<li><a href="#atom-literal">Literal</a></li>
+						<li><a href="#atom-chunk">Chunk</a></li>
+						<li><a href="#atom-midi">MIDI</a></li>
+					</ul>
+				</li>
+				<li><a href="#atom-container">Container</a>
+					<ul>
+						<li><a href="#atom-sequence">Sequence</a></li>
+						<li><a href="#atom-tuple">Tuple</a></li>
+						<li><a href="#atom-object">Object</a></li>
+						<li><a href="#atom-vector">Vector</a></li>
+					</ul>
+				</li>
+			</ul>
+		</li>
+
 		<li><a href="#stash">Stash</a></li>
 
 		<li><a href="#responder">Responder</a>
@@ -162,7 +162,7 @@
 			</ul>
 		</li>
 
-		<li><a href="#utils">Utilities</a>
+		<li><a href="#util">Utilities</a>
 			<ul>
 				<li><a href="#util-midi2cps">midi2cps</a></li>
 				<li><a href="#util-cps2midi">cps2midi</a></li>
@@ -280,6 +280,7 @@ end</code></pre>
 		<pre class="api-hidden"><code id="snippet-run-c1a1xc1a1">-- C1+A1 x C1+A1 prototype 'run' function
 
 function run(n, seq, forge, c, control, notify)
+	return c
 end</code></pre>
 		</div></div>
 
@@ -292,6 +293,7 @@ end</code></pre>
 		<pre class="api-hidden"><code id="snippet-run-c2a1xc2a1">-- C2+A1 x C2+A1 prototype 'run' function
 
 function run(n, seq, forge, c1, c2, control, notify)
+	return c1, c2
 end</code></pre>
 		</div></div>
 
@@ -304,6 +306,7 @@ end</code></pre>
 		<pre class="api-hidden"><code id="snippet-run-c4a1xc4a1">-- C4+A1 x C4+A1 prototype 'run' function
 
 function run(n, seq, forge, c1, c2, c3, c4, control, notify)
+	return c1, c2, c3, c4
 end</code></pre>
 		</div></div>
 
@@ -638,6 +641,939 @@ for i = 1, 100 do
 	cache[id] = true
 end</code></pre>
 		</div></div>
+
+	<!-- Forge -->
+	<div class="api-section"><div class="api-content">
+	<h1 id="forge">Forge</h1>
+	<p>A forge object is used to serialize arbitrary complex atoms, both simple
+	primitives and nested containers.</p>
+	</div></div>
+
+		<!-- Forge Primitive -->
+		<div class="api-section"><div class="api-content">
+		<h2 id="forge-primitive">Primitive</h2>
+		<p>Atom types that contain single data as part of their body are referred to
+		as primitives.</p>
+		</div></div>
+
+			<!-- Forge Bool -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-bool">Bool</h3>
+			<p>Forge a boolean atom, e.g. of type Atom.Bool.</p>
+
+			<dl>
+				<dt class="func">forge:bool(value)</dt>
+				<dt>value (boolean)</dt>
+					<dd>boolean value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-bool" data-snippet="snippet-forge-bool">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-bool">-- Forge Bool
+
+-- serialize
+local io = Stash()
+
+io:bool(true)
+io:bool(false)</code></pre>
+			</div></div>
+
+			<!-- Forge Int -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-int">Int</h3>
+			<p>Forge an integer atom, e.g. of type Atom.Int.</p>
+
+			<dl>
+				<dt class="func">forge:int(value)</dt>
+				<dt>value (integer)</dt>
+					<dd>integer value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-int" data-snippet="snippet-forge-int">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-int">-- Forge Int
+
+-- serialize
+local io = Stash()
+
+io:int(12)</code></pre>
+			</div></div>
+
+			<!-- Forge Long -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-long">Long</h3>
+			<p>Forge long integer atom, e.g. of type Atom.Long.</p>
+
+			<dl>
+				<dt class="func">forge:long(value)</dt>
+				<dt>value (integer)</dt>
+					<dd>integer value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-long" data-snippet="snippet-forge-long">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-long">-- Forge Long
+
+-- serialize
+local io = Stash()
+
+io:long(12)</code></pre>
+			</div></div>
+
+			<!-- Forge Float -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-float">Float</h3>
+			<p>Forge single-precision float atom, e.g. of type Atom.Float.</p>
+
+			<dl>
+				<dt class="func">forge:float(value)</dt>
+				<dt>value (number)</dt>
+					<dd>number value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-float" data-snippet="snippet-forge-float">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-float">-- Forge Float
+
+-- serialize
+local io = Stash()
+
+io:float(12.5)</code></pre>
+			</div></div>
+
+			<!-- Forge Double -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-double">Double</h3>
+			<p>Forge double-precision float atom, e.g. of type Atom.Double.</p>
+
+			<dl>
+				<dt class="func">forge:double(value)</dt>
+				<dt>value (number)</dt>
+					<dd>number value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-double" data-snippet="snippet-forge-double">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-double">-- Forge Double 
+
+-- serialize
+local io = Stash()
+
+io:double(12.5)</code></pre>
+			</div></div>
+
+			<!-- Forge URID -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-urid">URID</h3>
+			<p>Forge URID atom, e.g. of type Atom.URID.</p>
+
+			<dl>
+				<dt class="func">forge:urid(value)</dt>
+				<dt>value (integer)</dt>
+					<dd>URID value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-urid" data-snippet="snippet-forge-urid">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-urid">-- Forge URID
+
+local uri = 'urn:moony:xzy'
+local urn = Map[uri]
+
+-- serialize
+local io = Stash()
+
+io:urid(urn)</code></pre>
+			</div></div>
+
+			<!-- Forge URI -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-uri">URI</h3>
+			<p>Forge URI atom, e.g. of type Atom.URI.</p>
+
+			<dl>
+				<dt class="func">forge:uri(value)</dt>
+				<dt>value (string)</dt>
+					<dd>URI value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-uri" data-snippet="snippet-forge-uri">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-uri">-- Forge URI
+
+local uri = 'urn:moony:xzy'
+
+-- serialize
+local io = Stash()
+
+io:uri(uri)</code></pre>
+			</div></div>
+
+			<!-- Forge String -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-string">String</h3>
+			<p>Forge string atom, e.g. of type Atom.String.</p>
+
+			<dl>
+				<dt class="func">forge:string(value)</dt>
+				<dt>value (string)</dt>
+					<dd>string value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-string" data-snippet="snippet-forge-string">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-string">-- Forge String
+
+-- serialize
+local io = Stash()
+
+io:string('hello world')</code></pre>
+			</div></div>
+
+			<!-- Forge Path -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-path">Path</h3>
+			<p>Forge path atom, e.g. of type Atom.Path.</p>
+
+			<dl>
+				<dt class="func">forge:path(value)</dt>
+				<dt>value (string)</dt>
+					<dd>string value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-path" data-snippet="snippet-forge-path">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-path">-- Forge Path
+
+-- serialize
+local io = Stash()
+
+io:path('/tmp/xyz')</code></pre>
+			</div></div>
+
+			<!-- Forge Literal -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-literal">Literal</h3>
+			<p>Forge literal atom, e.g. of type Atom.Literal.</p>
+
+			<dl>
+				<dt class="func">forge:literal(value, datatype=nil, language=nil)</dt>
+				<dt>value (string)</dt>
+					<dd>string value to forge</dd>
+				<dt>datatype (integer)</dt>
+					<dd>datatype of literal as integer URID, defaults to 0</dd>
+				<dt>language (integer)</dt>
+					<dd>language of literal as integer URID, defaults to 0</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-literal" data-snippet="snippet-forge-literal">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-literal">-- Forge Literal
+
+local tlh = Map['http://lexvo.org/id/iso639-3/tlh'] -- Klingon language
+
+-- serialize
+local io = Stash()
+
+io:literal('902A7F', MIDI.MidiEvent) -- MIDI encoded as hexidecimal text
+io:literal('', nil, tlh) -- 'hello' aka 'what do you want?'</code></pre>
+			</div></div>
+
+			<!-- Forge Chunk -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-chunk">Chunk</h3>
+			<p>Forge chunk atom, e.g. of type Atom.Chunk.</p>
+
+			<dl>
+				<dt class="func">forge:chunk(value)</dt>
+				<dt>value (string)</dt>
+					<dd>byte string value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">forge:chunk(value)</dt>
+				<dt>value (table)</dt>
+					<dd>table with individual values to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">forge:chunk(...)</dt>
+				<dt>... (integer)</dt>
+					<dd>individual values to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-chunk" data-snippet="snippet-forge-chunk">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-chunk">-- Forge Chunk
+
+-- serialize
+local io = Stash()
+
+io:chunk(string.char(0x1, 0x2, 0x3))
+io:chunk({0x1, 0x2, 0x3})
+io:chunk(0x1, 0x2, 0x3)
+</code></pre>
+			</div></div>
+
+			<!-- Forge MIDI -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-midi">MIDI</h3>
+			<p>Forge MIDI atom, e.g. of type MIDI.MidiEvent.</p>
+
+			<dl>
+				<dt class="func">forge:midi(value)</dt>
+				<dt>value (string)</dt>
+					<dd>byte string value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">forge:midi(value)</dt>
+				<dt>value (table)</dt>
+					<dd>table with individual values to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">forge:midi(...)</dt>
+				<dt>... (integer)</dt>
+					<dd>individual values to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-midi" data-snippet="snippet-forge-midi">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-midi">-- Forge MIDI
+
+-- serialize
+local io = Stash()
+
+io:chunk(string.char(MIDI.NoteOn, 69, 0x7f))
+io:chunk({MIDI.NoteOn, 69, 0x7f})
+io:chunk(MIDI.NoteOn, 69, 0x7f)
+</code></pre>
+			</div></div>
+
+			<!-- Forge Raw -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-raw">Raw</h3>
+			<p>Forge a custom atom of arbitrary type.</p>
+
+			<dl>
+				<dt class="func">forge:raw(type, value)</dt>
+				<dt>type (integer)</dt>
+					<dd>type of atom as integer URID</dd>
+				<dt>value (string)</dt>
+					<dd>byte string value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">forge:raw(type, value)</dt>
+				<dt>type (integer)</dt>
+					<dd>type of atom as integer URID</dd>
+				<dt>value (table)</dt>
+					<dd>table with individual values to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">forge:raw(type, ...)</dt>
+				<dt>type (integer)</dt>
+					<dd>type of atom as integer URID</dd>
+				<dt>... (integer)</dt>
+					<dd>individual values to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-raw" data-snippet="snippet-forge-raw">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-raw">-- Forge Raw
+
+local byt = { -- stores individual bytes of zero-terminated string 'LV2'
+	string.byte('L'),
+	string.byte('V'),
+	string.byte('2'),
+	string.byte('\0')
+}
+
+-- serialize
+local io = Stash()
+
+io:raw(Atom.String, string.char(table.unpack(byt)))
+io:raw(Atom.String, byt)
+io:raw(Atom.String, table.unpack(byt))</code></pre>
+			</div></div>
+
+			<!-- Forge Typed -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-typed">Typed</h3>
+			<p>Forge an atom of arbitrary type.</p>
+
+			<dl>
+				<dt class="func">forge:typed(type, ...)</dt>
+				<dt>type (integer)</dt>
+					<dd>type of atom as integer URID</dd>
+				<dt>... (boolean | integer | number | string | table)</dt>
+					<dd>value(s) to forge, see native forge functions documentation</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-typed" data-snippet="snippet-forge-typed">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-typed">-- Forge Typed
+
+-- serialize
+local io = Stash()
+
+io:typed(Atom.Int, 12) -- equivalent to io:int(...)
+io:typed(Atom.Float, 12.5) -- equivalent to io:float(...)
+io:typed(Atom.String, 'LV2 rocks!') -- equivalent to io:string(...)</code></pre>
+			</div></div>
+
+			<!-- Forge Atom -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-atom">Atom</h3>
+			<p>Forge an unchanged atom. Useful for cloning whole atoms.</p>
+
+			<dl>
+				<dt class="func">forge:atom(value)</dt>
+				<dt>value (atom)</dt>
+					<dd>atom to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-atom" data-snippet="snippet-forge-atom">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-atom">-- Forge Atom
+
+-- serialize
+local io1 = Stash()
+local io2 = Stash()
+
+-- create integer atom
+io1:int(12)
+io1:read()
+
+-- forge prepared integer atom in whole
+io2:atom(io1)</code></pre>
+			</div></div>
+
+		<!-- Forge Container -->
+		<div class="api-section"><div class="api-content">
+		<h2 id="forge-container">Container</h2>
+		<p>Atom types that contain nested atoms as part of their body are referred to
+		as containers.</p>
+		</div></div>
+
+			<!-- Forge Sequence -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-sequence">Sequence</h3>
+			<p>Forge a sequence atom, e.g. an atom of type Atom.Sequence.</p>
+
+			<dl>
+				<dt class="func">forge:sequence(unit=0)</dt>
+				<dt>unit (integer)</dt>
+					<dd>event time unit as integer URID, defaults to 0, can either be Atom.frameTime or Atom.beatTime</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-sequence" data-snippet="snippet-forge-sequence">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-sequence">-- Forge Sequence
+
+-- serialize
+local io = Stash()
+
+local seq = io:sequence() -- create derived container forge object
+	seq:time(0):int(12)
+	seq:frame_time(1):int(13)
+seq:pop() -- finalize container
+
+seq = io:sequence(Atom.frameTime) -- create derived container forge object
+	seq:time(0):int(12)
+	seq:frame_time(1):int(13)
+seq:pop() -- finalize container
+
+seq = io:sequence(Atom.beatTime) -- create derived container forge object
+	seq:time(0.0):int(12)
+	seq:beat_time(1.0):int(13)
+seq:pop() -- finalize container</code></pre>
+			</div></div>
+
+				<!-- Forge Frame Time-->
+				<div class="api-section"><div class="api-content">
+				<h4 id="forge-frame-time">Frame Time</h4>
+				<p>Forge frame time of event. Use this on sequences with unit 0 or Atom.frameTime.</p>
+
+				<dl>
+					<dt class="func">forge:frame_time(frames)</dt>
+					<dt>frames (integer)</dt>
+						<dd>frame time of event</dd>
+					<dt class="ret">(forge)</dt>
+						<dd>self forge object</dd>
+				</dl>
+				</div></div>
+
+				<!-- Forge Beat Time-->
+				<div class="api-section"><div class="api-content">
+				<h4 id="forge-beat-time">Beat Time</h4>
+				<p>Forge beat time of event. Use this on sequences with unit Atom.beatTime.</p>
+
+				<dl>
+					<dt class="func">forge:beat_time(beats)</dt>
+					<dt>beats (number)</dt>
+						<dd>beat time of event</dd>
+					<dt class="ret">(forge)</dt>
+						<dd>self forge object</dd>
+				</dl>
+				</div></div>
+
+				<!-- Forge Time-->
+				<div class="api-section"><div class="api-content">
+				<h4 id="forge-time">Time</h4>
+				<p>Forge frame or beat time of event. Can be used as syntactic sugar instead of
+				<a href="#forge-frame-time">Frame Time</a> or <a href="#forge-beat-time">Beat Time</a>.</p>
+
+				<dl>
+					<dt class="func">forge:time(timestamp)</dt>
+					<dt>timestamp (integer | number)</dt>
+						<dd>frame time (integer) or beat time (number) of event</dd>
+					<dt class="ret">(forge)</dt>
+						<dd>self forge object</dd>
+				</dl>
+				</div></div>
+
+			<!-- Forge Object -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-object">Object</h3>
+			<p>Forge an object atom, e.g. an atom of type Atom.Object.</p>
+
+			<dl>
+				<dt class="func">forge:object(id=0, otype=0)</dt>
+				<dt>id (integer)</dt>
+					<dd>object ID as integer URID, defaults to 0</dd>
+				<dt>otype (integer)</dt>
+					<dd>object type as integer URID, defaults to 0</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-object" data-snippet="snippet-forge-object">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-object">-- Forge Object
+local urn = HashMap('urn:moony:xyz')
+
+-- serialize
+local io = Stash()
+
+local obj = io:object(nil, urn.FooBar) -- create derived container forge object
+	obj:key(urn.foo):int(12) -- without context
+	obj:key(urn.bar, urn.ctx):long(13) -- with context
+obj:pop() -- finalize container</code></pre>
+			</div></div>
+
+				<!-- Forge Key -->
+				<div class="api-section"><div class="api-content">
+				<h4 id="forge-key">Key</h4>
+				<p>Forge key of object property.</p>
+
+				<dl>
+					<dt class="func">forge:key(value, context=0)</dt>
+					<dt>value (integer)</dt>
+						<dd>key of property as integer URID</dd>
+					<dt>context (integer)</dt>
+						<dd>context of property as integer URID, defaults to 0</dd>
+					<dt class="ret">(forge)</dt>
+						<dd>self forge object</dd>
+				</dl>
+				</div></div>
+
+			<!-- Forge Tuple -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-tuple">Tuple</h3>
+			<p>Forge a tuple atom, e.g. an atom of type Atom.Tuple.</p>
+
+			<dl>
+				<dt class="func">forge:tuple()</dt>
+				<dt class="ret">(forge)</dt>
+					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-tuple" data-snippet="snippet-forge-tuple">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-tuple">-- Forge Tuple
+
+-- serialize
+local io = Stash()
+
+local tup = io:tuple() -- create derived container forge object
+	tup:int(12)
+	tup:long(13)
+	tup:float(13.5)
+	tup:double(14.5)
+	tup:string('this is an element of an atom tuple')
+	tup:bool(true)
+tup:pop() -- finalize container</code></pre>
+			</div></div>
+
+			<!-- Forge Vector -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-vector">Vector</h3>
+			<p>Forge a vector atom, e.g. an atom of type Atom.Vector.</p>
+
+			<dl>
+				<dt class="func">forge:vector(type, value)</dt>
+					<dt>type (integer)</dt>
+						<dd>child type as integer URID, valid are: Atom.Bool, Atom.Int, Atom.Float, Atom.Double, Atom.URID</dd>
+					<dt>value (table)</dt>
+						<dd>table with vector elements</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
+			</dl>
+
+			<dl>
+				<dt class="func">forge:vector(type, ...)</dt>
+					<dt>type (integer)</dt>
+						<dd>child type as integer URID, valid are: Atom.Bool, Atom.Int, Atom.Float, Atom.Double, Atom.URID</dd>
+					<dt>... (bool | integer | number)</dt>
+						<dd>vector elements</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-vector" data-snippet="snippet-forge-vector">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-vector">-- Forge Vector
+
+-- serialize
+local io = Stash()
+
+io:vector(Atom.Int, 1, 2, 3, 4, 5) -- vector items as individual arguments
+io:vector(Atom.Bool, {true, false, true}) --vector items as table</code></pre>
+			</div></div>
+
+			<!-- Forge Pop -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-pop">Pop</h3>
+			<p>Finalize any derived container forge object.</p>
+
+			<dl>
+				<dt class="func">forge:pop()</dt>
+			</dl>
+			</div></div>
+
+		<!-- Forge OSC -->
+		<div class="api-section"><div class="api-content">
+		<h2 id="forge-osc">OSC</h2>
+		<p>Atom types that contain Open Sound Control bundles or messages as part of their body.</p>
+		</div></div>
+
+			<!-- Forge Bundle -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-bundle">Bundle</h3>
+			<p>Forge a OSC bundle atom, e.g. an atom object of type OSC.Bundle.</p>
+
+			<dl>
+				<dt class="func">forge:bundle(timestamp=1)</dt>
+				<dt>timestamp (integer | number)</dt>
+					<dd>absolute timestamp in frames (integer) or relative timestamp (number) in seconds, defaults to 1 aka immediate</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-bundle" data-snippet="snippet-forge-bundle">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-bundle">-- Forge Bundle
+
+-- serialize
+local io = Stash()
+
+-- schedule bundle for immediate dispatch
+local bndl = io:bundle() -- create derived container forge object
+	bndl:message('/hello', 's', 'world')
+bndl:pop() -- finalize container
+
+-- schedule bundle for dispatch @ Sep 19, 2016 02.09.16.015811000 UTC
+bndl = io:bundle(0xdb89c74c040c3199)
+	bndl:message('/hello', 's', 'world')
+bndl:pop()
+
+-- schedule bundle for dispatch in 0.1s
+bndl = io:bundle(0.1)
+	bndl:message('/hello', 's', 'world')
+bndl:pop()</code></pre>
+			</div></div>
+
+			<!-- Forge Message -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-message">Message</h3>
+			<p>Forge a OSC message atom, e.g. an atom object of type OSC.Message.
+			Supported OSC argument types are: 'i', 'f', 's', 'b', 'h', 'd', 't',
+			'm', 'S', 'c', 'r', 'T', 'F', 'N', 'I'</p>
+
+			<dl>
+				<dt class="func">forge:message(path, format, ...)</dt>
+				<dt>path (string)</dt>
+					<dd>OSC path as string</dd>
+				<dt>format (string)</dt>
+					<dd>OSC format as string</dd>
+				<dt>... (integer | number | string)</dt>
+					<dd>variable arguments according to format</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-message" data-snippet="snippet-forge-message">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-message">-- Forge Message
+
+-- serialize
+local io = Stash()
+
+-- schedule bundle for immediate dispatch
+local bndl = io:bundle() -- create derived container forge object
+	bndl:message('/hello', 'ifs', 2016, 12.5, 'hello')
+	bndl:message('/hello', 'b', string.char(0x1, 0x2, 0x3))
+	bndl:message('/hello', 'hdS', 2017, 13.5, 'world')
+	bndl:message('/hello', 't', 0xdb89c74c040c3199)
+	bndl:message('/hello', 'TFNI')
+	bndl:message('/hello', 'm', string.char(MIDI.NoteOn, 69, 0x7f))
+	bndl:message('/hello', 'cr', string.byte('s'), 0xff00ff00)
+bndl:pop() -- finalize container)</code></pre>
+			</div></div>
+
+		<!-- Forge Patch -->
+		<div class="api-section"><div class="api-content">
+		<h2 id="forge-patch-patch">Patch</h2>
+		<p>Atom types that contain Patch messages as part of their body.</p>
+		</div></div>
+
+			<!-- Forge Patch-->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-patch">Patch</h3>
+			<p>Forge a patch patch atom, e.g. an atom object of type Patch.Patch.</p>
+
+			<dl>
+				<dt class="func">forge:patch(subject=0, sequenceNumber=0)</dt>
+				<dt>subject (integer)</dt>
+					<dd>patch subject as integer URID, defaults to 0</dd>
+				<dt>sequenceNumber (integer)</dt>
+					<dd>patch sequence number as integer, defaults to 0</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-patch" data-snippet="snippet-forge-patch">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-patch">-- Forge Patch
+
+local urn = HashMap('urn:moony:xzy')
+
+-- serialize
+local io = Stash()
+
+local patch= io:patch(urn.subj, 1002) -- with subject and sequence number
+
+	local rem = patch:remove() -- equivalent to patch:object(0, Patch.remove)
+		rem:key(urn.foo):urid(Patch.wildcard)
+		rem:key(urn.bar):urid(Patch.wildcard)
+	rem:pop()
+
+	local add = patch:add() -- equivalent to patch:object(0, Patch.add)
+		add:key(urn.foo):int(12)
+		add:key(urn.bar):float(12.5)
+	add:pop()
+
+patch:pop()</code></pre>
+			</div></div>
+
+				<!-- Forge Add -->
+				<div class="api-section"><div class="api-content">
+				<h4 id="forge-add">Add</h4>
+				<p>Forge add property of patch property.</p>
+
+				<dl>
+					<dt class="func">forge:add()</dt>
+					<dt class="ret">(forge)</dt>
+						<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
+				</dl>
+				</div></div>
+
+				<!-- Forge Add -->
+				<div class="api-section"><div class="api-content">
+				<h4 id="forge-remove">Remove</h4>
+				<p>Forge remove property of patch property.</p>
+
+				<dl>
+					<dt class="func">forge:remove()</dt>
+					<dt class="ret">(forge)</dt>
+						<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
+				</dl>
+				</div></div>
+
+			<!-- Forge Get -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-get">Get</h3>
+			<p>Forge a patch get atom, e.g. an atom object of type Patch.Get.</p>
+
+			<dl>
+				<dt class="func">forge:get(property, subject=0, sequenceNumber=0)</dt>
+				<dt>property (integer)</dt>
+					<dd>patch property as integer URID</dd>
+				<dt>subject (integer)</dt>
+					<dd>patch subject as integer URID, defaults to 0</dd>
+				<dt>sequenceNumber (integer)</dt>
+					<dd>patch sequence number as integer, defaults to 0</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self container object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-get" data-snippet="snippet-forge-get">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-get">-- Forge Get
+
+local urn = HashMap('urn:moony:xzy')
+
+-- serialize
+local io = Stash()
+
+io:get(urn.prop) -- without subject and sequence number
+io:get(urn.prop, nil, 1001) -- without subject
+io:get(urn.prop, urn.subj, 1002) -- with subject and sequence number</code></pre>
+			</div></div>
+
+			<!-- Forge Set -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-set">Set</h3>
+			<p>Forge a patch set atom, e.g. an atom object of type Patch.Set.</p>
+
+			<dl>
+				<dt class="func">forge:set(property, subject=0, sequenceNumber=0)</dt>
+				<dt>property (integer)</dt>
+					<dd>patch property as integer URID</dd>
+				<dt>subject (integer)</dt>
+					<dd>patch subject as integer URID, defaults to 0</dd>
+				<dt>sequenceNumber (integer)</dt>
+					<dd>patch sequence number as integer, defaults to 0</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-set" data-snippet="snippet-forge-set">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-set">-- Forge Set
+
+local urn = HashMap('urn:moony:xzy')
+
+-- serialize
+local io = Stash()
+
+local set = io:set(urn.prop) -- without subject and sequence number
+	set:int(12)
+set:pop()
+
+local set = io:set(urn.prop, urn.subj, 1002) -- with subject and sequence number
+	set:float(12)
+set:pop()</code></pre>
+			</div></div>
+
+			<!-- Forge Put -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-put">Put</h3>
+			<p>Forge a patch put atom, e.g. an atom object of type Patch.Put.</p>
+
+			<dl>
+				<dt class="func">forge:put(subject=0, sequenceNumber=0)</dt>
+				<dt>subject (integer)</dt>
+					<dd>patch subject as integer URID, defaults to 0</dd>
+				<dt>sequenceNumber (integer)</dt>
+					<dd>patch sequence number as integer, defaults to 0</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-put" data-snippet="snippet-forge-put">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-put">-- Forge Put
+
+local urn = HashMap('urn:moony:xzy')
+
+-- serialize
+local io = Stash()
+
+local put = io:put() -- without subject and sequence number
+	put:key(urn.foo):int(12)
+	put:key(urn.bar):float(12.5)
+put:pop()
+
+local put= io:put(urn.subj, 1002) -- with subject and sequence number
+	put:key(urn.foo):int(12)
+	put:key(urn.bar):float(12.5)
+put:pop()</code></pre>
+			</div></div>
+
+			<!-- Forge Ack -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-ack">Ack</h3>
+			<p>Forge an ack patch atom, e.g. an atom object of type Patch.Ack.</p>
+
+			<dl>
+				<dt class="func">forge:ack(subject=0, sequenceNumber=0)</dt>
+				<dt>subject (integer)</dt>
+					<dd>patch subject as integer URID, defaults to 0</dd>
+				<dt>sequenceNumber (integer)</dt>
+					<dd>patch sequence number as integer, defaults to 0</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-ack" data-snippet="snippet-forge-ack">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-ack">-- Forge Ack
+
+local urn = HashMap('urn:moony:xzy')
+
+-- serialize
+local io = Stash()
+
+io:ack(urn.subj, 1002) -- with subject and sequence number</code></pre>
+			</div></div>
+
+			<!-- Forge Error -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-error">Error</h3>
+			<p>Forge an error patch atom, e.g. an atom object of type Patch.Error.</p>
+
+			<dl>
+				<dt class="func">forge:error(subject=0, sequenceNumber=0)</dt>
+				<dt>subject (integer)</dt>
+					<dd>patch subject as integer URID, defaults to 0</dd>
+				<dt>sequenceNumber (integer)</dt>
+					<dd>patch sequence number as integer, defaults to 0</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-error" data-snippet="snippet-forge-error">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-error">-- Forge Error
+
+local urn = HashMap('urn:moony:xzy')
+
+-- serialize
+local io = Stash()
+
+io:error(urn.subj, 1002) -- with subject and sequence number</code></pre>
+			</div></div>
 
 	<div class="api-section"><div class="api-content">
 	<h1 id="atom">Atom</h1>
@@ -1686,938 +2622,6 @@ assert(v2.body == 13)
 assert(v3.body == 14)</code></pre>
 			</div></div>
 
-	<!-- Forge -->
-	<div class="api-section"><div class="api-content">
-	<h1 id="forge">Forge</h1>
-	<p>...</p>
-	</div></div>
-
-		<!-- Forge Primitive -->
-		<div class="api-section"><div class="api-content">
-		<h2 id="forge-primitive">Primitive</h2>
-		<p>Atom types that contain single data as part of their body are referred to
-		as primitives.</p>
-		</div></div>
-
-			<!-- Forge Bool -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-bool">Bool</h3>
-			<p>Forge a boolean atom, e.g. of type Atom.Bool.</p>
-
-			<dl>
-				<dt class="func">forge:bool(value)</dt>
-				<dt>value (boolean)</dt>
-					<dd>boolean value to forge</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-bool" data-snippet="snippet-forge-bool">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-bool">-- Forge Bool
-
--- serialize
-local io = Stash()
-
-io:bool(true)
-io:bool(false)</code></pre>
-			</div></div>
-
-			<!-- Forge Int -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-int">Int</h3>
-			<p>Forge an integer atom, e.g. of type Atom.Int.</p>
-
-			<dl>
-				<dt class="func">forge:int(value)</dt>
-				<dt>value (integer)</dt>
-					<dd>integer value to forge</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-int" data-snippet="snippet-forge-int">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-int">-- Forge Int
-
--- serialize
-local io = Stash()
-
-io:int(12)</code></pre>
-			</div></div>
-
-			<!-- Forge Long -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-long">Long</h3>
-			<p>Forge long integer atom, e.g. of type Atom.Long.</p>
-
-			<dl>
-				<dt class="func">forge:long(value)</dt>
-				<dt>value (integer)</dt>
-					<dd>integer value to forge</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-long" data-snippet="snippet-forge-long">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-long">-- Forge Long
-
--- serialize
-local io = Stash()
-
-io:long(12)</code></pre>
-			</div></div>
-
-			<!-- Forge Float -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-float">Float</h3>
-			<p>Forge single-precision float atom, e.g. of type Atom.Float.</p>
-
-			<dl>
-				<dt class="func">forge:float(value)</dt>
-				<dt>value (number)</dt>
-					<dd>number value to forge</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-float" data-snippet="snippet-forge-float">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-float">-- Forge Float
-
--- serialize
-local io = Stash()
-
-io:float(12.5)</code></pre>
-			</div></div>
-
-			<!-- Forge Double -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-double">Double</h3>
-			<p>Forge double-precision float atom, e.g. of type Atom.Double.</p>
-
-			<dl>
-				<dt class="func">forge:double(value)</dt>
-				<dt>value (number)</dt>
-					<dd>number value to forge</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-double" data-snippet="snippet-forge-double">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-double">-- Forge Double 
-
--- serialize
-local io = Stash()
-
-io:double(12.5)</code></pre>
-			</div></div>
-
-			<!-- Forge URID -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-urid">URID</h3>
-			<p>Forge URID atom, e.g. of type Atom.URID.</p>
-
-			<dl>
-				<dt class="func">forge:urid(value)</dt>
-				<dt>value (integer)</dt>
-					<dd>URID value to forge</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-urid" data-snippet="snippet-forge-urid">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-urid">-- Forge URID
-
-local uri = 'urn:moony:xzy'
-local urn = Map[uri]
-
--- serialize
-local io = Stash()
-
-io:urid(urn)</code></pre>
-			</div></div>
-
-			<!-- Forge URI -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-uri">URI</h3>
-			<p>Forge URI atom, e.g. of type Atom.URI.</p>
-
-			<dl>
-				<dt class="func">forge:uri(value)</dt>
-				<dt>value (string)</dt>
-					<dd>URI value to forge</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-uri" data-snippet="snippet-forge-uri">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-uri">-- Forge URI
-
-local uri = 'urn:moony:xzy'
-
--- serialize
-local io = Stash()
-
-io:uri(uri)</code></pre>
-			</div></div>
-
-			<!-- Forge String -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-string">String</h3>
-			<p>Forge string atom, e.g. of type Atom.String.</p>
-
-			<dl>
-				<dt class="func">forge:string(value)</dt>
-				<dt>value (string)</dt>
-					<dd>string value to forge</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-string" data-snippet="snippet-forge-string">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-string">-- Forge String
-
--- serialize
-local io = Stash()
-
-io:string('hello world')</code></pre>
-			</div></div>
-
-			<!-- Forge Path -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-path">Path</h3>
-			<p>Forge path atom, e.g. of type Atom.Path.</p>
-
-			<dl>
-				<dt class="func">forge:path(value)</dt>
-				<dt>value (string)</dt>
-					<dd>string value to forge</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-path" data-snippet="snippet-forge-path">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-path">-- Forge Path
-
--- serialize
-local io = Stash()
-
-io:path('/tmp/xyz')</code></pre>
-			</div></div>
-
-			<!-- Forge Literal -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-literal">Literal</h3>
-			<p>Forge literal atom, e.g. of type Atom.Literal.</p>
-
-			<dl>
-				<dt class="func">forge:literal(value, datatype=nil, language=nil)</dt>
-				<dt>value (string)</dt>
-					<dd>string value to forge</dd>
-				<dt>datatype (integer)</dt>
-					<dd>datatype of literal as integer URID, defaults to 0</dd>
-				<dt>language (integer)</dt>
-					<dd>language of literal as integer URID, defaults to 0</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-literal" data-snippet="snippet-forge-literal">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-literal">-- Forge Literal
-
-local tlh = Map['http://lexvo.org/id/iso639-3/tlh'] -- Klingon language
-
--- serialize
-local io = Stash()
-
-io:literal('902A7F', MIDI.MidiEvent) -- MIDI encoded as hexidecimal text
-io:literal('', nil, tlh) -- 'hello' aka 'what do you want?'</code></pre>
-			</div></div>
-
-			<!-- Forge Chunk -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-chunk">Chunk</h3>
-			<p>Forge chunk atom, e.g. of type Atom.Chunk.</p>
-
-			<dl>
-				<dt class="func">forge:chunk(value)</dt>
-				<dt>value (string)</dt>
-					<dd>byte string value to forge</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<dl>
-				<dt class="func">forge:chunk(value)</dt>
-				<dt>value (table)</dt>
-					<dd>table with individual values to forge</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<dl>
-				<dt class="func">forge:chunk(...)</dt>
-				<dt>... (integer)</dt>
-					<dd>individual values to forge</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-chunk" data-snippet="snippet-forge-chunk">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-chunk">-- Forge Chunk
-
--- serialize
-local io = Stash()
-
-io:chunk(string.char(0x1, 0x2, 0x3))
-io:chunk({0x1, 0x2, 0x3})
-io:chunk(0x1, 0x2, 0x3)
-</code></pre>
-			</div></div>
-
-			<!-- Forge MIDI -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-midi">MIDI</h3>
-			<p>Forge MIDI atom, e.g. of type MIDI.MidiEvent.</p>
-
-			<dl>
-				<dt class="func">forge:midi(value)</dt>
-				<dt>value (string)</dt>
-					<dd>byte string value to forge</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<dl>
-				<dt class="func">forge:midi(value)</dt>
-				<dt>value (table)</dt>
-					<dd>table with individual values to forge</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<dl>
-				<dt class="func">forge:midi(...)</dt>
-				<dt>... (integer)</dt>
-					<dd>individual values to forge</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-midi" data-snippet="snippet-forge-midi">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-midi">-- Forge MIDI
-
--- serialize
-local io = Stash()
-
-io:chunk(string.char(MIDI.NoteOn, 69, 0x7f))
-io:chunk({MIDI.NoteOn, 69, 0x7f})
-io:chunk(MIDI.NoteOn, 69, 0x7f)
-</code></pre>
-			</div></div>
-
-			<!-- Forge Raw -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-raw">Raw</h3>
-			<p>Forge a custom atom of arbitrary type.</p>
-
-			<dl>
-				<dt class="func">forge:raw(type, value)</dt>
-				<dt>type (integer)</dt>
-					<dd>type of atom as integer URID</dd>
-				<dt>value (string)</dt>
-					<dd>byte string value to forge</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<dl>
-				<dt class="func">forge:raw(type, value)</dt>
-				<dt>type (integer)</dt>
-					<dd>type of atom as integer URID</dd>
-				<dt>value (table)</dt>
-					<dd>table with individual values to forge</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<dl>
-				<dt class="func">forge:raw(type, ...)</dt>
-				<dt>type (integer)</dt>
-					<dd>type of atom as integer URID</dd>
-				<dt>... (integer)</dt>
-					<dd>individual values to forge</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-raw" data-snippet="snippet-forge-raw">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-raw">-- Forge Raw
-
-local byt = { -- stores individual bytes of zero-terminated string 'LV2'
-	string.byte('L'),
-	string.byte('V'),
-	string.byte('2'),
-	string.byte('\0')
-}
-
--- serialize
-local io = Stash()
-
-io:raw(Atom.String, string.char(table.unpack(byt)))
-io:raw(Atom.String, byt)
-io:raw(Atom.String, table.unpack(byt))</code></pre>
-			</div></div>
-
-			<!-- Forge Typed -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-typed">Typed</h3>
-			<p>Forge an atom of arbitrary type.</p>
-
-			<dl>
-				<dt class="func">forge:typed(type, ...)</dt>
-				<dt>type (integer)</dt>
-					<dd>type of atom as integer URID</dd>
-				<dt>... (boolean | integer | number | string | table)</dt>
-					<dd>value(s) to forge, see native forge functions documentation</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-typed" data-snippet="snippet-forge-typed">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-typed">-- Forge Typed
-
--- serialize
-local io = Stash()
-
-io:typed(Atom.Int, 12) -- equivalent to io:int(...)
-io:typed(Atom.Float, 12.5) -- equivalent to io:float(...)
-io:typed(Atom.String, 'LV2 rocks!') -- equivalent to io:string(...)</code></pre>
-			</div></div>
-
-			<!-- Forge Atom -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-atom">Atom</h3>
-			<p>Forge an unchanged atom. Useful for cloning whole atoms.</p>
-
-			<dl>
-				<dt class="func">forge:atom(value)</dt>
-				<dt>value (atom)</dt>
-					<dd>atom to forge</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-atom" data-snippet="snippet-forge-atom">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-atom">-- Forge Atom
-
--- serialize
-local io1 = Stash()
-local io2 = Stash()
-
--- create integer atom
-io1:int(12)
-io1:read()
-
--- forge prepared integer atom in whole
-io2:atom(io1)</code></pre>
-			</div></div>
-
-		<!-- Forge Container -->
-		<div class="api-section"><div class="api-content">
-		<h2 id="forge-container">Container</h2>
-		<p>Atom types that contain nested atoms as part of their body are referred to
-		as containers.</p>
-		</div></div>
-
-			<!-- Forge Sequence -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-sequence">Sequence</h3>
-			<p>Forge a sequence atom, e.g. an atom of type Atom.Sequence.</p>
-
-			<dl>
-				<dt class="func">forge:sequence(unit=0)</dt>
-				<dt>unit (integer)</dt>
-					<dd>event time unit as integer URID, defaults to 0, can either be Atom.frameTime or Atom.beatTime</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-sequence" data-snippet="snippet-forge-sequence">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-sequence">-- Forge Sequence
-
--- serialize
-local io = Stash()
-
-local seq = io:sequence() -- create derived container forge object
-	seq:time(0):int(12)
-	seq:frame_time(1):int(13)
-seq:pop() -- finalize container
-
-seq = io:sequence(Atom.frameTime) -- create derived container forge object
-	seq:time(0):int(12)
-	seq:frame_time(1):int(13)
-seq:pop() -- finalize container
-
-seq = io:sequence(Atom.beatTime) -- create derived container forge object
-	seq:time(0.0):int(12)
-	seq:beat_time(1.0):int(13)
-seq:pop() -- finalize container</code></pre>
-			</div></div>
-
-				<!-- Forge Frame Time-->
-				<div class="api-section"><div class="api-content">
-				<h4 id="forge-frame-time">Frame Time</h4>
-				<p>Forge frame time of event. Use this on sequences with unit 0 or Atom.frameTime.</p>
-
-				<dl>
-					<dt class="func">forge:frame_time(frames)</dt>
-					<dt>frames (integer)</dt>
-						<dd>frame time of event</dd>
-					<dt class="ret">(forge)</dt>
-						<dd>self forge object</dd>
-				</dl>
-				</div></div>
-
-				<!-- Forge Beat Time-->
-				<div class="api-section"><div class="api-content">
-				<h4 id="forge-beat-time">Beat Time</h4>
-				<p>Forge beat time of event. Use this on sequences with unit Atom.beatTime.</p>
-
-				<dl>
-					<dt class="func">forge:beat_time(beats)</dt>
-					<dt>beats (number)</dt>
-						<dd>beat time of event</dd>
-					<dt class="ret">(forge)</dt>
-						<dd>self forge object</dd>
-				</dl>
-				</div></div>
-
-				<!-- Forge Time-->
-				<div class="api-section"><div class="api-content">
-				<h4 id="forge-time">Time</h4>
-				<p>Forge frame or beat time of event. Can be used as syntactic sugar instead of
-				<a href="#forge-frame-time">Frame Time</a> or <a href="#forge-beat-time">Beat Time</a>.</p>
-
-				<dl>
-					<dt class="func">forge:time(timestamp)</dt>
-					<dt>timestamp (integer | number)</dt>
-						<dd>frame time (integer) or beat time (number) of event</dd>
-					<dt class="ret">(forge)</dt>
-						<dd>self forge object</dd>
-				</dl>
-				</div></div>
-
-			<!-- Forge Object -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-object">Object</h3>
-			<p>Forge an object atom, e.g. an atom of type Atom.Object.</p>
-
-			<dl>
-				<dt class="func">forge:object(id=0, otype=0)</dt>
-				<dt>id (integer)</dt>
-					<dd>object ID as integer URID, defaults to 0</dd>
-				<dt>otype (integer)</dt>
-					<dd>object type as integer URID, defaults to 0</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-object" data-snippet="snippet-forge-object">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-object">-- Forge Object
-local urn = HashMap('urn:moony:xyz')
-
--- serialize
-local io = Stash()
-
-local obj = io:object(nil, urn.FooBar) -- create derived container forge object
-	obj:key(urn.foo):int(12) -- without context
-	obj:key(urn.bar, urn.ctx):long(13) -- with context
-obj:pop() -- finalize container</code></pre>
-			</div></div>
-
-				<!-- Forge Key -->
-				<div class="api-section"><div class="api-content">
-				<h4 id="forge-key">Key</h4>
-				<p>Forge key of object property.</p>
-
-				<dl>
-					<dt class="func">forge:key(value, context=0)</dt>
-					<dt>value (integer)</dt>
-						<dd>key of property as integer URID</dd>
-					<dt>context (integer)</dt>
-						<dd>context of property as integer URID, defaults to 0</dd>
-					<dt class="ret">(forge)</dt>
-						<dd>self forge object</dd>
-				</dl>
-				</div></div>
-
-			<!-- Forge Tuple -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-tuple">Tuple</h3>
-			<p>Forge a tuple atom, e.g. an atom of type Atom.Tuple.</p>
-
-			<dl>
-				<dt class="func">forge:tuple()</dt>
-				<dt class="ret">(forge)</dt>
-					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-tuple" data-snippet="snippet-forge-tuple">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-tuple">-- Forge Tuple
-
--- serialize
-local io = Stash()
-
-local tup = io:tuple() -- create derived container forge object
-	tup:int(12)
-	tup:long(13)
-	tup:float(13.5)
-	tup:double(14.5)
-	tup:string('this is an element of an atom tuple')
-	tup:bool(true)
-tup:pop() -- finalize container</code></pre>
-			</div></div>
-
-			<!-- Forge Vector -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-vector">Vector</h3>
-			<p>Forge a vector atom, e.g. an atom of type Atom.Vector.</p>
-
-			<dl>
-				<dt class="func">forge:vector(type, value)</dt>
-					<dt>type (integer)</dt>
-						<dd>child type as integer URID, valid are: Atom.Bool, Atom.Int, Atom.Float, Atom.Double, Atom.URID</dd>
-					<dt>value (table)</dt>
-						<dd>table with vector elements</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
-			</dl>
-
-			<dl>
-				<dt class="func">forge:vector(type, ...)</dt>
-					<dt>type (integer)</dt>
-						<dd>child type as integer URID, valid are: Atom.Bool, Atom.Int, Atom.Float, Atom.Double, Atom.URID</dd>
-					<dt>... (bool | integer | number)</dt>
-						<dd>vector elements</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-vector" data-snippet="snippet-forge-vector">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-vector">-- Forge Vector
-
--- serialize
-local io = Stash()
-
-io:vector(Atom.Int, 1, 2, 3, 4, 5) -- vector items as individual arguments
-io:vector(Atom.Bool, {true, false, true}) --vector items as table</code></pre>
-			</div></div>
-
-			<!-- Forge Pop -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-pop">Pop</h3>
-			<p>Finalize any derived container forge object.</p>
-
-			<dl>
-				<dt class="func">forge:pop()</dt>
-			</dl>
-			</div></div>
-
-		<!-- Forge OSC -->
-		<div class="api-section"><div class="api-content">
-		<h2 id="forge-osc">OSC</h2>
-		<p>Atom types that contain Open Sound Control bundles or messages as part of their body.</p>
-		</div></div>
-
-			<!-- Forge Bundle -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-bundle">Bundle</h3>
-			<p>Forge a OSC bundle atom, e.g. an atom object of type OSC.Bundle.</p>
-
-			<dl>
-				<dt class="func">forge:bundle(timestamp=1)</dt>
-				<dt>timestamp (integer | number)</dt>
-					<dd>absolute timestamp in frames (integer) or relative timestamp (number) in seconds, defaults to 1 aka immediate</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-bundle" data-snippet="snippet-forge-bundle">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-bundle">-- Forge Bundle
-
--- serialize
-local io = Stash()
-
--- schedule bundle for immediate dispatch
-local bndl = io:bundle() -- create derived container forge object
-	bndl:message('/hello', 's', 'world')
-bndl:pop() -- finalize container
-
--- schedule bundle for dispatch @ Sep 19, 2016 02.09.16.015811000 UTC
-bndl = io:bundle(0xdb89c74c040c3199)
-	bndl:message('/hello', 's', 'world')
-bndl:pop()
-
--- schedule bundle for dispatch in 0.1s
-bndl = io:bundle(0.1)
-	bndl:message('/hello', 's', 'world')
-bndl:pop()</code></pre>
-			</div></div>
-
-			<!-- Forge Message -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-message">Message</h3>
-			<p>Forge a OSC message atom, e.g. an atom object of type OSC.Message.
-			Supported OSC argument types are: 'i', 'f', 's', 'b', 'h', 'd', 't',
-			'm', 'S', 'c', 'r', 'T', 'F', 'N', 'I'</p>
-
-			<dl>
-				<dt class="func">forge:message(path, format, ...)</dt>
-				<dt>path (string)</dt>
-					<dd>OSC path as string</dd>
-				<dt>format (string)</dt>
-					<dd>OSC format as string</dd>
-				<dt>... (integer | number | string)</dt>
-					<dd>variable arguments according to format</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-message" data-snippet="snippet-forge-message">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-message">-- Forge Message
-
--- serialize
-local io = Stash()
-
--- schedule bundle for immediate dispatch
-local bndl = io:bundle() -- create derived container forge object
-	bndl:message('/hello', 'ifs', 2016, 12.5, 'hello')
-	bndl:message('/hello', 'b', string.char(0x1, 0x2, 0x3))
-	bndl:message('/hello', 'hdS', 2017, 13.5, 'world')
-	bndl:message('/hello', 't', 0xdb89c74c040c3199)
-	bndl:message('/hello', 'TFNI')
-	bndl:message('/hello', 'm', string.char(MIDI.NoteOn, 69, 0x7f))
-	bndl:message('/hello', 'cr', string.byte('s'), 0xff00ff00)
-bndl:pop() -- finalize container)</code></pre>
-			</div></div>
-
-		<!-- Forge Patch -->
-		<div class="api-section"><div class="api-content">
-		<h2 id="forge-patch-patch">Patch</h2>
-		<p>Atom types that contain Patch messages as part of their body.</p>
-		</div></div>
-
-			<!-- Forge Patch-->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-patch">Patch</h3>
-			<p>Forge a patch patch atom, e.g. an atom object of type Patch.Patch.</p>
-
-			<dl>
-				<dt class="func">forge:patch(subject=0, sequenceNumber=0)</dt>
-				<dt>subject (integer)</dt>
-					<dd>patch subject as integer URID, defaults to 0</dd>
-				<dt>sequenceNumber (integer)</dt>
-					<dd>patch sequence number as integer, defaults to 0</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-patch" data-snippet="snippet-forge-patch">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-patch">-- Forge Patch
-
-local urn = HashMap('urn:moony:xzy')
-
--- serialize
-local io = Stash()
-
-local patch= io:patch(urn.subj, 1002) -- with subject and sequence number
-
-	local rem = patch:remove() -- equivalent to patch:object(0, Patch.remove)
-		rem:key(urn.foo):urid(Patch.wildcard)
-		rem:key(urn.bar):urid(Patch.wildcard)
-	rem:pop()
-
-	local add = patch:add() -- equivalent to patch:object(0, Patch.add)
-		add:key(urn.foo):int(12)
-		add:key(urn.bar):float(12.5)
-	add:pop()
-
-patch:pop()</code></pre>
-			</div></div>
-
-				<!-- Forge Add -->
-				<div class="api-section"><div class="api-content">
-				<h4 id="forge-add">Add</h4>
-				<p>Forge add property of patch property.</p>
-
-				<dl>
-					<dt class="func">forge:add()</dt>
-					<dt class="ret">(forge)</dt>
-						<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
-				</dl>
-				</div></div>
-
-				<!-- Forge Add -->
-				<div class="api-section"><div class="api-content">
-				<h4 id="forge-remove">Remove</h4>
-				<p>Forge remove property of patch property.</p>
-
-				<dl>
-					<dt class="func">forge:remove()</dt>
-					<dt class="ret">(forge)</dt>
-						<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
-				</dl>
-				</div></div>
-
-			<!-- Forge Get -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-get">Get</h3>
-			<p>Forge a patch get atom, e.g. an atom object of type Patch.Get.</p>
-
-			<dl>
-				<dt class="func">forge:get(property, subject=0, sequenceNumber=0)</dt>
-				<dt>property (integer)</dt>
-					<dd>patch property as integer URID</dd>
-				<dt>subject (integer)</dt>
-					<dd>patch subject as integer URID, defaults to 0</dd>
-				<dt>sequenceNumber (integer)</dt>
-					<dd>patch sequence number as integer, defaults to 0</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self container object</dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-get" data-snippet="snippet-forge-get">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-get">-- Forge Get
-
-local urn = HashMap('urn:moony:xzy')
-
--- serialize
-local io = Stash()
-
-io:get(urn.prop) -- without subject and sequence number
-io:get(urn.prop, nil, 1001) -- without subject
-io:get(urn.prop, urn.subj, 1002) -- with subject and sequence number</code></pre>
-			</div></div>
-
-			<!-- Forge Set -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-set">Set</h3>
-			<p>Forge a patch set atom, e.g. an atom object of type Patch.Set.</p>
-
-			<dl>
-				<dt class="func">forge:set(property, subject=0, sequenceNumber=0)</dt>
-				<dt>property (integer)</dt>
-					<dd>patch property as integer URID</dd>
-				<dt>subject (integer)</dt>
-					<dd>patch subject as integer URID, defaults to 0</dd>
-				<dt>sequenceNumber (integer)</dt>
-					<dd>patch sequence number as integer, defaults to 0</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-set" data-snippet="snippet-forge-set">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-set">-- Forge Set
-
-local urn = HashMap('urn:moony:xzy')
-
--- serialize
-local io = Stash()
-
-local set = io:set(urn.prop) -- without subject and sequence number
-	set:int(12)
-set:pop()
-
-local set = io:set(urn.prop, urn.subj, 1002) -- with subject and sequence number
-	set:float(12)
-set:pop()</code></pre>
-			</div></div>
-
-			<!-- Forge Put -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-put">Put</h3>
-			<p>Forge a patch put atom, e.g. an atom object of type Patch.Put.</p>
-
-			<dl>
-				<dt class="func">forge:put(subject=0, sequenceNumber=0)</dt>
-				<dt>subject (integer)</dt>
-					<dd>patch subject as integer URID, defaults to 0</dd>
-				<dt>sequenceNumber (integer)</dt>
-					<dd>patch sequence number as integer, defaults to 0</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-put" data-snippet="snippet-forge-put">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-put">-- Forge Put
-
-local urn = HashMap('urn:moony:xzy')
-
--- serialize
-local io = Stash()
-
-local put = io:put() -- without subject and sequence number
-	put:key(urn.foo):int(12)
-	put:key(urn.bar):float(12.5)
-put:pop()
-
-local put= io:put(urn.subj, 1002) -- with subject and sequence number
-	put:key(urn.foo):int(12)
-	put:key(urn.bar):float(12.5)
-put:pop()</code></pre>
-			</div></div>
-
-			<!-- Forge Ack -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-ack">Ack</h3>
-			<p>Forge an ack patch atom, e.g. an atom object of type Patch.Ack.</p>
-
-			<dl>
-				<dt class="func">forge:ack(subject=0, sequenceNumber=0)</dt>
-				<dt>subject (integer)</dt>
-					<dd>patch subject as integer URID, defaults to 0</dd>
-				<dt>sequenceNumber (integer)</dt>
-					<dd>patch sequence number as integer, defaults to 0</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-ack" data-snippet="snippet-forge-ack">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-ack">-- Forge Ack
-
-local urn = HashMap('urn:moony:xzy')
-
--- serialize
-local io = Stash()
-
-io:ack(urn.subj, 1002) -- with subject and sequence number</code></pre>
-			</div></div>
-
-			<!-- Forge Error -->
-			<div class="api-section"><div class="api-content">
-			<h3 id="forge-error">Error</h3>
-			<p>Forge an error patch atom, e.g. an atom object of type Patch.Error.</p>
-
-			<dl>
-				<dt class="func">forge:error(subject=0, sequenceNumber=0)</dt>
-				<dt>subject (integer)</dt>
-					<dd>patch subject as integer URID, defaults to 0</dd>
-				<dt>sequenceNumber (integer)</dt>
-					<dd>patch sequence number as integer, defaults to 0</dd>
-				<dt class="ret">(forge)</dt>
-					<dd>self forge object</dd>
-			</dl>
-
-			<a class="api-snippet" href="#snippet-forge-error" data-snippet="snippet-forge-error">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-error">-- Forge Error
-
-local urn = HashMap('urn:moony:xzy')
-
--- serialize
-local io = Stash()
-
-io:error(urn.subj, 1002) -- with subject and sequence number</code></pre>
-			</div></div>
-
 	<!-- Stash -->
 	<div class="api-section"><div class="api-content">
 	<h1 id="stash">Stash</h1>
@@ -2700,31 +2704,31 @@ assert(io.body == 13)</code></pre>
 
 	<!-- Utilities -->
 	<div class="api-section"><div class="api-content">
-	<h1 id="utils">Utilities</h1>
+	<h1 id="util">Utilities</h1>
 	<p>...</p>
 	</div></div>
 
 		<!-- midi2cps -->
 		<div class="api-section"><div class="api-content">
-		<h2 id="utils-midi2cps">midi2cps</h2>
+		<h2 id="util-midi2cps">midi2cps</h2>
 		<p>...</p>
 		</div></div>
 
 		<!-- cps2midi -->
 		<div class="api-section"><div class="api-content">
-		<h2 id="utils-cps2midi">cps2midi</h2>
+		<h2 id="util-cps2midi">cps2midi</h2>
 		<p>...</p>
 		</div></div>
 
 		<!-- encrypt -->
 		<div class="api-section"><div class="api-content">
-		<h2 id="utils-encrypt">Encrypt</h2>
+		<h2 id="util-encrypt">Encrypt</h2>
 		<p>...</p>
 		</div></div>
 
 		<!-- decrypt -->
 		<div class="api-section"><div class="api-content">
-		<h2 id="utils-decrypt">Decrypt</h2>
+		<h2 id="util-decrypt">Decrypt</h2>
 		<p>...</p>
 		</div></div>
 
