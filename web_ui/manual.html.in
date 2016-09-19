@@ -2328,8 +2328,8 @@ assert(io[3] == 64)</code></pre>
 			</dl>
 
 			<dl>
-				<dt class="func">seq:foreach(seq1, ...)</dt>
-				<dt>seq1 (atom)</dt>
+				<dt class="func">seq:foreach(...)</dt>
+				<dt>... (atom)</dt>
 					<dd>additional sequence(s) to multiplex and iterate over.</dd>
 				<dt class="ret">(integer | number, atom, atom)</dt>
 					<dd>multiplexes and iterates over all atom events from all sequences returning frame or beat time, event atom and source sequence atom.</dd>
@@ -2670,18 +2670,103 @@ io:int(13)
 -- switch to reading mode
 io:read()
 assert(io.body == 13)</code></pre>
-	</div></div>
+		</div></div>
 
 	<!-- Responder -->
 	<div class="api-section"><div class="api-content">
 	<h1 id="responder">Responder</h1>
-	<p>...</p>
+	<p>Responders are convenience wrappers to ease development of frequently used
+	logic event handling schemes via callbacks.</p>
+
+	<p>Moony offers simple responders for MIDI and OSC handling and more complex
+	responders for time and state handling.</p>
+
+	<p>By using responder objects, common problems like event filtering and
+	sequencing can be written with much less and more understandable code.</p>
+
+	<p>The StateResponder can be used to build simple user interfaces to make
+	any moony script available to non-coders around the world.</p>
+
 	</div></div>
 
 		<!-- MIDIResponder -->
 		<div class="api-section"><div class="api-content">
 		<h2 id="responder-midi">MIDIResponder</h2>
-		<p>...</p>
+		<p>Runs callbacks for received MIDI messages.</p>
+
+		<dl>
+			<dt class="func">MIDIResponder(responder)</dt>
+			<dt>responder (table)</dt>
+				<dd>table with responder callbacks</dd>
+			<dt class="ret">(userdata)</dt>
+				<dd>MIDIResponder object</dd>
+		</dl>
+
+		<dl>
+			<dt class="func">midiR:__call(frames, forge, atom, block=false) | midiR(frames, forge, atom, block=false)</dt>
+			<dt>frames (integer)</dt>
+				<dd>frame time of event</dd>
+			<dt>forge (forge)</dt>
+				<dd>forge object</dd>
+			<dt>atom (atom)</dt>
+				<dd>atom body of event</dd>
+			<dt>block (boolean)</dt>
+				<dd>flag whether to block unhandled messages, defaults to false</dd>
+			<dt class="ret">(boolean)</dt>
+				<dd>flag whether the event was handled, e.g. whether is was any MIDI at all</dd>
+		</dl>
+
+		<a class="api-snippet" href="#snippet-responder-midi" data-snippet="snippet-responder-midi">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-responder-midi">-- MIDIResponder
+
+-- define MIDI responder object with callbacks
+local midiR = MIDIResponder({
+	[MIDI.NoteOn] = function(self, frames, forge, chan, note, vel)
+		assert(frames == 0)
+		assert(chan == 0x1)
+		assert(note == 69)
+		assert(vel == 0x7f)
+
+		forge:time(frames):midi(MIDI.NoteOn | chan, note + 1, vel) -- increase note by 1
+	end,
+	[MIDI.NoteOff] = function(self, frames, forge, chan, note, vel)
+		assert(frames == 1)
+		assert(chan == 0x1)
+		assert(note == 69)
+		assert(vel == 0x0)
+
+		forge:time(frames):midi(MIDI.NoteOff | chan, note + 1, vel) -- increase note by 1
+	end
+})
+
+-- define run function
+function run(n, seq, forge, control, notify)
+	for frames, atom in seq:foreach() do
+		-- block all MIDI messages not explicitly handled by responder
+		local handled = midiR(frames, forge, atom, false)
+	end
+end
+
+local io1 = Stash()
+local io2 = Stash()
+
+-- define test sequence of MIDI events
+local seq1 = io1:sequence()
+	seq1:time(0):midi(MIDI.NoteOn | 0x1, 69, 0x7f)
+	seq1:time(1):midi(MIDI.NoteOff | 0x1, 69, 0x0)
+	seq1:time(2):midi(MIDI.Bender | 0x1, 0x0, 0x7f)
+seq1:pop()
+
+io1:read()
+
+-- run test sequence through run function
+local seq2 = io2:sequence()
+run(256, io1, seq2)
+seq2:pop()
+
+io2:read()
+
+assert(#io2 == 2)</code></pre>
 		</div></div>
 
 		<!-- OSCResponder -->
