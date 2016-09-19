@@ -2125,10 +2125,188 @@ io2:atom(io1)</code></pre>
 		as containers.</p>
 		</div></div>
 
-			<!-- Forge Sequencer -->
+			<!-- Forge Sequence -->
 			<div class="api-section"><div class="api-content">
-			<h3 id="forge-sequence">sequence</h3>
-			<p>...</p>
+			<h3 id="forge-sequence">Sequence</h3>
+			<p>Forge a sequence atom, e.g. an atom of type Atom.Sequence.</p>
+
+			<dl>
+				<dt class="func">forge:sequence(unit=0)</dt>
+				<dt>unit (integer)</dt>
+					<dd>event time unit as integer URID, defaults to 0, can either be Atom.frameTime or Atom.beatTime</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>derived container forge object, needs to be finalized with <a href="Pop">Pop</a></dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-sequence" data-snippet="snippet-forge-sequence">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-sequence">-- Forge Sequence
+
+-- serialize
+local io = Stash()
+
+local seq = io:sequence() -- create derived container forge object
+	seq:time(0):int(12)
+	seq:frame_time(1):int(13)
+seq:pop() -- finalize container
+
+seq = io:sequence(Atom.frameTime) -- create derived container forge object
+	seq:time(0):int(12)
+	seq:frame_time(1):int(13)
+seq:pop() -- finalize container
+
+seq = io:sequence(Atom.beatTime) -- create derived container forge object
+	seq:time(0.0):int(12)
+	seq:beat_time(1.0):int(13)
+seq:pop() -- finalize container</code></pre>
+			</div></div>
+
+				<!-- Forge Frame Time-->
+				<div class="api-section"><div class="api-content">
+				<h4 id="forge-frame-time">Frame Time</h4>
+				<p>Forge frame time of event. Use this on sequences with unit 0 or Atom.frameTime.</p>
+
+				<dl>
+					<dt class="func">forge:frame_time(frames)</dt>
+					<dt>frames (integer)</dt>
+						<dd>frame time of event</dd>
+					<dt class="ret">(forge)</dt>
+						<dd>self forge object</dd>
+				</dl>
+				</div></div>
+
+				<!-- Forge Beat Time-->
+				<div class="api-section"><div class="api-content">
+				<h4 id="forge-beat-time">Beat Time</h4>
+				<p>Forge beat time of event. Use this on sequences with unit Atom.beatTime.</p>
+
+				<dl>
+					<dt class="func">forge:beat_time(beats)</dt>
+					<dt>beats (number)</dt>
+						<dd>beat time of event</dd>
+					<dt class="ret">(forge)</dt>
+						<dd>self forge object</dd>
+				</dl>
+				</div></div>
+
+				<!-- Forge Time-->
+				<div class="api-section"><div class="api-content">
+				<h4 id="forge-time">Time</h4>
+				<p>Forge frame or beat time of event. Can be used as syntactic sugar instead of
+				<a href="#forge-frame-time">Frame Time</a> or <a href="#forge-beat-time">Beat Time</a>.</p>
+
+				<dl>
+					<dt class="func">forge:time(timestamp)</dt>
+					<dt>timestamp (integer | number)</dt>
+						<dd>frame time (integer) or beat time (number) of event</dd>
+					<dt class="ret">(forge)</dt>
+						<dd>self forge object</dd>
+				</dl>
+				</div></div>
+
+			<!-- Forge Object -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-object">Object</h3>
+			<p>Forge an object atom, e.g. an atom of type Atom.Object.</p>
+
+			<dl>
+				<dt class="func">forge:object(id=0, otype=0)</dt>
+				<dt>id (integer)</dt>
+					<dd>object ID as integer URID, defaults to 0</dd>
+				<dt>otype (integer)</dt>
+					<dd>object type as integer URID, defaults to 0</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>derived container forge object, needs to be finalized with <a href="Pop">Pop</a></dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-object" data-snippet="snippet-forge-object">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-object">-- Forge Object
+local urn = HashMap('urn:moony:xyz')
+
+-- serialize
+local io = Stash()
+
+local obj = io:sequence() -- create derived container forge object
+	obj:key(urn.foo):int(12) -- without context
+	obj:key(urn.bar, urn.ctx):long(13) -- with context
+obj:pop() -- finalize container</code></pre>
+			</div></div>
+
+				<!-- Forge Key -->
+				<div class="api-section"><div class="api-content">
+				<h4 id="forge-key">Key</h4>
+				<p>Forge key of object property.</p>
+
+				<dl>
+					<dt class="func">forge:key(value, context=0)</dt>
+					<dt>value (integer)</dt>
+						<dd>key of property as integer URID</dd>
+					<dt>context (integer)</dt>
+						<dd>context of property as integer URID, defaults to 0</dd>
+					<dt class="ret">(forge)</dt>
+						<dd>self forge object</dd>
+				</dl>
+				</div></div>
+
+			<!-- Forge Tuple -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-tuple">Tuple</h3>
+			<p>Forge a tuple atom, e.g. an atom of type Atom.Tuple.</p>
+
+			<dl>
+				<dt class="func">forge:tuple()</dt>
+				<dt class="ret">(forge)</dt>
+					<dd>derived container forge object, needs to be finalized with <a href="Pop">Pop</a></dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-tuple" data-snippet="snippet-forge-tuple">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-tuple">-- Forge Tuple
+
+-- serialize
+local io = Stash()
+
+local tup = io:tuple() -- create derived container forge object
+	tup:int(12)
+	tup:long(13)
+	tup:float(13.5)
+	tup:double(14.5)
+	tup:string('this is an element of an atom tuple')
+	tup:bool(true)
+tup:pop() -- finalize container</code></pre>
+			</div></div>
+
+			<!-- Forge Vector -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-vector">Vector</h3>
+			<p>Forge a vector atom, e.g. an atom of type Atom.Vector.</p>
+
+			<dl>
+				<dt class="func">forge:vector(type, value)</dt>
+					<dt>type (integer)</dt>
+						<dd>child type as integer URID, valid are: Atom.Bool, Atom.Int, Atom.Float, Atom.Double, Atom.URID</dd>
+					<dt>value (table)</dt>
+						<dd>table with vector elements</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>derived container forge object, needs to be finalized with <a href="Pop">Pop</a></dd>
+			</dl>
+
+			<dl>
+				<dt class="func">forge:vector(type, ...)</dt>
+					<dt>type (integer)</dt>
+						<dd>child type as integer URID, valid are: Atom.Bool, Atom.Int, Atom.Float, Atom.Double, Atom.URID</dd>
+					<dt>... (bool | integer | number)</dt>
+						<dd>vector elements</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>derived container forge object, needs to be finalized with <a href="Pop">Pop</a></dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-vector" data-snippet="snippet-forge-vector">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-vector">-- Forge Vector
+
+-- serialize
+local io = Stash()
+
+io:vector(Atom.Int, 1, 2, 3, 4, 5) -- vector items as individual arguments
+io:vector(Atom.Bool, {true, false, true}) --vector items as table</code></pre>
 			</div></div>
 
 			<!-- FIXME -->

@@ -703,20 +703,7 @@ _lforge_key(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
 	LV2_URID key = luaL_checkinteger(L, 2);
-
-	if(!lv2_atom_forge_key(lforge->forge, key))
-		luaL_error(L, forge_buffer_overflow);
-
-	lua_settop(L, 1);
-	return 1;
-}
-
-static int
-_lforge_property(lua_State *L)
-{
-	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_URID key = luaL_checkinteger(L, 2);
-	LV2_URID context = luaL_checkinteger(L, 3);
+	LV2_URID context = luaL_optinteger(L, 3, 0);
 
 	if(!lv2_atom_forge_property_head(lforge->forge, key, context))
 		luaL_error(L, forge_buffer_overflow);
@@ -905,7 +892,7 @@ _lforge_typed(lua_State *L)
 	else if(urid == lforge->forge->Object)
 		hook = _lforge_object;
 	else if(urid == lforge->forge->Property)
-		hook = _lforge_property;
+		hook = _lforge_key;
 	else if(urid == lforge->forge->Vector)
 		hook = _lforge_vector;
 	else if(urid == lforge->forge->Sequence)
@@ -1167,7 +1154,6 @@ const luaL_Reg lforge_mt [] = {
 
 	{"object", _lforge_object},
 	{"key", _lforge_key},
-	{"property", _lforge_property},
 
 	{"vector", _lforge_vector},
 

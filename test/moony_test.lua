@@ -593,7 +593,7 @@ do
 
 		assert(obj:key(key1):int(12) == obj)
 		
-		obj:property(key2, ctx2):long(13)
+		obj:key(key2, ctx2):long(13)
 
 		assert(obj:pop() == nil)
 	end
