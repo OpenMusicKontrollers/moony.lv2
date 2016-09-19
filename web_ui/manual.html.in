@@ -2695,23 +2695,23 @@ assert(io.body == 13)</code></pre>
 		<p>Runs callbacks for received MIDI messages.</p>
 
 		<dl>
-			<dt class="func">MIDIResponder(responder)</dt>
+			<dt class="func">MIDIResponder(responder, through=false)</dt>
 			<dt>responder (table)</dt>
 				<dd>table with responder callbacks</dd>
+			<dt>through (boolean)</dt>
+				<dd>flag whether to let unhandled messages through, defaults to false</dd>
 			<dt class="ret">(userdata)</dt>
 				<dd>MIDIResponder object</dd>
 		</dl>
 
 		<dl>
-			<dt class="func">midiR:__call(frames, forge, atom, block=false) | midiR(frames, forge, atom, block=false)</dt>
+			<dt class="func">midiR:__call(frames, forge, atom) | midiR(frames, forge, atom)</dt>
 			<dt>frames (integer)</dt>
 				<dd>frame time of event</dd>
 			<dt>forge (forge)</dt>
 				<dd>forge object</dd>
 			<dt>atom (atom)</dt>
 				<dd>atom body of event</dd>
-			<dt>block (boolean)</dt>
-				<dd>flag whether to block unhandled messages, defaults to false</dd>
 			<dt class="ret">(boolean)</dt>
 				<dd>flag whether the event was handled, e.g. whether is was any MIDI at all</dd>
 		</dl>
@@ -2737,13 +2737,12 @@ local midiR = MIDIResponder({
 
 		forge:time(frames):midi(MIDI.NoteOff | chan, note + 1, vel) -- increase note by 1
 	end
-})
+}, false) -- block all MIDI messages not explicitly handled by responder
 
 -- define run function
 function run(n, seq, forge, control, notify)
 	for frames, atom in seq:foreach() do
-		-- block all MIDI messages not explicitly handled by responder
-		local handled = midiR(frames, forge, atom, false)
+		local handled = midiR(frames, forge, atom)
 	end
 end
 
@@ -2772,8 +2771,70 @@ assert(#io2 == 2)</code></pre>
 		<!-- OSCResponder -->
 		<div class="api-section"><div class="api-content">
 		<h2 id="responder-osc">OSCResponder</h2>
-		<p>...</p>
-		</div></div>
+		<p>Runs callbacks for received OSC messages.</p>
+
+		<dl>
+			<dt class="func">OSCResponder(responder)</dt>
+			<dt>responder (table)</dt>
+				<dd>table with responder callbacks</dd>
+			<dt class="ret">(userdata)</dt>
+				<dd>OSCResponder object</dd>
+		</dl>
+
+		<dl>
+			<dt class="func">oscR:__call(frames, forge, atom) | oscR(frames, forge, atom)</dt>
+			<dt>frames (integer)</dt>
+				<dd>frame time of event</dd>
+			<dt>forge (forge)</dt>
+				<dd>forge object</dd>
+			<dt>atom (atom)</dt>
+				<dd>atom body of event</dd>
+			<dt class="ret">(boolean)</dt>
+				<dd>flag whether the event was handled, e.g. whether is was any OSC at all</dd>
+		</dl>
+
+		<a class="api-snippet" href="#snippet-responder-osc" data-snippet="snippet-responder-osc">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-responder-osc">-- OSCResponder
+
+-- define OSC responder object with callbacks
+local oscR = OSCResponder({
+	-- listen for '/ping'
+	['/ping'] = function(self, frames, forge, fmt, var1, var2) 
+		assert(frames == 0)
+		assert(fmt == 'if')
+		assert(var1 == 12)
+		assert(var2 == 12.5)
+
+		-- send a '/pong'
+		forge:time(frames):message('/pong', fmt, var1, var2) 
+	end
+})
+
+-- define run function
+function run(n, seq, forge, control, notify)
+	for frames, atom in seq:foreach() do
+		local handled = oscR(frames, forge, atom)
+	end
+end
+	
+local io1 = Stash()
+local io2 = Stash()
+
+-- define test sequence of OSC messages
+local seq1 = io1:sequence()
+	seq1:time(0):message('/ping', 'if', 12, 12.5)
+seq1:pop()
+
+io1:read()
+
+-- run test sequence through run function
+local seq2 = io2:sequence()
+run(256, io1, seq2)
+seq2:pop()
+
+io2:read()
+
+assert(#io2 == 1)</code></pre>
 
 		<!-- TimeResponder -->
 		<div class="api-section"><div class="api-content">
