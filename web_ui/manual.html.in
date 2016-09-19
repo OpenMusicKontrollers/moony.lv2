@@ -1692,21 +1692,437 @@ assert(v3.body == 14)</code></pre>
 		<!-- Forge Primitive -->
 		<div class="api-section"><div class="api-content">
 		<h2 id="forge-primitive">Primitive</h2>
-		<p>...</p>
+		<p>Atom types that contain single data as part of their body are referred to
+		as primitives.</p>
 		</div></div>
+
+			<!-- Forge Bool -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-bool">Bool</h3>
+			<p>Forge a boolean atom, e.g. of type Atom.Bool.</p>
+
+			<dl>
+				<dt class="func">forge:bool(value)</dt>
+				<dt>value (boolean)</dt>
+					<dd>boolean value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-bool" data-snippet="snippet-forge-bool">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-bool">-- Forge Bool
+
+-- serialize
+local io = Stash()
+
+io:bool(true)
+io:bool(false)</code></pre>
+			</div></div>
+
+			<!-- Forge Int -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-int">Int</h3>
+			<p>Forge an integer atom, e.g. of type Atom.Int.</p>
+
+			<dl>
+				<dt class="func">forge:int(value)</dt>
+				<dt>value (integer)</dt>
+					<dd>integer value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-int" data-snippet="snippet-forge-int">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-int">-- Forge Int
+
+-- serialize
+local io = Stash()
+
+io:int(12)</code></pre>
+			</div></div>
+
+			<!-- Forge Long -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-long">Long</h3>
+			<p>Forge long integer atom, e.g. of type Atom.Long.</p>
+
+			<dl>
+				<dt class="func">forge:long(value)</dt>
+				<dt>value (integer)</dt>
+					<dd>integer value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-long" data-snippet="snippet-forge-long">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-long">-- Forge Long
+
+-- serialize
+local io = Stash()
+
+io:long(12)</code></pre>
+			</div></div>
+
+			<!-- Forge Float -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-float">Float</h3>
+			<p>Forge single-precision float atom, e.g. of type Atom.Float.</p>
+
+			<dl>
+				<dt class="func">forge:float(value)</dt>
+				<dt>value (number)</dt>
+					<dd>number value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-float" data-snippet="snippet-forge-float">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-float">-- Forge Float
+
+-- serialize
+local io = Stash()
+
+io:float(12.5)</code></pre>
+			</div></div>
+
+			<!-- Forge Double -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-double">Double</h3>
+			<p>Forge double-precision float atom, e.g. of type Atom.Double.</p>
+
+			<dl>
+				<dt class="func">forge:double(value)</dt>
+				<dt>value (number)</dt>
+					<dd>number value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-double" data-snippet="snippet-forge-double">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-double">-- Forge Double 
+
+-- serialize
+local io = Stash()
+
+io:double(12.5)</code></pre>
+			</div></div>
+
+			<!-- Forge URID -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-urid">URID</h3>
+			<p>Forge URID atom, e.g. of type Atom.URID.</p>
+
+			<dl>
+				<dt class="func">forge:urid(value)</dt>
+				<dt>value (integer)</dt>
+					<dd>URID value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-urid" data-snippet="snippet-forge-urid">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-urid">-- Forge URID
+
+local uri = 'urn:moony:xzy'
+local urn = Map[uri]
+
+-- serialize
+local io = Stash()
+
+io:urid(urn)</code></pre>
+			</div></div>
+
+			<!-- Forge URI -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-uri">URI</h3>
+			<p>Forge URI atom, e.g. of type Atom.URI.</p>
+
+			<dl>
+				<dt class="func">forge:uri(value)</dt>
+				<dt>value (string)</dt>
+					<dd>URI value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-uri" data-snippet="snippet-forge-uri">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-uri">-- Forge URI
+
+local uri = 'urn:moony:xzy'
+
+-- serialize
+local io = Stash()
+
+io:uri(uri)</code></pre>
+			</div></div>
+
+			<!-- Forge String -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-string">String</h3>
+			<p>Forge string atom, e.g. of type Atom.String.</p>
+
+			<dl>
+				<dt class="func">forge:string(value)</dt>
+				<dt>value (string)</dt>
+					<dd>string value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-string" data-snippet="snippet-forge-string">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-string">-- Forge String
+
+-- serialize
+local io = Stash()
+
+io:string('hello world')</code></pre>
+			</div></div>
+
+			<!-- Forge Path -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-path">Path</h3>
+			<p>Forge path atom, e.g. of type Atom.Path.</p>
+
+			<dl>
+				<dt class="func">forge:path(value)</dt>
+				<dt>value (string)</dt>
+					<dd>string value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-path" data-snippet="snippet-forge-path">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-path">-- Forge Path
+
+-- serialize
+local io = Stash()
+
+io:path('/tmp/xyz')</code></pre>
+			</div></div>
+
+			<!-- Forge Literal -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-literal">Literal</h3>
+			<p>Forge literal atom, e.g. of type Atom.Literal.</p>
+
+			<dl>
+				<dt class="func">forge:literal(value, datatype=nil, language=nil)</dt>
+				<dt>value (string)</dt>
+					<dd>string value to forge</dd>
+				<dt>datatype (integer)</dt>
+					<dd>datatype of literal as integer URID, defaults to 0</dd>
+				<dt>language (integer)</dt>
+					<dd>language of literal as integer URID, defaults to 0</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-literal" data-snippet="snippet-forge-literal">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-literal">-- Forge Literal
+
+local tlh = Map['http://lexvo.org/id/iso639-3/tlh'] -- Klingon language
+
+-- serialize
+local io = Stash()
+
+io:literal('902A7F', MIDI.MidiEvent) -- MIDI encoded as hexidecimal text
+io:literal('', nil, tlh) -- 'hello' aka 'what do you want?'</code></pre>
+			</div></div>
+
+			<!-- Forge Chunk -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-chunk">Chunk</h3>
+			<p>Forge chunk atom, e.g. of type Atom.Chunk.</p>
+
+			<dl>
+				<dt class="func">forge:chunk(value)</dt>
+				<dt>value (string)</dt>
+					<dd>byte string value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">forge:chunk(value)</dt>
+				<dt>value (table)</dt>
+					<dd>table with individual values to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">forge:chunk(...)</dt>
+				<dt>... (integer)</dt>
+					<dd>individual values to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-chunk" data-snippet="snippet-forge-chunk">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-chunk">-- Forge Chunk
+
+-- serialize
+local io = Stash()
+
+io:chunk(string.char(0x1, 0x2, 0x3))
+io:chunk({0x1, 0x2, 0x3})
+io:chunk(0x1, 0x2, 0x3)
+</code></pre>
+			</div></div>
+
+			<!-- Forge MIDI -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-midi">MIDI</h3>
+			<p>Forge MIDI atom, e.g. of type MIDI.MidiEvent.</p>
+
+			<dl>
+				<dt class="func">forge:midi(value)</dt>
+				<dt>value (string)</dt>
+					<dd>byte string value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">forge:midi(value)</dt>
+				<dt>value (table)</dt>
+					<dd>table with individual values to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">forge:midi(...)</dt>
+				<dt>... (integer)</dt>
+					<dd>individual values to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-midi" data-snippet="snippet-forge-midi">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-midi">-- Forge MIDI
+
+-- serialize
+local io = Stash()
+
+io:chunk(string.char(MIDI.NoteOn, 69, 0x7f))
+io:chunk({MIDI.NoteOn, 69, 0x7f})
+io:chunk(MIDI.NoteOn, 69, 0x7f)
+</code></pre>
+			</div></div>
+
+			<!-- Forge Raw -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-raw">Raw</h3>
+			<p>Forge a custom atom of arbitrary type.</p>
+
+			<dl>
+				<dt class="func">forge:raw(type, value)</dt>
+				<dt>type (integer)</dt>
+					<dd>type of atom as integer URID</dd>
+				<dt>value (string)</dt>
+					<dd>byte string value to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">forge:raw(type, value)</dt>
+				<dt>type (integer)</dt>
+					<dd>type of atom as integer URID</dd>
+				<dt>value (table)</dt>
+					<dd>table with individual values to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">forge:raw(type, ...)</dt>
+				<dt>type (integer)</dt>
+					<dd>type of atom as integer URID</dd>
+				<dt>... (integer)</dt>
+					<dd>individual values to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-raw" data-snippet="snippet-forge-raw">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-raw">-- Forge Raw
+
+local byt = { -- stores individual bytes of zero-terminated string 'LV2'
+	string.byte('L'),
+	string.byte('V'),
+	string.byte('2'),
+	string.byte('\0')
+}
+
+-- serialize
+local io = Stash()
+
+io:raw(Atom.String, string.char(table.unpack(byt)))
+io:raw(Atom.String, byt)
+io:raw(Atom.String, table.unpack(byt))</code></pre>
+			</div></div>
+
+			<!-- Forge Typed -->
+			<div class="api-section"><div class="api-content">
+			<h3 id="forge-typed">Typed</h3>
+			<p>Forge an atom of arbitrary type.</p>
+
+			<dl>
+				<dt class="func">forge:typed(type, ...)</dt>
+				<dt>type (integer)</dt>
+					<dd>type of atom as integer URID</dd>
+				<dt>... (boolean | integer | number | string | table)</dt>
+					<dd>value(s) to forge, see native forge functions documentation</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-typed" data-snippet="snippet-forge-typed">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-typed">-- Forge Typed
+
+-- serialize
+local io = Stash()
+
+io:typed(Atom.Int, 12) -- equivalent to io:int(...)
+io:typed(Atom.Float, 12.5) -- equivalent to io:float(...)
+io:typed(Atom.String, 'LV2 rocks!') -- equivalent to io:string(...)</code></pre>
+			</div></div>
 
 			<!-- Forge Atom -->
 			<div class="api-section"><div class="api-content">
 			<h3 id="forge-atom">Atom</h3>
-			<p>...</p>
-			</div></div>
+			<p>Forge an unchanged atom. Useful for cloning whole atoms.</p>
 
-			<!-- FIXME -->
+			<dl>
+				<dt class="func">forge:atom(value)</dt>
+				<dt>value (atom)</dt>
+					<dd>atom to forge</dd>
+				<dt class="ret">(forge)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<a class="api-snippet" href="#snippet-forge-atom" data-snippet="snippet-forge-atom">&rArr; show snippet</a>
+			<pre class="api-hidden"><code id="snippet-forge-atom">-- Forge Atom
+
+-- serialize
+local io1 = Stash()
+local io2 = Stash()
+
+-- create integer atom
+io1:int(12)
+io1:read()
+
+-- forge prepared integer atom in whole
+io2:atom(io1)</code></pre>
+			</div></div>
 
 		<!-- Forge Container -->
 		<div class="api-section"><div class="api-content">
 		<h2 id="forge-container">Container</h2>
-		<p>...</p>
+		<p>Atom types that contain nested atoms as part of their body are referred to
+		as containers.</p>
 		</div></div>
 
 			<!-- Forge Sequencer -->
@@ -1748,7 +2164,7 @@ assert(v3.body == 14)</code></pre>
 		</dl>
 
 		<a class="api-snippet" href="#snippet-stash" data-snippet="snippet-stash">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-stash">-- Atom Vector
+		<pre class="api-hidden"><code id="snippet-stash">-- Stash
 
 -- a new stash defaults to writing mode - equivalent to forge object
 local io = Stash()
