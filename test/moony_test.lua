@@ -1194,14 +1194,14 @@ do
 	local rtid = VoiceMap() & 0x7fffffff
 
 	local function producer(forge)
-		forge:time(0):get(subject, property, rtid)
+		forge:time(0):get(property, subject, rtid)
 
-		forge:time(1):get(nil, property, rtid)
+		forge:time(1):get(property, nil, rtid)
 
-		local set = forge:time(2):set(subject, property, rtid)
+		local set = forge:time(2):set(property, subject, rtid)
 		set:string('hello world'):pop()
 		
-		local set = forge:time(3):set(nil, property, rtid)
+		local set = forge:time(3):set(property, nil, rtid)
 		set:string('hello world'):pop()
 
 		local patch = forge:time(4):patch(subject, rtid)
@@ -1227,10 +1227,14 @@ do
 		local put = forge:time(6):put(subject, rtid)
 		put:key(property):string('hello world')
 		put:pop()
+
+		forge:time(7):ack(subject, rtid)
+
+		forge:time(8):error(subject, rtid)
 	end
 
 	local function consumer(seq)
-		assert(#seq == 7)
+		assert(#seq == 9)
 
 		local get = seq[1]
 		assert(get.type == Atom.Object)
@@ -1300,6 +1304,20 @@ do
 		assert(body)
 		assert(#body == 1)
 		assert(body[property].body == 'hello world')
+
+		local ack = seq[8]
+		assert(ack.type == Atom.Object)
+		assert(ack.otype == Patch.Ack)
+		assert(#ack == 2)
+		assert(ack[Patch.subject].body == subject)
+		assert(ack[Patch.sequenceNumber].body == rtid)
+
+		local err = seq[9]
+		assert(err.type == Atom.Object)
+		assert(err.otype == Patch.Error)
+		assert(#err == 2)
+		assert(err[Patch.subject].body == subject)
+		assert(err[Patch.sequenceNumber].body == rtid)
 	end
 
 	test(producer, consumer)
@@ -1350,11 +1368,11 @@ do
 	})
 
 	local function producer(forge)
-		forge:frame_time(0):get(urid.subject, urid.int)
-		forge:frame_time(1):set(urid.subject, urid.int):typed(Atom.Int, 2):pop()
+		forge:frame_time(0):get(urid.int, urid.subject)
+		forge:frame_time(1):set(urid.int, urid.subject):typed(Atom.Int, 2):pop()
 
-		forge:frame_time(2):get(urid.subject, urid.flt)
-		forge:frame_time(3):set(urid.subject, urid.flt):typed(Atom.Float, 2.0):pop()
+		forge:frame_time(2):get(urid.flt, urid.subject)
+		forge:frame_time(3):set(urid.flt, urid.subject):typed(Atom.Float, 2.0):pop()
 
 		-- state:stash
 		forge:frame_time(4)

@@ -45,7 +45,7 @@ var LuaHighlightRules = function() {
 				// moony forge
 				"frame_time|beat_time|time|atom|int|long|float|double|bool|urid|string|literal|uri|path|"+
 				"chunk|midi|raw|bundle|message|tuple|object|key|property|vector|sequence|"+
-				"typed|get|set|put|patch|remove|add|pop|"+
+				"typed|get|set|put|patch|remove|add|ack|error|pop|"+
 				// moony common
 				"foreach|unpack|clone|stash|apply|register|"+
 				// moony stash
