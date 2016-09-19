@@ -2711,25 +2711,91 @@ assert(io.body == 13)</code></pre>
 		<!-- midi2cps -->
 		<div class="api-section"><div class="api-content">
 		<h2 id="util-midi2cps">midi2cps</h2>
-		<p>...</p>
+		<p>Conversion from MIDI note to Hertz.</p>
+
+		<dl>
+			<dt class="func">midi2cps(note)</dt>
+			<dt>note (number)</dt>
+				<dd>MIDI note, fractions are allowed</dd>
+			<dt class="ret">(number)</dt>
+				<dd>corresponding frequency in Hz</dd>
+		</dl>
+
+		<a class="api-snippet" href="#snippet-util-midi2cps" data-snippet="snippet-util-midi2cps">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-util-midi2cps">-- midi2cps
+
+assert(midi2cps(69.0) == 440.0)</code></pre>
 		</div></div>
 
 		<!-- cps2midi -->
 		<div class="api-section"><div class="api-content">
 		<h2 id="util-cps2midi">cps2midi</h2>
-		<p>...</p>
+		<p>Conversion from Hertz to MIDI note.</p>
+
+		<dl>
+			<dt class="func">cps2midi(cps)</dt>
+			<dt>cps (number)</dt>
+				<dd>frequency in Hz</dd>
+			<dt class="ret">(number)</dt>
+				<dd>corresponding MIDI note</dd>
+		</dl>
+
+		<a class="api-snippet" href="#snippet-util-cps2midi" data-snippet="snippet-util-cps2midi">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-util-cps2midi">-- cps2midi
+
+assert(cps2midi(440.0) == 69.0)</code></pre>
 		</div></div>
 
 		<!-- encrypt -->
 		<div class="api-section"><div class="api-content">
 		<h2 id="util-encrypt">Encrypt</h2>
-		<p>...</p>
+		<p>AES-128 encryption of byte strings.</p>
+
+		<dl>
+			<dt class="func">encrypt(value, pass)</dt>
+			<dt>value (string)</dt>
+				<dd>clear text byte string to encode</dd>
+			<dt>pass (string)</dt>
+				<dd>128-bit passphrase, either as raw byte string or as hex-encoded string</dd>
+			<dt class="ret">(string)</dt>
+				<dd>corresponding secret byte string</dd>
+		</dl>
+
+		<a class="api-snippet" href="#snippet-util-encrypt" data-snippet="snippet-util-encrypt">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-util-encrypt">-- encrypt
+
+local pass = '2b7e151628aed2a6abf7158809cf4f3c'
+local value = 'hello world'
+
+local secret = encrypt(value, pass)
+assert(decrypt(secret, pass) == value)</code></pre>
 		</div></div>
 
 		<!-- decrypt -->
 		<div class="api-section"><div class="api-content">
 		<h2 id="util-decrypt">Decrypt</h2>
-		<p>...</p>
+		<p>AES-128 decryption of byte strings.</p>
+
+		<dl>
+			<dt class="func">decrypt(value, pass)</dt>
+			<dt>value (string)</dt>
+				<dd>secret byte string to decode </dd>
+			<dt>pass (string)</dt>
+				<dd>128-bit passphrase, either as raw byte string or as hex-encoded string</dd>
+			<dt class="ret">(string)</dt>
+				<dd>corresponding clear text byte string</dd>
+		</dl>
+
+		<a class="api-snippet" href="#snippet-util-decrypt" data-snippet="snippet-util-decrypt">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-util-decrypt">-- decrypt
+
+local pass = string.char(
+	0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
+	0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c)
+local value = 'hello world'
+
+local secret = encrypt(value, pass)
+assert(decrypt(secret, pass) == value)</code></pre>
 		</div></div>
 
 	<div class="api-section"><div class="api-content">
