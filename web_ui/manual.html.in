@@ -2751,7 +2751,7 @@ local function produce_seq(forge)
 end
 
 -- process test messages with responder
-local function consume_seq(seq, forge)
+local function consume_seq(n, seq, forge)
 	for frames, atom in seq:foreach() do
 		local handled = midiR(frames, forge, atom)
 		assert(handled == true)
@@ -2812,7 +2812,7 @@ local function produce_seq(forge)
 end
 
 -- process test messages with responder
-local function consume_seq(seq, forge)
+local function consume_seq(n, seq, forge)
 	for frames, atom in seq:foreach() do
 		assert(frames == 0)
 		assert(atom.otype == OSC.Message)
@@ -2831,11 +2831,127 @@ local function check(seq)
 		assert(atom[OSC.messagePath].body == '/pong')
 	end
 end</code></pre>
+		</div></div>
 
 		<!-- TimeResponder -->
 		<div class="api-section"><div class="api-content">
 		<h2 id="responder-time">TimeResponder</h2>
-		<p>...</p>
+		<p>Runs callbacks for received Time messages.</p>
+
+		<dl>
+			<dt class="func">TimeResponder(responder)</dt>
+			<dt>responder (table)</dt>
+				<dd>table with responder callbacks</dd>
+			<dt class="ret">(userdata)</dt>
+				<dd>TimeResponder object</dd>
+		</dl>
+
+		<dl>
+			<dt class="func">timeR:__call(from, to, forge, atom) | timeR(from, to, forge, atom)</dt>
+			<dt>from (integer)</dt>
+				<dd>frame time of last event or period beginning</dd>
+			<dt>to (integer)</dt>
+				<dd>frame time of current event or period ending</dd>
+			<dt>forge (forge)</dt>
+				<dd>forge object</dd>
+			<dt>atom (atom)</dt>
+				<dd>atom body of event</dd>
+			<dt class="ret">(boolean)</dt>
+				<dd>flag whether the event was handled, e.g. whether is was any Time event at all</dd>
+		</dl>
+
+		<dl>
+			<dt class="func">timeR:__index(key) | timeR[key]</dt>
+			<dt>key (integer)</dt>
+				<dd>time position property key as integer URID, valid keys are: Time:speed, Time:bar, Time.barBeat, Time.beatUnit, Time.beatsPerBar, Time.beatsPerMinute, Time.frame, Time.framesPerSecond</dd>
+			<dt class="ret">(integer | number)</dt>
+				<dd>time position property value</dd>
+		</dl>
+
+		<a class="api-snippet" href="#snippet-responder-time" data-snippet="snippet-responder-time">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-responder-time">-- TimeResponder
+
+-- define Time responder object with callbacks
+local timeR = TimeResponder({
+	-- listen for speed change
+	[Time.speed] = function(self, frames, forge, speed)
+		assert( (speed == 0.0) or (speed == 1.0) )
+
+		self.rolling = speed ~= 0.0
+	end,
+	-- listen for bar change
+	[Time.bar] = function(self, frames, forge, bar)
+		assert(bar == 0)
+	end,
+	-- listen for barBeat change
+	[Time.barBeat] = function(self, frames, forge, barBeat)
+		assert(barBeat == 0.0)
+
+		-- send NoteOn message at each beat
+		forge:time(frames):midi(MIDI.NoteOn, 69, 0x7f)
+	end,
+	-- listen for beatUnit change
+	[Time.beatUnit] = function(self, frames, forge, beatUnit)
+		assert(beatUnit == 4)
+	end,
+	-- listen for beatsPerBar change
+	[Time.beatsPerBar] = function(self, frames, forge, beatsPerBar)
+		assert(beatsPerBar == 4.0)
+	end,
+	-- listen for beatsPerMinute change
+	[Time.beatsPerMinute] = function(self, frames, forge, beatsPerMinute)
+		assert(beatsPerMinute == 120.0)
+	end,
+	-- listen for frame change
+	[Time.frame] = function(self, frames, forge, frame)
+		assert( (frame == 0) or (frame == 127) )
+	end,
+	-- listen for framesPerSecond change
+	[Time.framesPerSecond] = function(self, frames, forge, framesPerSecond)
+		assert(framesPerSecond == 48000.0)
+	end,
+	rolling = false
+})
+
+-- index current transport state, can be called at any time
+assert(timeR[Time.speed] == 0)
+assert(timeR[Time.bar] == 0)
+assert(timeR[Time.barBeat] == 0.0)
+assert(timeR[Time.beatUnit] == 4)
+assert(timeR[Time.beatsPerBar] == 4.0)
+assert(timeR[Time.beatsPerMinute] == 120.0)
+assert(timeR[Time.frame] == 0)
+assert(timeR[Time.framesPerSecond] == 48000.0)
+
+-- forge test messages 
+local function produce_seq(forge)
+	local obj = forge:time(0):object(nil, Time.Position)
+		obj:key(Time.speed):float(1.0) -- start transport
+	obj:pop()
+end
+
+-- process test messages with responder
+local function consume_seq(n, seq, forge)
+	local from = 0 -- frame time of 'last event' aka 'period beginning'
+
+	for to, atom in seq:foreach() do
+		local handled = timeR(from, to, forge, atom)
+		assert(handled == true)
+
+		from = to -- update frame time of 'last event'
+	end
+
+	timeR(from, n-1, forge) -- we must call time responder until 'period ending'
+end
+
+-- check responder output
+local function check(seq)
+	for frames, atom in seq:foreach() do
+		assert(frames == 0)
+		assert(atom.type == MIDI.MidiEvent)
+		assert(atom.body == string.char(MIDI.NoteOn, 69, 0x7f))
+	end
+end</code></pre>
 		</div></div>
 
 		<!-- StateResponder -->

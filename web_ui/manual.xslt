@@ -18,7 +18,7 @@ local function _test(produce, consume, check)
 
 	if consume.seq then
 		local _seq = _to:sequence()
-		consume.seq(_from, _seq)
+		consume.seq(128, _from, _seq)
 		_seq:pop()
 	elseif consume.atom then
 		consume.atom(_from, _to)
