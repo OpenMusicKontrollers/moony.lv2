@@ -166,6 +166,7 @@
 			<ul>
 				<li><a href="#util-midi2cps">midi2cps</a></li>
 				<li><a href="#util-cps2midi">cps2midi</a></li>
+				<li><a href="#util-note">Note</a></li>
 				<li><a href="#util-encrypt">Encrypt</a></li>
 				<li><a href="#util-decrypt">Decrypt</a></li>
 			</ul>
@@ -3045,6 +3046,34 @@ assert(midi2cps(60.0, 60, 12, 400) == 400.0) -- relative to 'C-5'==400 Hz</code>
 
 assert(cps2midi(440.0) == 69.0) -- relative to 'A-5'==400 Hz
 assert(cps2midi(400.0, 60, 12, 400) == 60.0) -- relative to 'C-5'==400 Hz</code></pre>
+		</div></div>
+
+		<!-- Note -->
+		<div class="api-section"><div class="api-content">
+		<h2 id="util-note">Note</h2>
+		<p>Conversion from MIDI note number to note name and vice-versa.</p>
+
+		<dl>
+			<dt class="func">Note.__index(note) | Note[note]</dt>
+			<dt>note (integer)</dt>
+				<dd>MIDI Note number</dd>
+			<dt class="ret">(string)</dt>
+				<dd>MIDI note name</dd>
+		</dl>
+
+		<dl>
+			<dt class="func">Note.__index(name) | Note[name]</dt>
+			<dt>name (string)</dt>
+				<dd>MIDI Note name</dd>
+			<dt class="ret">(integer)</dt>
+				<dd>MIDI note number</dd>
+		</dl>
+
+		<a class="api-snippet" href="#snippet-util-note" data-snippet="snippet-util-note">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-util-note">-- Note
+
+assert(Note[60] == 'C-5')
+assert(Note['A-5'] == 69)</code></pre>
 		</div></div>
 
 		<!-- encrypt -->
