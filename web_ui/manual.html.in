@@ -2721,51 +2721,47 @@ assert(io.body == 13)</code></pre>
 
 -- define MIDI responder object with callbacks
 local midiR = MIDIResponder({
+	-- listen for NoteOn messages
 	[MIDI.NoteOn] = function(self, frames, forge, chan, note, vel)
 		assert(frames == 0)
 		assert(chan == 0x1)
 		assert(note == 69)
 		assert(vel == 0x7f)
 
+		-- send NoteOn message
 		forge:time(frames):midi(MIDI.NoteOn | chan, note + 1, vel) -- increase note by 1
 	end,
+	-- listen for NoteOff messages
 	[MIDI.NoteOff] = function(self, frames, forge, chan, note, vel)
 		assert(frames == 1)
 		assert(chan == 0x1)
 		assert(note == 69)
 		assert(vel == 0x0)
 
+		-- send NoteOff message
 		forge:time(frames):midi(MIDI.NoteOff | chan, note + 1, vel) -- increase note by 1
 	end
 }, false) -- block all MIDI messages not explicitly handled by responder
 
--- define run function
-function run(n, seq, forge, control, notify)
+-- forge test messages 
+local function produce_seq(forge)
+	forge:time(0):midi(MIDI.NoteOn | 0x1, 69, 0x7f)
+	forge:time(1):midi(MIDI.NoteOff | 0x1, 69, 0x0)
+	forge:time(2):midi(MIDI.Bender | 0x1, 0x0, 0x7f)
+end
+
+-- process test messages with responder
+local function consume_seq(seq, forge)
 	for frames, atom in seq:foreach() do
 		local handled = midiR(frames, forge, atom)
+		assert(handled == true)
 	end
 end
 
-local io1 = Stash()
-local io2 = Stash()
-
--- define test sequence of MIDI events
-local seq1 = io1:sequence()
-	seq1:time(0):midi(MIDI.NoteOn | 0x1, 69, 0x7f)
-	seq1:time(1):midi(MIDI.NoteOff | 0x1, 69, 0x0)
-	seq1:time(2):midi(MIDI.Bender | 0x1, 0x0, 0x7f)
-seq1:pop()
-
-io1:read()
-
--- run test sequence through run function
-local seq2 = io2:sequence()
-run(256, io1, seq2)
-seq2:pop()
-
-io2:read()
-
-assert(#io2 == 2)</code></pre>
+-- check responder output
+local function check(seq)
+	assert(#seq == 2) -- only NoteOn and NoteOff have gone through
+end</code></pre>
 		</div></div>
 
 		<!-- OSCResponder -->
@@ -2810,31 +2806,31 @@ local oscR = OSCResponder({
 	end
 })
 
--- define run function
-function run(n, seq, forge, control, notify)
+-- forge test messages
+local function produce_seq(forge)
+	forge:time(0):message('/ping', 'if', 12, 12.5)
+end
+
+-- process test messages with responder
+local function consume_seq(seq, forge)
 	for frames, atom in seq:foreach() do
+		assert(frames == 0)
+		assert(atom.otype == OSC.Message)
+		assert(atom[OSC.messagePath].body == '/ping')
+
 		local handled = oscR(frames, forge, atom)
+		assert(handled == true)
 	end
 end
-	
-local io1 = Stash()
-local io2 = Stash()
 
--- define test sequence of OSC messages
-local seq1 = io1:sequence()
-	seq1:time(0):message('/ping', 'if', 12, 12.5)
-seq1:pop()
-
-io1:read()
-
--- run test sequence through run function
-local seq2 = io2:sequence()
-run(256, io1, seq2)
-seq2:pop()
-
-io2:read()
-
-assert(#io2 == 1)</code></pre>
+-- check responder output
+local function check(seq)
+	for frames, atom in seq:foreach() do
+		assert(frames == 0)
+		assert(atom.otype == OSC.Message)
+		assert(atom[OSC.messagePath].body == '/pong')
+	end
+end</code></pre>
 
 		<!-- TimeResponder -->
 		<div class="api-section"><div class="api-content">
