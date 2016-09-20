@@ -208,8 +208,11 @@ static int
 _lmidi2cps(lua_State *L)
 {
 	const lua_Number note = luaL_checknumber(L, 1);
+	const lua_Number base = luaL_optnumber(L, 2, 69.0);
+	const lua_Number noct = luaL_optnumber(L, 3, 12.0);
+	const lua_Number fref = luaL_optnumber(L, 4, 440.0);
 
-	const lua_Number cps = exp2( (note - 69.0) / 12.0) * 440.0;
+	const lua_Number cps = exp2( (note - base) / noct) * fref;
 
 	lua_pushnumber(L, cps);
 	return 1;
@@ -219,8 +222,11 @@ static int
 _lcps2midi(lua_State *L)
 {
 	const lua_Number cps = luaL_checknumber(L, 1);
+	const lua_Number base = luaL_optnumber(L, 2, 69.0);
+	const lua_Number noct = luaL_optnumber(L, 3, 12.0);
+	const lua_Number fref = luaL_optnumber(L, 4, 440.0);
 
-	const lua_Number note = log2(cps / 440.0) * 12.0 + 69.0;
+	const lua_Number note = log2(cps / fref) * noct + base;
 
 	lua_pushnumber(L, note);
 	return 1;

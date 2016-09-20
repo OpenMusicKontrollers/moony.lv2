@@ -2868,6 +2868,22 @@ end</code></pre>
 				<dd>time position property value</dd>
 		</dl>
 
+		<dl>
+			<dt class="func">timeR:stash(forge)</dt>
+			<dt>forge (forge)</dt>
+				<dd>forge object to stash responder state to</dd>
+			<dt class="ret">(forge)</dt>
+				<dd>self forge object</dd>
+		</dl>
+
+		<dl>
+			<dt class="func">timeR:apply(atom)</dt>
+			<dt>atom (atom)</dt>
+				<dd>atom object to apply responder state from</dd>
+			<dt class="ret">(boolean)</dt>
+				<dd>flag whether state has been applied successfully</dd>
+		</dl>
+
 		<a class="api-snippet" href="#snippet-responder-time" data-snippet="snippet-responder-time">&rArr; show snippet</a>
 		<pre class="api-hidden"><code id="snippet-responder-time">-- TimeResponder
 
@@ -2885,10 +2901,12 @@ local timeR = TimeResponder({
 	end,
 	-- listen for barBeat change
 	[Time.barBeat] = function(self, frames, forge, barBeat)
-		assert(barBeat == 0.0)
+		if forge then -- forge==nil in timeR:apply()
+			assert(barBeat == 0.0)
 
-		-- send NoteOn message at each beat
-		forge:time(frames):midi(MIDI.NoteOn, 69, 0x7f)
+			-- send NoteOn message at each beat
+			forge:time(frames):midi(MIDI.NoteOn, 69, 0x7f)
+		end
 	end,
 	-- listen for beatUnit change
 	[Time.beatUnit] = function(self, frames, forge, beatUnit)
@@ -2922,6 +2940,17 @@ assert(timeR[Time.beatsPerBar] == 4.0)
 assert(timeR[Time.beatsPerMinute] == 120.0)
 assert(timeR[Time.frame] == 0)
 assert(timeR[Time.framesPerSecond] == 48000.0)
+
+-- push current responder state to temporary stash
+function stash(forge)
+	timeR:stash(forge)
+end
+
+-- pop and apply current responder state from temporary stash
+function apply(atom)
+	local handled = timeR:apply(atom)
+	assert(handled == true)
+end
 
 -- forge test messages 
 local function produce_seq(forge)
@@ -2963,7 +2992,7 @@ end</code></pre>
 	<!-- Utilities -->
 	<div class="api-section"><div class="api-content">
 	<h1 id="util">Utilities</h1>
-	<p>...</p>
+	<p>Various hopefully useful utility functions.</p>
 	</div></div>
 
 		<!-- midi2cps -->
@@ -2972,9 +3001,15 @@ end</code></pre>
 		<p>Conversion from MIDI note to Hertz.</p>
 
 		<dl>
-			<dt class="func">midi2cps(note)</dt>
+			<dt class="func">midi2cps(note, base=69.0, noct=12.0, fref=440.0)</dt>
 			<dt>note (number)</dt>
 				<dd>MIDI note, fractions are allowed</dd>
+			<dt>base (number)</dt>
+				<dd>MIDI base note corresponding to reference frequency, defaults to 69.0 (A-5)</dd>
+			<dt>noct (number)</dt>
+				<dd>number of notes per octave, default to 12.0</dd>
+			<dt>fref (number)</dt>
+				<dd>reference frequency corresponding to MIDI base note, defaults to 440.0 Hz (A-5)</dd>
 			<dt class="ret">(number)</dt>
 				<dd>corresponding frequency in Hz</dd>
 		</dl>
@@ -2982,7 +3017,8 @@ end</code></pre>
 		<a class="api-snippet" href="#snippet-util-midi2cps" data-snippet="snippet-util-midi2cps">&rArr; show snippet</a>
 		<pre class="api-hidden"><code id="snippet-util-midi2cps">-- midi2cps
 
-assert(midi2cps(69.0) == 440.0)</code></pre>
+assert(midi2cps(69.0) == 440.0) -- relative to 'A-5'==440 Hz
+assert(midi2cps(60.0, 60, 12, 400) == 400.0) -- relative to 'C-5'==400 Hz</code></pre>
 		</div></div>
 
 		<!-- cps2midi -->
@@ -2994,6 +3030,12 @@ assert(midi2cps(69.0) == 440.0)</code></pre>
 			<dt class="func">cps2midi(cps)</dt>
 			<dt>cps (number)</dt>
 				<dd>frequency in Hz</dd>
+			<dt>base (number)</dt>
+				<dd>MIDI base note corresponding to reference frequency, defaults to 69.0 (A-5)</dd>
+			<dt>noct (number)</dt>
+				<dd>number of notes per octave, default to 12.0</dd>
+			<dt>fref (number)</dt>
+				<dd>reference frequency corresponding to MIDI base note, defaults to 440.0 Hz (A-5)</dd>
 			<dt class="ret">(number)</dt>
 				<dd>corresponding MIDI note</dd>
 		</dl>
@@ -3001,7 +3043,8 @@ assert(midi2cps(69.0) == 440.0)</code></pre>
 		<a class="api-snippet" href="#snippet-util-cps2midi" data-snippet="snippet-util-cps2midi">&rArr; show snippet</a>
 		<pre class="api-hidden"><code id="snippet-util-cps2midi">-- cps2midi
 
-assert(cps2midi(440.0) == 69.0)</code></pre>
+assert(cps2midi(440.0) == 69.0) -- relative to 'A-5'==400 Hz
+assert(cps2midi(400.0, 60, 12, 400) == 60.0) -- relative to 'C-5'==400 Hz</code></pre>
 		</div></div>
 
 		<!-- encrypt -->

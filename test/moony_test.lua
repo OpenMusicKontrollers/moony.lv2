@@ -1589,9 +1589,19 @@ do
 	end
 	assert(69.0 == cps2midi(440.0))
 	assert(440.0 == midi2cps(69.0))
+
+	local base = 60.0
+	local noct = 32.0
+	local fref = 400.0
+	for note = 0.0, 127.0, 0.1 do
+		local cps = midi2cps(note, base, noct, fref)
+		assert(note - cps2midi(cps, base, noct, fref) < 1e-4)
+	end
+	assert(60.0 == cps2midi(400.0, base, noct, fref))
+	assert(400.0 == midi2cps(60.0, base, noct, fref))
 end
 
--- midi2cps/cps2midi
+-- HashMap
 print('[test] HashMap')
 do
 	local prefix = 'http://open-music-kontrollers.ch/lv2/synthpod#'
