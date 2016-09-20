@@ -84,6 +84,7 @@ do
 		atom = consume_atom
 	}
 	_test(_produce, _consume, check)
+	collectgarbage()
 end
 </xsl:for-each> 
 	</xsl:template>
