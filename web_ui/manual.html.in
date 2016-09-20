@@ -3027,7 +3027,7 @@ assert(midi2cps(60.0, 60, 12, 400) == 400.0) -- relative to 'C-5'==400 Hz</code>
 		<p>Conversion from Hertz to MIDI note.</p>
 
 		<dl>
-			<dt class="func">cps2midi(cps)</dt>
+			<dt class="func">cps2midi(cps, base=69.0, noct=12.0, fref=440.0)</dt>
 			<dt>cps (number)</dt>
 				<dd>frequency in Hz</dd>
 			<dt>base (number)</dt>
