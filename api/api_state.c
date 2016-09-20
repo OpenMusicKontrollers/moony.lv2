@@ -549,7 +549,7 @@ _lstateresponder_reg(lua_State *L)
 	// register state
 	_lstateresponder_register(L, moony, frames, lforge, &subject, 0); //TODO use patch:sequenceNumber
 
-	return 0;
+	return 1; // forge
 }
 
 static int
@@ -569,7 +569,10 @@ _lstateresponder_stash(lua_State *L)
 
 	// ignore patch:readable's
 	if(lua_geti(L, 1, moony->uris.patch.writable) == LUA_TNIL)
-		return 0;
+	{
+		lua_pop(L, 1); // nil
+		return 1; // forge
+	}
 
 	LV2_Atom_Forge_Frame frame;
 	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, 0))
@@ -602,7 +605,8 @@ _lstateresponder_stash(lua_State *L)
 
 	lv2_atom_forge_pop(lforge->forge, &frame);
 
-	return 0;
+	lua_pop(L, 1); // patch:writable
+	return 1; // forge
 }
 
 static int
@@ -620,23 +624,31 @@ _lstateresponder_apply(lua_State *L)
 	
 	latom_t *latom = luaL_checkudata(L, 2, "latom");
 
-	// ignore patch:readable's
-	if(lua_geti(L, 1, moony->uris.patch.writable) == LUA_TNIL)
-		return 0;
-
-	LV2_ATOM_OBJECT_BODY_FOREACH(latom->body.obj, latom->atom->size, prop)
+	// check for atom object
+	if(!lv2_atom_forge_is_object_type(&moony->forge, latom->atom->type))
 	{
-		if(lua_geti(L, -1, prop->key) != LUA_TNIL)
-		{
-			_latom_value(L, &prop->value);
-			lua_seti(L, -2, moony->uris.rdf_value); // set prop[RDF.value]
-			//TODO call prop[Patch.Set] ?
-		}
-
-		lua_pop(L, 1); // nil || prop
+		lua_pushboolean(L, false);
+		return 1;
 	}
 
-	return 0;
+	// ignore patch:readable's
+	if(lua_geti(L, 1, moony->uris.patch.writable) != LUA_TNIL)
+	{
+		LV2_ATOM_OBJECT_BODY_FOREACH(latom->body.obj, latom->atom->size, prop)
+		{
+			if(lua_geti(L, -1, prop->key) != LUA_TNIL)
+			{
+				_latom_value(L, &prop->value);
+				lua_seti(L, -2, moony->uris.rdf_value); // set prop[RDF.value]
+				//TODO call prop[Patch.Set] ?
+			}
+
+			lua_pop(L, 1); // nil || prop
+		}
+	}
+
+	lua_pushboolean(L, true);
+	return 1;
 }
 
 int

@@ -2888,7 +2888,7 @@ end</code></pre>
 		<a class="api-snippet" href="#snippet-responder-time" data-snippet="snippet-responder-time">&rArr; show snippet</a>
 		<pre class="api-hidden"><code id="snippet-responder-time">-- TimeResponder
 
--- define Time responder object with callbacks
+-- define time responder object with callbacks
 local timeR = TimeResponder({
 	-- listen for speed change
 	[Time.speed] = function(self, frames, forge, speed)
@@ -2944,7 +2944,7 @@ assert(timeR[Time.framesPerSecond] == 48000.0)
 
 -- push current responder state to temporary stash
 function stash(forge)
-	timeR:stash(forge)
+	assert(timeR:stash(forge) == forge)
 end
 
 -- pop and apply current responder state from temporary stash
@@ -2987,7 +2987,143 @@ end</code></pre>
 		<!-- StateResponder -->
 		<div class="api-section"><div class="api-content">
 		<h2 id="responder-state">StateResponder</h2>
-		<p>...</p>
+		<p>Runs callbacks for state handling via patch messages.</p>
+
+		<dl>
+			<dt class="func">StateResponder(responder)</dt>
+			<dt>responder (table)</dt>
+				<dd>table with responder callbacks</dd>
+			<dt class="ret">(userdata)</dt>
+				<dd>StateResponder object</dd>
+		</dl>
+
+		<dl>
+			<dt class="func">stateR:__call(frames, forge, atom) | stateR(frames, forge, atom)</dt>
+			<dt>frames (integer)</dt>
+				<dd>frame time of current event</dd>
+			<dt>forge (forge)</dt>
+				<dd>forge object</dd>
+			<dt>atom (atom)</dt>
+				<dd>atom body of event</dd>
+			<dt class="ret">(boolean)</dt>
+				<dd>flag whether the event was handled, e.g. whether is was any patch event at all</dd>
+		</dl>
+
+		<dl>
+			<dt class="func">stateR:register(frames, forge)</dt>
+			<dt>frames (integer)</dt>
+				<dd>frame time of current event, usually 0 aka start of period</dd>
+			<dt>forge (forge)</dt>
+				<dd>forge object to register state to</dd>
+			<dt class="ret">(forge)</dt>
+				<dd>self forge object</dd>
+		</dl>
+
+		<dl>
+			<dt class="func">stateR:stash(forge)</dt>
+			<dt>forge (forge)</dt>
+				<dd>forge object to stash responder state to</dd>
+			<dt class="ret">(forge)</dt>
+				<dd>self forge object</dd>
+		</dl>
+
+		<dl>
+			<dt class="func">stateR:apply(atom)</dt>
+			<dt>atom (atom)</dt>
+				<dd>atom object to apply responder state from</dd>
+			<dt class="ret">(boolean)</dt>
+				<dd>flag whether state has been applied successfully</dd>
+		</dl>
+
+		<a class="api-snippet" href="#snippet-responder-state" data-snippet="snippet-responder-state">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-responder-state">-- StateResponder
+
+local urn = HashMap('urn:moony:xzy')
+
+-- define read-only parameter
+local period = {
+	[RDFS.label] = 'Period',
+	[RDFS.comment] = 'set period',
+	[RDFS.range] = Atom.Float,
+	[Core.minimum] = 1.0,
+	[Core.maximum] = 10.0,
+	[Units.unit] = Units.s,
+	[RDF.value] = 5.0
+}
+
+-- define read-write parameter
+local frequency = {
+	[RDFS.label] = 'Frequency',
+	[RDFS.comment] = 'set frequency',
+	[RDFS.range] = Atom.Int,
+	[Core.minimum] = 1,
+	[Core.maximum] = 48000,
+	[Units.unit] = Units.hz,
+	[RDF.value] = 44100
+}
+
+-- define state responder object with callbacks
+local stateR = StateResponder({
+	[Patch.readable] = {
+		[urn.period] = period
+	},
+	[Patch.writable] = {
+		[urn.frequency] = frequency
+	}
+})
+
+-- push current responder state to temporary stash
+function stash(forge)
+	assert(stateR:stash(forge) == forge)
+end
+
+-- pop and apply current responder state from temporary stash
+function apply(atom)
+	local handled = stateR:apply(atom)
+	assert(handled == true)
+end
+
+-- save current responder state to disk
+function save(forge)
+	assert(stateR:stash(forge) == forge)
+end
+
+-- restore current responder state from disk
+function restore(atom)
+	local handled = stateR:apply(atom)
+	assert(handled == true)
+end
+
+-- register state upon code reload
+function once(n, seq, forge)
+	assert(stateR:register(0, forge) == forge)
+end
+
+-- forge test messages 
+local function produce_seq(forge)
+	forge:time(0):get(urn.period)
+end
+
+-- process test messages with responder
+local function consume_seq(n, seq, forge)
+	for frames, atom in seq:foreach() do
+		assert(frames == 0)
+		assert(atom.otype == Patch.Get)
+
+		local handled = stateR(frames, forge, atom)
+		assert(handled == true)
+	end
+end
+
+-- check responder output
+local function check(seq)
+	for frames, atom in seq:foreach() do
+		assert(frames == 0)
+		assert(atom.otype == Patch.Set)
+		assert(atom[Patch.property].body == urn.period)
+		assert(atom[Patch.value].body == 5.0)
+	end
+end</code></pre>
 		</div></div>
 
 	<!-- Utilities -->
