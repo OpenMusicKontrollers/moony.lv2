@@ -163,7 +163,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 		from = to;
 	}
 
-	timely_advance(&handle->timely, NULL, from, nsamples-1);
+	timely_advance(&handle->timely, NULL, from, nsamples);
 }
 
 static void
