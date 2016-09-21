@@ -2971,7 +2971,7 @@ local function consume_seq(n, seq, forge)
 		from = to -- update frame time of 'last event'
 	end
 
-	timeR(from, n-1, forge) -- we must call time responder until 'period ending'
+	timeR(from, n, forge) -- we must call time responder until 'period ending'
 end
 
 -- check responder output
