@@ -345,9 +345,6 @@ timely_advance_body(timely_t *timely, uint32_t size, uint32_t type,
 			timely->offset.beat += 1;
 			timely->pos.frame += 1;
 		}
-
-		if( (timely->mask & TIMELY_MASK_FRAME) && (to - from > 0) && (update_frame != to - 1) )
-				timely->cb(timely, to - 1, timely->urid.time_frame, timely->data);
 	}
 
 	// is this a time position event?

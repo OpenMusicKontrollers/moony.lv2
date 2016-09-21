@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 #include <timely.h>
 
@@ -81,7 +82,8 @@ _timely_cb(timely_t *timely, int64_t frames, LV2_URID type, void *data)
 	else if(type == TIMELY_URI_SPEED(timely))
 		uri = LV2_TIME__speed;
 
-	_log_printf(data, handle->log_trace, "%4li %s (%i)", frames, uri, type);
+	const int64_t frame = TIMELY_FRAME(timely);
+	_log_printf(data, handle->log_trace, "0x%08"PRIx64" %4"PRIi64" %s (%i)", frame, frames, uri, type);
 }
 
 static LV2_Handle
@@ -122,7 +124,7 @@ instantiate(const LV2_Descriptor* descriptor, double rate,
 		| TIMELY_MASK_BEAT_UNIT
 		| TIMELY_MASK_BEATS_PER_BAR
 		| TIMELY_MASK_BEATS_PER_MINUTE
-		//| TIMELY_MASK_FRAME
+		| TIMELY_MASK_FRAME
 		| TIMELY_MASK_FRAMES_PER_SECOND
 		| TIMELY_MASK_SPEED
 		| TIMELY_MASK_BAR_BEAT_WHOLE
