@@ -2923,7 +2923,7 @@ local timeR = TimeResponder({
 	end,
 	-- listen for frame change
 	[Time.frame] = function(self, frames, forge, frame)
-		assert( (frame == 0) or (frame == 127) )
+		assert(frame == 0)
 	end,
 	-- listen for framesPerSecond change
 	[Time.framesPerSecond] = function(self, frames, forge, framesPerSecond)
