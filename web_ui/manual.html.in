@@ -3586,7 +3586,7 @@ assert(Units.unit == ctx.units.unit)</code></pre>
 	</div></div>
 
 <div class="api-editor">
-	<div id="editor">-- moony manual
+	<div id="editor" style="height:100%;">-- moony manual
 	
 -- load a code snippet from the left!</div>
 </div>
@@ -3619,7 +3619,7 @@ assert(Units.unit == ctx.units.unit)</code></pre>
 		editor.$blockScrolling = Infinity
 		editor.setOptions({
 			minLines: 1,
-			maxLines: Infinity,
+			//maxLines: Infinity,
 			showPrintMargin: false,
 			fontSize: 14,
 			tabSize: 2,
