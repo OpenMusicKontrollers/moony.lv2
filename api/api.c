@@ -37,12 +37,17 @@
 #define RDFS_PREFIX "http://www.w3.org/2000/01/rdf-schema#"
 
 #define RDF__value RDF_PREFIX"value"
+#define RDF__type RDF_PREFIX"type"
 #define RDFS__label RDFS_PREFIX"label"
 #define RDFS__range RDFS_PREFIX"range"
 #define RDFS__comment RDFS_PREFIX"comment"
 
 #ifndef LV2_PATCH__Copy
 #	define LV2_PATCH__Copy LV2_PATCH_PREFIX "Copy"
+#endif
+
+#ifndef LV2_UNITS__midiController
+#	define LV2_UNITS__midiController LV2_UNITS_PREFIX "midiController"
 #endif
 
 static const char *moony_ref [MOONY_UDATA_COUNT] = {
@@ -1354,6 +1359,7 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	lua_newtable(L);
 	{
 		SET_MAP(L, RDF__, value);
+		SET_MAP(L, RDF__, type);
 	}
 	lua_setglobal(L, "RDF");
 
@@ -1386,6 +1392,7 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 		SET_MAP(L, LV2_UNITS__, m);
 		SET_MAP(L, LV2_UNITS__, mhz);
 		SET_MAP(L, LV2_UNITS__, midiNote);
+		SET_MAP(L, LV2_UNITS__, midiController);
 		SET_MAP(L, LV2_UNITS__, mile);
 		SET_MAP(L, LV2_UNITS__, min);
 		SET_MAP(L, LV2_UNITS__, mm);

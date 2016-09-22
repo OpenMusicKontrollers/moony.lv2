@@ -174,6 +174,8 @@
 			</ul>
 		</li>
 
+		<li><a href="#constants">Constants</a></li>
+
 		<li><a href="#license">License</a>
 		</li>
 	</ul>
@@ -3386,7 +3388,179 @@ local value = 'hello world'
 
 local secret = encrypt(value, pass)
 assert(decrypt(secret, pass) == value)</code></pre>
-		</div></div>
+	</div></div>
+
+	<!-- Constants -->
+	<div class="api-section"><div class="api-content">
+	<h1 id="constants">Constants</h1>
+	<p>Frequently used URID values and all MIDI message and controller constants
+	are premapped and conveniently accessible in their own tables.</p>
+
+		<dl>
+			<dt class="func">(table):__index(key) | (table)[key]</dt>
+			<dt>key (string)</dt>
+				<dd>key to index constants table with</dd>
+			<dt class="ret">(integer)</dt>
+				<dd>corresponding URID or integer for given key</dd>
+		</dl>
+
+		<a class="api-snippet" href="#snippet-constants" data-snippet="snippet-constants">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-constants">-- Constants
+
+local ctx = {
+	core =  HashMap('http://lv2plug.in/ns/lv2core#'),
+	atom =  HashMap('http://lv2plug.in/ns/ext/atom#'),
+	time =  HashMap('http://lv2plug.in/ns/ext/time#'),
+	midi =  HashMap('http://lv2plug.in/ns/ext/midi#'),
+	bufsz = HashMap('http://lv2plug.in/ns/ext/buf-size#'),
+	patch = HashMap('http://lv2plug.in/ns/ext/patch#'),
+	units = HashMap('http://lv2plug.in/ns/extensions/units#'),
+	osc =   HashMap('http://open-music-kontrollers.ch/lv2/osc#'),
+	rdf =  HashMap('http://www.w3.org/1999/02/22-rdf-syntax-ns#'),
+	rdfs =   HashMap('http://www.w3.org/2000/01/rdf-schema#'),
+}
+
+-- Atom URID constants
+assert(Atom.Bool == ctx.atom.Bool)
+assert(Atom.Int == ctx.atom.Int)
+assert(Atom.Long == ctx.atom.Long)
+assert(Atom.Float == ctx.atom.Float)
+assert(Atom.Double == ctx.atom.Double)
+assert(Atom.URID == ctx.atom.URID)
+assert(Atom.URI == ctx.atom.URI)
+assert(Atom.String == ctx.atom.String)
+assert(Atom.Literal == ctx.atom.Literal)
+assert(Atom.Path == ctx.atom.Path)
+assert(Atom.Chunk == ctx.atom.Chunk)
+assert(Atom.Property == ctx.atom.Property)
+assert(Atom.Object == ctx.atom.Object)
+assert(Atom.Sequence == ctx.atom.Sequence)
+assert(Atom.Tuple == ctx.atom.Tuple)
+assert(Atom.Vector == ctx.atom.Vector)
+assert(Atom.beatTime == ctx.atom.beatTime)
+assert(Atom.frameTime == ctx.atom.frameTime)
+
+-- Time URID constants
+assert(Time.Position == ctx.time.Position)
+assert(Time.barBeat == ctx.time.barBeat)
+assert(Time.bar == ctx.time.bar)
+assert(Time.beat == ctx.time.beat)
+assert(Time.beatUnit == ctx.time.beatUnit)
+assert(Time.beatsPerBar == ctx.time.beatsPerBar)
+assert(Time.beatsPerMinute == ctx.time.beatsPerMinute)
+assert(Time.frame == ctx.time.frame)
+assert(Time.framesPerSecond == ctx.time.framesPerSecond)
+assert(Time.speed == ctx.time.speed)
+
+-- MIDI URID constants
+assert(MIDI.MidiEvent == ctx.midi.MidiEvent)
+
+-- MIDI message and controller constants
+for k, v in pairs(MIDI) do
+	if k ~= MIDI.MidiEvent then
+		print(k, v)
+	end
+end
+
+-- OSC URID constants
+assert(OSC.Event == ctx.osc.Event)
+assert(OSC.Packet == ctx.osc.Packet)
+assert(OSC.Bundle == ctx.osc.Bundle)
+assert(OSC.bundleTimetag == ctx.osc.bundleTimetag)
+assert(OSC.bundleItems == ctx.osc.bundleItems)
+assert(OSC.Message == ctx.osc.Message)
+assert(OSC.messagePath == ctx.osc.messagePath)
+assert(OSC.messageArguments == ctx.osc.messageArguments)
+assert(OSC.Timetag == ctx.osc.Timetag)
+assert(OSC.timetagIntegral == ctx.osc.timetagIntegral)
+assert(OSC.timetagFraction == ctx.osc.timetagFraction)
+assert(OSC.Nil == ctx.osc.Nil)
+assert(OSC.Impulse == ctx.osc.Impulse)
+assert(OSC.Char == ctx.osc.Char)
+assert(OSC.RGBA == ctx.osc.RGBA)
+
+-- LV2 Core URID constants
+assert(Core.sampleRate == ctx.core.sampleRate)
+assert(Core.minimum == ctx.core.minimum)
+assert(Core.maximum == ctx.core.maximum)
+assert(Core.scalePoint == ctx.core.scalePoint)
+
+-- Buffer size URID constants
+assert(Buf_Size.minBlockLength == ctx.bufsz.minBlockLength)
+assert(Buf_Size.maxBlockLength == ctx.bufsz.maxBlockLength)
+assert(Buf_Size.sequenceSize == ctx.bufsz.sequenceSize)
+
+-- Patch URID constants
+assert(Patch.Ack == ctx.patch.Ack)
+assert(Patch.Delete == ctx.patch.Delete)
+assert(Patch.Copy == ctx.patch.Copy)
+assert(Patch.Error == ctx.patch.Error)
+assert(Patch.Get == ctx.patch.Get)
+assert(Patch.Message == ctx.patch.Message)
+assert(Patch.Move == ctx.patch.Move)
+assert(Patch.Patch == ctx.patch.Patch)
+assert(Patch.Post == ctx.patch.Post)
+assert(Patch.Put == ctx.patch.Put)
+assert(Patch.Request == ctx.patch.Request)
+assert(Patch.Response == ctx.patch.Response)
+assert(Patch.Set == ctx.patch.Set)
+assert(Patch.add == ctx.patch.add)
+assert(Patch.body == ctx.patch.body)
+assert(Patch.destination == ctx.patch.destination)
+assert(Patch.property == ctx.patch.property)
+assert(Patch.readable == ctx.patch.readable)
+assert(Patch.remove == ctx.patch.remove)
+assert(Patch.request == ctx.patch.request)
+assert(Patch.subject == ctx.patch.subject)
+assert(Patch.sequenceNumber == ctx.patch.sequenceNumber)
+assert(Patch.value == ctx.patch.value)
+assert(Patch.wildcard == ctx.patch.wildcard)
+assert(Patch.writable == ctx.patch.writable)
+
+-- RDF URID constants
+assert(RDF.value == ctx.rdf.value)
+assert(RDF.type == ctx.rdf.type)
+
+-- RDFS URID constants
+assert(RDFS.label == ctx.rdfs.label)
+assert(RDFS.range == ctx.rdfs.range)
+assert(RDFS.comment == ctx.rdfs.comment)
+
+-- Units URID constants
+assert(Units.Conversion == ctx.units.Conversion)
+assert(Units.Unit == ctx.units.Unit)
+assert(Units.bar == ctx.units.bar)
+assert(Units.beat == ctx.units.beat)
+assert(Units.bpm == ctx.units.bpm)
+assert(Units.cent == ctx.units.cent)
+assert(Units.cm == ctx.units.cm)
+assert(Units.coef == ctx.units.coef)
+assert(Units.conversion == ctx.units.conversion)
+assert(Units.db == ctx.units.db)
+assert(Units.degree == ctx.units.degree)
+assert(Units.frame == ctx.units.frame)
+assert(Units.hz == ctx.units.hz)
+assert(Units.inch == ctx.units.inch)
+assert(Units.khz == ctx.units.khz)
+assert(Units.km == ctx.units.km)
+assert(Units.m == ctx.units.m)
+assert(Units.mhz == ctx.units.mhz)
+assert(Units.midiNote == ctx.units.midiNote)
+assert(Units.midiController == ctx.units.midiController)
+assert(Units.mile == ctx.units.mile)
+assert(Units.min == ctx.units.min)
+assert(Units.mm == ctx.units.mm)
+assert(Units.ms == ctx.units.ms)
+assert(Units.name == ctx.units.name)
+assert(Units.oct == ctx.units.oct)
+assert(Units.pc == ctx.units.pc)
+assert(Units.prefixConversion == ctx.units.prefixConversion)
+assert(Units.render == ctx.units.render)
+assert(Units.s == ctx.units.s)
+assert(Units.semitone12TET == ctx.units.semitone12TET)
+assert(Units.symbol == ctx.units.symbol)
+assert(Units.unit == ctx.units.unit)</code></pre>
+	</div></div>
 
 	<div class="api-section"><div class="api-content">
 	<h1 id="license">License</h1>
