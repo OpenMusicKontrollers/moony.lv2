@@ -759,7 +759,7 @@ end</code></pre>
 				<dt class="func">forge:bool(value)</dt>
 				<dt>value (boolean)</dt>
 					<dd>boolean value to forge</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -782,7 +782,7 @@ io:bool(false)</code></pre>
 				<dt class="func">forge:int(value)</dt>
 				<dt>value (integer)</dt>
 					<dd>integer value to forge</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -804,7 +804,7 @@ io:int(12)</code></pre>
 				<dt class="func">forge:long(value)</dt>
 				<dt>value (integer)</dt>
 					<dd>integer value to forge</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -826,7 +826,7 @@ io:long(12)</code></pre>
 				<dt class="func">forge:float(value)</dt>
 				<dt>value (number)</dt>
 					<dd>number value to forge</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -848,7 +848,7 @@ io:float(12.5)</code></pre>
 				<dt class="func">forge:double(value)</dt>
 				<dt>value (number)</dt>
 					<dd>number value to forge</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -870,7 +870,7 @@ io:double(12.5)</code></pre>
 				<dt class="func">forge:urid(value)</dt>
 				<dt>value (integer)</dt>
 					<dd>URID value to forge</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -895,7 +895,7 @@ io:urid(urn)</code></pre>
 				<dt class="func">forge:uri(value)</dt>
 				<dt>value (string)</dt>
 					<dd>URI value to forge</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -919,7 +919,7 @@ io:uri(uri)</code></pre>
 				<dt class="func">forge:string(value)</dt>
 				<dt>value (string)</dt>
 					<dd>string value to forge</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -941,7 +941,7 @@ io:string('hello world')</code></pre>
 				<dt class="func">forge:path(value)</dt>
 				<dt>value (string)</dt>
 					<dd>string value to forge</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -967,7 +967,7 @@ io:path('/tmp/xyz')</code></pre>
 					<dd>datatype of literal as integer URID, defaults to 0</dd>
 				<dt>language (integer)</dt>
 					<dd>language of literal as integer URID, defaults to 0</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -992,7 +992,7 @@ io:literal('', nil, tlh) -- 'hello' aka 'what do you want?'</c
 				<dt class="func">forge:chunk(value)</dt>
 				<dt>value (string)</dt>
 					<dd>byte string value to forge</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -1000,7 +1000,7 @@ io:literal('', nil, tlh) -- 'hello' aka 'what do you want?'</c
 				<dt class="func">forge:chunk(value)</dt>
 				<dt>value (table)</dt>
 					<dd>table with individual values to forge</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -1008,7 +1008,7 @@ io:literal('', nil, tlh) -- 'hello' aka 'what do you want?'</c
 				<dt class="func">forge:chunk(...)</dt>
 				<dt>... (integer)</dt>
 					<dd>individual values to forge</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -1033,7 +1033,7 @@ io:chunk(0x1, 0x2, 0x3)
 				<dt class="func">forge:midi(value)</dt>
 				<dt>value (string)</dt>
 					<dd>byte string value to forge</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -1041,7 +1041,7 @@ io:chunk(0x1, 0x2, 0x3)
 				<dt class="func">forge:midi(value)</dt>
 				<dt>value (table)</dt>
 					<dd>table with individual values to forge</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -1049,7 +1049,7 @@ io:chunk(0x1, 0x2, 0x3)
 				<dt class="func">forge:midi(...)</dt>
 				<dt>... (integer)</dt>
 					<dd>individual values to forge</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -1076,7 +1076,7 @@ io:chunk(MIDI.NoteOn, 69, 0x7f)
 					<dd>type of atom as integer URID</dd>
 				<dt>value (string)</dt>
 					<dd>byte string value to forge</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -1086,7 +1086,7 @@ io:chunk(MIDI.NoteOn, 69, 0x7f)
 					<dd>type of atom as integer URID</dd>
 				<dt>value (table)</dt>
 					<dd>table with individual values to forge</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -1096,7 +1096,7 @@ io:chunk(MIDI.NoteOn, 69, 0x7f)
 					<dd>type of atom as integer URID</dd>
 				<dt>... (integer)</dt>
 					<dd>individual values to forge</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -1129,7 +1129,7 @@ io:raw(Atom.String, table.unpack(byt))</code></pre>
 					<dd>type of atom as integer URID</dd>
 				<dt>... (boolean | integer | number | string | table)</dt>
 					<dd>value(s) to forge, see native forge functions documentation</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -1151,9 +1151,9 @@ io:typed(Atom.String, 'LV2 rocks!') -- equivalent to io:string(...)</code></pre>
 
 			<dl>
 				<dt class="func">forge:atom(value)</dt>
-				<dt>value (atom)</dt>
+				<dt>value (userdata)</dt>
 					<dd>atom to forge</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -1188,7 +1188,7 @@ io2:atom(io1)</code></pre>
 				<dt class="func">forge:sequence(unit=0)</dt>
 				<dt>unit (integer)</dt>
 					<dd>event time unit as integer URID, defaults to 0, can either be Atom.frameTime or Atom.beatTime</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
@@ -1223,7 +1223,7 @@ seq:pop() -- finalize container</code></pre>
 					<dt class="func">forge:frame_time(frames)</dt>
 					<dt>frames (integer)</dt>
 						<dd>frame time of event</dd>
-					<dt class="ret">(forge)</dt>
+					<dt class="ret">(userdata)</dt>
 						<dd>self forge object</dd>
 				</dl>
 				</div></div>
@@ -1237,7 +1237,7 @@ seq:pop() -- finalize container</code></pre>
 					<dt class="func">forge:beat_time(beats)</dt>
 					<dt>beats (number)</dt>
 						<dd>beat time of event</dd>
-					<dt class="ret">(forge)</dt>
+					<dt class="ret">(userdata)</dt>
 						<dd>self forge object</dd>
 				</dl>
 				</div></div>
@@ -1252,7 +1252,7 @@ seq:pop() -- finalize container</code></pre>
 					<dt class="func">forge:time(timestamp)</dt>
 					<dt>timestamp (integer | number)</dt>
 						<dd>frame time (integer) or beat time (number) of event</dd>
-					<dt class="ret">(forge)</dt>
+					<dt class="ret">(userdata)</dt>
 						<dd>self forge object</dd>
 				</dl>
 				</div></div>
@@ -1268,7 +1268,7 @@ seq:pop() -- finalize container</code></pre>
 					<dd>object ID as integer URID, defaults to 0</dd>
 				<dt>otype (integer)</dt>
 					<dd>object type as integer URID, defaults to 0</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
@@ -1296,7 +1296,7 @@ obj:pop() -- finalize container</code></pre>
 						<dd>key of property as integer URID</dd>
 					<dt>context (integer)</dt>
 						<dd>context of property as integer URID, defaults to 0</dd>
-					<dt class="ret">(forge)</dt>
+					<dt class="ret">(userdata)</dt>
 						<dd>self forge object</dd>
 				</dl>
 				</div></div>
@@ -1308,7 +1308,7 @@ obj:pop() -- finalize container</code></pre>
 
 			<dl>
 				<dt class="func">forge:tuple()</dt>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
@@ -1339,7 +1339,7 @@ tup:pop() -- finalize container</code></pre>
 						<dd>child type as integer URID, valid are: Atom.Bool, Atom.Int, Atom.Float, Atom.Double, Atom.URID</dd>
 					<dt>value (table)</dt>
 						<dd>table with vector elements</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
@@ -1349,7 +1349,7 @@ tup:pop() -- finalize container</code></pre>
 						<dd>child type as integer URID, valid are: Atom.Bool, Atom.Int, Atom.Float, Atom.Double, Atom.URID</dd>
 					<dt>... (bool | integer | number)</dt>
 						<dd>vector elements</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
@@ -1388,7 +1388,7 @@ io:vector(Atom.Bool, {true, false, true}) --vector items as table</code></pre>
 				<dt class="func">forge:bundle(timestamp=1)</dt>
 				<dt>timestamp (integer | number)</dt>
 					<dd>absolute timestamp in frames (integer) or relative timestamp (number) in seconds, defaults to 1 aka immediate</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
@@ -1429,7 +1429,7 @@ bndl:pop()</code></pre>
 					<dd>OSC format as string</dd>
 				<dt>... (integer | number | string)</dt>
 					<dd>variable arguments according to format</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -1468,7 +1468,7 @@ bndl:pop() -- finalize container)</code></pre>
 					<dd>patch subject as integer URID, defaults to 0</dd>
 				<dt>sequenceNumber (integer)</dt>
 					<dd>patch sequence number as integer, defaults to 0</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
@@ -1502,7 +1502,7 @@ patch:pop()</code></pre>
 
 				<dl>
 					<dt class="func">forge:add()</dt>
-					<dt class="ret">(forge)</dt>
+					<dt class="ret">(userdata)</dt>
 						<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 				</dl>
 				</div></div>
@@ -1514,7 +1514,7 @@ patch:pop()</code></pre>
 
 				<dl>
 					<dt class="func">forge:remove()</dt>
-					<dt class="ret">(forge)</dt>
+					<dt class="ret">(userdata)</dt>
 						<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 				</dl>
 				</div></div>
@@ -1532,7 +1532,7 @@ patch:pop()</code></pre>
 					<dd>patch subject as integer URID, defaults to 0</dd>
 				<dt>sequenceNumber (integer)</dt>
 					<dd>patch sequence number as integer, defaults to 0</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self container object</dd>
 			</dl>
 
@@ -1562,7 +1562,7 @@ io:get(urn.prop, urn.subj, 1002) -- with subject and sequence number</code></pre
 					<dd>patch subject as integer URID, defaults to 0</dd>
 				<dt>sequenceNumber (integer)</dt>
 					<dd>patch sequence number as integer, defaults to 0</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
@@ -1594,7 +1594,7 @@ set:pop()</code></pre>
 					<dd>patch subject as integer URID, defaults to 0</dd>
 				<dt>sequenceNumber (integer)</dt>
 					<dd>patch sequence number as integer, defaults to 0</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
@@ -1628,7 +1628,7 @@ put:pop()</code></pre>
 					<dd>patch subject as integer URID, defaults to 0</dd>
 				<dt>sequenceNumber (integer)</dt>
 					<dd>patch sequence number as integer, defaults to 0</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -1654,7 +1654,7 @@ io:ack(urn.subj, 1002) -- with subject and sequence number</code></pre>
 					<dd>patch subject as integer URID, defaults to 0</dd>
 				<dt>sequenceNumber (integer)</dt>
 					<dd>patch sequence number as integer, defaults to 0</dd>
-				<dt class="ret">(forge)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>self forge object</dd>
 			</dl>
 
@@ -2417,15 +2417,15 @@ assert(io[3] == 64)</code></pre>
 
 			<dl>
 				<dt class="func">seq:foreach()</dt>
-				<dt class="ret">(integer | number, atom)</dt>
+				<dt class="ret">(integer | number, userdata)</dt>
 					<dd>iterates over all atom events returning frame or beat time and event atom.</dd>
 			</dl>
 
 			<dl>
 				<dt class="func">seq:foreach(...)</dt>
-				<dt>... (atom)</dt>
+				<dt>... (userdata)</dt>
 					<dd>additional sequence(s) to multiplex and iterate over.</dd>
-				<dt class="ret">(integer | number, atom, atom)</dt>
+				<dt class="ret">(integer | number, userdata, userdata)</dt>
 					<dd>multiplexes and iterates over all atom events from all sequences returning frame or beat time, event atom and source sequence atom.</dd>
 			</dl>
 
@@ -2433,7 +2433,7 @@ assert(io[3] == 64)</code></pre>
 				<dt class="func">seq:__index(idx) | seq[idx]</dt>
 				<dt>idx (integer)</dt>
 					<dd>event position to query for</dd>
-				<dt class="ret">(atom)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>event atom at position idx</dd>
 			</dl>
 
@@ -2493,13 +2493,13 @@ assert(atom.body == 12)</code></pre>
 					<dd>start position to unpack from, defaults to 1</dd>
 				<dt>to (nil | integer)</dt>
 					<dd>end position to unpack from, defaults to body size<dd>
-				<dt class="ret">(atom, atom, ...)</dt>
+				<dt class="ret">(userdata, ...)</dt>
 					<dd>atom items unpacked from tuple</dd>
 			</dl>
 
 			<dl>
 				<dt class="func">tup:foreach()</dt>
-				<dt class="ret">(integer, atom)</dt>
+				<dt class="ret">(integer, userdata)</dt>
 					<dd>iterates over all atom items returning index and atom item.</dd>
 			</dl>
 
@@ -2507,7 +2507,7 @@ assert(atom.body == 12)</code></pre>
 				<dt class="func">tup:__index(idx) | tup[idx]</dt>
 				<dt>idx (integer)</dt>
 					<dd>item position to query for</dd>
-				<dt class="ret">(atom)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>atom item at position idx</dd>
 			</dl>
 
@@ -2578,7 +2578,7 @@ assert(a1.body == 12)</code></pre>
 
 			<dl>
 				<dt class="func">obj:foreach()</dt>
-				<dt class="ret">(integer, atom, integer)</dt>
+				<dt class="ret">(integer, userdata, integer)</dt>
 					<dd>iterates over all properties returning property key, atom and context.</dd>
 			</dl>
 
@@ -2586,7 +2586,7 @@ assert(a1.body == 12)</code></pre>
 				<dt class="func">obj:__index(key) | obj[key]</dt>
 				<dt>key (integer)</dt>
 					<dd>URID of key to query for</dd>
-				<dt class="ret">(atom)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>property atom for key</dd>
 			</dl>
 
@@ -2659,13 +2659,13 @@ assert(atom.body == 12)</code></pre>
 					<dd>start position to unpack from, defaults to 1</dd>
 				<dt>to (nil | integer)</dt>
 					<dd>end position to unpack from, defaults to body size<dd>
-				<dt class="ret">(atom, atom, ...)</dt>
+				<dt class="ret">(userdata, ...)</dt>
 					<dd>atom items unpacked from vector</dd>
 			</dl>
 
 			<dl>
 				<dt class="func">vec:foreach()</dt>
-				<dt class="ret">(integer, atom)</dt>
+				<dt class="ret">(integer, userdata)</dt>
 					<dd>iterates over all vector items returning index and atom.</dd>
 			</dl>
 
@@ -2673,7 +2673,7 @@ assert(atom.body == 12)</code></pre>
 				<dt class="func">vec:__index(idx) | vec[idx]</dt>
 				<dt>idx (integer)</dt>
 					<dd>position to query for</dd>
-				<dt class="ret">(atom)</dt>
+				<dt class="ret">(userdata)</dt>
 					<dd>atom of item at position idx</dd>
 			</dl>
 
@@ -2736,13 +2736,13 @@ assert(v3.body == 14)</code></pre>
 
 		<dl>
 			<dt class="func">stash:read()</dt>
-			<dt class="ret">(atom)</dt>
+			<dt class="ret">(userdata)</dt>
 				<dd>reference to self as atom object to read from</dd>
 		</dl>
 
 		<dl>
 			<dt class="func">stash:write()</dt>
-			<dt class="ret">(forge)</dt>
+			<dt class="ret">(userdata)</dt>
 				<dd>reference to self as forge object to write to</dd>
 		</dl>
 
@@ -2802,9 +2802,9 @@ assert(io.body == 13)</code></pre>
 			<dt class="func">midiR:__call(frames, forge, atom) | midiR(frames, forge, atom)</dt>
 			<dt>frames (integer)</dt>
 				<dd>frame time of event</dd>
-			<dt>forge (forge)</dt>
+			<dt>forge (userdata)</dt>
 				<dd>forge object</dd>
-			<dt>atom (atom)</dt>
+			<dt>atom (userdata)</dt>
 				<dd>atom body of event</dd>
 			<dt class="ret">(boolean)</dt>
 				<dd>flag whether the event was handled, e.g. whether is was any MIDI at all</dd>
@@ -2875,9 +2875,9 @@ end</code></pre>
 			<dt class="func">oscR:__call(frames, forge, atom) | oscR(frames, forge, atom)</dt>
 			<dt>frames (integer)</dt>
 				<dd>frame time of event</dd>
-			<dt>forge (forge)</dt>
+			<dt>forge (userdata)</dt>
 				<dd>forge object</dd>
-			<dt>atom (atom)</dt>
+			<dt>atom (userdata)</dt>
 				<dd>atom body of event</dd>
 			<dt class="ret">(boolean)</dt>
 				<dd>flag whether the event was handled, e.g. whether is was any OSC at all</dd>
@@ -2946,9 +2946,9 @@ end</code></pre>
 				<dd>frame time of last event or period beginning</dd>
 			<dt>to (integer)</dt>
 				<dd>frame time of current event or period ending</dd>
-			<dt>forge (forge)</dt>
+			<dt>forge (userdata)</dt>
 				<dd>forge object</dd>
-			<dt>atom (atom)</dt>
+			<dt>atom (userdata)</dt>
 				<dd>atom body of event</dd>
 			<dt class="ret">(boolean)</dt>
 				<dd>flag whether the event was handled, e.g. whether is was any Time event at all</dd>
@@ -2964,15 +2964,15 @@ end</code></pre>
 
 		<dl>
 			<dt class="func">timeR:stash(forge)</dt>
-			<dt>forge (forge)</dt>
+			<dt>forge (userdata)</dt>
 				<dd>forge object to stash responder state to</dd>
-			<dt class="ret">(forge)</dt>
+			<dt class="ret">(userdata)</dt>
 				<dd>self forge object</dd>
 		</dl>
 
 		<dl>
 			<dt class="func">timeR:apply(atom)</dt>
-			<dt>atom (atom)</dt>
+			<dt>atom (userdata)</dt>
 				<dd>atom object to apply responder state from</dd>
 			<dt class="ret">(boolean)</dt>
 				<dd>flag whether state has been applied successfully</dd>
@@ -3094,9 +3094,9 @@ end</code></pre>
 			<dt class="func">stateR:__call(frames, forge, atom) | stateR(frames, forge, atom)</dt>
 			<dt>frames (integer)</dt>
 				<dd>frame time of current event</dd>
-			<dt>forge (forge)</dt>
+			<dt>forge (userdata)</dt>
 				<dd>forge object</dd>
-			<dt>atom (atom)</dt>
+			<dt>atom (userdata)</dt>
 				<dd>atom body of event</dd>
 			<dt class="ret">(boolean)</dt>
 				<dd>flag whether the event was handled, e.g. whether is was any patch event at all</dd>
@@ -3106,23 +3106,23 @@ end</code></pre>
 			<dt class="func">stateR:register(frames, forge)</dt>
 			<dt>frames (integer)</dt>
 				<dd>frame time of current event, usually 0 aka start of period</dd>
-			<dt>forge (forge)</dt>
+			<dt>forge (userdata)</dt>
 				<dd>forge object to register state to</dd>
-			<dt class="ret">(forge)</dt>
+			<dt class="ret">(userdata)</dt>
 				<dd>self forge object</dd>
 		</dl>
 
 		<dl>
 			<dt class="func">stateR:stash(forge)</dt>
-			<dt>forge (forge)</dt>
+			<dt>forge (userdata)</dt>
 				<dd>forge object to stash responder state to</dd>
-			<dt class="ret">(forge)</dt>
+			<dt class="ret">(userdata)</dt>
 				<dd>self forge object</dd>
 		</dl>
 
 		<dl>
 			<dt class="func">stateR:apply(atom)</dt>
-			<dt>atom (atom)</dt>
+			<dt>atom (userdata)</dt>
 				<dd>atom object to apply responder state from</dd>
 			<dt class="ret">(boolean)</dt>
 				<dd>flag whether state has been applied successfully</dd>
