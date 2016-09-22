@@ -153,6 +153,8 @@
 
 		<li><a href="#stash">Stash</a></li>
 
+		<li><a href="#options">Options</a></li>
+
 		<li><a href="#responder">Responder</a>
 			<ul>
 				<li><a href="#responder-midi">MIDIResponder</a></li>
@@ -2765,6 +2767,35 @@ io:int(13)
 io:read()
 assert(io.body == 13)</code></pre>
 		</div></div>
+
+	<!-- Options -->
+	<div class="api-section"><div class="api-content">
+	<h1 id="options">Options</h1>
+	<p>Sometimes it is useful to know the sample rate (e.g. for timing) and size of
+	sequence buffers and minimal and maximal to expect audio block frames.
+	If the host exports those values, they may be queried via the options table.</p>
+
+		<dl>
+			<dt class="func">Options:__index(key) | Options[key]</dt>
+			<dt>key (integer)</dt>
+				<dd>key to index options table with as integer URID, valid keys are:
+				Core.sampleRate, Buf_Size.sequenceSize, Buf_Size.minBlockLength, Buf_Size.maxBlockLength</dd>
+			<dt class="ret">(integer)</dt>
+				<dd>value of index key</dd>
+		</dl>
+
+		<a class="api-snippet" href="#snippet-options" data-snippet="snippet-options">&rArr; show snippet</a>
+		<pre class="api-hidden"><code id="snippet-options">-- Options
+
+-- sample rate is always available
+local sampleRate = Options[Core.sampleRate]
+assert(sampleRate == 48000)
+
+-- only available if exported by host
+local sequenceSize = Options[Buf_Size.sequenceSize]
+local minBlockLength = Options[Buf_Size.minBlockLength]
+local maxBlockLength = Options[Buf_Size.maxBlockLength]</code></pre>
+	</div></div>
 
 	<!-- Responder -->
 	<div class="api-section"><div class="api-content">
