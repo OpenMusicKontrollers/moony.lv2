@@ -55,11 +55,47 @@ local function _test(produce, consume, check)
 	end
 
 	if once then
-		--FIXME
+		local n = 128
+		local _seq1 = Stash()
+		local _seq2 = Stash()
+		local _seq3 = Stash()
+		local _seq4 = Stash()
+		local _forge1 = Stash()
+		local _forge2 = Stash()
+		local _forge3 = Stash()
+		local _forge4 = Stash()
+		_seq1:sequence():pop()
+		_seq1:read()
+		_seq2:sequence():pop()
+		_seq2:read()
+		_seq3:sequence():pop()
+		_seq3:read()
+		_seq4:sequence():pop()
+		_seq4:read()
+
+		once(n, _seq1, _forge1, _seq2, _forge2, _seq3, _forge3, _seq4, _forge4)
 	end
 
 	if run then
-		--FIXME
+		local n = 128
+		local _seq1 = Stash()
+		local _seq2 = Stash()
+		local _seq3 = Stash()
+		local _seq4 = Stash()
+		local _forge1 = Stash()
+		local _forge2 = Stash()
+		local _forge3 = Stash()
+		local _forge4 = Stash()
+		_seq1:sequence():pop()
+		_seq1:read()
+		_seq2:sequence():pop()
+		_seq2:read()
+		_seq3:sequence():pop()
+		_seq3:read()
+		_seq4:sequence():pop()
+		_seq4:read()
+
+		run(n, _seq1, _forge1, _seq2, _forge2, _seq3, _forge3, _seq4, _forge4)
 	end
 end
 

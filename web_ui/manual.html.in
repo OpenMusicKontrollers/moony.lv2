@@ -403,13 +403,13 @@ end</code></pre>
 		<a class="api-snippet" href="#snippet-callback-once" data-snippet="snippet-callback-once">&rArr; show snippet</a>
 		<pre class="api-hidden"><code id="snippet-callback-once">-- 'once' callback prototype for moony#a1xa1
 
-local stateR = StateResponder({})
-
 function once(n, seq, forge, control, notify)
 	-- here we will run logic once right after a code update
 
-	-- register state parameters with the plugin's UI
-	stateR:register(0, notify)
+	-- send all-notes-off MIDI message on all channels
+	for channel = 0x0, 0xf do
+		forge:time(0):midi(MIDI.Controller | channel, MIDI.AllNotesOff)
+	end
 end</code></pre>
 		</div></div>
 
@@ -431,14 +431,22 @@ end</code></pre>
 		</dl>
 
 		<a class="api-snippet" href="#snippet-callback-stash" data-snippet="snippet-callback-stash">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-callback-stash">-- 'stash' callback prototype for moony#a1xa1
+		<pre class="api-hidden"><code id="snippet-callback-stash">-- 'stash' callback prototype
 
-local timeR = TimeResponder({})
+-- a simple flag
+local myflag = true
 
 function stash(forge)
-	-- here we can serialize arbitrary data to an atom forge object
+	-- serialize single boolean flag
+	forge:bool(myflag)
+end
 
-	timeR:stash(forge)
+function apply(atom)
+	assert(atom.type == Atom.Bool)
+
+	-- deserialize single boolean flag
+	myflag = atom.body
+	assert(myflag == true)
 end</code></pre>
 		</div></div>
 
@@ -459,14 +467,38 @@ end</code></pre>
 		</dl>
 
 		<a class="api-snippet" href="#snippet-callback-apply" data-snippet="snippet-callback-apply">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-callback-apply">-- 'apply' callback prototype for moony#a1xa1
+		<pre class="api-hidden"><code id="snippet-callback-apply">-- 'apply' callback prototype
 
-local timeR = TimeResponder({})
+-- table that holds active notes
+local active_notes = {
+	60, 64, 67, 72
+}
 
+function stash(forge)
+	local tup = forge:tuple()
+
+	-- serialize active notes to atom tuple
+	for i, v in ipairs(active_notes) do
+		tup:int(v)
+	end
+
+	tup:pop()
+end
+		
 function apply(atom)
-	-- here we can deserialize arbitrary data to an atom forge object
+	assert(atom.type == Atom.Tuple)
 
-	timeR:apply(timeR)
+	-- clear active notes table
+	active_notes = {}
+
+	-- deserialize active notes from atom tuple
+	for i, v in atom:foreach() do
+		assert(v.type == Atom.Int)
+
+		active_notes[i] = v.body
+	end
+
+	assert(#active_notes == 4)
 end</code></pre>
 		</div></div>
 
@@ -486,14 +518,47 @@ end</code></pre>
 		</dl>
 
 		<a class="api-snippet" href="#snippet-callback-save" data-snippet="snippet-callback-save">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-callback-save">-- 'save' callback prototype for moony#a1xa1
+		<pre class="api-hidden"><code id="snippet-callback-save">-- 'save' callback prototype
 
-local stateR = StateResponder({})
+local urn = HashMap('urn:moony:xzy')
+
+-- state
+local state = {
+	[urn.foo] = {
+		[RDFS.range] = Atom.Int,
+		[RDF.value] = 12
+	},
+	[urn.bar] = {
+		[RDFS.range] = Atom.Chunk,
+		[RDF.value] = string.char(0x0, 0x1, 0x2)
+	}
+}
 
 function save(forge)
-	-- here we can serialize arbitrary data to an atom forge object
+	local obj = forge:object()
 
-	stateR:stash(forge)
+	-- serialize state to atom object
+	for k, v in pairs(state) do
+		obj:key(k):typed(v[RDFS.range], v[RDF.value])
+	end
+
+	obj:pop()
+end
+
+function restore(atom)
+	assert(atom.type == Atom.Object)
+
+	-- deserialize state from atom object
+	for k, v in pairs(state) do
+		local itm = atom[k]
+
+		if itm then
+			assert(itm.type == v[RDFS.range])
+			assert(itm.body == v[RDF.value])
+
+			v[RDF.value] = itm.body
+		end
+	end
 end</code></pre>
 		</div></div>
 
@@ -510,14 +575,42 @@ end</code></pre>
 		</dl>
 
 		<a class="api-snippet" href="#snippet-callback-restore" data-snippet="snippet-callback-restore">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-callback-restore">-- 'restore' callback prototype for moony#a1xa1
+		<pre class="api-hidden"><code id="snippet-callback-restore">-- 'restore' callback prototype
 
-local stateR = StateResponder({})
+local urn = HashMap('urn:moony:xyz')
+
+-- 3D positional state
+local state = {
+	[urn.position] = { 0.2, 0.3, 0.9 },
+	[urn.rotation] = { -math.pi, 0.0, math.pi/2 }
+}
+
+function save(forge)
+	local obj = forge:object()
+
+	-- serialize state to atom object
+	for k, v in pairs(state) do
+		obj:key(k):vector(Atom.Float, v)
+	end
+
+	obj:pop()
+end
 
 function restore(atom)
-	-- here we can deserialize arbitrary data to an atom forge object
+	assert(atom.type == Atom.Object)
 
-	stateR:apply(atom)
+	-- deserialize state from atom object
+	for k, v in pairs(state) do
+		local itm = atom[k]
+
+		if itm then
+			assert(itm.type == Atom.Vector)
+			assert(itm.child_type == Atom.Float)
+
+			state[k] = { itm:unpack() }
+			assert(#state[k] == 3)
+		end
+	end
 end</code></pre>
 		</div></div>
 
