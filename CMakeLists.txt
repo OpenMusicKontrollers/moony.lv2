@@ -215,7 +215,20 @@ if(${BUILD_TESTING})
 		DEPENDS
 			${PROJECT_SOURCE_DIR}/web_ui/manual.xslt
 			${PROJECT_BINARY_DIR}/manual.html)
-		add_custom_target(MOONY_MANUAL_TEST ALL DEPENDS ${PROJECT_BINARY_DIR}/moony_manual.lua)
+	add_custom_target(MOONY_MANUAL_TEST ALL DEPENDS ${PROJECT_BINARY_DIR}/moony_manual.lua)
+
+	pkg_search_module(SORD REQUIRED sord-0>=0.12.0)
+	include_directories(${SORD_INCLUDE_DIRS})
+	if(DEFINED STATIC_SORD)
+		set(DETURTLE_LIBS m ${STATIC_SORD} ${STATIC_SERD})
+	else()
+		set(DETURTLE_LIBS ${SORD_LDFLAGS})
+	endif()
+
+	add_executable(moony_deturtle
+		test/moony_deturtle.c)
+	set_target_properties(moony_deturtle PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
+	target_link_libraries(moony_deturtle ${DETURTLE_LIBS})
 
 	add_executable(moony_test
 		test/moony_test.c
@@ -234,11 +247,20 @@ if(${BUILD_TESTING})
 	if(DEFINED WINE)
 		add_test(NAME API-Test COMMAND ${WINE} moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
 		add_test(NAME Manual-Test COMMAND ${WINE} moony_test ${PROJECT_BINARY_DIR}/moony_manual.lua)
+		add_test(NAME Deturtle-Test COMMAND ${WINE} moony_deturtle ${PROJECT_SOURCE_DIR}/plugin/presets.ttl
+			${PROJECT_BINARY_DIR}/moony_presets.lua)
+		add_test(NAME Presets-Test COMMAND ${WINE} moony_test ${PROJECT_BINARY_DIR}/moony_presets.lua)
 	elseif(DEFINED QEMU)
 		add_test(NAME API-Test COMMAND ${QEMU} moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
 		add_test(NAME Manual-Test COMMAND ${QEMU} moony_test ${PROJECT_BINARY_DIR}/moony_manual.lua)
+		add_test(NAME Deturtle-Test COMMAND ${QEMU} moony_deturtle ${PROJECT_SOURCE_DIR}/plugin/presets.ttl
+			${PROJECT_BINARY_DIR}/moony_presets.lua)
+		add_test(NAME Presets-Test COMMAND ${QEMU} moony_test ${PROJECT_BINARY_DIR}/moony_presets.lua)
 	else()
 		add_test(NAME API-Test COMMAND moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
 		add_test(NAME Manual-Test COMMAND moony_test ${PROJECT_BINARY_DIR}/moony_manual.lua)
+		add_test(NAME Deturtle-Test COMMAND moony_deturtle ${PROJECT_SOURCE_DIR}/plugin/presets.ttl
+			${PROJECT_BINARY_DIR}/moony_presets.lua)
+		add_test(NAME Presets-Test COMMAND moony_test ${PROJECT_BINARY_DIR}/moony_presets.lua)
 	endif()
 endif()
