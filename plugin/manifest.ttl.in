@@ -1,4 +1,4 @@
-# Copyright (c) 2015 Hanspeter Portner (dev@open-music-kontrollers.ch)
+# Copyright (c) 2015-2016 Hanspeter Portner (dev@open-music-kontrollers.ch)
 #
 # This is free software: you can redistribute it and/or modify
 # it under the terms of the Artistic License 2.0 as published by
@@ -170,6 +170,9 @@ moony:bank-time
 moony:bank-state
 	a pset:Bank ;
 	rdfs:label "State bank" .
+moony:bank-tutorial
+	a pset:Bank ;
+	rdfs:label "Tutorial bank" .
 
 # Template presets
 moony:bank-through_control-through
@@ -249,4 +252,11 @@ moony:bank-state_state-responder
 	lv2:appliesTo moony:a1xa1 ;
 	pset:bank moony:bank-state ;
 	rdfs:label "State responder" ;
+	rdfs:seeAlso <presets.ttl> .
+
+moony:bank-tutorial_part-1
+	a pset:Preset ;
+	lv2:appliesTo moony:a1xa1 ;
+	pset:bank moony:bank-tutorial ;
+	rdfs:label "Tutorail 1: MIDI Chords" ;
 	rdfs:seeAlso <presets.ttl> .

@@ -1,4 +1,4 @@
-# Copyright (c) 2015 Hanspeter Portner (dev@open-music-kontrollers.ch)
+# Copyright (c) 2015-2016 Hanspeter Portner (dev@open-music-kontrollers.ch)
 #
 # This is free software: you can redistribute it and/or modify
 # it under the terms of the Artistic License 2.0 as published by
@@ -418,4 +418,40 @@ end""" ;
 			stateR:pString "world hello" ;
 			stateR:pURID <http://lv2plug.in/ns/ext/midi#MidiEvent>
 		]
+	] .
+
+moony:bank-tutorial_part-1
+	a pset:Preset ;
+	doap:license lic:Artistic-2.0 ;
+	state:state [
+		moony:code """-- Tutorial 1: MIDI Chords
+
+-- define table that holds number of chord notes and their offsets
+local chord = {0, 12, 24, 36} -- octaves, obviously
+
+-- define a general note responder factory
+local function noteResponder(cmd)
+	return function (self, frames, forge, chan, note, vel)
+		for i, v in ipairs(chord) do -- iterate over chord offsets
+			local chanNew = i - 1 -- set MIDI channel to chord index - 1
+			local noteNew = note + v -- set MIDI note to chord offset
+			if noteNew >= 0 and noteNew <= 0x7f then -- handle note under/overflows
+				forge:time(frames):midi(cmd | chanNew, noteNew, vel) -- serialize event
+			end
+		end
+	end
+end
+
+-- define a MIDIResponder object configured to pass-through unmatched messages
+local midiR = MIDIResponder({
+	[MIDI.NoteOn] = noteResponder(MIDI.NoteOn), -- create responder for NoteOn
+	[MIDI.NoteOff] = noteResponder(MIDI.NoteOff), -- and NoteOff
+	[MIDI.NotePressure] = noteResponder(MIDI.NotePressure) -- and NotePressure
+}, true)
+		
+function run(n, seq, forge, control, notify) 
+	for frames, atom in seq:foreach() do -- iterate over incoming events
+		local handled = midiR(frames, forge, atom) -- call responder for event
+	end
+end"""
 	] .
