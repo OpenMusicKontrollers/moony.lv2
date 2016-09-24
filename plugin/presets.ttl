@@ -424,7 +424,43 @@ moony:bank-tutorial_part-1
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
-		moony:code """-- Tutorial 1: MIDI Chords
+		moony:code """-- Tutorial 1: MIDI Channel Blocker
+
+-- define table which holds active MIDI channels
+local channels = {0, 2, 4, 6}
+
+-- derive channel mask based on active channels
+local mask = 0 -- block everything
+for i, v in ipairs(channels) do
+	mask = mask | (1 << v) -- toggle bit of active channel
+end
+
+function run(n, seq, forge, control, notify) 
+	for frames, atom in seq:foreach() do -- iterate over incoming events
+		local block = false -- assume a not-to-be-blocked event by default
+
+		if atom.type == MIDI.MidiEvent then -- check for MIDI message
+			local msg = atom[1] -- get first MIDI byte
+			local cmd = msg & 0xf0 -- get MIDI command nibble
+			local chn = msg & 0x0f -- get MIDI channel nibble
+
+			if (cmd ~= 0xf0) and ((1 << chn) & mask == 0) then
+				block = true -- if not a system message and channel not part of mask
+			end
+		end
+
+		if not block then -- let atom through
+			forge:time(frames):atom(atom) -- serialize atom as-is
+		end
+	end
+end"""
+	] .
+
+moony:bank-tutorial_part-2
+	a pset:Preset ;
+	doap:license lic:Artistic-2.0 ;
+	state:state [
+		moony:code """-- Tutorial 2: MIDI Chorder
 
 -- define table that holds number of chord notes and their offsets
 local chord = {0, 12, 24, 36} -- octaves, obviously
@@ -448,7 +484,7 @@ local midiR = MIDIResponder({
 	[MIDI.NoteOff] = noteResponder(MIDI.NoteOff), -- and NoteOff
 	[MIDI.NotePressure] = noteResponder(MIDI.NotePressure) -- and NotePressure
 }, true)
-		
+
 function run(n, seq, forge, control, notify) 
 	for frames, atom in seq:foreach() do -- iterate over incoming events
 		local handled = midiR(frames, forge, atom) -- call responder for event

@@ -258,5 +258,12 @@ moony:bank-tutorial_part-1
 	a pset:Preset ;
 	lv2:appliesTo moony:a1xa1 ;
 	pset:bank moony:bank-tutorial ;
-	rdfs:label "Tutorail 1: MIDI Chords" ;
+	rdfs:label "Tutorial 1: MIDI Channel Blocker" ;
+	rdfs:seeAlso <presets.ttl> .
+
+moony:bank-tutorial_part-2
+	a pset:Preset ;
+	lv2:appliesTo moony:a1xa1 ;
+	pset:bank moony:bank-tutorial ;
+	rdfs:label "Tutorial 2: MIDI Chorder" ;
 	rdfs:seeAlso <presets.ttl> .
