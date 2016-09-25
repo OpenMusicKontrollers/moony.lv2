@@ -435,7 +435,7 @@ for i, v in ipairs(channels) do
 	mask = mask | (1 << v) -- toggle bit of active channel
 end
 
-function run(n, seq, forge, control, notify) 
+function run(n, seq, forge, control, notify)
 	for frames, atom in seq:foreach() do -- iterate over incoming events
 		local block = false -- assume a not-to-be-blocked event by default
 
@@ -485,7 +485,94 @@ local midiR = MIDIResponder({
 	[MIDI.NotePressure] = noteResponder(MIDI.NotePressure) -- and NotePressure
 }, true)
 
-function run(n, seq, forge, control, notify) 
+function run(n, seq, forge, control, notify)
+	for frames, atom in seq:foreach() do -- iterate over incoming events
+		local handled = midiR(frames, forge, atom) -- call responder for event
+	end
+end"""
+	] .
+
+moony:bank-tutorial_part-3
+	a pset:Preset ;
+	doap:license lic:Artistic-2.0 ;
+	state:state [
+		moony:code """-- Tutorial 3: MIDI Sample & Hold
+
+local urn = HashMap('urn:moony:tutorial-3#') -- prefix of this presets URIs
+local sample = false -- flag to tell whether we are sampling or not
+local noteOffs = {} -- table to store NoteOff events while sampling
+
+-- MIDI responder for NoteOff events
+local function noteOff(self, frames, forge, chan, note, vel)
+	local msg = string.char(MIDI.NoteOff | chan, note, vel) -- encode to byte string
+
+	if sample then -- are we sampling?
+		table.insert(noteOffs, msg) -- add event to table, e.g. put it on-hold
+	else
+		forge:time(frames):midi(msg) -- let event through as-is
+	end
+end
+
+-- MIDI responder for Controller events
+local function controller(self, frames, forge, chan, control, value)
+	if control == MIDI.SustainPedal then -- check for SustainPedal
+		local newSample = value > 0 -- derive new sampling state from Controller value
+
+		if newSample ~= sample then -- is new sampling state different from current one?
+			if not newSample then -- sustain pedal has been released
+				for i, msg in ipairs(noteOffs) do -- release NoteOff events on-hold
+					forge:time(frames):midi(msg)
+				end
+				noteOffs = {} -- clear table as events have been released
+			end
+
+			sample = newSample -- update sampling state
+		end
+	else -- let through non-SustainPedal Controller events
+		forge:time(frames):midi(MIDI.Controller | chan, control, value)
+	end
+end
+
+-- define a MIDIResponder object configured to pass-through unmatched messages
+local midiR = MIDIResponder({
+	[MIDI.NoteOff] = noteOff, -- register NoteOff responder
+	[MIDI.Controller] = controller -- register Controller responder
+}, true)
+
+-- push sampling state and events on-hold on stash
+function stash(forge)
+	local obj = forge:object() -- create object
+
+	-- add boolean property for sampling state to object
+	obj:key(urn.sample):bool(sample)
+
+	-- add tuple property for events on-hold to object
+	local tup = forge:key(urn.noteOffs):tuple()
+	for i, msg in ipairs(noteOffs) do -- add events on-hold to tuple
+		tup:midi(msg)
+	end
+
+	tup:pop() -- finalize tuple
+	obj:pop() -- finalize object
+end
+
+-- pop sampling state and events on-hold from stash
+function apply(atom)
+	-- get sampling state from object
+	if atom[urn.sample] then
+		sample = atom[urn.sample].body
+	end
+
+	-- get events on-hold from object
+	if atom[urn.noteOffs] then
+		noteOffs = {} -- clear table
+		for i, msg in atom[urn.noteOffs]:foreach() do -- iterate tuple
+			noteOffs[i] = msg -- add events on-hold to table
+		end
+	end
+end
+
+function run(n, seq, forge, control, notify)
 	for frames, atom in seq:foreach() do -- iterate over incoming events
 		local handled = midiR(frames, forge, atom) -- call responder for event
 	end
