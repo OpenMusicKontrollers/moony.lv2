@@ -578,3 +578,90 @@ function run(n, seq, forge, control, notify)
 	end
 end"""
 	] .
+
+moony:bank-tutorial_part-4
+	a pset:Preset ;
+	doap:license lic:Artistic-2.0 ;
+	state:state [
+		moony:code """-- Tutorial 4: MIDI Arpeggiator
+
+local schar = string.char -- local variable is more efficient to look up
+
+local chord = {0, 3, 7, 11} -- table with chord note offsets
+local offset = 0.1 -- time offset between notes in seconds
+
+local schedule = {} -- table to store Note events
+local dur = math.floor(offset * Options[Core.sampleRate]) -- time offset in frames
+
+-- compare function to sort scheduled messages according to frame time
+local function cmp(a, b)
+	return a[1] < b[1]
+end
+
+-- add message to scheduled events
+local function sched(off, msg)
+	table.insert(schedule, {off, msg}) -- insert message and offset frames into table
+	table.sort(schedule, cmp) -- sort table
+end
+
+local function note_responder(cmd)
+	return function(self, frames, forge, chan, note, vel)
+		for i, v in ipairs(chord) do
+			local chanNew = i - 1 -- set new channel to chord note index - 1
+			local noteNew = note + v -- set new note to chord note offset
+			local msg = schar(cmd | chanNew, noteNew, vel) -- serialize message
+			local off = frames + (i-1)*dur
+			sched(off, msg) -- schedule message
+		end
+	end
+end
+
+-- define a MIDIResponder object configured to pass-through unmatched messages
+local midiR = MIDIResponder({
+	[MIDI.NoteOn] = note_responder(MIDI.NoteOn), -- register responder for NoteOn
+	[MIDI.NoteOff] = note_responder(MIDI.NoteOff), -- and NoteOff
+	[MIDI.NotePressure] = note_responder(MIDI.NotePressure) -- and NotePressure
+}, true)
+
+-- push scheduled events stash
+function stash(forge)
+	local seq= forge:sequence() -- create atom sequence
+	for i, v in ipairs(schedule) do -- iterate over scheduled events
+		seq:time(v[1]):midi(v[2]) -- add events to atom sequence
+	end
+	seq:pop() -- finalize atom sequence
+end
+
+-- pop scheduled events from stash
+function apply(atom)
+	if atom.type == Atom.Sequence then -- check for correct atom type
+		schedule = {} -- clear table with scheduled events
+		for off, itm in atom:foreach() do -- iteratore over sequence events
+			table.insert(schedule, {off, itm.body}) -- insert event into table
+		end
+		table.sort(schedule, cmp) -- sort events
+	end
+end
+
+-- are there any scheduled events to dispatch?
+local function dispatch(n, forge)
+::loop::
+	for i, v in ipairs(schedule) do
+		if v[1] < n then
+			forge:time(v[1]):midi(v[2]) -- send message
+			table.remove(schedule, i) -- remove message from scheduled events
+			goto loop -- restart loop as we have removed an item
+		else
+			v[1] = v[1] - n -- decrease timestamp by period size
+		end
+	end
+end
+
+function run(n, seq, forge, control, notify)
+	for frames, atom in seq:foreach() do -- iterate over incoming events
+		local handled = midiR(frames, forge, atom) -- call responder for event
+	end
+
+	dispatch(n, forge) -- dispatch scheduled events
+end"""
+	] .
