@@ -307,3 +307,10 @@ moony:bank-template_part-3
 	pset:bank moony:bank-template;
 	rdfs:label "Template 3: OSC Responder" ;
 	rdfs:seeAlso <presets.ttl> .
+
+moony:bank-template_part-4
+	a pset:Preset ;
+	lv2:appliesTo moony:a1xa1 ;
+	pset:bank moony:bank-template;
+	rdfs:label "Template 4: State Responder" ;
+	rdfs:seeAlso <presets.ttl> .

@@ -771,6 +771,16 @@ local timeR = TimeResponder({
 	end
 })
 
+-- push time responder state to stash
+function stash(forge)
+	timeR:stash(forge)
+end
+
+-- pop time responder state from stash
+function apply(atom)
+	timeR:apply(atom)
+end
+
 function run(n, seq, forge, control, notify)
 	local from = 0 -- initial frame offset
 
@@ -803,6 +813,58 @@ local oscR = OSCResponder({
 function run(n, seq, forge, control, notify)
 	for frames, atom in seq:foreach() do -- iterate over incoming events
 		local handled = oscR(frames, forge, atom) -- call responder for event
+	end
+end"""
+	] .
+
+moony:bank-template_part-4
+	a pset:Preset ;
+	doap:license lic:Artistic-2.0 ;
+	state:state [
+		moony:code """-- Template 4: State Responder
+
+-- define URI prefix for state parameters
+local urn = HashMap('urn:moony:template-4#')
+
+-- define single parameter
+local param = {
+	[RDFS.label] = 'Awesome Parameter',
+	[RDFS.comment] = 'does this and that...',
+	[RDFS.range] = Atom.Int,
+	[Core.minimum] = 0,
+	[Core.maximum] = 10,
+	[Units.unit] = Units.hz,
+	[RDF.value] = 5
+}
+
+-- define a StateResponder object
+local stateR = StateResponder({
+	[Patch.readable] = {
+		--TODO
+	},
+	[Patch.writable] = {
+		[urn.param] = param -- register parameter to writable group
+	}
+})
+
+-- push parameter values to disk
+function save(forge)
+	stateR:stash(forge)
+end
+
+-- pop parameter values from disk
+function restore(atom)
+	stateR:apply(atom)
+end
+
+-- register parameters to UI
+function once(n, seq, forge, control, notify)
+	stateR:register(0, notify)
+end
+
+function run(n, seq, forge, control, notify)
+	for frames, atom in seq:foreach(control) do -- iterate over incoming events
+		local handled = stateR(frames, notify, atom)
 	end
 end"""
 	] .
