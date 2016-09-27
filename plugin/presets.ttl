@@ -783,3 +783,26 @@ function run(n, seq, forge, control, notify)
 	timeR(from, n, forge) -- call responder for remaining frames
 end"""
 	] .
+
+moony:bank-template_part-3
+	a pset:Preset ;
+	doap:license lic:Artistic-2.0 ;
+	state:state [
+		moony:code """-- Template 3: OSC Responder
+
+-- define an OSCResponder object
+local oscR = OSCResponder({
+	['/ping'] = function(self, frames, forge, fmt, ...)
+		--TODO
+	end,
+	['/pong'] = function(self, frames, forge, fmt, ...)
+		--TODO
+	end
+})
+
+function run(n, seq, forge, control, notify)
+	for frames, atom in seq:foreach() do -- iterate over incoming events
+		local handled = oscR(frames, forge, atom) -- call responder for event
+	end
+end"""
+	] .
