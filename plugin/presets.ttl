@@ -660,3 +660,79 @@ function run(n, seq, forge, control, notify)
 	dispatch(n, forge) -- dispatch scheduled events
 end"""
 	] .
+
+moony:bank-template_part-1
+	a pset:Preset ;
+	doap:license lic:Artistic-2.0 ;
+	state:state [
+		moony:code """-- Template 1: MIDI Responder
+
+local block = false -- route unmatched messages as-is
+
+-- define a MIDIResponder object configured to pass-through unmatched messages
+local midiR = MIDIResponder({
+	-- callbacks featuring a channel parameter
+	[MIDI.NoteOn] = function(self, frames, forge, chan, note, vel)
+		--TODO
+	end,
+	[MIDI.NoteOff] = function(self, frames, forge, chan, note, vel)
+		--TODO
+	end,
+	[MIDI.NotePressure] = function(self, frames, forge, chan, note, vel)
+		--TODO
+	end,
+	[MIDI.Bender] = function(self, frames, forge, chan, lsb, msb)
+		--TODO
+	end,
+	[MIDI.Controller] = function(self, frames, forge, chan, cntrl, val)
+		--TODO
+	end,
+	[MIDI.ProgramChange] = function(self, frames, forge, chan, lsb, msb)
+		--TODO
+	end,
+	[MIDI.ChannelPressure] = function(self, frames, forge, chan, val)
+		--TODO
+	end,
+
+	-- callbacks featuring no channel parameter
+	[MIDI.SystemExclusive] = function(self, frames, forge, _, ...)
+		--TODO
+	end,
+	[MIDI.QuarterFrame] = function(self, frames, forge, _, type, val)
+		--TODO
+	end,
+	[MIDI.SongPosition] = function(self, frames, forge, _, lsb, msb) 
+		--TODO
+	end,
+	[MIDI.SongSelect] = function(self, frames, forge, _, val)
+		--TODO
+	end,
+	[MIDI.TuneRequest] = function(self, frames, forge)
+		--TODO
+	end,
+	[MIDI.Clock] = function(self, frames, forge)
+		--TODO
+	end,
+	[MIDI.Start] = function(self, frames, forge)
+		--TODO
+	end,
+	[MIDI.Continue] = function(self, frames, forge)
+		--TODO
+	end,
+	[MIDI.Stop] = function(self, frames, forge)
+		--TODO
+	end,
+	[MIDI.ActiveSense] = function(self, frames, forge)
+		--TODO
+	end,
+	[MIDI.Reset] = function(self, frames, forge)
+		--TODO
+	end
+}, not block)
+
+function run(n, seq, forge, control, notify)
+	for frames, atom in seq:foreach() do -- iterate over incoming events
+		local handled = midiR(frames, forge, atom) -- call responder for event
+	end
+end"""
+	] .

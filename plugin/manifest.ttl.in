@@ -173,6 +173,9 @@ moony:bank-state
 moony:bank-tutorial
 	a pset:Bank ;
 	rdfs:label "Tutorial bank" .
+moony:bank-template
+	a pset:Bank ;
+	rdfs:label "Template bank" .
 
 # Template presets
 moony:bank-through_control-through
@@ -280,4 +283,11 @@ moony:bank-tutorial_part-4
 	lv2:appliesTo moony:a1xa1 ;
 	pset:bank moony:bank-tutorial ;
 	rdfs:label "Tutorial 4: MIDI Arpeggiator" ;
+	rdfs:seeAlso <presets.ttl> .
+
+moony:bank-template_part-1
+	a pset:Preset ;
+	lv2:appliesTo moony:a1xa1 ;
+	pset:bank moony:bank-template;
+	rdfs:label "Template 1: MIDI Responder" ;
 	rdfs:seeAlso <presets.ttl> .
