@@ -661,6 +661,59 @@ function run(n, seq, forge, control, notify)
 end"""
 	] .
 
+moony:bank-tutorial_part-5
+	a pset:Preset ;
+	doap:license lic:Artistic-2.0 ;
+	state:state [
+		moony:code """-- Tutorial 5: MIDI Velocity Curve Interpolator
+
+local X = {0, 15, 112, 127} -- X-coordinates of curve
+local Y = {0,  7, 120, 127} -- Y-coordinates of curve
+local N = #X -- number of points to interpolate over
+local Ymin = 0 -- clip minimum
+local Ymax = 127 -- clip maximum
+
+-- Lagrange Polynomial Interpolation
+local function P(x)
+	local sum = 0
+	for j = 1, N do
+		local prod = Y[j]
+		for k = 1, N do
+			prod = prod * (k == j and 1.0 or (x - X[k]) / (X[j] - X[k]))
+		end
+		sum = sum + prod
+	end
+	sum = math.floor(sum) -- round to lower integer
+	return sum < Ymin and Ymin or (sum > Ymax and Ymax or sum) -- clip to [Ymin, Ymax]
+end
+
+-- fill velocity curve lookup table
+local curve = {}
+for i = 0, 127 do
+	curve[i+1] = P(i)
+end
+
+-- note responder function factory
+local function note_responder(cmd)
+	return function(self, frames, forge, chan, note, vel)
+		local velNew = curve[vel+1] -- index velocity curve lookup table
+		forge:time(frames):midi(cmd | chan, note, velNew) -- send event
+	end
+end
+
+-- define a MIDIResponder object configured to pass-through unmatched messages
+local midiR = MIDIResponder({
+	[MIDI.NoteOn] = note_responder(MIDI.NoteOn), -- register responder for NoteOn
+	[MIDI.NoteOff] = note_responder(MIDI.NoteOff) -- and NoteOff
+}, true)
+
+function run(n, seq, forge, control, notify)
+	for frames, atom in seq:foreach() do -- iterate over incoming events
+		local handled = midiR(frames, forge, atom) -- call responder for event
+	end
+end"""
+	] .
+
 moony:bank-template_part-1
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
