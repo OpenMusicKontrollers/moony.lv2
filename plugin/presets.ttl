@@ -669,7 +669,7 @@ moony:bank-template_part-1
 
 local block = false -- route unmatched messages as-is
 
--- define a MIDIResponder object configured to pass-through unmatched messages
+-- define a MIDIResponder object
 local midiR = MIDIResponder({
 	-- callbacks featuring a channel parameter
 	[MIDI.NoteOn] = function(self, frames, forge, chan, note, vel)
@@ -734,5 +734,52 @@ function run(n, seq, forge, control, notify)
 	for frames, atom in seq:foreach() do -- iterate over incoming events
 		local handled = midiR(frames, forge, atom) -- call responder for event
 	end
+end"""
+	] .
+
+moony:bank-template_part-2
+	a pset:Preset ;
+	doap:license lic:Artistic-2.0 ;
+	state:state [
+		moony:code """-- Template 2: Time Responder
+
+-- define a TimeResponder object
+local timeR = TimeResponder({
+	[Time.speed] = function(self, frames, forge, speed)
+		--TODO
+	end,
+	[Time.bar] = function(self, frames, forge, bar)
+		--TODO
+	end,
+	[Time.barBeat] = function(self, frames, forge, barBeat)
+		--TODO
+	end,
+	[Time.beatUnit] = function(self, frames, forge, beatUnit)
+		--TODO
+	end,
+	[Time.beatsPerBar] = function(self, frames, forge, beatsPerBar)
+		--TODO
+	end,
+	[Time.beatsPerMinute] = function(self, frames, forge, beatsPerMinute)
+		--TODO
+	end,
+	[Time.framesPerSecond] = function(self, frames, forge, framesPerSecond)
+		--TODO
+	end,
+	[Time.frame] = function(self, frames, forge, frame)
+		--TODO
+	end
+})
+
+function run(n, seq, forge, control, notify)
+	local from = 0 -- initial frame offset
+
+	for to, atom in seq:foreach() do -- iterate over incoming events
+		timeR(from, to, forge, atom) -- call responder for event
+
+		from = to -- update to new frame offset
+	end
+
+	timeR(from, n, forge) -- call responder for remaining frames
 end"""
 	] .

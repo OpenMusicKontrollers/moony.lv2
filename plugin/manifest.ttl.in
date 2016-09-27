@@ -257,6 +257,7 @@ moony:bank-state_state-responder
 	rdfs:label "State responder" ;
 	rdfs:seeAlso <presets.ttl> .
 
+# Tutorials
 moony:bank-tutorial_part-1
 	a pset:Preset ;
 	lv2:appliesTo moony:a1xa1 ;
@@ -285,9 +286,17 @@ moony:bank-tutorial_part-4
 	rdfs:label "Tutorial 4: MIDI Arpeggiator" ;
 	rdfs:seeAlso <presets.ttl> .
 
+# Templates
 moony:bank-template_part-1
 	a pset:Preset ;
 	lv2:appliesTo moony:a1xa1 ;
 	pset:bank moony:bank-template;
 	rdfs:label "Template 1: MIDI Responder" ;
+	rdfs:seeAlso <presets.ttl> .
+
+moony:bank-template_part-2
+	a pset:Preset ;
+	lv2:appliesTo moony:a1xa1 ;
+	pset:bank moony:bank-template;
+	rdfs:label "Template 2: Time Responder" ;
 	rdfs:seeAlso <presets.ttl> .
