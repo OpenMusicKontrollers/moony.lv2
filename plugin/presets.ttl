@@ -598,12 +598,6 @@ local function cmp(a, b)
 	return a[1] < b[1]
 end
 
--- add message to scheduled events
-local function sched(off, msg)
-	table.insert(schedule, {off, msg}) -- insert message and offset frames into table
-	table.sort(schedule, cmp) -- sort table
-end
-
 local function note_responder(cmd)
 	return function(self, frames, forge, chan, note, vel)
 		for i, v in ipairs(chord) do
@@ -611,8 +605,9 @@ local function note_responder(cmd)
 			local noteNew = note + v -- set new note to chord note offset
 			local msg = schar(cmd | chanNew, noteNew, vel) -- serialize message
 			local off = frames + (i-1)*dur
-			sched(off, msg) -- schedule message
+			table.insert(schedule, {off, msg}) -- schedule message with offset
 		end
+		table.sort(schedule, cmp) -- sort table
 	end
 end
 
