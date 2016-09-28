@@ -714,6 +714,99 @@ function run(n, control, notify, seq, forge)
 end"""
 	] .
 
+moony:bank-tutorial_part-6
+	a pset:Preset ;
+	doap:license lic:Artistic-2.0 ;
+	state:state [
+		moony:code """-- Tutorial 6: MIDI Sequencer
+
+local urn = HashMap('urn:moony:tutorial-6#')
+
+-- table with MIDI notes for 8 beats
+local notes = {
+	Note['C-5'],  -- beat 1
+	Note['D#-5'], -- beat 2
+	false,        -- beat 3
+	Note['C-5'],  -- beat 4
+	Note['G-5'],  -- beat 5 
+	false,        -- beat 6
+	Note['G-4'],  -- beat 7
+	false         -- beat 8
+}
+
+local vel = 0x7f -- MIDI note velocity
+
+local active = nil -- active MIDI note
+
+-- register Time responder object
+local timeR = TimeResponder({
+	rolling = false, -- flag to signal whether we are rolling or not
+	[Time.speed] = function(self, frames, forge, speed) -- transport start/stop
+		self.rolling = speed > 0 and true or false
+
+		-- send note off event at transport stop with active note
+		if not self.rolling and forge and active then
+			forge:time(frames):midi(MIDI.NoteOff, active, vel)
+			active = nil
+		end
+	end,
+	[Time.barBeat] = function(self, frames, forge, barBeat)
+		if self.rolling and forge and math.tointeger(barBeat) then
+			-- send note off event for active note
+			if active then
+				forge:time(frames):midi(MIDI.NoteOff, active, vel)
+				active = nil
+			end
+
+			-- get new note
+			local note = notes[barBeat % #notes + 1]
+			-- send note on event for new note
+			if note then
+				forge:time(frames):midi(MIDI.NoteOn, note, vel)
+				active = note
+			end
+		end
+	end
+})
+
+-- push time responder state and active note to stash
+function stash(forge)
+	local obj = forge:object()
+
+	obj:key(Time.Position)
+	timeR:stash(obj)
+
+	if active then
+		obj:key(urn.active):int(active)
+	end
+
+	obj:pop()
+end
+
+-- pop time responder state and active note from stash
+function apply(atom)
+	if atom[Time.Position] then
+		timeR:apply(atom[Time.Position])
+	end
+
+	if atom[urn.active] then
+		active = atom[urn.active].body
+	end
+end
+
+function run(n, control, notify, seq, forge)
+	local from = 0
+
+	for to, atom in seq:foreach() do -- iterate over incoming events
+		timeR(from, to, forge, atom) -- call responder for event
+
+		from = to
+	end
+
+	timeR(from, n, forge)
+end"""
+	] .
+
 moony:bank-template_part-1
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;

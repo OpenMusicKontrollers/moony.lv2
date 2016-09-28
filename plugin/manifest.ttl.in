@@ -342,6 +342,18 @@ moony:bank-tutorial_part-5
 	rdfs:label "Tutorial 5: MIDI Velocity Curve Interpolater" ;
 	rdfs:seeAlso <presets.ttl> .
 
+moony:bank-tutorial_part-6
+	a pset:Preset ;
+	lv2:appliesTo moony:a1xa1 ,
+		moony:a2xa2 ,
+		moony:a4xa4 ,
+		moony:c1a1xc1a1 ,
+		moony:c2a1xc2a1 ,
+		moony:c4a1xc4a1 ;
+	pset:bank moony:bank-tutorial ;
+	rdfs:label "Tutorial 6: MIDI Sequencer" ;
+	rdfs:seeAlso <presets.ttl> .
+
 # Bank templates
 moony:bank-template_part-1
 	a pset:Preset ;
