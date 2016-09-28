@@ -151,7 +151,7 @@ moony:ui_2_simple_2_kx
 	ui:binary <moony_simple@CMAKE_SHARED_MODULE_SUFFIX@> ;
 	rdfs:seeAlso <moony_ui.ttl> .
 
-# Template banks
+# Banks
 moony:bank-through
 	a pset:Bank ;
 	rdfs:label "Through bank" .
@@ -177,51 +177,24 @@ moony:bank-template
 	a pset:Bank ;
 	rdfs:label "Template bank" .
 
-# Template presets
+# Through bank
 moony:bank-through_control-through
 	a pset:Preset ;
-	lv2:appliesTo moony:c1xc1 ;
-	lv2:appliesTo moony:c2xc2 ;
-	lv2:appliesTo moony:c4xc4 ;
+	lv2:appliesTo moony:c1xc1 ,
+		moony:c2xc2 ,
+		moony:c4xc4 ;
 	pset:bank moony:bank-through ;
 	rdfs:label "Through" ;
 	rdfs:seeAlso <presets.ttl> .
 
 moony:bank-through_atom-through
 	a pset:Preset ;
-	lv2:appliesTo moony:a1xa1 ;
-	lv2:appliesTo moony:c1a1xc1a1 ;
-	lv2:appliesTo moony:c2a1xc2a1 ;
-	lv2:appliesTo moony:c4a1xc4a1 ;
+	lv2:appliesTo moony:a1xa1 ,
+		moony:c1a1xc1a1 ,
+		moony:c2a1xc2a1 ,
+		moony:c4a1xc4a1 ;
 	pset:bank moony:bank-through ;
 	rdfs:label "Through" ;
-	rdfs:seeAlso <presets.ttl> .
-moony:bank-midi_midi-responder
-	a pset:Preset ;
-	lv2:appliesTo moony:a1xa1 ;
-	lv2:appliesTo moony:c1a1xc1a1 ;
-	lv2:appliesTo moony:c2a1xc2a1 ;
-	lv2:appliesTo moony:c4a1xc4a1 ;
-	pset:bank moony:bank-midi ;
-	rdfs:label "MIDI responder" ;
-	rdfs:seeAlso <presets.ttl> .
-moony:bank-time_midi-sequencer
-	a pset:Preset ;
-	lv2:appliesTo moony:a1xa1 ;
-	lv2:appliesTo moony:c1a1xc1a1 ;
-	lv2:appliesTo moony:c2a1xc2a1 ;
-	lv2:appliesTo moony:c4a1xc4a1 ;
-	pset:bank moony:bank-time ;
-	rdfs:label "MIDI sequencer" ;
-	rdfs:seeAlso <presets.ttl> .
-moony:bank-osc_osc-responder
-	a pset:Preset ;
-	lv2:appliesTo moony:a1xa1 ;
-	lv2:appliesTo moony:c1a1xc1a1 ;
-	lv2:appliesTo moony:c2a1xc2a1 ;
-	lv2:appliesTo moony:c4a1xc4a1 ;
-	pset:bank moony:bank-osc ;
-	rdfs:label "OSC responder" ;
 	rdfs:seeAlso <presets.ttl> .
 
 moony:bank-through_atom-through2
@@ -230,12 +203,6 @@ moony:bank-through_atom-through2
 	pset:bank moony:bank-through ;
 	rdfs:label "Through" ;
 	rdfs:seeAlso <presets.ttl> .
-moony:bank-multiplex_atom-multiplex2
-	a pset:Preset ;
-	lv2:appliesTo moony:a2xa2 ;
-	pset:bank moony:bank-multiplex ;
-	rdfs:label "Multiplex" ;
-	rdfs:seeAlso <presets.ttl> .
 
 moony:bank-through_atom-through4
 	a pset:Preset ;
@@ -243,6 +210,15 @@ moony:bank-through_atom-through4
 	pset:bank moony:bank-through ;
 	rdfs:label "Through" ;
 	rdfs:seeAlso <presets.ttl> .
+
+# Bank multiplex
+moony:bank-multiplex_atom-multiplex2
+	a pset:Preset ;
+	lv2:appliesTo moony:a2xa2 ;
+	pset:bank moony:bank-multiplex ;
+	rdfs:label "Multiplex" ;
+	rdfs:seeAlso <presets.ttl> .
+
 moony:bank-multiplex_atom-multiplex4
 	a pset:Preset ;
 	lv2:appliesTo moony:a4xa4 ;
@@ -250,74 +226,170 @@ moony:bank-multiplex_atom-multiplex4
 	rdfs:label "Multiplex" ;
 	rdfs:seeAlso <presets.ttl> .
 
+# Bank MIDI
+moony:bank-midi_midi-responder
+	a pset:Preset ;
+	lv2:appliesTo moony:a1xa1 ,
+		moony:a2xa2 ,
+		moony:a4xa4 ,
+		moony:c1a1xc1a1 ,
+		moony:c2a1xc2a1 ,
+		moony:c4a1xc4a1 ;
+	pset:bank moony:bank-midi ;
+	rdfs:label "MIDI responder" ;
+	rdfs:seeAlso <presets.ttl> .
+
+# Bank time
+moony:bank-time_midi-sequencer
+	a pset:Preset ;
+	lv2:appliesTo moony:a1xa1 ,
+		moony:a2xa2 ,
+		moony:a4xa4 ,
+		moony:c1a1xc1a1 ,
+		moony:c2a1xc2a1 ,
+		moony:c4a1xc4a1 ;
+	pset:bank moony:bank-time ;
+	rdfs:label "MIDI sequencer" ;
+	rdfs:seeAlso <presets.ttl> .
+
+# Bank OSC
+moony:bank-osc_osc-responder
+	a pset:Preset ;
+	lv2:appliesTo moony:a1xa1 ,
+		moony:a2xa2 ,
+		moony:a4xa4 ,
+		moony:c1a1xc1a1 ,
+		moony:c2a1xc2a1 ,
+		moony:c4a1xc4a1 ;
+	pset:bank moony:bank-osc ;
+	rdfs:label "OSC responder" ;
+	rdfs:seeAlso <presets.ttl> .
+
+# Bank state
 moony:bank-state_state-responder
 	a pset:Preset ;
-	lv2:appliesTo moony:a1xa1 ;
+	lv2:appliesTo moony:a1xa1 ,
+		moony:a2xa2 ,
+		moony:a4xa4 ,
+		moony:c1a1xc1a1 ,
+		moony:c2a1xc2a1 ,
+		moony:c4a1xc4a1 ,
+		moony:c1xc1 ,
+		moony:c2xc2 ,
+		moony:c4xc4 ;
 	pset:bank moony:bank-state ;
 	rdfs:label "State responder" ;
 	rdfs:seeAlso <presets.ttl> .
 
-# Tutorials
+# Bank tutorials
 moony:bank-tutorial_part-1
 	a pset:Preset ;
-	lv2:appliesTo moony:a1xa1 ;
+	lv2:appliesTo moony:a1xa1 ,
+		moony:a2xa2 ,
+		moony:a4xa4 ,
+		moony:c1a1xc1a1 ,
+		moony:c2a1xc2a1 ,
+		moony:c4a1xc4a1 ;
 	pset:bank moony:bank-tutorial ;
 	rdfs:label "Tutorial 1: MIDI Channel Blocker" ;
 	rdfs:seeAlso <presets.ttl> .
 
 moony:bank-tutorial_part-2
 	a pset:Preset ;
-	lv2:appliesTo moony:a1xa1 ;
+	lv2:appliesTo moony:a1xa1 ,
+		moony:a2xa2 ,
+		moony:a4xa4 ,
+		moony:c1a1xc1a1 ,
+		moony:c2a1xc2a1 ,
+		moony:c4a1xc4a1 ;
 	pset:bank moony:bank-tutorial ;
 	rdfs:label "Tutorial 2: MIDI Chorder" ;
 	rdfs:seeAlso <presets.ttl> .
 
 moony:bank-tutorial_part-3
 	a pset:Preset ;
-	lv2:appliesTo moony:a1xa1 ;
+	lv2:appliesTo moony:a1xa1 ,
+		moony:a2xa2 ,
+		moony:a4xa4 ,
+		moony:c1a1xc1a1 ,
+		moony:c2a1xc2a1 ,
+		moony:c4a1xc4a1 ;
 	pset:bank moony:bank-tutorial ;
 	rdfs:label "Tutorial 3: MIDI Sample & Hold" ;
 	rdfs:seeAlso <presets.ttl> .
 
 moony:bank-tutorial_part-4
 	a pset:Preset ;
-	lv2:appliesTo moony:a1xa1 ;
+	lv2:appliesTo moony:a1xa1 ,
+		moony:a2xa2 ,
+		moony:a4xa4 ,
+		moony:c1a1xc1a1 ,
+		moony:c2a1xc2a1 ,
+		moony:c4a1xc4a1 ;
 	pset:bank moony:bank-tutorial ;
 	rdfs:label "Tutorial 4: MIDI Arpeggiator" ;
 	rdfs:seeAlso <presets.ttl> .
 
 moony:bank-tutorial_part-5
 	a pset:Preset ;
-	lv2:appliesTo moony:a1xa1 ;
+	lv2:appliesTo moony:a1xa1 ,
+		moony:a2xa2 ,
+		moony:a4xa4 ,
+		moony:c1a1xc1a1 ,
+		moony:c2a1xc2a1 ,
+		moony:c4a1xc4a1 ;
 	pset:bank moony:bank-tutorial ;
 	rdfs:label "Tutorial 5: MIDI Velocity Curve Interpolater" ;
 	rdfs:seeAlso <presets.ttl> .
 
-# Templates
+# Bank templates
 moony:bank-template_part-1
 	a pset:Preset ;
-	lv2:appliesTo moony:a1xa1 ;
+	lv2:appliesTo moony:a1xa1 ,
+		moony:a2xa2 ,
+		moony:a4xa4 ,
+		moony:c1a1xc1a1 ,
+		moony:c2a1xc2a1 ,
+		moony:c4a1xc4a1 ;
 	pset:bank moony:bank-template;
 	rdfs:label "Template 1: MIDI Responder" ;
 	rdfs:seeAlso <presets.ttl> .
 
 moony:bank-template_part-2
 	a pset:Preset ;
-	lv2:appliesTo moony:a1xa1 ;
+	lv2:appliesTo moony:a1xa1 ,
+		moony:a2xa2 ,
+		moony:a4xa4 ,
+		moony:c1a1xc1a1 ,
+		moony:c2a1xc2a1 ,
+		moony:c4a1xc4a1 ;
 	pset:bank moony:bank-template;
 	rdfs:label "Template 2: Time Responder" ;
 	rdfs:seeAlso <presets.ttl> .
 
 moony:bank-template_part-3
 	a pset:Preset ;
-	lv2:appliesTo moony:a1xa1 ;
+	lv2:appliesTo moony:a1xa1 ,
+		moony:a2xa2 ,
+		moony:a4xa4 ,
+		moony:c1a1xc1a1 ,
+		moony:c2a1xc2a1 ,
+		moony:c4a1xc4a1 ;
 	pset:bank moony:bank-template;
 	rdfs:label "Template 3: OSC Responder" ;
 	rdfs:seeAlso <presets.ttl> .
 
 moony:bank-template_part-4
 	a pset:Preset ;
-	lv2:appliesTo moony:a1xa1 ;
+	lv2:appliesTo moony:a1xa1 ,
+		moony:a2xa2 ,
+		moony:a4xa4 ,
+		moony:c1a1xc1a1 ,
+		moony:c2a1xc2a1 ,
+		moony:c4a1xc4a1 ,
+		moony:c1xc1 ,
+		moony:c2xc2 ,
+		moony:c4xc4 ;
 	pset:bank moony:bank-template;
 	rdfs:label "Template 4: State Responder" ;
 	rdfs:seeAlso <presets.ttl> .
