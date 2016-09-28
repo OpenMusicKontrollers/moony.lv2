@@ -96,9 +96,6 @@ _run_period(lua_State *L, const char *cmd, Handle *handle, uint32_t nsamples,
 	{
 		lua_pushinteger(L, nsamples);
 
-		for(unsigned i=0; i<handle->max_val; i++)
-			lua_pushnumber(L, *handle->val_in[i]);
-
 		// push control / notify pair
 		{
 			latom_t *latom = moony_newuserdata(L, &handle->moony, MOONY_UDATA_ATOM, true);
@@ -110,6 +107,10 @@ _run_period(lua_State *L, const char *cmd, Handle *handle, uint32_t nsamples,
 			lforge->last.frames = 0;
 			lforge->forge = &handle->moony.notify_forge;
 		}
+
+		// push values
+		for(unsigned i=0; i<handle->max_val; i++)
+			lua_pushnumber(L, *handle->val_in[i]);
 
 		lua_call(L, 1 + handle->max_val + 2, LUA_MULTRET);
 

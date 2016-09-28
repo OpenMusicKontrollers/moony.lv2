@@ -72,7 +72,7 @@ moony:bank-through_control-through
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
-		moony:code """function run(n, ...)
+		moony:code """function run(n, control, notify, ...)
 	return ...
 end"""
 	] .
@@ -81,7 +81,7 @@ moony:bank-through_atom-through
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
-		moony:code """function run(n, seq, forge, ...)
+		moony:code """function run(n, control, notify, seq, forge, ...)
 	for frames, atom in seq:foreach() do
 		forge:time(frames):atom(atom)
 	end
@@ -94,7 +94,7 @@ moony:bank-through_atom-through2
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
-		moony:code """function run(n, seq1, forge1, seq2, forge2)
+		moony:code """function run(n, control, notify, seq1, forge1, seq2, forge2)
 	for frames, atom in seq1:foreach() do
 		forge1:time(frames):atom(atom)
 	end
@@ -109,7 +109,7 @@ moony:bank-through_atom-through4
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
-		moony:code """function run(n, seq1, forge1, seq2, forge2, seq3, forge3, seq4, forge4)
+		moony:code """function run(n, control, notify, seq1, forge1, seq2, forge2, seq3, forge3, seq4, forge4)
 	for frames, atom in seq1:foreach() do
 		forge1:time(frames):atom(atom)
 	end
@@ -132,7 +132,7 @@ moony:bank-multiplex_atom-multiplex2
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
-		moony:code """function run(n, seq1, forge1, seq2, forge2)
+		moony:code """function run(n, control, notify, seq1, forge1, seq2, forge2)
 	for frames, atom in seq1:foreach(seq2) do
 		forge1:time(frames):atom(atom)
 		forge2:time(frames):atom(atom)
@@ -144,7 +144,7 @@ moony:bank-multiplex_atom-multiplex4
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
-		moony:code """function run(n, seq1, forge1, seq2, forge2, seq3, forge3, seq4, forge4)
+		moony:code """function run(n, control, notify, seq1, forge1, seq2, forge2, seq3, forge3, seq4, forge4)
 	for frames, atom in seq1:foreach(seq2, seq3, seq4) do
 		forge1:time(frames):atom(atom)
 		forge2:time(frames):atom(atom)
@@ -167,7 +167,7 @@ moony:bank-midi_midi-responder
 	end
 })
 
-function run(n, seq, forge)
+function run(n, control, notify, seq, forge)
 	for frames, atom in seq:foreach() do
 		local handled = midiR(frames, forge, atom)
 	end
@@ -208,7 +208,7 @@ function apply(atom)
   timeR:apply(atom)
 end
 
-function run(n, seq, forge)
+function run(n, control, notify, seq, forge)
   local from = 0
   for frames, atom in seq:foreach() do
     timeR(from, frames, forge, atom)
@@ -231,7 +231,7 @@ moony:bank-osc_osc-responder
 	end
 })
 
-function run(n, seq, forge)
+function run(n, control, notify, seq, forge)
   for frames, atom in seq:foreach() do
     local handled = oscR(frames, forge, atom)
   end
@@ -399,11 +399,11 @@ function restore(atom)
   pURI[RDF.value] = Unmap[pURID[RDF.value]]
 end
 
-function once(n, seq, forge, control, notify)
+function once(n, control, notify, seq, forge)
   stateR:register(0, notify)
 end
 
-function run(n, seq, forge, control, notify)
+function run(n, control, notify, seq, forge)
   for frames, atom in control:foreach() do
     stateR(frames, notify, atom)
   end
@@ -435,7 +435,7 @@ for i, v in ipairs(channels) do
 	mask = mask | (1 << v) -- toggle bit of active channel
 end
 
-function run(n, seq, forge, control, notify)
+function run(n, control, notify, seq, forge)
 	for frames, atom in seq:foreach() do -- iterate over incoming events
 		local block = false -- assume a not-to-be-blocked event by default
 
@@ -485,7 +485,7 @@ local midiR = MIDIResponder({
 	[MIDI.NotePressure] = noteResponder(MIDI.NotePressure) -- and NotePressure
 }, true)
 
-function run(n, seq, forge, control, notify)
+function run(n, control, notify, seq, forge)
 	for frames, atom in seq:foreach() do -- iterate over incoming events
 		local handled = midiR(frames, forge, atom) -- call responder for event
 	end
@@ -572,7 +572,7 @@ function apply(atom)
 	end
 end
 
-function run(n, seq, forge, control, notify)
+function run(n, control, notify, seq, forge)
 	for frames, atom in seq:foreach() do -- iterate over incoming events
 		local handled = midiR(frames, forge, atom) -- call responder for event
 	end
@@ -652,7 +652,7 @@ local function dispatch(n, forge)
 	end
 end
 
-function run(n, seq, forge, control, notify)
+function run(n, control, notify, seq, forge)
 	for frames, atom in seq:foreach() do -- iterate over incoming events
 		local handled = midiR(frames, forge, atom) -- call responder for event
 	end
@@ -707,7 +707,7 @@ local midiR = MIDIResponder({
 	[MIDI.NoteOff] = note_responder(MIDI.NoteOff) -- and NoteOff
 }, true)
 
-function run(n, seq, forge, control, notify)
+function run(n, control, notify, seq, forge)
 	for frames, atom in seq:foreach() do -- iterate over incoming events
 		local handled = midiR(frames, forge, atom) -- call responder for event
 	end
@@ -783,7 +783,7 @@ local midiR = MIDIResponder({
 	end
 }, not block)
 
-function run(n, seq, forge, control, notify)
+function run(n, control, notify, seq, forge)
 	for frames, atom in seq:foreach() do -- iterate over incoming events
 		local handled = midiR(frames, forge, atom) -- call responder for event
 	end
@@ -834,7 +834,7 @@ function apply(atom)
 	timeR:apply(atom)
 end
 
-function run(n, seq, forge, control, notify)
+function run(n, control, notify, seq, forge)
 	local from = 0 -- initial frame offset
 
 	for to, atom in seq:foreach() do -- iterate over incoming events
@@ -863,7 +863,7 @@ local oscR = OSCResponder({
 	end
 })
 
-function run(n, seq, forge, control, notify)
+function run(n, control, notify, seq, forge)
 	for frames, atom in seq:foreach() do -- iterate over incoming events
 		local handled = oscR(frames, forge, atom) -- call responder for event
 	end
@@ -911,11 +911,11 @@ function restore(atom)
 end
 
 -- register parameters to UI
-function once(n, seq, forge, control, notify)
+function once(n, control, notify, seq, forge)
 	stateR:register(0, notify)
 end
 
-function run(n, seq, forge, control, notify)
+function run(n, control, notify, seq, forge)
 	for frames, atom in seq:foreach(control) do -- iterate over incoming events
 		local handled = stateR(frames, notify, atom)
 	end

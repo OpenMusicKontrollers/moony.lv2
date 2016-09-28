@@ -103,6 +103,18 @@ _run_period(lua_State *L, const char *cmd, Handle *handle, uint32_t nsamples,
 	{
 		lua_pushinteger(L, nsamples);
 
+		// push control / notify pair
+		{
+			latom_t *latom = moony_newuserdata(L, &handle->moony, MOONY_UDATA_ATOM, true);
+			latom->atom = (const LV2_Atom *)control;
+			latom->body.raw = LV2_ATOM_BODY_CONST(latom->atom);
+
+			lforge_t *lforge = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE, true);
+			lforge->depth = 0;
+			lforge->last.frames = 0;
+			lforge->forge = &handle->moony.notify_forge;
+		}
+
 		// push sequence / forge pair(s)
 		for(unsigned i=0; i<handle->max_val; i++)
 		{
@@ -114,18 +126,6 @@ _run_period(lua_State *L, const char *cmd, Handle *handle, uint32_t nsamples,
 			lforge->depth = 0;
 			lforge->last.frames = 0;
 			lforge->forge = &handle->forge[i];
-		}
-
-		// push control / notify pair
-		{
-			latom_t *latom = moony_newuserdata(L, &handle->moony, MOONY_UDATA_ATOM, true);
-			latom->atom = (const LV2_Atom *)control;
-			latom->body.raw = LV2_ATOM_BODY_CONST(latom->atom);
-
-			lforge_t *lforge = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE, true);
-			lforge->depth = 0;
-			lforge->last.frames = 0;
-			lforge->forge = &handle->moony.notify_forge;
 		}
 			
 		lua_call(L, 1 + 2*handle->max_val + 2, 0);

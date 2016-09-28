@@ -214,7 +214,7 @@
 		<a class="api-snippet" href="#snippet-run-c1xc1" data-snippet="snippet-run-c1xc1">&rArr; show snippet</a>
 		<pre class="api-hidden"><code id="snippet-run-c1xc1">-- C1 x C1 prototype 'run' function
 
-function run(n, c, control, notify)
+function run(n, control, notify, c)
 	return c
 end</code></pre>
 		</div></div>
@@ -226,7 +226,7 @@ end</code></pre>
 		<a class="api-snippet" href="#snippet-run-c2xc2" data-snippet="snippet-run-c2xc2">&rArr; show snippet</a>
 		<pre class="api-hidden"><code id="snippet-run-c2xc2">-- C2 x C2 prototype 'run' function
 
-function run(n, c1, c2, control, notify)
+function run(n, control, notify, c1, c2)
 	return c1, c2
 end</code></pre>
 		</div></div>
@@ -238,7 +238,7 @@ end</code></pre>
 		<a class="api-snippet" href="#snippet-run-c4xc4" data-snippet="snippet-run-c4xc4">&rArr; show snippet</a>
 		<pre class="api-hidden"><code id="snippet-run-c4xc4">-- C4 x C4 prototype 'run' function
 
-function run(n, c1, c2, c3, c4, control, notify)
+function run(n, control, notify, c1, c2, c3, c4)
 	return c1, c2, c3, c4
 end</code></pre>
 		</div></div>
@@ -250,7 +250,7 @@ end</code></pre>
 		<a class="api-snippet" href="#snippet-run-a1xa1" data-snippet="snippet-run-a1xa1">&rArr; show snippet</a>
 		<pre class="api-hidden"><code id="snippet-run-a1xa1">-- A1 x A1 prototype 'run' function
 
-function run(n, seq, forge, control, notify)
+function run(n, control, notify, seq, forge)
 end</code></pre>
 		</div></div>
 
@@ -261,7 +261,7 @@ end</code></pre>
 		<a class="api-snippet" href="#snippet-run-a2xa2" data-snippet="snippet-run-a2xa2">&rArr; show snippet</a>
 		<pre class="api-hidden"><code id="snippet-run-a2xa2">-- A2 x A2 prototype 'run' function
 
-function run(n, seq1, forge1, seq2, forge2, control, notify)
+function run(n, control, notify, seq1, forge1, seq2, forge2)
 end</code></pre>
 		</div></div>
 
@@ -272,7 +272,7 @@ end</code></pre>
 		<a class="api-snippet" href="#snippet-run-a4xa4" data-snippet="snippet-run-a4xa4">&rArr; show snippet</a>
 		<pre class="api-hidden"><code id="snippet-run-a4xa4">-- A4 x A4 prototype 'run' function
 
-function run(n, seq1, forge1, seq2, forge2, seq3, forge3, seq4, forge4, control, notify)
+function run(n, control, notify, seq1, forge1, seq2, forge2, seq3, forge3, seq4, forge4)
 end</code></pre>
 		</div></div>
 
@@ -284,7 +284,7 @@ end</code></pre>
 		<a class="api-snippet" href="#snippet-run-c1a1xc1a1" data-snippet="snippet-run-c1a1xc1a1">&rArr; show snippet</a>
 		<pre class="api-hidden"><code id="snippet-run-c1a1xc1a1">-- C1+A1 x C1+A1 prototype 'run' function
 
-function run(n, seq, forge, c, control, notify)
+function run(n, control, notify, seq, forge, c)
 	return c
 end</code></pre>
 		</div></div>
@@ -297,7 +297,7 @@ end</code></pre>
 		<a class="api-snippet" href="#snippet-run-c2a1xc2a1" data-snippet="snippet-run-c2a1xc2a1">&rArr; show snippet</a>
 		<pre class="api-hidden"><code id="snippet-run-c2a1xc2a1">-- C2+A1 x C2+A1 prototype 'run' function
 
-function run(n, seq, forge, c1, c2, control, notify)
+function run(n, control, notify, seq, forge, c1, c2)
 	return c1, c2
 end</code></pre>
 		</div></div>
@@ -310,7 +310,7 @@ end</code></pre>
 		<a class="api-snippet" href="#snippet-run-c4a1xc4a1" data-snippet="snippet-run-c4a1xc4a1">&rArr; show snippet</a>
 		<pre class="api-hidden"><code id="snippet-run-c4a1xc4a1">-- C4+A1 x C4+A1 prototype 'run' function
 
-function run(n, seq, forge, c1, c2, c3, c4, control, notify)
+function run(n, control, notify, seq, forge, c1, c2, c3, c4)
 	return c1, c2, c3, c4
 end</code></pre>
 		</div></div>
@@ -358,15 +358,15 @@ print('hello world')</code></pre>
 		return native Lua numbers, missing return values will be set to 0.0.</p>
 
 		<dl>
-			<dt class="func">function run(n, seq1, forge1, ..., c1, ..., control, notify)</dt>
+			<dt class="func">function run(n, control, notify, seq1, forge1, ..., c1, ...)</dt>
 			<dt>n (integer)</dt>
 				<dd>number of audio samples of current period</dd>
+			<dt>{control, notify} (userdata, userdata)</dt>
+				<dd>pair of atom sequence and atom forge object for communication with UI</dd>
 			<dt>{seq, forge} [x] (userdata, userdata)</dt>
 				<dd>pairs of atom sequence and atom forge objects, with x=[0, 1, 2, 4]</dd>
 			<dt>c [x] (number)</dt>
 				<dd>control port inputs, with x=[0, 1, 2, 4]</dd>
-			<dt>{control, notify} (userdata, userdata)</dt>
-				<dd>pair of atom sequence and atom forge object for communication with UI</dd>
 			<dt class="ret">(number)</dt>
 				<dd>control port outputs, with x=[0, 1, 2, 4]</dd>
 		</dl>
@@ -374,7 +374,7 @@ print('hello world')</code></pre>
 		<a class="api-snippet" href="#snippet-callback-run" data-snippet="snippet-callback-run">&rArr; show snippet</a>
 		<pre class="api-hidden"><code id="snippet-callback-run">-- 'run' callback prototype for moony#a1xa1
 
-function run(n, seq, forge, control, notify)
+function run(n, control, notify, seq, forge)
 	-- here we will process events
 end</code></pre>
 		</div></div>
@@ -393,21 +393,21 @@ end</code></pre>
 		a new <a href="#state-responder">StateResponder</a>.</p>
 
 		<dl>
-			<dt class="func">function once(n, seq1, forge1, ..., c1, ..., control, notify)</dt>
+			<dt class="func">function once(n, control, notify, seq1, forge1, ..., c1, ...)</dt>
 			<dt>n (integer)</dt>
 				<dd>number of audio samples of current period</dd>
+			<dt>{control, notify} (userdata, userdata)</dt>
+				<dd>pair of atom sequence and atom forge object for communication with UI</dd>
 			<dt>{seq, forge} [x] (userdata, userdata)</dt>
 				<dd>pairs of atom sequence and atom forge objects, with x=[0, 1, 2, 4]</dd>
 			<dt>c [x] (number)</dt>
 				<dd>control port inputs, with x=[0, 1, 2, 4]</dd>
-			<dt>{control, notify} (userdata, userdata)</dt>
-				<dd>pair of atom sequence and atom forge object for communication with UI</dd>
 		</dl>
 
 		<a class="api-snippet" href="#snippet-callback-once" data-snippet="snippet-callback-once">&rArr; show snippet</a>
 		<pre class="api-hidden"><code id="snippet-callback-once">-- 'once' callback prototype for moony#a1xa1
 
-function once(n, seq, forge, control, notify)
+function once(n, control, notify, seq, forge)
 	-- here we will run logic once right after a code update
 
 	-- send all-notes-off MIDI message on all channels
@@ -3221,7 +3221,7 @@ function restore(atom)
 end
 
 -- register state upon code reload
-function once(n, seq, forge)
+function once(n, control, notify, seq, forge)
 	assert(stateR:register(0, forge) == forge)
 end
 

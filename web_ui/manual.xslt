@@ -56,14 +56,18 @@ local function _test(produce, consume, check)
 
 	if once then
 		local n = 128
+		local _seq0 = Stash()
 		local _seq1 = Stash()
 		local _seq2 = Stash()
 		local _seq3 = Stash()
 		local _seq4 = Stash()
+		local _forge0 = Stash()
 		local _forge1 = Stash()
 		local _forge2 = Stash()
 		local _forge3 = Stash()
 		local _forge4 = Stash()
+		_seq0:sequence():pop()
+		_seq0:read()
 		_seq1:sequence():pop()
 		_seq1:read()
 		_seq2:sequence():pop()
@@ -73,19 +77,23 @@ local function _test(produce, consume, check)
 		_seq4:sequence():pop()
 		_seq4:read()
 
-		once(n, _seq1, _forge1, _seq2, _forge2, _seq3, _forge3, _seq4, _forge4)
+		once(n, _seq0, _forge0, _seq1, _forge1, _seq2, _forge2, _seq3, _forge3, _seq4, _forge4)
 	end
 
 	if run then
 		local n = 128
+		local _seq0 = Stash()
 		local _seq1 = Stash()
 		local _seq2 = Stash()
 		local _seq3 = Stash()
 		local _seq4 = Stash()
+		local _forge0 = Stash()
 		local _forge1 = Stash()
 		local _forge2 = Stash()
 		local _forge3 = Stash()
 		local _forge4 = Stash()
+		_seq0:sequence():pop()
+		_seq0:read()
 		_seq1:sequence():pop()
 		_seq1:read()
 		_seq2:sequence():pop()
@@ -95,7 +103,7 @@ local function _test(produce, consume, check)
 		_seq4:sequence():pop()
 		_seq4:read()
 
-		run(n, _seq1, _forge1, _seq2, _forge2, _seq3, _forge3, _seq4, _forge4)
+		run(n, _seq0, _forge0, _seq1, _forge1, _seq2, _forge2, _seq3, _forge3, _seq4, _forge4)
 	end
 end
 

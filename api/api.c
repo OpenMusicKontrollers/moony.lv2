@@ -980,7 +980,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	{
 		strcpy(moony->chunk,
 			"-- host does not support state:loadDefaultState feature\n\n"
-			"function run(n, ...)\n"
+			"function run(n, control, notify, ...)\n"
 			"end");
 	}
 	if(!moony->voice_map)
