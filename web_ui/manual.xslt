@@ -10,6 +10,10 @@ local function _test(produce, consume, check)
 		local _seq = _from:sequence()
 		produce.seq(_seq)
 		_seq:pop()
+	elseif produce.tup then
+		local _tup = _from:tuple()
+		produce.tup(_tup)
+		_tup:pop()
 	elseif produce.atom then
 		produce.atom(_from)
 	end
@@ -20,6 +24,10 @@ local function _test(produce, consume, check)
 		local _seq = _to:sequence()
 		consume.seq(128, _from, _seq)
 		_seq:pop()
+	elseif consume.tup then
+		local _tup = _to:tuple()
+		consume.tup(_from, _tup)
+		_tup:pop()
 	elseif consume.atom then
 		consume.atom(_from, _to)
 	end
@@ -121,11 +129,13 @@ do
 
 	local _produce = {
 		seq = produce_seq,
-		atom = produce_atom
+		atom = produce_atom,
+		tup = produce_tup
 	}
 	local _consume = {
 		seq = consume_seq,
-		atom = consume_atom
+		atom = consume_atom,
+		tup = consume_tup
 	}
 	_test(_produce, _consume, check)
 	collectgarbage()
