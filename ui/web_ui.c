@@ -1092,8 +1092,11 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	ui->controller = controller;
 
 	// LWS
+#if defined(USE_VERBOSE_LOG)
+	lws_set_log_level( (1 << LLL_COUNT) - 1, NULL);
+#else
 	lws_set_log_level(0, NULL);
-	//lws_set_log_level( (1 << LLL_COUNT) - 1, NULL);
+#endif
 
 	struct lws_context_creation_info info;
 	memset(&info, 0x0, sizeof(info));
