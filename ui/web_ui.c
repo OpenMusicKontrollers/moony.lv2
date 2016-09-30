@@ -1110,6 +1110,11 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	info.uid = -1;
 	info.max_http_header_pool = 1;
 	info.options = LWS_SERVER_OPTION_VALIDATE_UTF8;
+	info.ka_time = 10; // TCP keepalive period
+	info.ka_probes = 3; // TCP keepalive number of retries
+	info.ka_interval = 1; // TCP keepalive interval between retries
+	info.timeout_secs = 60; // roundtrip timeout
+
 	ui->context = lws_create_context(&info);
 	if(!ui->context)
 	{
