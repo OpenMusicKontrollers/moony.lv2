@@ -58,7 +58,7 @@ include(CMakeDependentOption)
 option(BUILD_SIMPLE_UI "Build simple external UI" OFF)
 option(BUILD_WEB_UI "Build web-based external UI" ON)
 option(USE_MANUAL_GC "Use manual garbage collection" OFF)
-option(USE_VERBOSE_LOG "Use verbose log for websocket" ON)
+option(USE_VERBOSE_LOG "Use verbose log for websocket" OFF)
 
 if(USE_MANUAL_GC)
 	add_definitions("-DUSE_MANUAL_GC")
