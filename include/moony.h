@@ -47,6 +47,8 @@
 #include <lv2/lv2plug.in/ns/extensions/ui/ui.h>
 #include <lv2/lv2plug.in/ns/extensions/units/units.h>
 
+#include <lv2_extensions.h>
+
 #include <api_vm.h>
 #include <osc.lv2/osc.h>
 #include <xpress.h>
@@ -271,6 +273,9 @@ struct _moony_t {
 
 	xpress_map_t *voice_map;
 
+	LV2_Inline_Display *queue_draw;
+	LV2_Inline_Display_Image_Surface image_surface;
+
 	moony_vm_t vm;
 
 	volatile int props_out;
@@ -284,11 +289,18 @@ struct _moony_t {
 
 	struct {
 		atomic_flag state;
+		atomic_flag render;
 	} lock;
 
 	LV2_Atom *state_atom;
 	LV2_Atom *stash_atom;
 	uint32_t stash_size;
+
+	struct {
+		LV2_Atom_Forge forge;
+		LV2_Atom *atom;
+		uint32_t size;
+	} render;
 
 	latom_driver_hash_t atom_driver_hash [DRIVER_HASH_MAX];
 

@@ -477,6 +477,49 @@ _ldecrypt(lua_State *L)
 	return 1;
 }
 
+static int
+_lqueue_draw(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	
+	lua_settop(L, 1); // ignore superfluous arguments
+
+	if(moony->queue_draw && lua_isfunction(L, 1) && _try_lock(&moony->lock.render) )
+	{
+		lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, true);
+		lframe->depth = 0;
+		lframe->last.frames = 0;
+		lframe->forge = &moony->render.forge;
+
+		atom_ser_t ser = {
+			.moony = moony,
+			.size = 1024,
+			.offset = 0
+		};
+		ser.buf = moony_alloc(moony, ser.size);
+
+		if(ser.buf)
+		{
+			memset(ser.buf, 0x0, sizeof(LV2_Atom));
+
+			lv2_atom_forge_set_sink(lframe->forge, _sink, _deref, &ser);
+			lua_call(L, 1, 0);
+
+			if(moony->render.atom)
+				moony_free(moony, moony->render.atom, moony->render.size);
+			LV2_Atom *atom = (LV2_Atom *)ser.buf;
+			moony->render.atom = atom;
+			moony->render.size = ser.size;
+
+			moony->queue_draw->queue_draw(moony->queue_draw->handle);
+		}
+
+		_unlock(&moony->lock.render);
+	}
+
+	return 0;
+}
+
 LV2_Atom_Forge_Ref
 _sink(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
 {
@@ -917,6 +960,198 @@ static const LV2_Worker_Interface work_iface = {
 	.end_run = _end_run
 };
 
+// Xiaolin Wu's line algorithm
+static inline void
+_wu_plot(uint32_t *surf, uint32_t stride, int x, int y, float c, uint32_t col)
+{
+	const uint32_t a = ( 0xff ); //TODO
+	const uint32_t r = ( (col >> 16) & 0xff ) * c;
+	const uint32_t g = ( (col >> 8) & 0xff ) * c;
+	const uint32_t b = ( (col >> 0) & 0xff ) * c;
+	surf[y*stride + x] = (a << 24) | (r << 16) | (g << 8) | (b << 0);
+}
+
+static inline int
+_wu_ipart(float x)
+{
+	return (int)x;
+}
+
+static inline int
+_wu_round(float x)
+{
+	return _wu_ipart(x + 0.5);
+}
+
+static inline float
+_wu_fpart(float x)
+{
+	if(x < 0.f)
+		return 1.f - (x - floor(x));
+	return x - floor(x);
+}
+
+static inline float
+_wu_rfpart(float x)
+{
+	return 1.f - _wu_fpart(x);
+}
+
+static inline void
+_wu_swap(float *a, float *b)
+{
+	const float c = *a;
+	*a = *b;
+	*b = c;
+}
+
+static inline void
+_wu_line(uint32_t *surf, uint32_t stride, float x0, float y0, float x1, float y1, uint32_t col)
+{
+	const bool steep = fabs(y1 - y0) > fabs(x1 - x0);
+
+	if(steep)
+	{
+		_wu_swap(&x0, &y0);
+		_wu_swap(&x1, &y1);
+	}
+
+	if(x0 > x1)
+	{
+		_wu_swap(&x0, &x1);
+		_wu_swap(&y0, &y1);
+	}
+
+	const float dx = x1 - x0;
+	const float dy = y1 - y0;
+	const float gradient = dy / dx;
+
+	// handle first endpoint
+	float xend = round(x0);
+	float yend = y0 + gradient * (xend - x0);
+	float xgap = _wu_rfpart(x0 + 0.5);
+	const int xpxl1 = xend;
+	const int ypxl1 = _wu_ipart(yend);
+
+	if(steep)
+	{
+		_wu_plot(surf, stride, ypxl1,   xpxl1, _wu_rfpart(yend) * xgap, col);
+		_wu_plot(surf, stride, ypxl1+1, xpxl1,  _wu_fpart(yend) * xgap, col);
+	}
+	else
+	{
+		_wu_plot(surf, stride, xpxl1, ypxl1,   _wu_rfpart(yend) * xgap, col);
+		_wu_plot(surf, stride, xpxl1, ypxl1+1,  _wu_fpart(yend) * xgap, col);
+	}
+	float intery = yend + gradient;
+
+	// handle second point
+	xend = round(x1);
+	yend = y1 + gradient * (xend - x1);
+	xgap = _wu_fpart(x1 + 0.5);
+	const int xpxl2 = xend;
+	const int ypxl2 = _wu_ipart(yend);
+
+	if(steep)
+	{
+		_wu_plot(surf, stride, ypxl2,   xpxl2, _wu_rfpart(yend) * xgap, col);
+		_wu_plot(surf, stride, ypxl2+1, xpxl2,  _wu_fpart(yend) * xgap, col);
+	}
+	else
+	{
+		_wu_plot(surf, stride, xpxl2, ypxl2, _wu_rfpart(yend) * xgap, col);
+		_wu_plot(surf, stride, xpxl2, ypxl2+1,  _wu_fpart(yend) * xgap, col);
+	}
+
+	// main loop
+	if(steep)
+	{
+		for(int x=xpxl1+1; x<=xpxl2-1; x++, intery+=gradient)
+		{
+			_wu_plot(surf, stride, _wu_ipart(intery), x, _wu_rfpart(intery), col);
+			_wu_plot(surf, stride, _wu_ipart(intery)+1, x, _wu_fpart(intery), col);
+		}
+	}
+	else
+	{
+		for(int x=xpxl1+1; x<=xpxl2-1; x++, intery+=gradient)
+		{
+			_wu_plot(surf, stride, x, _wu_ipart(intery), _wu_rfpart(intery), col);
+			_wu_plot(surf, stride, x, _wu_ipart(intery)+1, _wu_fpart(intery), col);
+		}
+	}
+}
+
+// non-rt
+static LV2_Inline_Display_Image_Surface *
+_render(LV2_Handle instance, uint32_t w, uint32_t h)
+{
+	moony_t *moony = instance;
+
+	// prepare pixel surface in all cases
+	LV2_Inline_Display_Image_Surface *surf = &moony->image_surface;
+
+	if( (surf->width != (int)w) || (surf->height > (int)h) || !surf->data)
+	{
+		surf->width = w;
+		surf->height = w > h ? h : w; // use ratio 1:1
+		surf->stride = surf->width * sizeof(uint32_t);
+		surf->data = realloc(surf->data, surf->stride * surf->height);
+		if(!surf->data)
+			return NULL;
+	}
+	memset(surf->data, 0x0, surf->stride * surf->height);
+
+	const float y2 = surf->height - 1;
+	bool first = true;
+	float x0 = 0.f;
+	float y0 = 0.f;
+
+	_spin_lock(&moony->lock.render)
+	if(moony->render.atom && (moony->render.atom->type == moony->render.forge.Tuple))
+	{
+		LV2_ATOM_TUPLE_FOREACH((const LV2_Atom_Tuple *)moony->render.atom, point)
+		{
+			if(point->type == moony->render.forge.Tuple)
+			{
+				const LV2_Atom_Tuple *tup = (const LV2_Atom_Tuple*)point;
+				const LV2_Atom *X = lv2_atom_tuple_begin(tup);
+				const LV2_Atom *Y = lv2_atom_tuple_is_end(LV2_ATOM_BODY_CONST(tup), tup->atom.size, X)
+					? NULL
+					: lv2_atom_tuple_next(X);
+				const LV2_Atom *C = lv2_atom_tuple_is_end(LV2_ATOM_BODY_CONST(tup), tup->atom.size, Y)
+					? NULL
+					: lv2_atom_tuple_next(Y);
+				if(  X && (X->type == moony->render.forge.Float)
+					&& Y && (Y->type == moony->render.forge.Float) )
+				{
+					const float x1 = ((const LV2_Atom_Float *)X)->body * (surf->width-1);
+					const float y1 = ((const LV2_Atom_Float *)Y)->body * (surf->height-1);
+					const int64_t c = C && (C->type == moony->render.forge.Long)
+						? ((const LV2_Atom_Long *)C)->body
+						: 0xffffff;
+					if(first)
+						first = false;
+					else
+						_wu_line((uint32_t *)surf->data, surf->width, x0, y2-y0, x1, y2-y1, c);
+
+					x0 = x1;
+					y0 = y1;
+				}
+			}
+		}
+	}
+	else
+		surf = NULL;
+
+	_unlock(&moony->lock.render);
+	return surf;
+}
+
+static const LV2_Inline_Display_Interface inlinedisplay_iface = {
+	.render = _render
+};
+
 const void*
 extension_data(const char* uri)
 {
@@ -924,6 +1159,8 @@ extension_data(const char* uri)
 		return &work_iface;
 	else if(!strcmp(uri, LV2_STATE__interface))
 		return &state_iface;
+	else if(!strcmp(uri, LV2_INLINEDISPLAY__interface))
+		return &inlinedisplay_iface;
 	else
 		return NULL;
 }
@@ -959,6 +1196,8 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 			load_default_state = true;
 		else if(!strcmp(features[i]->URI, XPRESS_VOICE_MAP))
 			moony->voice_map = features[i]->data;
+		else if(!strcmp(features[i]->URI, LV2_INLINEDISPLAY__queue_draw))
+			moony->queue_draw = features[i]->data;
 	}
 
 	if(!moony->map)
@@ -1042,6 +1281,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	lv2_atom_forge_init(&moony->forge, moony->map);
 	lv2_atom_forge_init(&moony->state_forge, moony->map);
 	lv2_atom_forge_init(&moony->stash_forge, moony->map);
+	lv2_atom_forge_init(&moony->render.forge, moony->map);
 	lv2_atom_forge_init(&moony->notify_forge, moony->map);
 	if(moony->log)
 		lv2_log_logger_init(&moony->logger, moony->map, moony->log);
@@ -1117,6 +1357,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->props_out = 1; // trigger update of UI
 
 	atomic_flag_clear_explicit(&moony->lock.state, memory_order_relaxed);
+	atomic_flag_clear_explicit(&moony->lock.render, memory_order_relaxed);
 
 	moony_freeuserdata(moony);
 
@@ -1134,6 +1375,15 @@ moony_deinit(moony_t *moony)
 		moony_free(moony, moony->stash_atom, moony->stash_size);
 	moony->stash_atom = NULL;
 	moony->stash_size = 0;
+
+	if(moony->render.atom)
+		moony_free(moony, moony->render.atom, moony->render.size);
+	moony->render.atom = NULL;
+	moony->render.size = 0;
+
+	if(moony->image_surface.data)
+		free(moony->image_surface.data);
+	moony->image_surface.data = NULL;
 
 	moony_vm_deinit(&moony->vm);
 }
@@ -1610,6 +1860,10 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 
 	lua_pushcclosure(L, _ldecrypt, 0);
 	lua_setglobal(L, "decrypt");
+
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	lua_pushcclosure(L, _lqueue_draw, 1);
+	lua_setglobal(L, "draw");
 
 #undef SET_MAP
 }

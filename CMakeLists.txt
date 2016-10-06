@@ -5,6 +5,7 @@ project(moony.lv2)
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/tlsf-3.0)
 include_directories(${PROJECT_SOURCE_DIR}/kx.lv2)
+include_directories(${PROJECT_SOURCE_DIR}/ardour.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/osc.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/timely.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/xpress.lv2)
@@ -31,6 +32,8 @@ set(CMAKE_C_FLAGS "-Wshadow -Wimplicit-function-declaration -Wredundant-decls -W
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-z,defs ${CMAKE_MODULE_LINKER_FLAGS}")
 	set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-z,nodelete ${CMAKE_MODULE_LINKER_FLAGS}")
+elseif(WIN32)
+	set(CMAKE_C_FLAGS "-mstackrealign -mpreferred-stack-boundary=2 ${CMAKE_C_FLAGS}")
 endif()
 add_definitions("-D_GNU_SOURCE=1") # asprintf
 
@@ -49,9 +52,11 @@ endif()
 
 find_package(PkgConfig) # ${PKG_CONFIG_FOUND}
 
+set(LIBS m)
+
 pkg_search_module(LV2 REQUIRED lv2>=1.10)
 include_directories(${LV2_INCLUDE_DIRS})
-set(LIBS ${LIBS} ${LV2_LDFLAGS} m)
+set(LIBS ${LIBS} ${LV2_LDFLAGS})
 
 # options
 include(CMakeDependentOption)
