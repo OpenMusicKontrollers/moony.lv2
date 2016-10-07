@@ -33,7 +33,7 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-z,defs ${CMAKE_MODULE_LINKER_FLAGS}")
 	set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-z,nodelete ${CMAKE_MODULE_LINKER_FLAGS}")
 elseif(WIN32)
-	set(CMAKE_C_FLAGS "-mstackrealign -mpreferred-stack-boundary=2 ${CMAKE_C_FLAGS}")
+	set(CMAKE_C_FLAGS "-mstackrealign ${CMAKE_C_FLAGS}")
 endif()
 add_definitions("-D_GNU_SOURCE=1") # asprintf
 
@@ -52,7 +52,7 @@ endif()
 
 find_package(PkgConfig) # ${PKG_CONFIG_FOUND}
 
-set(LIBS m)
+set(LIBS ${LIBS} m)
 
 pkg_search_module(LV2 REQUIRED lv2>=1.10)
 include_directories(${LV2_INCLUDE_DIRS})
