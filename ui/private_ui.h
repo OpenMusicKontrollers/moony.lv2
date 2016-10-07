@@ -112,6 +112,7 @@ _spawn_spawn(spawn_t *spawn, char **args)
 		cmd = strcat(cmd, " ");
 	}
 
+	int ret = 0;
 	if(!CreateProcess(
 		NULL,           // No module name (use command line)
 		cmd,            // Command line
@@ -127,12 +128,12 @@ _spawn_spawn(spawn_t *spawn, char **args)
 	{
 		if(spawn->logger)
 			lv2_log_error(spawn->logger, "CreateProcess failed: %d\n", GetLastError());
-		return -1;
+		ret = -1;
 	}
 
 	free(cmd);
 
-	return 0;
+	return ret;
 }
 
 static inline int

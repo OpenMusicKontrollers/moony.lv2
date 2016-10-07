@@ -15,6 +15,7 @@
  * http://www.perlfoundation.org/artistic_license_2_0.
  */
 
+#include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -144,6 +145,7 @@ struct _ui_t {
 
 	struct lws_context *context;
 	client_t *client;
+	atomic_flag lock;
 
 	jsatom_t jsatom;
 };
@@ -297,7 +299,7 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 				return -1;
 			}
 
-#if defined(_WIN32)
+#if 0
 			const char *sep = ui->bundle_path[strlen(ui->bundle_path) - 1] == '\\' ? "" : "\\";
 			const char *sep2 = "\\";
 #else
@@ -325,11 +327,6 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 			break;
 		}
 
-		case LWS_CALLBACK_HTTP_BODY:
-		{
-			break;
-		}
-
 		case LWS_CALLBACK_HTTP_BODY_COMPLETION:
 		{
 			lws_return_http_status(wsi, HTTP_STATUS_OK, NULL);
@@ -342,16 +339,20 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 			goto try_to_reuse;
 		}
 
-		case LWS_CALLBACK_HTTP_WRITEABLE:
-			// fall-through
-		case LWS_CALLBACK_FILTER_NETWORK_CONNECTION:
-			// fall-through
 		case LWS_CALLBACK_LOCK_POLL:
-			// fall-through
+		{
+			while(atomic_flag_test_and_set_explicit(&ui->lock, memory_order_acquire))
+			{
+				// spin
+			}
+			break;
+		}
 		case LWS_CALLBACK_UNLOCK_POLL:
-			// fall-through
-		case LWS_CALLBACK_GET_THREAD_ID:
-			// fall-through
+		{
+			atomic_flag_clear_explicit(&ui->lock, memory_order_release);
+			break;
+		}
+
 		default:
 		{
 			break;
@@ -473,6 +474,20 @@ callback_lv2(struct lws *wsi, enum lws_callback_reasons reason,
 			ui->client = NULL;
 			ui->done = 1;
 
+			break;
+		}
+
+		case LWS_CALLBACK_LOCK_POLL:
+		{
+			while(atomic_flag_test_and_set_explicit(&ui->lock, memory_order_acquire))
+			{
+				// spin
+			}
+			break;
+		}
+		case LWS_CALLBACK_UNLOCK_POLL:
+		{
+			atomic_flag_clear_explicit(&ui->lock, memory_order_release);
 			break;
 		}
 
@@ -1092,6 +1107,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	ui->controller = controller;
 
 	// LWS
+	atomic_flag_clear_explicit(&ui->lock, memory_order_relaxed);
 #if defined(USE_VERBOSE_LOG)
 	lws_set_log_level( (1 << LLL_COUNT) - 1, NULL);
 #else
@@ -1108,7 +1124,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 
 	info.gid = -1;
 	info.uid = -1;
-	info.max_http_header_pool = 1;
+	info.max_http_header_pool = 32;
 	info.options = LWS_SERVER_OPTION_VALIDATE_UTF8;
 	info.ka_time = 10; // TCP keepalive period
 	info.ka_probes = 3; // TCP keepalive number of retries
