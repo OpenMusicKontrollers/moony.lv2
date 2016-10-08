@@ -25,10 +25,6 @@
 #include <aes.h>
 #include <osc.lv2/endian.h>
 
-#ifdef BUILD_INLINE_DISPLAY
-#	include <cairo.h>
-#endif
-
 #include <api_atom.h>
 #include <api_forge.h>
 #include <api_stash.h>
@@ -37,14 +33,29 @@
 #include <api_time.h>
 #include <api_state.h>
 
-#define RDF_PREFIX "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-#define RDFS_PREFIX "http://www.w3.org/2000/01/rdf-schema#"
+#define RDF_PREFIX    "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+#define RDFS_PREFIX   "http://www.w3.org/2000/01/rdf-schema#"
+#define CANVAS_PREFIX MOONY_URI"#canvas#"
 
-#define RDF__value RDF_PREFIX"value"
-#define RDF__type RDF_PREFIX"type"
-#define RDFS__label RDFS_PREFIX"label"
-#define RDFS__range RDFS_PREFIX"range"
+#define RDF__value    RDF_PREFIX"value"
+#define RDF__type     RDF_PREFIX"type"
+#define RDFS__label   RDFS_PREFIX"label"
+#define RDFS__range   RDFS_PREFIX"range"
 #define RDFS__comment RDFS_PREFIX"comment"
+
+#define CANVAS__body      CANVAS_PREFIX"body"
+#define CANVAS__moveTo    CANVAS_PREFIX"moveTo"
+#define CANVAS__lineTo    CANVAS_PREFIX"lineTo"
+#define CANVAS__rectangle CANVAS_PREFIX"rectangle"
+#define CANVAS__arc       CANVAS_PREFIX"arc"
+#define CANVAS__curveTo   CANVAS_PREFIX"curveTo"
+#define CANVAS__color     CANVAS_PREFIX"color"
+#define CANVAS__lineWidth CANVAS_PREFIX"lineWidth"
+#define CANVAS__closePath CANVAS_PREFIX"closePath"
+#define CANVAS__stroke    CANVAS_PREFIX"stroke"
+#define CANVAS__fill      CANVAS_PREFIX"fill"
+#define CANVAS__fontSize  CANVAS_PREFIX"fontSize"
+#define CANVAS__showText  CANVAS_PREFIX"showText"
 
 #ifndef LV2_PATCH__Copy
 #	define LV2_PATCH__Copy LV2_PATCH_PREFIX "Copy"
@@ -485,12 +496,13 @@ static int
 _lqueue_draw(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	
-	lua_settop(L, 1); // ignore superfluous arguments
+
+	const int n = lua_gettop(L);
 
 	if(moony->queue_draw && lua_isfunction(L, 1) && _try_lock(&moony->lock.render) )
 	{
 		lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, true);
+		lua_insert(L, 2); // insert at position 2
 		lframe->depth = 0;
 		lframe->last.frames = 0;
 		lframe->forge = &moony->render.forge;
@@ -507,7 +519,7 @@ _lqueue_draw(lua_State *L)
 			memset(ser.buf, 0x0, sizeof(LV2_Atom));
 
 			lv2_atom_forge_set_sink(lframe->forge, _sink, _deref, &ser);
-			lua_call(L, 1, 0);
+			lua_call(L, n, 0);
 
 			if(moony->render.atom)
 				moony_free(moony, moony->render.atom, moony->render.size);
@@ -965,125 +977,164 @@ static const LV2_Worker_Interface work_iface = {
 };
 
 #ifdef BUILD_INLINE_DISPLAY
-// Xiaolin Wu's line algorithm
 static inline void
-_wu_plot(uint32_t *surf, uint32_t stride, int x, int y, float c, uint32_t col)
+_render_cmd(moony_t *moony, cairo_t *ctx, const LV2_Atom_Object *obj)
 {
-	const uint32_t a = ( 0xff ); //TODO
-	const uint32_t r = ( (col >> 16) & 0xff ) * c;
-	const uint32_t g = ( (col >> 8) & 0xff ) * c;
-	const uint32_t b = ( (col >> 0) & 0xff ) * c;
-	surf[y*stride + x] = (a << 24) | (r << 16) | (g << 8) | (b << 0);
-}
-
-static inline int
-_wu_ipart(float x)
-{
-	return (int)x;
-}
-
-static inline int
-_wu_round(float x)
-{
-	return _wu_ipart(x + 0.5);
-}
-
-static inline float
-_wu_fpart(float x)
-{
-	if(x < 0.f)
-		return 1.f - (x - floor(x));
-	return x - floor(x);
-}
-
-static inline float
-_wu_rfpart(float x)
-{
-	return 1.f - _wu_fpart(x);
-}
-
-static inline void
-_wu_swap(float *a, float *b)
-{
-	const float c = *a;
-	*a = *b;
-	*b = c;
-}
-
-static inline void
-_wu_line(uint32_t *surf, uint32_t stride, float x0, float y0, float x1, float y1, uint32_t col)
-{
-	const bool steep = fabs(y1 - y0) > fabs(x1 - x0);
-
-	if(steep)
+	//FIXME binary search for obj.body.otype
+	if(obj->body.otype == moony->uris.canvas_closePath)
 	{
-		_wu_swap(&x0, &y0);
-		_wu_swap(&x1, &y1);
+		cairo_close_path(ctx);
+		return;
+	}
+	else if(obj->body.otype == moony->uris.canvas_stroke)
+	{
+		cairo_stroke(ctx);
+		return;
+	}
+	else if(obj->body.otype == moony->uris.canvas_fill)
+	{
+		cairo_fill(ctx);
+		return;
 	}
 
-	if(x0 > x1)
+	const LV2_Atom *body = NULL;
+
+	lv2_atom_object_get(obj, moony->uris.canvas_body, &body, 0);
+
+	if(!body)
+		return;
+
+	const LV2_Atom_Vector *vec = (const LV2_Atom_Vector *)body;
+	const float *flt = LV2_ATOM_CONTENTS_CONST(LV2_Atom_Vector, vec);
+	const size_t n = (vec->atom.type == moony->render.forge.Vector)
+		&& (vec->body.child_type == moony->render.forge.Float)
+		? (vec->atom.size - sizeof(LV2_Atom_Vector_Body)) / vec->body.child_size
+		: 0;
+
+	if(obj->body.otype == moony->uris.canvas_moveTo)
 	{
-		_wu_swap(&x0, &x1);
-		_wu_swap(&y0, &y1);
+		if(n >= 2)
+			cairo_move_to(ctx, flt[0], flt[1]);
 	}
-
-	const float dx = x1 - x0;
-	const float dy = y1 - y0;
-	const float gradient = dy / dx;
-
-	// handle first endpoint
-	float xend = round(x0);
-	float yend = y0 + gradient * (xend - x0);
-	float xgap = _wu_rfpart(x0 + 0.5);
-	const int xpxl1 = xend;
-	const int ypxl1 = _wu_ipart(yend);
-
-	if(steep)
+	else if(obj->body.otype == moony->uris.canvas_lineTo)
 	{
-		_wu_plot(surf, stride, ypxl1,   xpxl1, _wu_rfpart(yend) * xgap, col);
-		_wu_plot(surf, stride, ypxl1+1, xpxl1,  _wu_fpart(yend) * xgap, col);
+		if(n >= 2)
+			cairo_line_to(ctx, flt[0], flt[1]);
 	}
-	else
+	else if(obj->body.otype == moony->uris.canvas_rectangle)
 	{
-		_wu_plot(surf, stride, xpxl1, ypxl1,   _wu_rfpart(yend) * xgap, col);
-		_wu_plot(surf, stride, xpxl1, ypxl1+1,  _wu_fpart(yend) * xgap, col);
+		if(n >= 4)
+			cairo_rectangle(ctx, flt[0], flt[1], flt[2], flt[3]);
 	}
-	float intery = yend + gradient;
-
-	// handle second point
-	xend = round(x1);
-	yend = y1 + gradient * (xend - x1);
-	xgap = _wu_fpart(x1 + 0.5);
-	const int xpxl2 = xend;
-	const int ypxl2 = _wu_ipart(yend);
-
-	if(steep)
+	else if(obj->body.otype == moony->uris.canvas_arc)
 	{
-		_wu_plot(surf, stride, ypxl2,   xpxl2, _wu_rfpart(yend) * xgap, col);
-		_wu_plot(surf, stride, ypxl2+1, xpxl2,  _wu_fpart(yend) * xgap, col);
+		if(n >= 3)
+			cairo_arc(ctx, flt[0], flt[1], flt[2],
+				n >= 4 ? flt[3] : 0.0,
+				n >= 5 ? flt[4] : 2*M_PI);
 	}
-	else
+	else if(obj->body.otype == moony->uris.canvas_curveTo)
 	{
-		_wu_plot(surf, stride, xpxl2, ypxl2, _wu_rfpart(yend) * xgap, col);
-		_wu_plot(surf, stride, xpxl2, ypxl2+1,  _wu_fpart(yend) * xgap, col);
+		if(n >= 6)
+			cairo_curve_to(ctx, flt[0], flt[1], flt[2], flt[3], flt[4], flt[5]);
 	}
-
-	// main loop
-	if(steep)
+	else if(obj->body.otype == moony->uris.canvas_color)
 	{
-		for(int x=xpxl1+1; x<=xpxl2-1; x++, intery+=gradient)
+		const LV2_Atom_Long *col = body->type == moony->render.forge.Long
+			? (const LV2_Atom_Long *)body
+			: NULL;
+		if(col)
+			cairo_set_source_rgba(ctx,
+				(float)((col->body >> 16) & 0xff) / 0xff,
+				(float)((col->body >>  8) & 0xff) / 0xff,
+				(float)((col->body >>  0) & 0xff) / 0xff,
+				(float)((col->body >> 24) & 0xff) / 0xff);
+	}
+	else if(obj->body.otype == moony->uris.canvas_lineWidth)
+	{
+		const LV2_Atom_Float *w = body->type == moony->render.forge.Float
+			? (const LV2_Atom_Float *)body
+			: NULL;
+		if(w)
+			cairo_set_line_width(ctx, w->body);
+	}
+	else if(obj->body.otype == moony->uris.canvas_fontSize)
+	{
+		const LV2_Atom_Float *sz = body->type == moony->render.forge.Float
+			? (const LV2_Atom_Float *)body
+			: NULL;
+		if(sz)
+			cairo_set_font_size(ctx, sz->body);
+	}
+	else if(obj->body.otype == moony->uris.canvas_showText)
+	{
+		const char *str = body->type == moony->render.forge.String
+			? LV2_ATOM_BODY_CONST(body)
+			: NULL;
+		if(str)
 		{
-			_wu_plot(surf, stride, _wu_ipart(intery), x, _wu_rfpart(intery), col);
-			_wu_plot(surf, stride, _wu_ipart(intery)+1, x, _wu_fpart(intery), col);
+			cairo_text_extents_t extents;
+			cairo_text_extents (ctx, str, &extents);
+			const float dx = (extents.width/2 + extents.x_bearing);
+			const float dy = (extents.height/2 + extents.y_bearing);
+			cairo_rel_move_to(ctx, -dx, -dy);
+			cairo_show_text(ctx, str);
 		}
 	}
-	else
+}
+
+static inline LV2_Inline_Display_Image_Surface *
+_cairo_init(moony_t *moony, int w, int h)
+{
+	LV2_Inline_Display_Image_Surface *surf = &moony->image_surface;
+
+	surf->width = w;
+	surf->height = w > h ? h : w; // try to use 1:1 ratio
+	surf->stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, surf->width);
+	surf->data = realloc(surf->data, surf->stride * surf->height);
+	if(!surf->data)
+		return NULL;
+
+	moony->cairo.surface = NULL; //FIXME
+	moony->cairo.surface = cairo_image_surface_create_for_data(
+		surf->data, CAIRO_FORMAT_ARGB32, surf->width, surf->height, surf->stride);
+
+	if(moony->cairo.surface)
 	{
-		for(int x=xpxl1+1; x<=xpxl2-1; x++, intery+=gradient)
+		cairo_surface_set_device_scale(moony->cairo.surface, surf->width, surf->height);
+		
+		moony->cairo.ctx = cairo_create(moony->cairo.surface);
+		if(moony->cairo.ctx)
 		{
-			_wu_plot(surf, stride, x, _wu_ipart(intery), _wu_rfpart(intery), col);
-			_wu_plot(surf, stride, x, _wu_ipart(intery)+1, _wu_fpart(intery), col);
+			cairo_select_font_face(moony->cairo.ctx, "cairo:monospace", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
 		}
+	}
+
+	return surf;
+}
+
+static inline void
+_cairo_deinit(moony_t *moony)
+{
+	LV2_Inline_Display_Image_Surface *surf = &moony->image_surface;
+
+	if(moony->cairo.ctx)
+	{
+		cairo_destroy(moony->cairo.ctx);
+		moony->cairo.ctx = NULL;
+	}
+
+	if(moony->cairo.surface)
+	{
+		cairo_surface_finish(moony->cairo.surface);
+		cairo_surface_destroy(moony->cairo.surface);
+		moony->cairo.surface = NULL;
+	}
+
+	if(surf->data)
+	{
+		free(surf->data);
+		surf->data = NULL;
 	}
 }
 #endif
@@ -1100,58 +1151,41 @@ _render(LV2_Handle instance, uint32_t w, uint32_t h)
 
 	if( (surf->width != (int)w) || (surf->height > (int)h) || !surf->data)
 	{
-		surf->width = w;
-		surf->height = w > h ? h : w; // use ratio 1:1
-		surf->stride = surf->width * sizeof(uint32_t);
-		surf->data = realloc(surf->data, surf->stride * surf->height);
-		if(!surf->data)
-			return NULL;
+		_cairo_deinit(moony);
+		surf = _cairo_init(moony, w, h);
 	}
-	memset(surf->data, 0x0, surf->stride * surf->height);
 
-	const float y2 = surf->height - 1;
-	bool first = true;
-	float x0 = 0.f;
-	float y0 = 0.f;
+	if(!surf)
+		return NULL;
 
 	_spin_lock(&moony->lock.render)
 	if(moony->render.atom && (moony->render.atom->type == moony->render.forge.Tuple))
 	{
-		LV2_ATOM_TUPLE_FOREACH((const LV2_Atom_Tuple *)moony->render.atom, point)
-		{
-			if(point->type == moony->render.forge.Tuple)
-			{
-				const LV2_Atom_Tuple *tup = (const LV2_Atom_Tuple*)point;
-				const LV2_Atom *X = lv2_atom_tuple_begin(tup);
-				const LV2_Atom *Y = lv2_atom_tuple_is_end(LV2_ATOM_BODY_CONST(tup), tup->atom.size, X)
-					? NULL
-					: lv2_atom_tuple_next(X);
-				const LV2_Atom *C = lv2_atom_tuple_is_end(LV2_ATOM_BODY_CONST(tup), tup->atom.size, Y)
-					? NULL
-					: lv2_atom_tuple_next(Y);
-				if(  X && (X->type == moony->render.forge.Float)
-					&& Y && (Y->type == moony->render.forge.Float) )
-				{
-					const float x1 = ((const LV2_Atom_Float *)X)->body * (surf->width-1);
-					const float y1 = ((const LV2_Atom_Float *)Y)->body * (surf->height-1);
-					const int64_t c = C && (C->type == moony->render.forge.Long)
-						? ((const LV2_Atom_Long *)C)->body
-						: 0xffffff;
-					if(first)
-						first = false;
-					else
-						_wu_line((uint32_t *)surf->data, surf->width, x0, y2-y0, x1, y2-y1, c);
+		// clear surface
+		cairo_set_source_rgba(moony->cairo.ctx, 0.0, 0.0, 0.0, 1.0);
+		cairo_rectangle(moony->cairo.ctx, 0.0, 0.0, 1.0, 1.0);
+		cairo_fill(moony->cairo.ctx);
 
-					x0 = x1;
-					y0 = y1;
-				}
-			}
+		// default attributes
+		cairo_set_font_size(moony->cairo.ctx, 0.1);
+		cairo_set_line_width(moony->cairo.ctx, 0.01);
+		cairo_set_source_rgba(moony->cairo.ctx, 1.0, 1.0, 1.0, 1.0);
+
+		const LV2_Atom_Tuple *tup = (const LV2_Atom_Tuple *)moony->render.atom;
+		LV2_ATOM_TUPLE_FOREACH(tup, itm)
+		{
+			if(lv2_atom_forge_is_object_type(&moony->render.forge, itm->type))
+				_render_cmd(moony, moony->cairo.ctx, (const LV2_Atom_Object *)itm);
 		}
+
+		cairo_surface_flush(moony->cairo.surface);
 	}
 	else
+	{
 		surf = NULL;
-
+	}
 	_unlock(&moony->lock.render);
+
 	return surf;
 #else
 	return NULL;
@@ -1287,6 +1321,20 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->uris.atom_frame_time = moony->map->map(moony->map->handle, LV2_ATOM__frameTime);
 	moony->uris.atom_beat_time = moony->map->map(moony->map->handle, LV2_ATOM__beatTime);
 
+	moony->uris.canvas_body = moony->map->map(moony->map->handle, CANVAS__body);
+	moony->uris.canvas_moveTo = moony->map->map(moony->map->handle, CANVAS__moveTo);
+	moony->uris.canvas_lineTo = moony->map->map(moony->map->handle, CANVAS__lineTo);
+	moony->uris.canvas_rectangle = moony->map->map(moony->map->handle, CANVAS__rectangle);
+	moony->uris.canvas_arc = moony->map->map(moony->map->handle, CANVAS__arc);
+	moony->uris.canvas_curveTo = moony->map->map(moony->map->handle, CANVAS__curveTo);
+	moony->uris.canvas_color = moony->map->map(moony->map->handle, CANVAS__color);
+	moony->uris.canvas_lineWidth = moony->map->map(moony->map->handle, CANVAS__lineWidth);
+	moony->uris.canvas_closePath = moony->map->map(moony->map->handle, CANVAS__closePath);
+	moony->uris.canvas_stroke = moony->map->map(moony->map->handle, CANVAS__stroke);
+	moony->uris.canvas_fill = moony->map->map(moony->map->handle, CANVAS__fill);
+	moony->uris.canvas_fontSize = moony->map->map(moony->map->handle, CANVAS__fontSize);
+	moony->uris.canvas_showText= moony->map->map(moony->map->handle, CANVAS__showText);
+
 	lv2_osc_urid_init(&moony->osc_urid, moony->map);
 	lv2_atom_forge_init(&moony->forge, moony->map);
 	lv2_atom_forge_init(&moony->state_forge, moony->map);
@@ -1390,6 +1438,10 @@ moony_deinit(moony_t *moony)
 		moony_free(moony, moony->render.atom, moony->render.size);
 	moony->render.atom = NULL;
 	moony->render.size = 0;
+
+#ifdef BUILD_INLINE_DISPLAY
+	_cairo_deinit(moony);
+#endif
 
 	if(moony->image_surface.data)
 		free(moony->image_surface.data);
@@ -1668,6 +1720,24 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 		SET_MAP(L, LV2_UNITS__, unit);
 	}
 	lua_setglobal(L, "Units");
+
+	lua_newtable(L);
+	{
+		SET_MAP(L, CANVAS__, body);
+		SET_MAP(L, CANVAS__, moveTo);
+		SET_MAP(L, CANVAS__, lineTo);
+		SET_MAP(L, CANVAS__, rectangle);
+		SET_MAP(L, CANVAS__, arc);
+		SET_MAP(L, CANVAS__, curveTo);
+		SET_MAP(L, CANVAS__, color);
+		SET_MAP(L, CANVAS__, lineWidth);
+		SET_MAP(L, CANVAS__, closePath);
+		SET_MAP(L, CANVAS__, stroke);
+		SET_MAP(L, CANVAS__, fill);
+		SET_MAP(L, CANVAS__, fontSize);
+		SET_MAP(L, CANVAS__, showText);
+	}
+	lua_setglobal(L, "Canvas");
 
 	lua_newtable(L);
 	{

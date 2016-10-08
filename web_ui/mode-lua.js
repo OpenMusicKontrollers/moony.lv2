@@ -77,6 +77,8 @@ var LuaHighlightRules = function() {
 				"label|range|comment|"+
 				// moony Units
 				"Conversion|Unit|bar|beat|bpm|cent|cm|coef|conversion|db|degree|frame|hz|inch|khz|km|m|mhz|midiNote|mile|min|mm|ms|name|oct|pc|prefixConversion|render|s|semitone12TET|symbol|unit|"+
+				// moony Units
+				"body|moveTo|lineTo|rectangle|arc|curveTo|color|lineWidth|closePath|stroke|fill|fontSize|showText|"+
 
 				// moony common
 				"type|body|"+
@@ -93,7 +95,7 @@ var LuaHighlightRules = function() {
 				// Lua
 				"coroutine|string|utf8|table|math|debug|"+
 				// moony
-				"Atom|MIDI|Time|OSC|Core|Buf_Size|Patch|RDF|RDFS|Units|Options|"+
+				"Atom|MIDI|Time|OSC|Core|Buf_Size|Patch|RDF|RDFS|Units|Options|Canvas|"+
 				"MIDIResponder|OSCResponder|TimeResponder|StateResponder|Map|Unmap|VoiceMap|Stash|Note|HashMap");
 
     var keywordMapper = this.createKeywordMapper({

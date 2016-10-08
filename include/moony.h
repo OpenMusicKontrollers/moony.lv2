@@ -56,6 +56,10 @@
 #include <lua.h>
 #include <lauxlib.h>
 
+#ifdef BUILD_INLINE_DISPLAY
+#	include <cairo.h>
+#endif
+
 #ifdef LV2_ATOM_TUPLE_FOREACH
 #	undef LV2_ATOM_TUPLE_FOREACH
 #	define LV2_ATOM_TUPLE_FOREACH(tuple, iter) \
@@ -252,6 +256,20 @@ struct _moony_t {
 
 		LV2_URID atom_beat_time;
 		LV2_URID atom_frame_time;
+
+		LV2_URID canvas_body;
+		LV2_URID canvas_moveTo;
+		LV2_URID canvas_lineTo;
+		LV2_URID canvas_rectangle;
+		LV2_URID canvas_arc;
+		LV2_URID canvas_curveTo;
+		LV2_URID canvas_color;
+		LV2_URID canvas_lineWidth;
+		LV2_URID canvas_closePath;
+		LV2_URID canvas_stroke;
+		LV2_URID canvas_fill;
+		LV2_URID canvas_fontSize;
+		LV2_URID canvas_showText;
 	} uris;
 
 	struct {
@@ -275,6 +293,12 @@ struct _moony_t {
 
 	LV2_Inline_Display *queue_draw;
 	LV2_Inline_Display_Image_Surface image_surface;
+#ifdef BUILD_INLINE_DISPLAY
+	struct {
+		cairo_surface_t *surface;
+		cairo_t *ctx;
+	} cairo;
+#endif
 
 	moony_vm_t vm;
 
