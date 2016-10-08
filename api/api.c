@@ -25,6 +25,10 @@
 #include <aes.h>
 #include <osc.lv2/endian.h>
 
+#ifdef BUILD_INLINE_DISPLAY
+#	include <cairo.h>
+#endif
+
 #include <api_atom.h>
 #include <api_forge.h>
 #include <api_stash.h>
@@ -960,6 +964,7 @@ static const LV2_Worker_Interface work_iface = {
 	.end_run = _end_run
 };
 
+#ifdef BUILD_INLINE_DISPLAY
 // Xiaolin Wu's line algorithm
 static inline void
 _wu_plot(uint32_t *surf, uint32_t stride, int x, int y, float c, uint32_t col)
@@ -1081,6 +1086,7 @@ _wu_line(uint32_t *surf, uint32_t stride, float x0, float y0, float x1, float y1
 		}
 	}
 }
+#endif
 
 // non-rt
 static LV2_Inline_Display_Image_Surface *
@@ -1088,6 +1094,7 @@ _render(LV2_Handle instance, uint32_t w, uint32_t h)
 {
 	moony_t *moony = instance;
 
+#ifdef BUILD_INLINE_DISPLAY
 	// prepare pixel surface in all cases
 	LV2_Inline_Display_Image_Surface *surf = &moony->image_surface;
 
@@ -1146,6 +1153,9 @@ _render(LV2_Handle instance, uint32_t w, uint32_t h)
 
 	_unlock(&moony->lock.render);
 	return surf;
+#else
+	return NULL;
+#endif
 }
 
 static const LV2_Inline_Display_Interface inlinedisplay_iface = {
