@@ -11,13 +11,12 @@ TOOLCHAIN_FILE="${CI_PROJECT_DIR}/cmake/${CI_BUILD_NAME}.cmake"
 
 apt-get install -y -q xsltproc
 
-#git clone https://gitlab.com/OpenMusicKontrollers/moony.lv2.git
-
+rm -rf ${TARGET}
 mkdir -p ${TARGET}
 pushd ${TARGET}
 	PKG_CONFIG_PATH=${PKG_CONFIG_PATH} cmake \
 		-DCMAKE_BUILD_TYPE=Release \
-		-DUSE_VERBOSE_LOG=0 \
+		-DUSE_VERBOSE_LOG=1 \
 		-DBUILD_INLINE_DISPLAY=1 \
 		-DBUILD_TESTING=1 \
 		-DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR} \

@@ -23,6 +23,10 @@
 #include <string.h>
 #include <math.h>
 
+#if !defined(_WIN32)
+#	include <pthread.h>
+#endif
+
 #include <libwebsockets.h>
 
 #include <moony.h>
@@ -255,6 +259,8 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 	ui_t *ui = lws_context_user(lws_get_context(wsi));
 	const char *in_str = in;
 
+	//fprintf(stderr, "callback_http: %i, %s\n", reason, len > 0 ? in_str : NULL);
+
 	switch(reason)
 	{
 		case LWS_CALLBACK_HTTP:
@@ -352,6 +358,18 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 			atomic_flag_clear_explicit(&ui->lock, memory_order_release);
 			break;
 		}
+		case LWS_CALLBACK_GET_THREAD_ID:
+		{
+#if defined(_WIN32)
+			return GetCurrentThreadId();
+#elif defined(__APPLE__)
+			uint64_t tid;
+			pthread_threadid_np(NULL, &tid);
+			return tid;
+#else
+			return pthread_self();
+#endif
+		}
 
 		default:
 		{
@@ -379,6 +397,8 @@ callback_lv2(struct lws *wsi, enum lws_callback_reasons reason,
 	ui_t *ui = lws_context_user(lws_get_context(wsi));
 	client_t *client = user;
 	const char *in_str = in;
+
+	//fprintf(stderr, "callback_lv2: %i, %s\n", reason, len > 0 ? in_str : NULL);
 
 	switch(reason)
 	{
@@ -489,6 +509,18 @@ callback_lv2(struct lws *wsi, enum lws_callback_reasons reason,
 		{
 			atomic_flag_clear_explicit(&ui->lock, memory_order_release);
 			break;
+		}
+		case LWS_CALLBACK_GET_THREAD_ID:
+		{
+#if defined(_WIN32)
+			return GetCurrentThreadId();
+#elif defined(__APPLE__)
+			uint64_t tid;
+			pthread_threadid_np(NULL, &tid);
+			return tid;
+#else
+			return pthread_self();
+#endif
 		}
 
 		default:
