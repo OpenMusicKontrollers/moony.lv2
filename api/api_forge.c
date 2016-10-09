@@ -685,8 +685,8 @@ _lforge_object(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_URID id = luaL_optinteger(L, 2, 0);
-	LV2_URID otype = luaL_optinteger(L, 3, 0);
+	LV2_URID otype = luaL_optinteger(L, 2, 0);
+	LV2_URID id = luaL_optinteger(L, 3, 0);
 	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
 	lframe->depth = 1;
 	lframe->last.frames = lforge->last.frames;

@@ -588,7 +588,7 @@ do
 
 	local function producer(forge)
 		assert(forge:frame_time(0) == forge)
-		local obj = forge:object(id, otype)
+		local obj = forge:object(otype, id)
 		assert(obj ~= forge)
 
 		assert(obj:key(key1):int(12) == obj)
@@ -963,7 +963,7 @@ do
 	local time_responder = TimeResponder(time_cb)
 
 	local function producer(forge)
-		local obj = forge:frame_time(0):object(0, Time.Position)
+		local obj = forge:frame_time(0):object(Time.Position)
 		obj:key(Time.barBeat):float(0.5)
 		obj:key(Time.bar):long(34)
 		obj:key(Time.beatUnit):int(8)

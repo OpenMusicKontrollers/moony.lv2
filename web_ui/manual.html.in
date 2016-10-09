@@ -1251,11 +1251,11 @@ end</code></pre>
 			<p>Forge an object atom, e.g. an atom of type Atom.Object.</p>
 
 			<dl>
-				<dt class="func">forge:object(id=0, otype=0)</dt>
-				<dt>id (integer)</dt>
-					<dd>object ID as integer URID, defaults to 0</dd>
+				<dt class="func">forge:object(otype=0, id=0)</dt>
 				<dt>otype (integer)</dt>
 					<dd>object type as integer URID, defaults to 0</dd>
+				<dt>id (integer)</dt>
+					<dd>object ID as integer URID, defaults to 0</dd>
 				<dt class="ret">(userdata)</dt>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
@@ -1265,7 +1265,7 @@ end</code></pre>
 local urn = HashMap('urn:moony:xyz')
 
 local function produce_atom(forge)
-	local obj = forge:object(nil, urn.FooBar) -- create derived container forge object
+	local obj = forge:object(urn.FooBar) -- create derived container forge object
 		obj:key(urn.foo):int(12) -- without context
 		obj:key(urn.bar, urn.ctx):long(13) -- with context
 	obj:pop() -- finalize container
@@ -1463,12 +1463,12 @@ local urn = HashMap('urn:moony:xzy')
 local function produce_atom(forge)
 	local patch= forge:patch(urn.subj, 1002) -- with subject and sequence number
 
-		local rem = patch:remove() -- equivalent to patch:object(0, Patch.remove)
+		local rem = patch:remove() -- equivalent to patch:object(Patch.remove)
 			rem:key(urn.foo):urid(Patch.wildcard)
 			rem:key(urn.bar):urid(Patch.wildcard)
 		rem:pop()
 
-		local add = patch:add() -- equivalent to patch:object(0, Patch.add)
+		local add = patch:add() -- equivalent to patch:object(Patch.add)
 			add:key(urn.foo):int(12)
 			add:key(urn.bar):float(12.5)
 		add:pop()
@@ -2615,7 +2615,7 @@ local urn = HashMap('urn:moony:xyz#')
 
 -- serialize
 local function produce_atom(forge)
-	local obj = forge:object(urn.id, urn.otype)
+	local obj = forge:object(urn.otype, urn.id)
 		obj:key(urn.key):int(12)
 	obj:pop()
 end
@@ -3104,7 +3104,7 @@ end
 
 -- forge test messages 
 local function produce_seq(forge)
-	local obj = forge:time(0):object(nil, Time.Position)
+	local obj = forge:time(0):object(Time.Position)
 		obj:key(Time.speed):float(1.0) -- start transport
 	obj:pop()
 end
