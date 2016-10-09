@@ -43,19 +43,22 @@
 #define RDFS__range   RDFS_PREFIX"range"
 #define RDFS__comment RDFS_PREFIX"comment"
 
+#define CANVAS__Canvas    CANVAS_PREFIX"Canvas"
+#define CANVAS__draw      CANVAS_PREFIX"draw"
 #define CANVAS__body      CANVAS_PREFIX"body"
-#define CANVAS__moveTo    CANVAS_PREFIX"moveTo"
-#define CANVAS__lineTo    CANVAS_PREFIX"lineTo"
-#define CANVAS__rectangle CANVAS_PREFIX"rectangle"
-#define CANVAS__arc       CANVAS_PREFIX"arc"
-#define CANVAS__curveTo   CANVAS_PREFIX"curveTo"
-#define CANVAS__color     CANVAS_PREFIX"color"
-#define CANVAS__lineWidth CANVAS_PREFIX"lineWidth"
-#define CANVAS__closePath CANVAS_PREFIX"closePath"
-#define CANVAS__stroke    CANVAS_PREFIX"stroke"
-#define CANVAS__fill      CANVAS_PREFIX"fill"
-#define CANVAS__fontSize  CANVAS_PREFIX"fontSize"
-#define CANVAS__showText  CANVAS_PREFIX"showText"
+#define CANVAS__BeginPath CANVAS_PREFIX"BeginPath"
+#define CANVAS__MoveTo    CANVAS_PREFIX"MoveTo"
+#define CANVAS__LineTo    CANVAS_PREFIX"LineTo"
+#define CANVAS__Rectangle CANVAS_PREFIX"Rectangle"
+#define CANVAS__Arc       CANVAS_PREFIX"Arc"
+#define CANVAS__CurveTo   CANVAS_PREFIX"CurveTo"
+#define CANVAS__Color     CANVAS_PREFIX"Color"
+#define CANVAS__LineWidth CANVAS_PREFIX"LineWidth"
+#define CANVAS__ClosePath CANVAS_PREFIX"ClosePath"
+#define CANVAS__Stroke    CANVAS_PREFIX"Stroke"
+#define CANVAS__Fill      CANVAS_PREFIX"Fill"
+#define CANVAS__FontSize  CANVAS_PREFIX"FontSize"
+#define CANVAS__ShowText  CANVAS_PREFIX"ShowText"
 
 #ifndef LV2_PATCH__Copy
 #	define LV2_PATCH__Copy LV2_PATCH_PREFIX "Copy"
@@ -490,50 +493,6 @@ _ldecrypt(lua_State *L)
 
 	lua_pushnil(L);
 	return 1;
-}
-
-static int
-_lqueue_draw(lua_State *L)
-{
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-
-	const int n = lua_gettop(L);
-
-	if(moony->queue_draw && lua_isfunction(L, 1) && _try_lock(&moony->lock.render) )
-	{
-		lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, true);
-		lua_insert(L, 2); // insert at position 2
-		lframe->depth = 0;
-		lframe->last.frames = 0;
-		lframe->forge = &moony->render.forge;
-
-		atom_ser_t ser = {
-			.moony = moony,
-			.size = 1024,
-			.offset = 0
-		};
-		ser.buf = moony_alloc(moony, ser.size);
-
-		if(ser.buf)
-		{
-			memset(ser.buf, 0x0, sizeof(LV2_Atom));
-
-			lv2_atom_forge_set_sink(lframe->forge, _sink, _deref, &ser);
-			lua_call(L, n, 0);
-
-			if(moony->render.atom)
-				moony_free(moony, moony->render.atom, moony->render.size);
-			LV2_Atom *atom = (LV2_Atom *)ser.buf;
-			moony->render.atom = atom;
-			moony->render.size = ser.size;
-
-			moony->queue_draw->queue_draw(moony->queue_draw->handle);
-		}
-
-		_unlock(&moony->lock.render);
-	}
-
-	return 0;
 }
 
 LV2_Atom_Forge_Ref
@@ -981,6 +940,11 @@ static inline void
 _render_cmd(moony_t *moony, cairo_t *ctx, const LV2_Atom_Object *obj)
 {
 	//FIXME binary search for obj.body.otype
+	if(obj->body.otype == moony->uris.canvas_beginPath)
+	{
+		cairo_new_sub_path(ctx);
+		return;
+	}
 	if(obj->body.otype == moony->uris.canvas_closePath)
 	{
 		cairo_close_path(ctx);
@@ -1095,7 +1059,6 @@ _cairo_init(moony_t *moony, int w, int h)
 	if(!surf->data)
 		return NULL;
 
-	moony->cairo.surface = NULL; //FIXME
 	moony->cairo.surface = cairo_image_surface_create_for_data(
 		surf->data, CAIRO_FORMAT_ARGB32, surf->width, surf->height, surf->stride);
 
@@ -1321,19 +1284,22 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->uris.atom_frame_time = moony->map->map(moony->map->handle, LV2_ATOM__frameTime);
 	moony->uris.atom_beat_time = moony->map->map(moony->map->handle, LV2_ATOM__beatTime);
 
+	moony->uris.canvas_canvas = moony->map->map(moony->map->handle, CANVAS__Canvas);
+	moony->uris.canvas_draw = moony->map->map(moony->map->handle, CANVAS__draw);
 	moony->uris.canvas_body = moony->map->map(moony->map->handle, CANVAS__body);
-	moony->uris.canvas_moveTo = moony->map->map(moony->map->handle, CANVAS__moveTo);
-	moony->uris.canvas_lineTo = moony->map->map(moony->map->handle, CANVAS__lineTo);
-	moony->uris.canvas_rectangle = moony->map->map(moony->map->handle, CANVAS__rectangle);
-	moony->uris.canvas_arc = moony->map->map(moony->map->handle, CANVAS__arc);
-	moony->uris.canvas_curveTo = moony->map->map(moony->map->handle, CANVAS__curveTo);
-	moony->uris.canvas_color = moony->map->map(moony->map->handle, CANVAS__color);
-	moony->uris.canvas_lineWidth = moony->map->map(moony->map->handle, CANVAS__lineWidth);
-	moony->uris.canvas_closePath = moony->map->map(moony->map->handle, CANVAS__closePath);
-	moony->uris.canvas_stroke = moony->map->map(moony->map->handle, CANVAS__stroke);
-	moony->uris.canvas_fill = moony->map->map(moony->map->handle, CANVAS__fill);
-	moony->uris.canvas_fontSize = moony->map->map(moony->map->handle, CANVAS__fontSize);
-	moony->uris.canvas_showText= moony->map->map(moony->map->handle, CANVAS__showText);
+	moony->uris.canvas_beginPath = moony->map->map(moony->map->handle, CANVAS__BeginPath);
+	moony->uris.canvas_moveTo = moony->map->map(moony->map->handle, CANVAS__MoveTo);
+	moony->uris.canvas_lineTo = moony->map->map(moony->map->handle, CANVAS__LineTo);
+	moony->uris.canvas_rectangle = moony->map->map(moony->map->handle, CANVAS__Rectangle);
+	moony->uris.canvas_arc = moony->map->map(moony->map->handle, CANVAS__Arc);
+	moony->uris.canvas_curveTo = moony->map->map(moony->map->handle, CANVAS__CurveTo);
+	moony->uris.canvas_color = moony->map->map(moony->map->handle, CANVAS__Color);
+	moony->uris.canvas_lineWidth = moony->map->map(moony->map->handle, CANVAS__LineWidth);
+	moony->uris.canvas_closePath = moony->map->map(moony->map->handle, CANVAS__ClosePath);
+	moony->uris.canvas_stroke = moony->map->map(moony->map->handle, CANVAS__Stroke);
+	moony->uris.canvas_fill = moony->map->map(moony->map->handle, CANVAS__Fill);
+	moony->uris.canvas_fontSize = moony->map->map(moony->map->handle, CANVAS__FontSize);
+	moony->uris.canvas_showText= moony->map->map(moony->map->handle, CANVAS__ShowText);
 
 	lv2_osc_urid_init(&moony->osc_urid, moony->map);
 	lv2_atom_forge_init(&moony->forge, moony->map);
@@ -1723,19 +1689,21 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 
 	lua_newtable(L);
 	{
+		SET_MAP(L, CANVAS__, Canvas);
+		SET_MAP(L, CANVAS__, draw);
 		SET_MAP(L, CANVAS__, body);
-		SET_MAP(L, CANVAS__, moveTo);
-		SET_MAP(L, CANVAS__, lineTo);
-		SET_MAP(L, CANVAS__, rectangle);
-		SET_MAP(L, CANVAS__, arc);
-		SET_MAP(L, CANVAS__, curveTo);
-		SET_MAP(L, CANVAS__, color);
-		SET_MAP(L, CANVAS__, lineWidth);
-		SET_MAP(L, CANVAS__, closePath);
-		SET_MAP(L, CANVAS__, stroke);
-		SET_MAP(L, CANVAS__, fill);
-		SET_MAP(L, CANVAS__, fontSize);
-		SET_MAP(L, CANVAS__, showText);
+		SET_MAP(L, CANVAS__, MoveTo);
+		SET_MAP(L, CANVAS__, LineTo);
+		SET_MAP(L, CANVAS__, Rectangle);
+		SET_MAP(L, CANVAS__, Arc);
+		SET_MAP(L, CANVAS__, CurveTo);
+		SET_MAP(L, CANVAS__, Color);
+		SET_MAP(L, CANVAS__, LineWidth);
+		SET_MAP(L, CANVAS__, ClosePath);
+		SET_MAP(L, CANVAS__, Stroke);
+		SET_MAP(L, CANVAS__, Fill);
+		SET_MAP(L, CANVAS__, FontSize);
+		SET_MAP(L, CANVAS__, ShowText);
 	}
 	lua_setglobal(L, "Canvas");
 
@@ -1940,10 +1908,6 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 
 	lua_pushcclosure(L, _ldecrypt, 0);
 	lua_setglobal(L, "decrypt");
-
-	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
-	lua_pushcclosure(L, _lqueue_draw, 1);
-	lua_setglobal(L, "draw");
 
 #undef SET_MAP
 }
@@ -2269,4 +2233,32 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 		lv2_atom_forge_pop(forge, &moony->notify_frame);
 	else
 		lv2_atom_sequence_clear(notify);
+
+	// intercept canvas_canvas events
+	if(moony->queue_draw)
+	{
+		LV2_ATOM_SEQUENCE_FOREACH(notify, ev)
+		{
+			const LV2_Atom_Object *obj = (const LV2_Atom_Object *)&ev->body;
+
+			if(  lv2_atom_forge_is_object_type(forge, obj->atom.type)
+				&& (obj->body.otype == moony->uris.canvas_canvas) )
+			{
+				const LV2_Atom_Tuple *draw = NULL;
+				lv2_atom_object_get(obj, moony->uris.canvas_draw, &draw, 0);
+
+				if(  draw && (draw->atom.type == forge->Tuple)
+					&& _try_lock(&moony->lock.render) )
+				{
+					const uint32_t sz = lv2_atom_total_size(&draw->atom);
+					moony->render.atom = moony_realloc(moony, moony->render.atom, moony->render.size, sz);
+					moony->render.size = sz;
+					memcpy(moony->render.atom, draw, sz);
+
+					moony->queue_draw->queue_draw(moony->queue_draw->handle);
+					_unlock(&moony->lock.render);
+				}
+			}
+		}
+	}
 }
