@@ -258,7 +258,7 @@ struct _moony_t {
 		LV2_URID atom_frame_time;
 
 		LV2_URID canvas_canvas;
-		LV2_URID canvas_draw;
+		LV2_URID canvas_graph;
 		LV2_URID canvas_body;
 		LV2_URID canvas_beginPath;
 		LV2_URID canvas_moveTo;
@@ -327,6 +327,8 @@ struct _moony_t {
 		LV2_Atom_Forge forge;
 		LV2_Atom *atom;
 		uint32_t size;
+		int32_t countdown;
+		uint32_t countup;
 	} render;
 
 	latom_driver_hash_t atom_driver_hash [DRIVER_HASH_MAX];

@@ -1150,27 +1150,6 @@ _lforge_error(lua_State *L)
 }
 
 static int
-_lforge_canvas(lua_State *L)
-{
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lforge_t *lforge = lua_touserdata(L, 1);
-	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
-	lframe->depth = 2;
-	lframe->last.frames = lforge->last.frames;
-	lframe->forge = lforge->forge;
-
-	if(!lv2_atom_forge_object(lforge->forge, &lframe->frame[0], 0, moony->uris.canvas_canvas))
-		luaL_error(L, forge_buffer_overflow);
-
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.canvas_draw))
-		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_tuple(lforge->forge, &lframe->frame[1]))
-		luaL_error(L, forge_buffer_overflow);
-
-	return 1; // derived forge
-}
-
-static int
 _lforge_pop(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -1258,8 +1237,6 @@ const luaL_Reg lforge_mt [] = {
 	{"add", _lforge_add},
 	{"ack", _lforge_ack},
 	{"error", _lforge_error},
-
-	{"canvas", _lforge_canvas},
 
 	{"pop", _lforge_pop},
 
