@@ -257,7 +257,6 @@ struct _moony_t {
 		LV2_URID atom_beat_time;
 		LV2_URID atom_frame_time;
 
-		LV2_URID canvas_canvas;
 		LV2_URID canvas_graph;
 		LV2_URID canvas_body;
 		LV2_URID canvas_beginPath;
@@ -309,6 +308,7 @@ struct _moony_t {
 	volatile int dirty_out;
 	volatile int error_out;
 	volatile int trace_out;
+	volatile int graph_out;
 
 	// udata cache
 	int itr [MOONY_UDATA_COUNT];

@@ -43,7 +43,6 @@
 #define RDFS__range   RDFS_PREFIX"range"
 #define RDFS__comment RDFS_PREFIX"comment"
 
-#define CANVAS__Canvas    CANVAS_PREFIX"Canvas"
 #define CANVAS__graph     CANVAS_PREFIX"graph"
 #define CANVAS__body      CANVAS_PREFIX"body"
 #define CANVAS__BeginPath CANVAS_PREFIX"BeginPath"
@@ -532,7 +531,7 @@ _ldraw(lua_State *L)
 			LV2_Atom *atom = (LV2_Atom *)ser.buf;
 			moony->render.atom = atom;
 			moony->render.size = ser.size;
-			
+
 			if(moony->render.countdown <= 0)
 				moony->render.countdown = INT32_MAX; // immediate display
 			moony->render.countup += 1;
@@ -1333,7 +1332,6 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->uris.atom_frame_time = moony->map->map(moony->map->handle, LV2_ATOM__frameTime);
 	moony->uris.atom_beat_time = moony->map->map(moony->map->handle, LV2_ATOM__beatTime);
 
-	moony->uris.canvas_canvas = moony->map->map(moony->map->handle, CANVAS__Canvas);
 	moony->uris.canvas_graph = moony->map->map(moony->map->handle, CANVAS__graph);
 	moony->uris.canvas_body = moony->map->map(moony->map->handle, CANVAS__body);
 	moony->uris.canvas_beginPath = moony->map->map(moony->map->handle, CANVAS__BeginPath);
@@ -1738,7 +1736,6 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 
 	lua_newtable(L);
 	{
-		SET_MAP(L, CANVAS__, Canvas);
 		SET_MAP(L, CANVAS__, graph);
 		SET_MAP(L, CANVAS__, body);
 		SET_MAP(L, CANVAS__, BeginPath);
@@ -2076,6 +2073,10 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 					if(strlen(moony->error) > 0)
 						moony->error_out = 1;
 				}
+				else if(property->body == moony->uris.canvas_graph)
+				{
+					moony->graph_out = 1;
+				}
 			}
 			else // !property
 			{
@@ -2283,7 +2284,7 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 		moony->trace_out = 0; // reset flag
 	}
 
-	// intercept canvas_canvas events
+	// handle canvas events
 	if(moony->render.countdown > 0)
 	{
 		bool dispatch = moony->render.countup;
@@ -2307,19 +2308,33 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 			if(moony->queue_draw)
 				moony->queue_draw->queue_draw(moony->queue_draw->handle);
 
+			moony->graph_out = 1;
+		}
+	}
+
+	if(moony->graph_out)
+	{
+		if(moony->render.atom)
+		{
 			// update web_ui
 			LV2_Atom_Forge_Frame obj_frame;
 			if(ref)
 				ref = lv2_atom_forge_frame_time(forge, frames);
 			if(ref)
-				ref = lv2_atom_forge_object(forge, &obj_frame, 0, moony->uris.canvas_canvas);
+				ref = lv2_atom_forge_object(forge, &obj_frame, 0, moony->uris.patch.set);
+			//FIXME subject, sequenceNumber
 			if(ref)
-				ref = lv2_atom_forge_key(forge, moony->uris.canvas_graph);
+				ref = lv2_atom_forge_key(forge, moony->uris.patch.property);
+			if(ref)
+				ref = lv2_atom_forge_urid(forge, moony->uris.canvas_graph);
+			if(ref)
+				ref = lv2_atom_forge_key(forge, moony->uris.patch.value);
 			if(ref)
 				ref = lv2_atom_forge_write(forge, moony->render.atom, lv2_atom_total_size(moony->render.atom));
 			if(ref)
 				lv2_atom_forge_pop(forge, &obj_frame);
 		}
+		moony->graph_out = 0;
 	}
 
 	if(ref)

@@ -166,7 +166,6 @@ var MOONY = {
 };
 
 var CANVAS = {
-	Canvas            : 'canvas:Canvas',
 	graph             : 'canvas:graph',
 	body              : 'canvas:body',
 	BeginPath         : 'canvas:BeginPath',
@@ -743,6 +742,10 @@ function lv2_read_event(symbol, obj) {
 					var tracemsg = $('#tracemsg');
 					tracemsg.append(tracecnt + ': ' + value[RDF.value] + '<br />').scrollTop(tracemsg.prop('scrollHeight'));
 					tracecnt += 1;
+				} else if( (property == CANVAS.graph) ) {
+					if(value) {
+						canvas_render(value);
+					}
 				} else {
 					var item = $('#' + property.replace(trim, ''));
 					var range = item.attr('data-range');
@@ -766,11 +769,6 @@ function lv2_read_event(symbol, obj) {
 				} else {
 					lv2_ack(MOONY.dsp, seq_num);
 				}
-			}
-		} else if(node_is_a(obj, CANVAS.Canvas)) {
-			var graph = obj[CANVAS.graph];
-			if(graph) {
-				canvas_render(graph);
 			}
 		}
 	}
@@ -967,6 +965,7 @@ function ws_connect() {
 			lv2_get(MOONY.ui, PATCH.subject);
 			lv2_get(MOONY.dsp, MOONY.code);
 			lv2_get(MOONY.dsp, MOONY.error);
+			lv2_get(MOONY.dsp, CANVAS.graph);
 			lv2_get_all(MOONY.dsp);
 		} 
 

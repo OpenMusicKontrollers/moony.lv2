@@ -78,7 +78,7 @@ var LuaHighlightRules = function() {
 				// moony Units
 				"Conversion|Unit|bar|beat|bpm|cent|cm|coef|conversion|db|degree|frame|hz|inch|khz|km|m|mhz|midiNote|mile|min|mm|ms|name|oct|pc|prefixConversion|render|s|semitone12TET|symbol|unit|"+
 				// moony Units
-				"Canvas|graph|body|MoveTo|LineTo|Rectangle|Arc|CurveTo|Color|LineWidth|BeginPath|ClosePath|Stroke|Fill|FontSize|ShowText|"+
+				"graph|body|MoveTo|LineTo|Rectangle|Arc|CurveTo|Color|LineWidth|BeginPath|ClosePath|Stroke|Fill|FontSize|ShowText|"+
 
 				// moony common
 				"type|body|"+
