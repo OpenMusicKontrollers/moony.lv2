@@ -214,6 +214,9 @@ var format = {
 
 var trim = /[^a-zA-Z0-9_]+/g;
 
+var canvas = null;
+var ctx = null;
+
 function sequence_number(seq_num) {
 	return {
 		[RDF.type]  : [ATOM.Int],
@@ -732,6 +735,7 @@ function lv2_read_event(symbol, obj) {
 				} else if( (property == MOONY.code) && node_is_a(value, ATOM.String) ) {
 					editor.setValue(value[RDF.value], 1);
 					lv2_get_all(MOONY.dsp); // update properties
+					canvas_clear();
 				} else if( (property == MOONY.error) && node_is_a(value, ATOM.String) ) {
 					var errmsg = $('#errmsg');
 					errmsg.html(value[RDF.value]).fadeIn(300);
@@ -766,7 +770,7 @@ function lv2_read_event(symbol, obj) {
 		} else if(node_is_a(obj, CANVAS.Canvas)) {
 			var graph = obj[CANVAS.graph];
 			if(graph) {
-				render(graph);
+				canvas_render(graph);
 			}
 		}
 	}
@@ -856,9 +860,11 @@ function color(num) {
 	return 'rgba(' + [r, g, b, a].join(',') + ')';
 }
 
-function render(graph) {
-	var canvas = $('#canvas')[0];
-	var ctx = canvas.getContext('2d');
+function canvas_clear() {
+	ctx.clearRect(0, 0, 1, 1);
+}
+
+function canvas_render(graph) {
 	var list = graph[RDF.list];
 
 	ctx.clearRect(0, 0, 1, 1);
@@ -991,10 +997,10 @@ function ws_connect() {
 }
 
 $(document).ready(function() {
-	var canvas = $('#canvas')[0];
-	var ctx = canvas.getContext('2d');
 	var session = null;
 
+	canvas = $('#canvas')[0];
+	ctx = canvas.getContext('2d');
 	ctx.scale(canvas.width, canvas.height);
 
 	editor = ace.edit("editor");
