@@ -848,6 +848,7 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 
 		moony->dirty_out = 1; // trigger update of UI
 		moony->props_out = 1; // trigger update of UI
+		moony->once = true; // trigger call of 'once'
 	}
 	else
 	{
@@ -2024,8 +2025,6 @@ moony_pre(moony_t *moony, LV2_Atom_Sequence *notify)
 bool
 moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *notify)
 {
-	bool once = false;
-
 	lua_State *L = moony->vm.L;
 	LV2_Atom_Forge *forge = &moony->notify_forge;
 	LV2_Atom_Forge_Ref ref = moony->notify_ref;
@@ -2148,7 +2147,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 #endif
 							}
 
-							once = true;
+							moony->once = true;
 						}
 					}
 					else
@@ -2257,7 +2256,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 
 	moony->notify_ref = ref;
 
-	return once;
+	return moony->once;
 }
 
 void
@@ -2341,4 +2340,6 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 		lv2_atom_forge_pop(forge, &moony->notify_frame);
 	else
 		lv2_atom_sequence_clear(notify);
+
+	moony->once = false;
 }
