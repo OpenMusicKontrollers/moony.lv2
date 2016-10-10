@@ -26,6 +26,7 @@ var LV2_UI_PREFIX   = 'http://lv2plug.in/ns/extensions/ui#';
 var LV2_UNITS_PREFIX= 'http://lv2plug.in/ns/extensions/units#';
 var RDF_PREFIX      = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
 var RDFS_PREFIX     = 'http://www.w3.org/2000/01/rdf-schema#';
+var CANVAS_PREFIX   = 'http://open-music-kontrollers.ch/lv2/moony#canvas#';
 var MOONY_PREFIX    = 'http://open-music-kontrollers.ch/lv2/moony#';
 
 var context = {
@@ -36,6 +37,7 @@ var context = {
 	'units'           : LV2_UNITS_PREFIX,
 	'rdf'             : RDF_PREFIX,
 	'rdfs'            : RDFS_PREFIX,
+	'canvas'          : CANVAS_PREFIX,
 	'moony'           : MOONY_PREFIX
 };
 
@@ -163,6 +165,25 @@ var MOONY = {
 	destination       : 'moony:destination'
 };
 
+var CANVAS = {
+	Canvas            : 'canvas:Canvas',
+	graph             : 'canvas:graph',
+	body              : 'canvas:body',
+	BeginPath         : 'canvas:BeginPath',
+	MoveTo            : 'canvas:MoveTo',
+	LineTo            : 'canvas:LineTo',
+	Rectangle         : 'canvas:Rectangle',
+	Arc               : 'canvas:Arc',
+	CurveTo           : 'canvas:CurveTo',
+	Color             : 'canvas:Color',
+	LineWidth         : 'canvas:LineWidth',
+	ClosePath         : 'canvas:ClosePath',
+	Stroke            : 'canvas:Stroke',
+	Fill              : 'canvas:Fill',
+	FontSize          : 'canvas:FontSize',
+	ShowText          : 'canvas:ShowText'
+};
+
 var format = {
 	[UNITS.s]             : 's',
 	[UNITS.ms]            : 'ms',
@@ -191,14 +212,14 @@ var format = {
 	[UNITS.midiController]: 'controller' //TODO function callback
 };
 
+var trim = /[^a-zA-Z0-9_]+/g;
+
 function sequence_number(seq_num) {
 	return {
 		[RDF.type]  : [ATOM.Int],
 		[RDF.value] : seq_num
 	}
 }
-
-var trim = /[^a-zA-Z0-9_]+/g;
 
 function node_is_a(node, id) {
 	if(node) {
@@ -694,9 +715,7 @@ function lv2_read_event(symbol, obj) {
 					lv2_ack(MOONY.dsp, seq_num);
 				}
 			}
-		}
-		else if(node_is_a(obj, PATCH.Set))
-		{
+		} else if(node_is_a(obj, PATCH.Set)) {
 			//var subject = obj[PATCH.subject];
 			var property = obj[PATCH.property][RDF.id];
 			var value = obj[PATCH.value];
@@ -743,6 +762,11 @@ function lv2_read_event(symbol, obj) {
 				} else {
 					lv2_ack(MOONY.dsp, seq_num);
 				}
+			}
+		} else if(node_is_a(obj, CANVAS.Canvas)) {
+			var graph = obj[CANVAS.graph];
+			if(graph) {
+				render(graph);
 			}
 		}
 	}
@@ -824,6 +848,87 @@ function clear_log() {
 	tracecnt = 0;
 }
 
+function color(num) {
+	var a = ((num >>> 24) & 0xff) / 0xff;
+	var r =  (num >>> 16) & 0xff;
+	var g =  (num >>>  8) & 0xff;
+	var b =  (num >>>  0) & 0xff;
+	return 'rgba(' + [r, g, b, a].join(',') + ')';
+}
+
+function render(graph) {
+	var canvas = $('#canvas')[0];
+	var ctx = canvas.getContext('2d');
+	var list = graph[RDF.list];
+
+	ctx.clearRect(0, 0, 1, 1);
+
+	ctx.fillStyle = 'white';
+	ctx.strokeStyle = 'white';
+	ctx.lineWidth = 1; //FIXME
+
+	for(var i in list) {
+		var cmd = list[i];
+		var body = cmd[CANVAS.body];
+
+		if(node_is_a(cmd, CANVAS.BeginPath)) {
+			ctx.beginPath();
+		} else if(node_is_a(cmd, CANVAS.MoveTo)) {
+			var list2 = body[RDF.list];
+			var x = list2[0][RDF.value];
+			var y = list2[1][RDF.value];
+			ctx.moveTo(x, y);
+		} else if(node_is_a(cmd, CANVAS.LineTo)) {
+			var list2 = body[RDF.list];
+			var x = list2[0][RDF.value];
+			var y = list2[1][RDF.value];
+			ctx.lineTo(x, y);
+		} else if(node_is_a(cmd, CANVAS.Rectangle)) {
+			var list2 = body[RDF.list];
+			var x = list2[0][RDF.value];
+			var y = list2[1][RDF.value];
+			var w = list2[2][RDF.value];
+			var h = list2[3][RDF.value];
+			ctx.rect(x, y, w, h);
+		} else if(node_is_a(cmd, CANVAS.Arc)) {
+			var list2 = body[RDF.list];
+			var x = list2[0][RDF.value];
+			var y = list2[1][RDF.value];
+			var r = list2[2][RDF.value];
+			var a1 = list2[3] ? list2[3][RDF.value] : 0.0;
+			var a2 = list2[4] ? list2[4][RDF.value] : 2*Math.PI;
+			ctx.arc(x, y, r, a1, a2);
+		} else if(node_is_a(cmd, CANVAS.CurveTo)) {
+			var list2 = body[RDF.list];
+			var x1 = list2[0][RDF.value];
+			var y1 = list2[1][RDF.value];
+			var x2 = list2[2][RDF.value];
+			var y2 = list2[3][RDF.value];
+			var x3 = list2[4][RDF.value];
+			var y3 = list2[5][RDF.value];
+			ctx.bezierCurveTo(x1, y1, x2, y2, x3, y3);
+		} else if(node_is_a(cmd, CANVAS.Color)) {
+			var value = body[RDF.value];
+			var col = color(value);
+			ctx.fillStyle = col;
+			ctx.strokeStyle = col;
+		} else if(node_is_a(cmd, CANVAS.LineWidth)) {
+			var value = body[RDF.value];
+			ctx.lineWidth = value;
+		} else if(node_is_a(cmd, CANVAS.ClosePath)) {
+			ctx.closePath();
+		} else if(node_is_a(cmd, CANVAS.Stroke)) {
+			ctx.stroke();
+		} else if(node_is_a(cmd, CANVAS.Fill)) {
+			ctx.fill();
+		} else if(node_is_a(cmd, CANVAS.FontSize)) {
+			//TODO
+		} else if(node_is_a(cmd, CANVAS.ShowText)) {
+			//TODO
+		}
+	}
+}
+
 function ws_url() {
 	var pcol;
 	var u = document.URL;
@@ -886,7 +991,12 @@ function ws_connect() {
 }
 
 $(document).ready(function() {
+	var canvas = $('#canvas')[0];
+	var ctx = canvas.getContext('2d');
 	var session = null;
+
+	ctx.scale(canvas.width, canvas.height);
+
 	editor = ace.edit("editor");
 	session = editor.getSession();
 

@@ -24,7 +24,7 @@ var LuaHighlightRules = function() {
 				"__concat|__len|__eq|__lt|__le|__index|__newindex|__call|"+
 				"__gc|__mode|__name|__tostring|__metatable|__pairs|"+
 				// moony basic
-				"run|once|save|restore|stash|apply|register|midi2cps|cps2midi|encrypt|decrypt");
+				"run|once|save|restore|stash|apply|register|midi2cps|cps2midi|encrypt|decrypt|draw");
 
 		var field_functions = (
 				// Lua coroutine
@@ -45,7 +45,7 @@ var LuaHighlightRules = function() {
 				// moony forge
 				"frame_time|beat_time|time|atom|int|long|float|double|bool|urid|string|literal|uri|path|"+
 				"chunk|midi|raw|bundle|message|tuple|object|key|property|vector|sequence|"+
-				"typed|get|set|put|patch|remove|add|ack|error|canvas|pop|"+
+				"typed|get|set|put|patch|remove|add|ack|error|pop|"+
 				// moony common
 				"foreach|unpack|clone|stash|apply|register|"+
 				// moony stash
@@ -78,7 +78,7 @@ var LuaHighlightRules = function() {
 				// moony Units
 				"Conversion|Unit|bar|beat|bpm|cent|cm|coef|conversion|db|degree|frame|hz|inch|khz|km|m|mhz|midiNote|mile|min|mm|ms|name|oct|pc|prefixConversion|render|s|semitone12TET|symbol|unit|"+
 				// moony Units
-				"Canvas|draw|body|MoveTo|LineTo|Rectangle|Arc|CurveTo|Color|LineWidth|BeginPath|ClosePath|Stroke|Fill|FontSize|ShowText|"+
+				"Canvas|graph|body|MoveTo|LineTo|Rectangle|Arc|CurveTo|Color|LineWidth|BeginPath|ClosePath|Stroke|Fill|FontSize|ShowText|"+
 
 				// moony common
 				"type|body|"+

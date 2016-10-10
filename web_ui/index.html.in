@@ -75,6 +75,9 @@
 			</div>
 
 		</div>
+
+		<canvas id="canvas" width="250px" height="250px"></canvas>
+
 	</body>
 
 </html>
