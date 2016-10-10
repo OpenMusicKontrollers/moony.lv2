@@ -66,17 +66,18 @@
 			</div>
 
 			<div class="slide-menu">
-				<h1>properties</h1>
 				<div class="clip" hidden>
+					<h1>properties</h1>
 					<div class="props">
 						<table id="properties"></table>
 					</div>
+
+					<h1>canvas</h2>
+					<canvas id="canvas" width="250px" height="250px"></canvas>
 				</div>
 			</div>
 
 		</div>
-
-		<canvas id="canvas" width="250px" height="250px"></canvas>
 
 	</body>
 

@@ -865,7 +865,7 @@ function render(graph) {
 
 	ctx.fillStyle = 'white';
 	ctx.strokeStyle = 'white';
-	ctx.lineWidth = 1; //FIXME
+	ctx.lineWidth = 0.01;
 
 	for(var i in list) {
 		var cmd = list[i];
