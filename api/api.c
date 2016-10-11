@@ -836,23 +836,30 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 		&type,
 		&flags2);
 
-	if(chunk && (size <= MOONY_MAX_CHUNK_LEN) && (type == moony->forge.String) )
+	if(chunk && size && (type == moony->forge.String) )
 	{
-		strncpy(moony->chunk, chunk, size);
+		if(size <= MOONY_MAX_CHUNK_LEN)
+		{
+			strncpy(moony->chunk, chunk, size);
 
-		_clear_global_callbacks(L);
-		if(luaL_dostring(L, moony->chunk))
-			moony_error(moony);
+			_clear_global_callbacks(L);
+			if(luaL_dostring(L, moony->chunk))
+				moony_error(moony);
+			else
+				moony->error[0] = 0x0; // reset error flag
+
+			moony->dirty_out = 1; // trigger update of UI
+			moony->props_out = 1; // trigger update of UI
+			moony->once = true; // trigger call of 'once'
+		}
 		else
-			moony->error[0] = 0x0; // reset error flag
-
-		moony->dirty_out = 1; // trigger update of UI
-		moony->props_out = 1; // trigger update of UI
-		moony->once = true; // trigger call of 'once'
+		{
+			moony_err(moony, "restore: moony:code too long");
+		}
 	}
 	else
 	{
-		moony_err(moony, "chunk too long");
+		moony_err(moony, "restore: moony:code property not found");
 	}
 
 	const uint8_t *body = retrieve(
@@ -888,6 +895,10 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 			lua_gc(L, LUA_GCSTEP, 0);
 #endif
 		}
+	}
+	else
+	{
+		moony_err(moony, "restore: moony:state property not found");
 	}
 
 	return LV2_STATE_SUCCESS;
@@ -2152,7 +2163,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 					}
 					else
 					{
-						moony_err(moony, "chunk too long");
+						moony_err(moony, "load: moony:code too long");
 					}
 
 					// apply stash
