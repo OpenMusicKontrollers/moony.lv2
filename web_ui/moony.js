@@ -169,18 +169,27 @@ var CANVAS = {
 	graph             : 'canvas:graph',
 	body              : 'canvas:body',
 	BeginPath         : 'canvas:BeginPath',
-	MoveTo            : 'canvas:MoveTo',
-	LineTo            : 'canvas:LineTo',
-	Rectangle         : 'canvas:Rectangle',
+	ClosePath         : 'canvas:ClosePath',
 	Arc               : 'canvas:Arc',
 	CurveTo           : 'canvas:CurveTo',
-	Color             : 'canvas:Color',
+	LineTo            : 'canvas:LineTo',
+	MoveTo            : 'canvas:MoveTo',
+	Rectangle         : 'canvas:Rectangle',
+	Style             : 'canvas:Style',
 	LineWidth         : 'canvas:LineWidth',
-	ClosePath         : 'canvas:ClosePath',
+	LineDash          : 'canvas:LineDash',
+	LineCap           : 'canvas:LineCap',
+	LineJoin          : 'canvas:LineJoin',
+	MiterLimit        : 'canvas:MiterLimit',
 	Stroke            : 'canvas:Stroke',
 	Fill              : 'canvas:Fill',
+	Clip              : 'canvas:Clip',
+	Translate         : 'canvas:Translate',
+	Scale             : 'canvas:Scale',
+	Rotate            : 'canvas:Rotate',
+	Reset             : 'canvas:Reset',
 	FontSize          : 'canvas:FontSize',
-	ShowText          : 'canvas:ShowText'
+	FillText          : 'canvas:FillText'
 };
 
 var format = {
@@ -215,6 +224,8 @@ var trim = /[^a-zA-Z0-9_]+/g;
 
 var canvas = null;
 var ctx = null;
+var canvas_x = 0.5;
+var canvas_y = 0.5;
 
 function sequence_number(seq_num) {
 	return {
@@ -862,14 +873,24 @@ function canvas_clear() {
 	ctx.clearRect(0, 0, 1, 1);
 }
 
+function canvas_reset() {
+	//ctx.resetTransform(); // not widely supported, yet
+	ctx.setTransform(1, 0, 0, 1, 0, 0);
+	ctx.scale(canvas.width, canvas.height);
+}
+
 function canvas_render(graph) {
 	var list = graph[RDF.list];
 
+	canvas_reset();
 	ctx.clearRect(0, 0, 1, 1);
 
 	ctx.fillStyle = 'white';
 	ctx.strokeStyle = 'white';
 	ctx.lineWidth = 0.01;
+	ctx.setLineDash([]);
+	ctx.lineCap = 'butt';
+	ctx.lineJoin = 'miter';
 
 	for(var i in list) {
 		var cmd = list[i];
@@ -877,23 +898,8 @@ function canvas_render(graph) {
 
 		if(node_is_a(cmd, CANVAS.BeginPath)) {
 			ctx.beginPath();
-		} else if(node_is_a(cmd, CANVAS.MoveTo)) {
-			var list2 = body[RDF.list];
-			var x = list2[0][RDF.value];
-			var y = list2[1][RDF.value];
-			ctx.moveTo(x, y);
-		} else if(node_is_a(cmd, CANVAS.LineTo)) {
-			var list2 = body[RDF.list];
-			var x = list2[0][RDF.value];
-			var y = list2[1][RDF.value];
-			ctx.lineTo(x, y);
-		} else if(node_is_a(cmd, CANVAS.Rectangle)) {
-			var list2 = body[RDF.list];
-			var x = list2[0][RDF.value];
-			var y = list2[1][RDF.value];
-			var w = list2[2][RDF.value];
-			var h = list2[3][RDF.value];
-			ctx.rect(x, y, w, h);
+		} else if(node_is_a(cmd, CANVAS.ClosePath)) {
+			ctx.closePath();
 		} else if(node_is_a(cmd, CANVAS.Arc)) {
 			var list2 = body[RDF.list];
 			var x = list2[0][RDF.value];
@@ -911,7 +917,26 @@ function canvas_render(graph) {
 			var x3 = list2[4][RDF.value];
 			var y3 = list2[5][RDF.value];
 			ctx.bezierCurveTo(x1, y1, x2, y2, x3, y3);
-		} else if(node_is_a(cmd, CANVAS.Color)) {
+		} else if(node_is_a(cmd, CANVAS.LineTo)) {
+			var list2 = body[RDF.list];
+			var x = list2[0][RDF.value];
+			var y = list2[1][RDF.value];
+			ctx.lineTo(x, y);
+		} else if(node_is_a(cmd, CANVAS.MoveTo)) {
+			var list2 = body[RDF.list];
+			var x = list2[0][RDF.value];
+			var y = list2[1][RDF.value];
+			ctx.moveTo(x, y);
+			canvas_x = x; // for FillText
+			canvas_y = y; // for FillText
+		} else if(node_is_a(cmd, CANVAS.Rectangle)) {
+			var list2 = body[RDF.list];
+			var x = list2[0][RDF.value];
+			var y = list2[1][RDF.value];
+			var w = list2[2][RDF.value];
+			var h = list2[3][RDF.value];
+			ctx.rect(x, y, w, h);
+		} else if(node_is_a(cmd, CANVAS.Style)) {
 			var value = body[RDF.value];
 			var col = color(value);
 			ctx.fillStyle = col;
@@ -919,16 +944,51 @@ function canvas_render(graph) {
 		} else if(node_is_a(cmd, CANVAS.LineWidth)) {
 			var value = body[RDF.value];
 			ctx.lineWidth = value;
-		} else if(node_is_a(cmd, CANVAS.ClosePath)) {
-			ctx.closePath();
+		} else if(node_is_a(cmd, CANVAS.LineDash)) {
+			var list2 = body[RDF.list]; //FIXME construct whole array
+			var on = list2[0][RDF.value];
+			var off = list2[1][RDF.value];
+			ctx.setLineDash([on, off]);
+		} else if(node_is_a(cmd, CANVAS.LineCap)) {
+			var value = body[RDF.value];
+			ctx.lineCap = value; // 'butt' || 'round' || 'square'
+		} else if(node_is_a(cmd, CANVAS.LineJoin)) {
+			var value = body[RDF.value];
+			ctx.lineJoin = value; // 'miter' || 'round' || 'bevel'
+		} else if(node_is_a(cmd, CANVAS.MiterLimit)) {
+			var value = body[RDF.value];
+			ctx.miterLimit = value;
 		} else if(node_is_a(cmd, CANVAS.Stroke)) {
 			ctx.stroke();
 		} else if(node_is_a(cmd, CANVAS.Fill)) {
 			ctx.fill();
+		} else if(node_is_a(cmd, CANVAS.Clip)) {
+			ctx.clip();
+		} else if(node_is_a(cmd, CANVAS.Save)) {
+			ctx.save();
+		} else if(node_is_a(cmd, CANVAS.Restore)) {
+			ctx.restore();
+		} else if(node_is_a(cmd, CANVAS.Translate)) {
+			var list2 = body[RDF.list];
+			var x = list2[0][RDF.value];
+			var y = list2[1][RDF.value];
+			ctx.translate(x, y);
+		} else if(node_is_a(cmd, CANVAS.Scale)) {
+			var list2 = body[RDF.list];
+			var w = list2[0][RDF.value];
+			var h = list2[1][RDF.value];
+			ctx.scale(w, h);
+		} else if(node_is_a(cmd, CANVAS.Rotate)) {
+			var value = body[RDF.value];
+			ctx.rotate(value);
+		} else if(node_is_a(cmd, CANVAS.Reset)) {
+			canvas_reset();
 		} else if(node_is_a(cmd, CANVAS.FontSize)) {
-			//TODO
-		} else if(node_is_a(cmd, CANVAS.ShowText)) {
-			//TODO
+			var value = body[RDF.value];
+			ctx.font = value + 'px monospace'; //FIXME do not use pixel unit
+		} else if(node_is_a(cmd, CANVAS.FillText)) {
+			var value = body[RDF.value];
+			ctx.fillText(value, canvas_x, canvas_y);
 		}
 	}
 }
@@ -1000,7 +1060,7 @@ $(document).ready(function() {
 
 	canvas = $('#canvas')[0];
 	ctx = canvas.getContext('2d');
-	ctx.scale(canvas.width, canvas.height);
+	canvas_reset();
 
 	editor = ace.edit("editor");
 	session = editor.getSession();
