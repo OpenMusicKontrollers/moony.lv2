@@ -27,14 +27,23 @@ if(NOT WIN32)
 	endif()
 endif()
 
+set(CMAKE_C_FLAGS "-fdata-sections -ffunction-sections ${CMAKE_C_FLAGS}")
 set(CMAKE_C_FLAGS "-std=gnu11 -Wextra -Wno-unused-parameter -ffast-math -fvisibility=hidden ${CMAKE_C_FLAGS}")
 set(CMAKE_C_FLAGS "-Wshadow -Wimplicit-function-declaration -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes ${CMAKE_C_FLAGS}")
+
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-z,defs ${CMAKE_MODULE_LINKER_FLAGS}")
 	set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-z,nodelete ${CMAKE_MODULE_LINKER_FLAGS}")
 elseif(WIN32)
 	set(CMAKE_C_FLAGS "-mstackrealign ${CMAKE_C_FLAGS}")
 endif()
+
+if(APPLE)
+	set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-dead_strip ${CMAKE_MODULE_LINKER_FLAGS}")
+else()
+	set(CMAKE_MODULE_LINKER_FLAGS "-Wl,--gc-sections -Wl,-s ${CMAKE_MODULE_LINKER_FLAGS}")
+endif()
+
 add_definitions("-D_GNU_SOURCE=1") # asprintf
 
 file(STRINGS "VERSION" MOONY_VERSION)
@@ -98,6 +107,7 @@ if(BUILD_SIMPLE_UI)
 	set_target_properties(moony_simple PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
 	set_target_properties(moony_simple PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 	set_target_properties(moony_simple PROPERTIES PREFIX "")
+	set_target_properties(moony_simple PROPERTIES LINK_FLAGS "-Wl,-e,lv2ui_descriptor")
 	install(TARGETS moony_simple DESTINATION ${PLUGIN_DEST})
 else()
 	set(SIMPLE_WRAP "#")
@@ -125,6 +135,7 @@ if(BUILD_WEB_UI)
 	set_target_properties(moony_web PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
 	set_target_properties(moony_web PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 	set_target_properties(moony_web PROPERTIES PREFIX "")
+	set_target_properties(moony_web PROPERTIES LINK_FLAGS "-Wl,-e,lv2ui_descriptor")
 	install(TARGETS moony_web DESTINATION ${PLUGIN_DEST})
 	install(FILES ${PROJECT_BINARY_DIR}/index.html DESTINATION ${PLUGIN_DEST}/web_ui)
 	install(FILES ${PROJECT_BINARY_DIR}/manual.html DESTINATION ${PLUGIN_DEST}/web_ui)
@@ -181,6 +192,7 @@ add_library(lua OBJECT
 	lua-5.3.3/ltablib.c
 	lua-5.3.3/lutf8lib.c)
 set_target_properties(lua PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
+set_target_properties(lua PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 
 add_library(api OBJECT
 	api/api.c
@@ -195,6 +207,7 @@ add_library(api OBJECT
 	tlsf-3.0/tlsf.c
 	tiny-AES128-C/aes.c)
 set_target_properties(api PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
+set_target_properties(api PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 
 add_library(moony MODULE
 	plugin/moony.c
@@ -214,6 +227,7 @@ target_link_libraries(moony ${LIBS})
 set_target_properties(moony PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
 set_target_properties(moony PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 set_target_properties(moony PROPERTIES PREFIX "")
+set_target_properties(moony PROPERTIES LINK_FLAGS "-Wl,-e,lv2_descriptor")
 install(TARGETS moony DESTINATION ${PLUGIN_DEST})
 
 configure_file(${PROJECT_SOURCE_DIR}/plugin/manifest.ttl.in ${PROJECT_BINARY_DIR}/manifest.ttl)
