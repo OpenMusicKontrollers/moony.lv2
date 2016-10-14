@@ -107,7 +107,9 @@ if(BUILD_SIMPLE_UI)
 	set_target_properties(moony_simple PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
 	set_target_properties(moony_simple PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 	set_target_properties(moony_simple PROPERTIES PREFIX "")
-	set_target_properties(moony_simple PROPERTIES LINK_FLAGS "-Wl,-e,lv2ui_descriptor")
+	if(NOT WIN32)
+		set_target_properties(moony_simple PROPERTIES LINK_FLAGS "-Wl,-e,lv2ui_descriptor")
+	endif()
 	install(TARGETS moony_simple DESTINATION ${PLUGIN_DEST})
 else()
 	set(SIMPLE_WRAP "#")
@@ -135,7 +137,9 @@ if(BUILD_WEB_UI)
 	set_target_properties(moony_web PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
 	set_target_properties(moony_web PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 	set_target_properties(moony_web PROPERTIES PREFIX "")
-	set_target_properties(moony_web PROPERTIES LINK_FLAGS "-Wl,-e,lv2ui_descriptor")
+	if(NOT WIN32)
+		set_target_properties(moony_web PROPERTIES LINK_FLAGS "-Wl,-e,lv2ui_descriptor")
+	endif()
 	install(TARGETS moony_web DESTINATION ${PLUGIN_DEST})
 	install(FILES ${PROJECT_BINARY_DIR}/index.html DESTINATION ${PLUGIN_DEST}/web_ui)
 	install(FILES ${PROJECT_BINARY_DIR}/manual.html DESTINATION ${PLUGIN_DEST}/web_ui)
@@ -227,7 +231,9 @@ target_link_libraries(moony ${LIBS})
 set_target_properties(moony PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
 set_target_properties(moony PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 set_target_properties(moony PROPERTIES PREFIX "")
-set_target_properties(moony PROPERTIES LINK_FLAGS "-Wl,-e,lv2_descriptor")
+if(NOT WIN32)
+	set_target_properties(moony PROPERTIES LINK_FLAGS "-Wl,-e,lv2_descriptor")
+endif()
 install(TARGETS moony DESTINATION ${PLUGIN_DEST})
 
 configure_file(${PROJECT_SOURCE_DIR}/plugin/manifest.ttl.in ${PROJECT_BINARY_DIR}/manifest.ttl)
