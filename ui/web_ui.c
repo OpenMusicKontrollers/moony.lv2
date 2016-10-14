@@ -913,7 +913,7 @@ _idle_cb(LV2UI_Handle instance)
 
 	if(!ui->done)
 	{
-		if(lws_service(ui->context, 0))
+		if(lws_service(ui->context, 1)) // 1ms timeout
 			ui->done = 1; // lws errored
 	}
 
