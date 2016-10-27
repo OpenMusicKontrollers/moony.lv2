@@ -35,7 +35,7 @@
 
 #define RDF_PREFIX    "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 #define RDFS_PREFIX   "http://www.w3.org/2000/01/rdf-schema#"
-#define CANVAS_PREFIX MOONY_URI"#canvas#"
+#define CANVAS_PREFIX "http://open-music-kontrollers.ch/lv2/canvas#"
 
 #define RDF__value    RDF_PREFIX"value"
 #define RDF__type     RDF_PREFIX"type"

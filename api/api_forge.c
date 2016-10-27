@@ -1315,7 +1315,7 @@ _lforge_canvas_style(lua_State *L)
 
 	const int64_t style = luaL_checkinteger(L, 2);
 
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_rectangle))
+	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_style))
 		luaL_error(L, forge_buffer_overflow);
 	if(!lv2_atom_forge_key(lforge->forge, moony->uris.canvas_body))
 		luaL_error(L, forge_buffer_overflow);

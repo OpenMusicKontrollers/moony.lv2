@@ -26,7 +26,7 @@ var LV2_UI_PREFIX   = 'http://lv2plug.in/ns/extensions/ui#';
 var LV2_UNITS_PREFIX= 'http://lv2plug.in/ns/extensions/units#';
 var RDF_PREFIX      = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
 var RDFS_PREFIX     = 'http://www.w3.org/2000/01/rdf-schema#';
-var CANVAS_PREFIX   = 'http://open-music-kontrollers.ch/lv2/moony#canvas#';
+var CANVAS_PREFIX   = 'http://open-music-kontrollers.ch/lv2/canvas#';
 var MOONY_PREFIX    = 'http://open-music-kontrollers.ch/lv2/moony#';
 
 var context = {
