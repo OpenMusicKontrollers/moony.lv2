@@ -266,13 +266,13 @@ _lcps2midi(lua_State *L)
 }
 
 static const char *note_keys [12] = {
-	"C-", "C#-",
-	"D-", "D#-",
-	"E-",
-	"F-", "F#-",
-	"G-", "G#-",
-	"A-", "A#-",
-	"H-"
+	"C", "C#",
+	"D", "D#",
+	"E",
+	"F", "F#",
+	"G", "G#",
+	"A", "A#",
+	"H"
 };
 
 static int
@@ -290,9 +290,9 @@ _lnote__index(lua_State *L)
 		if( (note >= 0) && (note < 0x80) )
 		{
 			char name [16];
-			const unsigned octave = note / 12;
-			const unsigned key = note % 12;
-			snprintf(name, 16, "%s%"PRIu32, note_keys[key], octave);
+			const int8_t octave = note / 12 - 1;
+			const uint8_t key = note % 12;
+			snprintf(name, 16, "%s%+"PRIi8, note_keys[key], octave);
 
 			lua_pushstring(L, name);
 			return 1;
@@ -308,10 +308,10 @@ _lnote__index(lua_State *L)
 			const char *key = note_keys[i];
 			const size_t key_len = strlen(key);
 
-			if(!strncmp(str, key, key_len))
+			if( (str_len - 2 == key_len) && !strncmp(str, key, key_len) )
 			{
 				const int octave = atoi(str + key_len);
-				const int note = octave*12 + i;
+				const int note = (octave + 1)*12 + i;
 				if( (note >= 0) && (note < 0x80) )
 				{
 					lua_pushinteger(L, note);

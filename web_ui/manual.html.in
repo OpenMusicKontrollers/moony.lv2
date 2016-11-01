@@ -3357,8 +3357,8 @@ assert(cps2midi(400.0, 60, 12, 400) == 60.0) -- relative to 'C-5'==400 Hz</code>
 		<a class="api-snippet" href="#snippet-util-note" data-snippet="snippet-util-note">&rArr; show snippet</a>
 		<pre class="api-hidden"><code id="snippet-util-note">-- Note
 
-assert(Note[60] == 'C-5')
-assert(Note['A-5'] == 69)</code></pre>
+assert(Note[60] == 'C+4')
+assert(Note['A+4'] == 69)</code></pre>
 		</div></div>
 
 		<!-- encrypt -->
