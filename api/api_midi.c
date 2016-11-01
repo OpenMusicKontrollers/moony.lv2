@@ -132,6 +132,7 @@ const midi_msg_t midi_msgs [] = {
 	{ LV2_MIDI_MSG_STOP									, "Stop" },
 	{ LV2_MIDI_MSG_ACTIVE_SENSE					, "ActiveSense" },
 	{ LV2_MIDI_MSG_RESET								, "Reset" },
+	{ 0xf7															, "EndOfExclusive" },
 
 	{ 0, NULL} // sentinel
 };

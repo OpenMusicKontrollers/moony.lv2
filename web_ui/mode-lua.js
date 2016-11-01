@@ -59,7 +59,7 @@ var LuaHighlightRules = function() {
 				"Bool|Chunk|Double|Float|Int|Long|Literal|Object|Path|Property|Sequence|String|Tuple|URI|URID|Vector|frameTime|beatTime|"+
 				// moony MIDI
 				"MidiEvent|"+
-				"NoteOff|NoteOn|NotePressure|Controller|ProgramChange|ChannelPressure|Bender|SystemExclusive|QuarterFrame|SongPosition|SongSelect|TuneRequest|Clock|Start|Continue|Stop|ActiveSense|Reset|"+
+				"NoteOff|NoteOn|NotePressure|Controller|ProgramChange|ChannelPressure|Bender|SystemExclusive|QuarterFrame|SongPosition|SongSelect|TuneRequest|Clock|Start|Continue|Stop|ActiveSense|Reset|EndOfExclusive|"+
 				"BankSelection_MSB|Modulation_MSB|Breath_MSB|Foot_MSB|PortamentoTime_MSB|DataEntry_MSB|MainVolume_MSB|Balance_MSB|Panpot_MSB|Expression_MSB|Effect1_MSB|Effect2_MSB|GeneralPurpose1_MSB|GeneralPurpose2_MSB|GeneralPurpose3_MSB|GeneralPurpose4_MSB|BankSelection_LSB|Modulation_LSB|Breath_LSB|Foot_LSB|PortamentoTime_LSB|DataEntry_LSB|MainVolume_LSB|Balance_LSB|Panpot_LSB|Expression_LSB|Effect1_LSB|Effect2_LSB|GeneralPurpose1_LSB|GeneralPurpose2_LSB|GeneralPurpose3_LSB|GeneralPurpose4_LSB|SustainPedal|Portamento|Sostenuto|SoftPedal|LegatoFootSwitch|Hold2|SoundVariation|ReleaseTime|Timbre|AttackTime|Brightness|SC1|SC2|SC3|SC4|SC5|SC6|SC7|SC8|SC9|SC10|GeneralPurpose5|GeneralPurpose6|GeneralPurpose7|GeneralPurpose8|PortamentoControl|ReverbDepth|TremoloDepth|ChorusDepth|DetuneDepth|PhaserDepth|E1|E2|E3|E4|E5|DataIncrement|DataDecrement|NRPN_LSB|NRPN_MSB|RPN_LSB|RPN_MSB|AllSoundsOff|ResetControllers|LocalControlSwitch|AllNotesOff|OmniOff|OmniOn|Mono1|Mono2|"+
 				// moony Time
 				"Position|barBeat|bar|beat|beatUnit|beatsPerBar|beatsPerMinute|frame|framesPerSecond|speed|"+
