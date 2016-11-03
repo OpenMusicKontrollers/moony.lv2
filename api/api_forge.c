@@ -486,7 +486,7 @@ _lforge_to_timetag(lua_State *L, moony_t *moony, lforge_t *lforge, int pos)
 		uint64_t t0 = moony->osc_sched->frames2osc(moony->osc_sched->handle, lforge->last.frames);
 		uint64_t dt = timetag - t0;
 		double dd = dt * 0x1p-32;
-		printf("%"PRIU64" %lf\n", dt, dd);
+		printf("%"PRIu64" %lf\n", dt, dd);
 		*/
 	}
 
@@ -502,7 +502,7 @@ _lforge_osc_bundle(lua_State *L)
 	LV2_OSC_URID *osc_urid = &moony->osc_urid;
 	LV2_Atom_Forge *forge = lforge->forge;
 
-	uint64_t timetag = _lforge_to_timetag(L, moony, lforge, 2);
+	const uint64_t timetag = _lforge_to_timetag(L, moony, lforge, 2);
 
 	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
 	lframe->depth = 2;
