@@ -1396,18 +1396,20 @@ _lforge_canvas_curve_to(lua_State *L)
 	lforge_t *lforge = lua_touserdata(L, 1);
 	LV2_Atom_Forge_Frame frame;
 
-	const float vec [4] = {
+	const float vec [6] = {
 		luaL_checknumber(L, 2),
 		luaL_checknumber(L, 3),
 		luaL_checknumber(L, 4),
-		luaL_checknumber(L, 5)
+		luaL_checknumber(L, 5),
+		luaL_checknumber(L, 6),
+		luaL_checknumber(L, 7)
 	};
 
 	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_curveTo))
 		luaL_error(L, forge_buffer_overflow);
 	if(!lv2_atom_forge_key(lforge->forge, moony->uris.canvas_body))
 		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_vector(lforge->forge, sizeof(float), lforge->forge->Float, 4, vec))
+	if(!lv2_atom_forge_vector(lforge->forge, sizeof(float), lforge->forge->Float, 6, vec))
 		luaL_error(L, forge_buffer_overflow);
 	lv2_atom_forge_pop(lforge->forge, &frame);
 
