@@ -542,6 +542,9 @@ _lforge_osc_bundle(lua_State *L)
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
 
+	lua_pushvalue(L, 1); // lforge
+	lua_setuservalue(L, -2); // store parent as uservalue
+
 	if(!lv2_osc_forge_bundle_head(forge, osc_urid, lframe->frame, LV2_OSC_TIMETAG_CREATE(timetag)))
 		luaL_error(L, forge_buffer_overflow);
 
@@ -707,6 +710,9 @@ _lforge_tuple(lua_State *L)
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
 
+	lua_pushvalue(L, 1); // lforge
+	lua_setuservalue(L, -2); // store parent as uservalue
+
 	if(!lv2_atom_forge_tuple(lforge->forge, &lframe->frame[0]))
 		luaL_error(L, forge_buffer_overflow);
 
@@ -764,6 +770,9 @@ _lforge_object(lua_State *L)
 	lframe->depth = 1;
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
+
+	lua_pushvalue(L, 1); // lforge
+	lua_setuservalue(L, -2); // store parent as uservalue
 
 	if(!lv2_atom_forge_object(lforge->forge, &lframe->frame[0], id, otype))
 		luaL_error(L, forge_buffer_overflow);
@@ -955,6 +964,9 @@ _lforge_sequence(lua_State *L)
 	lframe->last.frames = 0;
 	lframe->forge = lforge->forge;
 
+	lua_pushvalue(L, 1); // lforge
+	lua_setuservalue(L, -2); // store parent as uservalue
+
 	if(!lv2_atom_forge_sequence_head(lforge->forge, &lframe->frame[0], unit))
 		luaL_error(L, forge_buffer_overflow);
 
@@ -1111,6 +1123,9 @@ _lforge_set(lua_State *L)
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
 
+	lua_pushvalue(L, 1); // lforge
+	lua_setuservalue(L, -2); // store parent as uservalue
+
 	if(!lv2_atom_forge_object(lforge->forge, lframe->frame, 0, moony->uris.patch.set))
 		luaL_error(L, forge_buffer_overflow);
 
@@ -1150,6 +1165,9 @@ _lforge_put(lua_State *L)
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
 
+	lua_pushvalue(L, 1); // lforge
+	lua_setuservalue(L, -2); // store parent as uservalue
+
 	if(!lv2_atom_forge_object(lforge->forge, &lframe->frame[0], 0, moony->uris.patch.put))
 		luaL_error(L, forge_buffer_overflow);
 
@@ -1186,6 +1204,9 @@ _lforge_patch(lua_State *L)
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
 
+	lua_pushvalue(L, 1); // lforge
+	lua_setuservalue(L, -2); // store parent as uservalue
+
 	if(!lv2_atom_forge_object(lforge->forge, lframe->frame, 0, moony->uris.patch.patch))
 		luaL_error(L, forge_buffer_overflow);
 
@@ -1215,6 +1236,9 @@ _lforge_remove(lua_State *L)
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
 
+	lua_pushvalue(L, 1); // lforge
+	lua_setuservalue(L, -2); // store parent as uservalue
+
 	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.remove))
 		luaL_error(L, forge_buffer_overflow);
 	if(!lv2_atom_forge_object(lforge->forge, lframe->frame, 0, 0))
@@ -1232,6 +1256,9 @@ _lforge_add(lua_State *L)
 	lframe->depth = 1;
 	lframe->last.frames = lforge->last.frames;
 	lframe->forge = lforge->forge;
+
+	lua_pushvalue(L, 1); // lforge
+	lua_setuservalue(L, -2); // store parent as uservalue
 
 	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.add))
 		luaL_error(L, forge_buffer_overflow);
@@ -1810,7 +1837,9 @@ _lforge_pop(lua_State *L)
 	}
 	lforge->depth = 0; // reset depth
 
-	return 0;
+	lua_getuservalue(L, 1); // get parent lforge
+
+	return 1;
 }
 
 static int

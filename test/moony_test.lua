@@ -604,7 +604,7 @@ do
 
 		obj:key(key2, ctx2):long(13)
 
-		assert(obj:pop() == nil)
+		assert(obj:pop() == forge)
 
 		-- produce objectPack
 		for obj in forge:frame_time(0):objectPack(otype, id) do
@@ -699,7 +699,7 @@ do
 		bndl:message('/two', 'i', 2)
 		bndl:message('/three', 'i', 3)
 		bndl:bundle(0.1):pop() -- nested
-		assert(bndl:pop() == nil)
+		assert(bndl:pop() == forge)
 
 		forge:frame_time(6)
 		forge:message('/color', 'r', 0xff00007f)
@@ -1077,7 +1077,7 @@ do
 		subseq:time(1.1):int(1)
 		subseq:beat_time(2.2):int(1)
 
-		assert(subseq:pop() == nil)
+		assert(subseq:pop() == forge)
 
 		-- produce sequencePack
 		for seq in forge:frame_time(1):sequencePack() do

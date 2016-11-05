@@ -1393,6 +1393,8 @@ end</code></pre>
 
 			<dl>
 				<dt class="func">forge:pop()</dt>
+				<dt class="ret">(userdata)</dt>
+					<dd>parent container forge object</dd>
 			</dl>
 			</div></div>
 
