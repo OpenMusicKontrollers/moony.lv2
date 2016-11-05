@@ -343,7 +343,7 @@ print('hello world')</code></pre>
 
 		<p>Depending on the plugin variant, the <b>run</b> function takes variable amount
 		of arguments. All variants have the first and last two arguments in common, though.</p>
-		
+
 		<p>If a plugin has input event ports, sequence objects (Lua userdata) will be
 		given to the <b>run</b> function whose events can be iterated over.</p>
 
@@ -354,7 +354,7 @@ print('hello world')</code></pre>
 		<p>If a plugin has input control ports, those values will be given to the <b>run</b>
 		function as native Lua numbers.</p>
 
-		<p>If a plugin has output control ports, the <b>run</b> function is expected to 
+		<p>If a plugin has output control ports, the <b>run</b> function is expected to
 		return native Lua numbers, missing return values will be set to 0.0.</p>
 
 		<dl>
@@ -488,7 +488,7 @@ function stash(forge)
 
 	tup:pop()
 end
-		
+
 function apply(atom)
 	assert(atom.type == Atom.Tuple)
 
@@ -688,7 +688,7 @@ assert(prefix .. 'bar' == bar_uri)</code></pre>
 		<h2 id="urid-hashmap">HashMap</h2>
 		<p>A convenience wrapper and syntactic sugar around <a href="#urid-map">Map</a>.
 		Simplifies creating multiple mappings which share a common URI prefix.</p>
-		
+
 		<p>Returns a table which can be queried by indexing with the URI postfix.
 		The query is equivalent to a mapping of concatenated URI prefix and postfix.</p>
 
@@ -853,7 +853,7 @@ end</code></pre>
 			</dl>
 
 			<a class="api-snippet" href="#snippet-forge-double" data-snippet="snippet-forge-double">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-double">-- Forge Double 
+			<pre class="api-hidden"><code id="snippet-forge-double">-- Forge Double
 
 local function produce_atom(forge)
 	forge:double(12.5)
@@ -1181,6 +1181,14 @@ end</code></pre>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
+			<dl>
+				<dt class="func">forge:sequencePack(unit=0)</dt>
+				<dt>unit (integer)</dt>
+					<dd>event time unit as integer URID, defaults to 0, can either be Atom.frameTime or Atom.beatTime</dd>
+				<dt class="ret">(function)</dt>
+					<dd>iterator for derived container forge object which is automatically finalized</dd>
+			</dl>
+
 			<a class="api-snippet" href="#snippet-forge-sequence" data-snippet="snippet-forge-sequence">&rArr; show snippet</a>
 			<pre class="api-hidden"><code id="snippet-forge-sequence">-- Forge Sequence
 
@@ -1195,10 +1203,10 @@ local function produce_tup(forge)
 		seq:frame_time(1):int(13)
 	seq:pop() -- finalize container
 
-	seq = forge:sequence(Atom.beatTime) -- create derived container forge object
+	for seq in forge:sequencePack(Atom.beatTime) do -- create iterator for derived container forge object
 		seq:time(0.0):int(12)
 		seq:beat_time(1.0):int(13)
-	seq:pop() -- finalize container
+	end -- finalize container
 end</code></pre>
 			</div></div>
 
@@ -1260,15 +1268,30 @@ end</code></pre>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
+			<dl>
+				<dt class="func">forge:objectPack(otype=0, id=0)</dt>
+				<dt>otype (integer)</dt>
+					<dd>object type as integer URID, defaults to 0</dd>
+				<dt>id (integer)</dt>
+					<dd>object ID as integer URID, defaults to 0</dd>
+				<dt class="ret">(function)</dt>
+					<dd>iterator for derived container forge object which is automatically finalized</dd>
+			</dl>
+
 			<a class="api-snippet" href="#snippet-forge-object" data-snippet="snippet-forge-object">&rArr; show snippet</a>
 			<pre class="api-hidden"><code id="snippet-forge-object">-- Forge Object
 local urn = HashMap('urn:moony:xyz')
 
-local function produce_atom(forge)
+local function produce_tup(forge)
 	local obj = forge:object(urn.FooBar) -- create derived container forge object
 		obj:key(urn.foo):int(12) -- without context
 		obj:key(urn.bar, urn.ctx):long(13) -- with context
 	obj:pop() -- finalize container
+
+	for obj in forge:objectPack(urn.FooBar) do -- create iterator for derived container forge object
+		obj:key(urn.foo):int(12) -- without context
+		obj:key(urn.bar, urn.ctx):long(13) -- with context
+	end -- finalize container
 end</code></pre>
 			</div></div>
 
@@ -1299,10 +1322,16 @@ end</code></pre>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
+			<dl>
+				<dt class="func">forge:tuplePack()</dt>
+				<dt class="ret">(function)</dt>
+					<dd>iterator for derived container forge object which is automatically finalized</dd>
+			</dl>
+
 			<a class="api-snippet" href="#snippet-forge-tuple" data-snippet="snippet-forge-tuple">&rArr; show snippet</a>
 			<pre class="api-hidden"><code id="snippet-forge-tuple">-- Forge Tuple
 
-local function produce_atom(forge)
+local function produce_tup(forge)
 	local tup = forge:tuple() -- create derived container forge object
 		tup:int(12)
 		tup:long(13)
@@ -1311,6 +1340,15 @@ local function produce_atom(forge)
 		tup:string('this is an element of an atom tuple')
 		tup:bool(true)
 	tup:pop() -- finalize container
+
+	for tup in forge:tuplePack() do -- create iterator for derived container forge object
+		tup:int(12)
+		tup:long(13)
+		tup:float(13.5)
+		tup:double(14.5)
+		tup:string('this is an element of an atom tuple')
+		tup:bool(true)
+	end -- finalize container
 end</code></pre>
 			</div></div>
 
@@ -2469,7 +2507,7 @@ local function consume_atom(seq)
 		assert(frames == 0)
 		assert(atom.body == 12)
 	end
-			
+
 	-- indexing
 	local atom = seq[1]
 	assert(atom.body == 12)
@@ -2480,7 +2518,7 @@ end</code></pre>
 			<div class="api-tuple"><div class="api-content">
 			<h3 id="atom-tuple">Tuple</h3>
 			<p>A Tuple atom, e.g. of type Atom.Tuple and variable size. Atom size
-			denotes to number of items contained in atom body. An atom tuple 
+			denotes to number of items contained in atom body. An atom tuple
 			consists of individual atom items.</p>
 
 			<dl>
@@ -2550,7 +2588,7 @@ local function consume_atom(tup)
 	-- unpack
 	local a1 = tup:unpack()
 	assert(a1.body == 12)
-			
+
 	-- indexing
 	a1 = tup[1]
 	assert(a1.body == 12)
@@ -2561,7 +2599,7 @@ end</code></pre>
 			<div class="api-object"><div class="api-content">
 			<h3 id="atom-object">Object</h3>
 			<p>An Object atom, e.g. of type Atom.Object and variable size. Atom size
-			denotes to number of properties contained in atom body. An atom object 
+			denotes to number of properties contained in atom body. An atom object
 			consists of individual properties.</p>
 
 			<dl>
@@ -2634,7 +2672,7 @@ local function consume_atom(obj)
 		assert(atom.body == 12)
 		assert(ctx == 0)
 	end
-			
+
 	-- indexing
 	local atom = obj[urn.key]
 	assert(atom.body == 12)
@@ -2645,7 +2683,7 @@ end</code></pre>
 			<div class="api-vector"><div class="api-content">
 			<h3 id="atom-vector">Vector</h3>
 			<p>A Vector atom, e.g. of type Atom.Vector and variable size. Atom size
-			denotes to number of items contained in atom body. An atom vector 
+			denotes to number of items contained in atom body. An atom vector
 			consists of equally typed atom items.</p>
 
 			<dl>
@@ -2734,7 +2772,7 @@ local function consume_atom(vec)
 	assert(v1.body == 12)
 	assert(v2.body == 13)
 	assert(v3.body == 14)
-			
+
 	-- indexing
 	v1, v2, v3 = vec[1], vec[2], vec[3]
 	assert(v1.body == 12)
@@ -2893,7 +2931,7 @@ local midiR = MIDIResponder({
 	end
 }, false) -- block all MIDI messages not explicitly handled by responder
 
--- forge test messages 
+-- forge test messages
 local function produce_seq(forge)
 	forge:time(0):midi(MIDI.NoteOn | 0x1, 69, 0x7f)
 	forge:time(1):midi(MIDI.NoteOff | 0x1, 69, 0x0)
@@ -2945,14 +2983,14 @@ end</code></pre>
 -- define OSC responder object with callbacks
 local oscR = OSCResponder({
 	-- listen for '/ping'
-	['/ping'] = function(self, frames, forge, fmt, var1, var2) 
+	['/ping'] = function(self, frames, forge, fmt, var1, var2)
 		assert(frames == 0)
 		assert(fmt == 'if')
 		assert(var1 == 12)
 		assert(var2 == 12.5)
 
 		-- send a '/pong'
-		forge:time(frames):message('/pong', fmt, var1, var2) 
+		forge:time(frames):message('/pong', fmt, var1, var2)
 	end
 })
 
@@ -3102,7 +3140,7 @@ function apply(atom)
 	assert(handled == true)
 end
 
--- forge test messages 
+-- forge test messages
 local function produce_seq(forge)
 	local obj = forge:time(0):object(Time.Position)
 		obj:key(Time.speed):float(1.0) -- start transport
@@ -3248,7 +3286,7 @@ function once(n, control, notify, seq, forge)
 	assert(stateR:register(0, forge) == forge)
 end
 
--- forge test messages 
+-- forge test messages
 local function produce_seq(forge)
 	forge:time(0):get(urn.period)
 end
@@ -3610,7 +3648,7 @@ assert(Units.unit == ctx.units.unit)</code></pre>
 
 <div class="api-editor">
 	<div id="editor" style="height:100%;">-- moony manual
-	
+
 -- load a code snippet from the left!</div>
 </div>
 

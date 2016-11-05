@@ -167,6 +167,10 @@ typedef enum _moony_upclosure_t {
 	MOONY_UPCLOSURE_SEQUENCE_FOREACH,
 	MOONY_UPCLOSURE_SEQUENCE_MULTIPLEX,
 
+	MOONY_UPCLOSURE_TUPLE_PACK,
+	MOONY_UPCLOSURE_OBJECT_PACK,
+	MOONY_UPCLOSURE_SEQUENCE_PACK,
+
 	MOONY_UPCLOSURE_COUNT
 } moony_upclosure_t;
 
@@ -300,11 +304,11 @@ struct _moony_t {
 
 	LV2_OSC_URID osc_urid;
 	LV2_OSC_Schedule *osc_sched;
-	
+
 	LV2_Worker_Schedule *sched;
 	volatile int working;
 	volatile int fully_extended;
-	
+
 	LV2_Log_Log *log;
 	LV2_Log_Logger logger;
 
@@ -419,7 +423,7 @@ _moony_patch(patch_t *patch, LV2_Atom_Forge *forge, LV2_URID key,
 	const char *str, uint32_t size)
 {
 	LV2_Atom_Forge_Frame frame;
-	
+
 	LV2_Atom_Forge_Ref ref = lv2_atom_forge_object(forge, &frame, 0, str ? patch->set : patch->get)
 		&& lv2_atom_forge_key(forge, patch->subject)
 		&& lv2_atom_forge_urid(forge, patch->self)

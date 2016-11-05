@@ -63,7 +63,7 @@ int
 _latom_clone(lua_State *L)
 {
 	latom_t *latom = lua_touserdata(L, 1);
-	
+
 	latom_t *litem = lua_newuserdata(L, sizeof(latom_t) + lv2_atom_total_size(latom->atom));
 	litem->lheader.type = MOONY_UDATA_ATOM;
 	litem->lheader.cache = false;
@@ -341,7 +341,7 @@ _latom_literal_value(lua_State *L, latom_t *latom)
 static int
 _latom_literal__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushfstring(L, "(literal: %p, %s)", latom, 
+	lua_pushfstring(L, "(literal: %p, %s)", latom,
 		LV2_ATOM_CONTENTS_CONST(LV2_Atom_Literal_Body, latom->body.lit));
 	return 1;
 }
@@ -451,7 +451,7 @@ _latom_tuple_foreach_itr(lua_State *L)
 		latom_t *litem = lua_touserdata(L, lua_upvalueindex(2));
 		litem->atom = latom->iter.tuple.item;
 		litem->body.raw = LV2_ATOM_BODY_CONST(litem->atom);
-	
+
 		// advance iterator
 		latom->iter.tuple.pos += 1;
 		latom->iter.tuple.item = lv2_atom_tuple_next(latom->iter.tuple.item);
@@ -552,7 +552,7 @@ _latom_obj_foreach_itr(lua_State *L)
 
 		// push context
 		lua_pushinteger(L, latom->iter.obj.prop->context);
-	
+
 		// advance iterator
 		latom->iter.obj.prop = lv2_atom_object_next(latom->iter.obj.prop);
 
@@ -605,7 +605,7 @@ _latom_seq__indexi(lua_State *L, latom_t *latom)
 	int count = 0;
 	LV2_ATOM_SEQUENCE_BODY_FOREACH(latom->body.seq, latom->atom->size, ev)
 	{
-		if(++count == index) 
+		if(++count == index)
 		{
 			_latom_new(L, &ev->body, latom->lheader.cache);
 			return 1;
@@ -687,7 +687,7 @@ _latom_seq_multiplex_itr(lua_State *L)
 		litem->atom = &latom[nxt]->iter.seq.ev->body;
 		litem->body.raw = LV2_ATOM_BODY_CONST(litem->atom);
 		lua_rawgeti(L, 1, 1+nxt);
-	
+
 		// advance iterator
 		latom[nxt]->iter.seq.ev = lv2_atom_sequence_next(latom[nxt]->iter.seq.ev);
 
@@ -743,7 +743,7 @@ _latom_seq_foreach_itr(lua_State *L)
 		latom_t *litem = lua_touserdata(L, lua_upvalueindex(2));
 		litem->atom = &latom->iter.seq.ev->body;
 		litem->body.raw = LV2_ATOM_BODY_CONST(litem->atom);
-	
+
 		// advance iterator
 		latom->iter.seq.ev = lv2_atom_sequence_next(latom->iter.seq.ev);
 

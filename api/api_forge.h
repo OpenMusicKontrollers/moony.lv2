@@ -31,11 +31,25 @@ struct _lforge_t {
 		int64_t frames;	// Time in audio frames
 		double  beats; // Time in beats
 	} last;
+	union {
+		struct {
+			LV2_URID otype; // Object type
+			LV2_URID id; // Object ID
+		};
+		LV2_URID unit; // Sequence time unit
+	} pack;
 	LV2_Atom_Forge_Frame frame [2];
 };
 
 LV2_Atom_Forge_Ref
 _lforge_basic(lua_State *L, int pos, LV2_Atom_Forge *forge, LV2_URID range);
+
+int
+_lforge_tuple_itr(lua_State *L);
+int
+_lforge_object_itr(lua_State *L);
+int
+_lforge_sequence_itr(lua_State *L);
 
 extern const char *forge_buffer_overflow;
 

@@ -1,15 +1,15 @@
 --[[
 	Copyright (c) 2015-2016 Hanspeter Portner (dev@open-music-kontrollers.ch)
-	
+
 	This is free software: you can redistribute it and/or modify
 	it under the terms of the Artistic License 2.0 as published by
 	The Perl Foundation.
-	
+
 	This source is distributed in the hope that it will be useful,
 	but WITHOUT ANY WARRANTY; without even the implied warranty of
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 	Artistic License 2.0 for more details.
-	
+
 	You should have received a copy of the Artistic License 2.0
 	along the source as a COPYING file. If not, obtain it from
 	http://www.perlfoundation.org/artistic_license_2_0.
@@ -34,7 +34,7 @@ do
 	local function producer(forge)
 		forge:frame_time(0)
 		forge:int(0x7fffffff)
-		
+
 		forge:frame_time(0):int(0xffffffff)
 	end
 
@@ -45,7 +45,7 @@ do
 		assert(#atom == 4)
 		assert(type(atom.body) == 'number')
 		assert(atom.body == 0x7fffffff)
-		
+
 		local atom = seq[2]
 		assert(atom.type == Atom.Int)
 		assert(#atom == 4)
@@ -146,7 +146,7 @@ do
 		assert(#atom == 4)
 		assert(type(atom.body) == 'boolean')
 		assert(atom.body == true)
-		
+
 		local atom = seq[2]
 		assert(atom.type == Atom.Bool)
 		assert(#atom == 4)
@@ -317,16 +317,16 @@ do
 		assert(status == m[1])
 		assert(note == m[2])
 		assert(vel == m[3])
-		
+
 		status, note, vel = atom:unpack(1, 2)
 		assert(status == m[1])
 		assert(note == m[2])
 		assert(vel == nil)
-		
+
 		note, vel = atom:unpack(2, 3)
 		assert(note == m[2])
 		assert(vel == m[3])
-		
+
 		status, note, vel = atom:unpack(-1, 5)
 		assert(status == m[1])
 		assert(note == m[2])
@@ -334,7 +334,7 @@ do
 
 		assert(atom:unpack(-1) == atom:unpack(0))
 		assert(atom:unpack(0) == atom:unpack(1))
-		
+
 		assert(#{atom:unpack()} == #{atom:unpack(-100, 100)})
 		assert(#{atom:unpack(1, 2)} == #{atom:unpack(2, 3)})
 
@@ -455,7 +455,7 @@ local function consumer_chunk(seq, c, atype)
 
 	assert(atom:unpack(-1) == atom:unpack(0))
 	assert(atom:unpack(0) == atom:unpack(1))
-	
+
 	assert(#{atom:unpack()} == #{atom:unpack(-100, 100)})
 	assert(#{atom:unpack(1, 2)} == #{atom:unpack(2, 3)})
 
@@ -487,7 +487,7 @@ do
 	test(producer, consumer)
 end
 
--- Raw 
+-- Raw
 print('[test] Raw')
 do
 	local u = Map['http://open-music-kontrollers.ch/lv2/moony#raw']
@@ -520,7 +520,10 @@ do
 		assert(tup ~= forge)
 		tup:int(1):float(2.0):long(3):double(4.0):pop()
 
-		forge:frame_time(1):tuple():pop()
+		-- produce tuplePack
+		for tup in forge:frame_time(1):tuplePack() do
+			tup:bool(true)
+		end
 	end
 
 	local function consumer(seq)
@@ -532,15 +535,15 @@ do
 		local sub = atom[1]
 		assert(sub.type == Atom.Int)
 		assert(sub.body == 1)
-		
+
 		sub = atom[2]
 		assert(sub.type == Atom.Float)
 		assert(sub.body == 2.0)
-		
+
 		sub = atom[3]
 		assert(sub.type == Atom.Long)
 		assert(sub.body == 3)
-		
+
 		sub = atom[4]
 		assert(sub.type == Atom.Double)
 		assert(sub.body == 4.0)
@@ -556,22 +559,28 @@ do
 		sub, subsub = atom:unpack(1, 1)
 		assert(sub.type == Atom.Int)
 		assert(subsub == nil)
-		
+
 		sub, subsub = atom:unpack(2)
 		assert(sub.type == Atom.Float)
 		assert(subsub.type == Atom.Long)
-		
+
 		assert(atom:unpack(-1).type == atom:unpack(0).type)
 		assert(atom:unpack(0).type == atom:unpack(1).type)
-		
+
 		assert(#{atom:unpack()} == #{atom:unpack(-100, 100)})
 		assert(#{atom:unpack(1, 2)} == #{atom:unpack(3, 4)})
 
+		-- consume tuplePack
 		atom = seq[2]
 		assert(atom.type == Atom.Tuple)
-		assert(#atom == 0)
+		assert(#atom == 1)
+
+		sub = atom[1]
+		assert(sub.type == Atom.Bool)
+		assert(sub.body == true)
+
 		assert(atom[0] == nil)
-		assert(atom[1] == nil)
+		assert(atom[2] == nil)
 	end
 
 	test(producer, consumer)
@@ -592,23 +601,28 @@ do
 		assert(obj ~= forge)
 
 		assert(obj:key(key1):int(12) == obj)
-		
+
 		obj:key(key2, ctx2):long(13)
 
 		assert(obj:pop() == nil)
+
+		-- produce objectPack
+		for obj in forge:frame_time(0):objectPack(otype, id) do
+			obj:key(key1):int(14)
+		end
 	end
 
 	local function consumer(seq)
-		assert(#seq == 1)
+		assert(#seq == 2)
 		local atom = seq[1]
 		assert(atom.type == Atom.Object)
-		assert(atom.id == 0)
+		assert(atom.id == id)
 		assert(atom.otype == otype)
 		assert(#atom == 2)
 
 		local sub = atom[key1]
 		assert(sub.type == Atom.Int)
-		
+
 		sub = atom[key2]
 		assert(sub.body == 13)
 
@@ -619,6 +633,17 @@ do
 				assert(ctx == ctx2)
 			end
 		end
+
+		-- consume objectPack
+		atom = seq[2]
+		assert(atom.type == Atom.Object)
+		assert(atom.id == id)
+		assert(atom.otype == otype)
+		assert(#atom == 1)
+
+		sub = atom[key1]
+		assert(sub.type == Atom.Int)
+		assert(sub.body == 14)
 	end
 
 	test(producer, consumer)
@@ -654,19 +679,19 @@ do
 	local function producer(forge)
 		forge:frame_time(0)
 		forge:message('/hello', 'sif', 'world', 12, 13.0)
-		
+
 		forge:frame_time(1)
 		forge:message('/hallo', 'Shdt', 'velo', 12, 13.0, 1)
-		
+
 		forge:frame_time(2)
 		forge:message('/yup', 'c', string.byte('a'))
-		
+
 		forge:frame_time(3)
 		forge:message('/singletons', 'TFNI')
-		
+
 		forge:frame_time(4)
 		forge:message('/chunky', 'mb', string.char(0x90, 0x20, 0x7f), string.char(0x01, 0x02, 0x03, 0x04))
-		
+
 		forge:frame_time(5)
 		local bndl = forge:bundle(1)
 		assert(bndl ~= forge)
@@ -675,7 +700,7 @@ do
 		bndl:message('/three', 'i', 3)
 		bndl:bundle(0.1):pop() -- nested
 		assert(bndl:pop() == nil)
-		
+
 		forge:frame_time(6)
 		forge:message('/color', 'r', 0xff00007f)
 	end
@@ -700,7 +725,7 @@ do
 		assert(args[3].type == Atom.Float)
 		assert(args[3].body == 13.0)
 		assert(args[4] == nil)
-		
+
 		atom = seq[2]
 		assert(atom.type == Atom.Object)
 		assert(atom.otype == OSC.Message)
@@ -722,7 +747,7 @@ do
 		assert(args[4][OSC.timetagIntegral].body == 0)
 		assert(args[4][OSC.timetagFraction].body == 1)
 		assert(args[5] == nil)
-		
+
 		atom = seq[3]
 		assert(atom.type == Atom.Object)
 		assert(atom.otype == OSC.Message)
@@ -737,7 +762,7 @@ do
 		assert(args[1].datatype == OSC.Char)
 		assert(args[1].body == 'a')
 		assert(args[2] == nil)
-		
+
 		atom = seq[4]
 		assert(atom.type == Atom.Object)
 		assert(atom.otype == OSC.Message)
@@ -758,7 +783,7 @@ do
 		assert(args[4].datatype == OSC.Impulse)
 		assert(args[4].body == '')
 		assert(args[5] == nil)
-		
+
 		atom = seq[5]
 		assert(atom.type == Atom.Object)
 		assert(atom.otype == OSC.Message)
@@ -781,7 +806,7 @@ do
 		assert(args[2][3] == 0x03)
 		assert(args[2][4] == 0x04)
 		assert(args[5] == nil)
-		
+
 		atom = seq[6]
 		assert(atom.type == Atom.Object)
 		assert(atom.otype == OSC.Bundle)
@@ -798,7 +823,7 @@ do
 		assert(itms[3].otype == OSC.Message)
 		assert(itms[4].otype == OSC.Bundle)
 		assert(#itms[4][OSC.bundleItems] == 0)
-		
+
 		atom = seq[7]
 		assert(atom.type == Atom.Object)
 		assert(atom.otype == OSC.Message)
@@ -1054,7 +1079,10 @@ do
 
 		assert(subseq:pop() == nil)
 
-		forge:frame_time(1):sequence():pop()
+		-- produce sequencePack
+		for seq in forge:frame_time(1):sequencePack() do
+			seq:time(10):bool(true)
+		end
 	end
 
 	local function consumer(seq)
@@ -1070,12 +1098,20 @@ do
 			assert(atom.body == 1)
 		end
 
+		-- consume sequencePack
 		subseq = seq[2]
 		assert(subseq.type == Atom.Sequence)
 		assert(subseq.unit == 0)
-		assert(#subseq == 0)
+		assert(#subseq == 1)
+
+		for frames, atom in subseq:foreach() do
+			assert(frames == 10)
+			assert(atom.type == Atom.Bool)
+			assert(atom.body == true)
+		end
+
 		assert(subseq[0] == nil)
-		assert(subseq[1] == nil)
+		assert(subseq[2] == nil)
 	end
 
 	test(producer, consumer)
@@ -1091,16 +1127,16 @@ do
 
 		forge:time(1)
 		forge:vector(Atom.Long, 5, 6, 7, 8)
-		
+
 		forge:time(2)
 		forge:vector(Atom.Bool, {true, false})
-		
+
 		forge:time(3)
 		forge:vector(Atom.Float, 1.0, 2.0)
-		
+
 		forge:time(4)
 		forge:vector(Atom.Double, {3.3, 4.4})
-		
+
 		forge:time(5)
 		forge:vector(Atom.URID, Atom.Int, Atom.Long)
 	end
@@ -1118,7 +1154,7 @@ do
 			assert(atom.type == Atom.Int)
 			assert(atom.body == i)
 		end
-		
+
 		vec = seq[2]
 		assert(vec.type == Atom.Vector)
 		assert(#vec == 4)
@@ -1148,7 +1184,7 @@ do
 		local a, b = vec:unpack()
 		assert(a.body == 1.0)
 		assert(b.body == 2.0)
-		
+
 		vec = seq[5]
 		assert(vec.type == Atom.Vector)
 		assert(#vec == 2)
@@ -1157,7 +1193,7 @@ do
 		local a, b = vec:unpack()
 		assert(a.body == 3.3)
 		assert(b.body == 4.4)
-		
+
 		vec = seq[6]
 		assert(vec.type == Atom.Vector)
 		assert(#vec == 2)
@@ -1200,7 +1236,7 @@ do
 
 		local set = forge:time(2):set(property, subject, rtid)
 		set:string('hello world'):pop()
-		
+
 		local set = forge:time(3):set(property, nil, rtid)
 		set:string('hello world'):pop()
 
@@ -1276,8 +1312,8 @@ do
 		assert(#patch == 4)
 		assert(patch[Patch.subject].body == subject)
 		assert(patch[Patch.sequenceNumber].body == rtid)
-		assert(patch[Patch.remove][access].body == Patch.wildcard) 
-		assert(patch[Patch.add][access].body == property) 
+		assert(patch[Patch.remove][access].body == Patch.wildcard)
+		assert(patch[Patch.add][access].body == property)
 
 		patch = seq[6]
 		assert(patch.type == Atom.Object)
@@ -1286,13 +1322,13 @@ do
 		assert(patch[Patch.subject].body == property)
 		assert(patch[Patch.sequenceNumber].body == rtid)
 		assert(patch[Patch.remove][RDFS.label].body == Patch.wildcard)
-		assert(patch[Patch.remove][RDFS.range].body == Patch.wildcard) 
-		assert(patch[Patch.remove][Core.minimum].body == Patch.wildcard) 
-		assert(patch[Patch.remove][Core.maximum].body == Patch.wildcard) 
-		assert(patch[Patch.add][RDFS.label].body == 'A dummy label') 
-		assert(patch[Patch.add][RDFS.range].body == Atom.Int) 
-		assert(patch[Patch.add][Core.minimum].body == 0) 
-		assert(patch[Patch.add][Core.maximum].body == 10) 
+		assert(patch[Patch.remove][RDFS.range].body == Patch.wildcard)
+		assert(patch[Patch.remove][Core.minimum].body == Patch.wildcard)
+		assert(patch[Patch.remove][Core.maximum].body == Patch.wildcard)
+		assert(patch[Patch.add][RDFS.label].body == 'A dummy label')
+		assert(patch[Patch.add][RDFS.range].body == Atom.Int)
+		assert(patch[Patch.add][Core.minimum].body == 0)
+		assert(patch[Patch.add][Core.maximum].body == 10)
 
 		local put = seq[7]
 		assert(put.type == Atom.Object)
@@ -1409,7 +1445,7 @@ do
 	test(producer, consumer)
 end
 
--- Note 
+-- Note
 print('[test] Note')
 do
 	assert(Note[0] == 'C-1')
