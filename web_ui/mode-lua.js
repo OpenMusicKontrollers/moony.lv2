@@ -43,7 +43,7 @@ var LuaHighlightRules = function() {
 				"getupvalue|upvaluejoin|upvalueid|setuservalue|sethook|setlocal|"+
 				"setmetatable|setupvalue|traceback|"+
 				// moony forge
-				"frame_time|beat_time|time|atom|int|long|float|double|bool|urid|string|literal|uri|path|"+
+				"frameTime|beatTime|time|atom|int|long|float|double|bool|urid|string|literal|uri|path|"+
 				"chunk|midi|raw|bundle|message|tuple|tuplePack|object|objectPack|key|property|vector|sequence|sequencePack|"+
 				"typed|get|set|put|patch|remove|add|ack|error|pop|"+
 				"beginPath|closePath|arc|curveTo|lineTo|moveTo|rectangle|style|lineWidth|lineDash|lineCap|lineJoin|miterLimig|stroke|fill|clip|save|restore|translate|scale|rotate|reset|fontSize|fillText|"+

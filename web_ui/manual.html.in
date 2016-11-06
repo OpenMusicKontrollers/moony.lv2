@@ -1195,17 +1195,17 @@ end</code></pre>
 local function produce_tup(forge)
 	local seq = forge:sequence() -- create derived container forge object
 		seq:time(0):int(12)
-		seq:frame_time(1):int(13)
+		seq:frameTime(1):int(13)
 	seq:pop() -- finalize container
 
 	seq = forge:sequence(Atom.frameTime) -- create derived container forge object
 		seq:time(0):int(12)
-		seq:frame_time(1):int(13)
+		seq:frameTime(1):int(13)
 	seq:pop() -- finalize container
 
 	for seq in forge:sequencePack(Atom.beatTime) do -- create iterator for derived container forge object
 		seq:time(0.0):int(12)
-		seq:beat_time(1.0):int(13)
+		seq:beatTime(1.0):int(13)
 	end -- finalize container
 end</code></pre>
 			</div></div>
@@ -1216,7 +1216,7 @@ end</code></pre>
 				<p>Forge frame time of event. Use this on sequences with unit 0 or Atom.frameTime.</p>
 
 				<dl>
-					<dt class="func">forge:frame_time(frames)</dt>
+					<dt class="func">forge:frameTime(frames)</dt>
 					<dt>frames (integer)</dt>
 						<dd>frame time of event</dd>
 					<dt class="ret">(userdata)</dt>
@@ -1230,7 +1230,7 @@ end</code></pre>
 				<p>Forge beat time of event. Use this on sequences with unit Atom.beatTime.</p>
 
 				<dl>
-					<dt class="func">forge:beat_time(beats)</dt>
+					<dt class="func">forge:beatTime(beats)</dt>
 					<dt>beats (number)</dt>
 						<dd>beat time of event</dd>
 					<dt class="ret">(userdata)</dt>

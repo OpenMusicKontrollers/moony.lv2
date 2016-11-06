@@ -1904,8 +1904,8 @@ const luaL_Reg lforge_mt [] = {
 
 	{"sequence", _lforge_sequence},
 	{"sequencePack", _lforge_sequence_pack},
-	{"frame_time", _lforge_frame_time},
-	{"beat_time", _lforge_beat_time},
+	{"frameTime", _lforge_frame_time},
+	{"beatTime", _lforge_beat_time},
 	{"time", _lforge_time},
 
 	{"bundle", _lforge_osc_bundle},

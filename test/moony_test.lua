@@ -32,10 +32,10 @@ end
 print('[test] Int')
 do
 	local function producer(forge)
-		forge:frame_time(0)
+		forge:frameTime(0)
 		forge:int(0x7fffffff)
 
-		forge:frame_time(0):int(0xffffffff)
+		forge:frameTime(0):int(0xffffffff)
 	end
 
 	local function consumer(seq)
@@ -60,7 +60,7 @@ end
 print('[test] Frame mismatch')
 do
 	local function producer(forge)
-		forge:frame_time(0)
+		forge:frameTime(0)
 		forge:tuple() -- would need a pop()
 	end
 
@@ -77,7 +77,7 @@ end
 print('[test] Long')
 do
 	local function producer(forge)
-		forge:frame_time(0):long(0x100000000)
+		forge:frameTime(0):long(0x100000000)
 	end
 
 	local function consumer(seq)
@@ -96,7 +96,7 @@ end
 print('[test] Float')
 do
 	local function producer(forge)
-		forge:frame_time(0)
+		forge:frameTime(0)
 		forge:float(2.0)
 	end
 
@@ -116,7 +116,7 @@ end
 print('[test] Double')
 do
 	local function producer(forge)
-		forge:frame_time(0):double(0.12)
+		forge:frameTime(0):double(0.12)
 	end
 
 	local function consumer(seq)
@@ -135,8 +135,8 @@ end
 print('[test] Bool')
 do
 	local function producer(forge)
-		forge:beat_time(0.1):bool(true)
-		forge:beat_time(0.2):bool(false)
+		forge:beatTime(0.1):bool(true)
+		forge:beatTime(0.2):bool(false)
 	end
 
 	local function consumer(seq)
@@ -164,7 +164,7 @@ do
 	local str = 'hello world'
 
 	local function producer(forge)
-		forge:frame_time(0)
+		forge:frameTime(0)
 		forge:string(str)
 	end
 
@@ -188,7 +188,7 @@ do
 	local lang = Map['http://test.org#lang']
 
 	local function producer(forge)
-		forge:frame_time(0)
+		forge:frameTime(0)
 		forge:literal(str, datatype, lang)
 	end
 
@@ -216,7 +216,7 @@ do
 	local uri = 'http://test.org'
 
 	local function producer(forge)
-		forge:frame_time(0)
+		forge:frameTime(0)
 		forge:uri(uri)
 	end
 
@@ -238,7 +238,7 @@ do
 	local path = '/tmp/lua.lua'
 
 	local function producer(forge)
-		forge:frame_time(0)
+		forge:frameTime(0)
 		forge:path(path)
 	end
 
@@ -261,7 +261,7 @@ do
 	local urid = Map[uri]
 
 	local function producer(forge)
-		forge:frame_time(0):urid(urid)
+		forge:frameTime(0):urid(urid)
 	end
 
 	local function consumer(seq)
@@ -358,10 +358,10 @@ do
 	local stop = {MIDI.Stop, 0x2}
 
 	local function producer(forge)
-		forge:frame_time(0):midi(note_on)
-		forge:frame_time(1):midi(note_off)
-		forge:frame_time(2):midi(start)
-		forge:frame_time(3):midi(stop)
+		forge:frameTime(0):midi(note_on)
+		forge:frameTime(1):midi(note_off)
+		forge:frameTime(2):midi(start)
+		forge:frameTime(3):midi(stop)
 	end
 
 	local note_on_responder = false
@@ -470,13 +470,13 @@ do
 	local c = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06}
 
 	local function producer(forge)
-		forge:frame_time(0)
+		forge:frameTime(0)
 		forge:chunk(c)
 
-		forge:frame_time(0)
+		forge:frameTime(0)
 		forge:chunk(string.char(table.unpack(c)))
 
-		forge:frame_time(0)
+		forge:frameTime(0)
 		forge:chunk(table.unpack(c))
 	end
 
@@ -494,13 +494,13 @@ do
 	local c = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06}
 
 	local function producer(forge)
-		forge:frame_time(0)
+		forge:frameTime(0)
 		forge:raw(u, c)
 
-		forge:frame_time(0)
+		forge:frameTime(0)
 		forge:raw(u, string.char(table.unpack(c)))
 
-		forge:frame_time(0)
+		forge:frameTime(0)
 		forge:raw(u, table.unpack(c))
 	end
 
@@ -515,13 +515,13 @@ end
 print('[test] Tuple')
 do
 	local function producer(forge)
-		forge:frame_time(0)
+		forge:frameTime(0)
 		local tup = forge:tuple()
 		assert(tup ~= forge)
 		tup:int(1):float(2.0):long(3):double(4.0):pop()
 
 		-- produce tuplePack
-		for tup in forge:frame_time(1):tuplePack() do
+		for tup in forge:frameTime(1):tuplePack() do
 			tup:bool(true)
 		end
 	end
@@ -596,7 +596,7 @@ do
 	local key2 = Map['http://test.org#key2']
 
 	local function producer(forge)
-		assert(forge:frame_time(0) == forge)
+		assert(forge:frameTime(0) == forge)
 		local obj = forge:object(otype, id)
 		assert(obj ~= forge)
 
@@ -607,7 +607,7 @@ do
 		assert(obj:pop() == forge)
 
 		-- produce objectPack
-		for obj in forge:frame_time(0):objectPack(otype, id) do
+		for obj in forge:frameTime(0):objectPack(otype, id) do
 			obj:key(key1):int(14)
 		end
 	end
@@ -657,7 +657,7 @@ do
 	local function producer(forge)
 		forge0 = forge
 
-		forge:frame_time(0)
+		forge:frameTime(0)
 		forge:int(12)
 	end
 
@@ -667,7 +667,7 @@ do
 		assert(atom.type == Atom.Int)
 		assert(atom.body == 12)
 
-		forge0:frame_time(0):atom(atom)
+		forge0:frameTime(0):atom(atom)
 	end
 
 	test(producer, consumer)
@@ -677,22 +677,22 @@ end
 print('[test] OSC')
 do
 	local function producer(forge)
-		forge:frame_time(0)
+		forge:frameTime(0)
 		forge:message('/hello', 'sif', 'world', 12, 13.0)
 
-		forge:frame_time(1)
+		forge:frameTime(1)
 		forge:message('/hallo', 'Shdt', 'velo', 12, 13.0, 1)
 
-		forge:frame_time(2)
+		forge:frameTime(2)
 		forge:message('/yup', 'c', string.byte('a'))
 
-		forge:frame_time(3)
+		forge:frameTime(3)
 		forge:message('/singletons', 'TFNI')
 
-		forge:frame_time(4)
+		forge:frameTime(4)
 		forge:message('/chunky', 'mb', string.char(0x90, 0x20, 0x7f), string.char(0x01, 0x02, 0x03, 0x04))
 
-		forge:frame_time(5)
+		forge:frameTime(5)
 		local bndl = forge:bundle(1)
 		assert(bndl ~= forge)
 		bndl:message('/one', 'i', 1)
@@ -701,7 +701,7 @@ do
 		bndl:bundle(0.1):pop() -- nested
 		assert(bndl:pop() == forge)
 
-		forge:frame_time(6)
+		forge:frameTime(6)
 		forge:message('/color', 'r', 0xff00007f)
 	end
 
@@ -842,16 +842,16 @@ end
 print('[test] OSCResponder')
 do
 	local function producer(forge)
-		forge:frame_time(0):message('/ping', 'i', 13)
-		forge:frame_time(1):bundle(0):message('/pong', 's', 'world'):pop()
+		forge:frameTime(0):message('/ping', 'i', 13)
+		forge:frameTime(1):bundle(0):message('/pong', 's', 'world'):pop()
 
-		forge:frame_time(2):message('/one/two/three', 'd', 12.3)
-		forge:frame_time(2):message('/one/*/three', 'd', 12.3)
-		forge:frame_time(2):message('/?ne/*/three', 'd', 12.3)
-		forge:frame_time(2):message('/?ne/*/{three,four}', 'd', 12.3)
-		forge:frame_time(2):message('/?ne/*/[tT]hree', 'd', 12.3)
-		forge:frame_time(2):message('/?ne/*/[!T]hree', 'd', 12.3)
-		forge:frame_time(2):message('/{one,eins}/*/{three,drei}', 'd', 12.3)
+		forge:frameTime(2):message('/one/two/three', 'd', 12.3)
+		forge:frameTime(2):message('/one/*/three', 'd', 12.3)
+		forge:frameTime(2):message('/?ne/*/three', 'd', 12.3)
+		forge:frameTime(2):message('/?ne/*/{three,four}', 'd', 12.3)
+		forge:frameTime(2):message('/?ne/*/[tT]hree', 'd', 12.3)
+		forge:frameTime(2):message('/?ne/*/[!T]hree', 'd', 12.3)
+		forge:frameTime(2):message('/{one,eins}/*/{three,drei}', 'd', 12.3)
 	end
 
 	local ping_responded = false
@@ -988,7 +988,7 @@ do
 	local time_responder = TimeResponder(time_cb)
 
 	local function producer(forge)
-		local obj = forge:frame_time(0):object(Time.Position)
+		local obj = forge:frameTime(0):object(Time.Position)
 		obj:key(Time.barBeat):float(0.5)
 		obj:key(Time.bar):long(34)
 		obj:key(Time.beatUnit):int(8)
@@ -1000,7 +1000,7 @@ do
 		obj:pop()
 
 		-- time:stash
-		forge:frame_time(1)
+		forge:frameTime(1)
 		time_responder:stash(forge)
 	end
 
@@ -1070,17 +1070,17 @@ print('[test] Sequence')
 do
 
 	local function producer(forge)
-		forge:frame_time(0)
+		forge:frameTime(0)
 		local subseq = forge:sequence(Atom.beatTime)
 		assert(subseq ~= forge)
 
 		subseq:time(1.1):int(1)
-		subseq:beat_time(2.2):int(1)
+		subseq:beatTime(2.2):int(1)
 
 		assert(subseq:pop() == forge)
 
 		-- produce sequencePack
-		for seq in forge:frame_time(1):sequencePack() do
+		for seq in forge:frameTime(1):sequencePack() do
 			seq:time(10):bool(true)
 		end
 	end
@@ -1404,14 +1404,14 @@ do
 	})
 
 	local function producer(forge)
-		forge:frame_time(0):get(urid.int, urid.subject)
-		forge:frame_time(1):set(urid.int, urid.subject):typed(Atom.Int, 2):pop()
+		forge:frameTime(0):get(urid.int, urid.subject)
+		forge:frameTime(1):set(urid.int, urid.subject):typed(Atom.Int, 2):pop()
 
-		forge:frame_time(2):get(urid.flt, urid.subject)
-		forge:frame_time(3):set(urid.flt, urid.subject):typed(Atom.Float, 2.0):pop()
+		forge:frameTime(2):get(urid.flt, urid.subject)
+		forge:frameTime(3):set(urid.flt, urid.subject):typed(Atom.Float, 2.0):pop()
 
 		-- state:stash
-		forge:frame_time(4)
+		forge:frameTime(4)
 		state:stash(forge)
 	end
 
