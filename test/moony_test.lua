@@ -703,10 +703,22 @@ do
 
 		forge:frameTime(6)
 		forge:message('/color', 'r', 0xff00007f)
+
+		-- create OSC message from scratch
+		for obj in forge:frameTime(6):objectPack(OSC.Message) do
+			obj:key(OSC.messagePath):string('/custom')
+			for tup in obj:key(OSC.messageArguments):tuplePack() do
+				tup:raw(0) -- nil
+				tup:impulse()
+				tup:char('c')
+				tup:rgba(0xbb0000ff)
+				tup:timetag(0xffeeddccaa998877)
+			end
+		end
 	end
 
 	local function consumer(seq)
-		assert(#seq == 7)
+		assert(#seq == 8)
 
 		local atom = seq[1]
 		assert(atom.type == Atom.Object)
@@ -833,6 +845,26 @@ do
 		assert(args[1].type == Atom.Literal)
 		assert(args[1].datatype == OSC.RGBA)
 		assert(args[1].body == 'ff00007f')
+
+		atom = seq[8]
+		assert(atom.type == Atom.Object)
+		assert(atom.otype == OSC.Message)
+		args = atom[OSC.messageArguments]
+		assert(args.type == Atom.Tuple)
+		assert(#args == 5)
+		assert(args[1].type == 0)
+		assert(args[2].type == Atom.Literal)
+		assert(args[2].datatype == OSC.Impulse)
+		assert(args[3].type == Atom.Literal)
+		assert(args[3].datatype == OSC.Char)
+		assert(args[3].body == 'c')
+		assert(args[4].type == Atom.Literal)
+		assert(args[4].datatype == OSC.RGBA)
+		assert(args[4].body == 'bb0000ff')
+		assert(args[5].type == Atom.Object)
+		assert(args[5].otype == OSC.Timetag)
+		assert(args[5][OSC.timetagIntegral].body == 0xffeeddcc)
+		assert(args[5][OSC.timetagFraction].body == 0xaa998877)
 	end
 
 	test(producer, consumer)

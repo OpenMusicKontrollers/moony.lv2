@@ -701,6 +701,72 @@ _lforge_osc_message(lua_State *L)
 }
 
 static int
+_lforge_osc_impulse(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = lua_touserdata(L, 1);
+	LV2_OSC_URID *osc_urid = &moony->osc_urid;
+
+	if(!lv2_osc_forge_impulse(lforge->forge, osc_urid))
+		luaL_error(L, forge_buffer_overflow);
+
+	lua_settop(L, 1);
+	return 1;
+}
+
+static int
+_lforge_osc_char(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = lua_touserdata(L, 1);
+	LV2_OSC_URID *osc_urid = &moony->osc_urid;
+
+	const char *ch = luaL_checkstring(L, 2);
+
+	if(!lv2_osc_forge_char(lforge->forge, osc_urid, ch[0]))
+		luaL_error(L, forge_buffer_overflow);
+
+	lua_settop(L, 1);
+	return 1;
+}
+
+static int
+_lforge_osc_rgba(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = lua_touserdata(L, 1);
+	LV2_OSC_URID *osc_urid = &moony->osc_urid;
+
+	const uint32_t col = luaL_checkinteger(L, 2);
+	const uint8_t r = (col >> 24) & 0xff;
+	const uint8_t g = (col >> 16) & 0xff;
+	const uint8_t b = (col >>  8) & 0xff;
+	const uint8_t a = (col >>  0) & 0xff;
+
+	if(!lv2_osc_forge_rgba(lforge->forge, osc_urid, r, g, b, a))
+		luaL_error(L, forge_buffer_overflow);
+
+	lua_settop(L, 1);
+	return 1;
+}
+
+static int
+_lforge_osc_timetag(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = lua_touserdata(L, 1);
+	LV2_OSC_URID *osc_urid = &moony->osc_urid;
+
+	const uint64_t tt = _lforge_to_timetag(L, moony, lforge, 2);
+
+	if(!lv2_osc_forge_timetag(lforge->forge, osc_urid, LV2_OSC_TIMETAG_CREATE(tt)))
+		luaL_error(L, forge_buffer_overflow);
+
+	lua_settop(L, 1);
+	return 1;
+}
+
+static int
 _lforge_tuple(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1908,9 +1974,15 @@ const luaL_Reg lforge_mt [] = {
 	{"beatTime", _lforge_beat_time},
 	{"time", _lforge_time},
 
+	// OSC
 	{"bundle", _lforge_osc_bundle},
 	{"message", _lforge_osc_message},
+	{"impulse", _lforge_osc_impulse},
+	{"char", _lforge_osc_char},
+	{"rgba", _lforge_osc_rgba},
+	{"timetag", _lforge_osc_timetag},
 
+	// patch
 	{"get", _lforge_get},
 	{"set", _lforge_set},
 	{"put", _lforge_put},
@@ -1948,6 +2020,7 @@ const luaL_Reg lforge_mt [] = {
 
 	{"pop", _lforge_pop},
 
+	// stash
 	{"read", _lforge_read},
 
 	{"__tostring", _lforge__tostring},
