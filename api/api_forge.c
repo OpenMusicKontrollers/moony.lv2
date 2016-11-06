@@ -721,9 +721,9 @@ _lforge_osc_char(lua_State *L)
 	lforge_t *lforge = lua_touserdata(L, 1);
 	LV2_OSC_URID *osc_urid = &moony->osc_urid;
 
-	const char *ch = luaL_checkstring(L, 2);
+	const char ch = luaL_checkinteger(L, 2);
 
-	if(!lv2_osc_forge_char(lforge->forge, osc_urid, ch[0]))
+	if(!lv2_osc_forge_char(lforge->forge, osc_urid, ch))
 		luaL_error(L, forge_buffer_overflow);
 
 	lua_settop(L, 1);

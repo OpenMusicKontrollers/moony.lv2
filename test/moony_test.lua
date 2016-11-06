@@ -710,7 +710,7 @@ do
 			for tup in obj:key(OSC.messageArguments):tuplePack() do
 				tup:raw(0) -- nil
 				tup:impulse()
-				tup:char('c')
+				tup:char(string.byte('c'))
 				tup:rgba(0xbb0000ff)
 				tup:timetag(0xffeeddccaa998877)
 			end

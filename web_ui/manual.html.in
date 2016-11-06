@@ -1499,8 +1499,8 @@ end</code></pre>
 
 				<dl>
 					<dt class="func">forge:char(ch)</dt>
-					<dt>ch (string)</dt>
-						<dd>single character string</dd>
+					<dt>ch (integer)</dt>
+						<dd>character as integer</dd>
 					<dt class="ret">(userdata)</dt>
 						<dd>self forge object</dd>
 				</dl>
@@ -1558,7 +1558,7 @@ local function produce_atom(forge)
 			tup:bool(false) -- 'F'alse
 
 			-- forge 'c', 'r', 'm', 'S' OSC arguments
-			tup:char('c') -- 'c'char
+			tup:char(string.byte('c')) -- 'c'char
 			tup:rgba(0xbb0000ff) -- reddish, 'r'gba
 			tup:midi(MIDI.NoteOn, Note['C-0'], 64) -- 'm'idi
 			tup:urid(Core.sampleRate) -- 'S'ymbol
