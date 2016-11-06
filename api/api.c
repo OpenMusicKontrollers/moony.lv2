@@ -35,40 +35,12 @@
 
 #define RDF_PREFIX    "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 #define RDFS_PREFIX   "http://www.w3.org/2000/01/rdf-schema#"
-#define CANVAS_PREFIX "http://open-music-kontrollers.ch/lv2/canvas#"
 
 #define RDF__value    RDF_PREFIX"value"
 #define RDF__type     RDF_PREFIX"type"
 #define RDFS__label   RDFS_PREFIX"label"
 #define RDFS__range   RDFS_PREFIX"range"
 #define RDFS__comment RDFS_PREFIX"comment"
-
-#define CANVAS__graph      CANVAS_PREFIX"graph"
-#define CANVAS__body       CANVAS_PREFIX"body"
-#define CANVAS__BeginPath  CANVAS_PREFIX"BeginPath"
-#define CANVAS__ClosePath  CANVAS_PREFIX"ClosePath"
-#define CANVAS__Arc        CANVAS_PREFIX"Arc"
-#define CANVAS__CurveTo    CANVAS_PREFIX"CurveTo"
-#define CANVAS__LineTo     CANVAS_PREFIX"LineTo"
-#define CANVAS__MoveTo     CANVAS_PREFIX"MoveTo"
-#define CANVAS__Rectangle  CANVAS_PREFIX"Rectangle"
-#define CANVAS__Style      CANVAS_PREFIX"Style"
-#define CANVAS__LineWidth  CANVAS_PREFIX"LineWidth"
-#define CANVAS__LineDash   CANVAS_PREFIX"LineDash"
-#define CANVAS__LineCap    CANVAS_PREFIX"LineCap"
-#define CANVAS__LineJoin   CANVAS_PREFIX"LineJoin"
-#define CANVAS__MiterLimit CANVAS_PREFIX"MiterLimig"
-#define CANVAS__Stroke     CANVAS_PREFIX"Stroke"
-#define CANVAS__Fill       CANVAS_PREFIX"Fill"
-#define CANVAS__Clip       CANVAS_PREFIX"Clip"
-#define CANVAS__Save       CANVAS_PREFIX"Save"
-#define CANVAS__Restore    CANVAS_PREFIX"Restore"
-#define CANVAS__Translate  CANVAS_PREFIX"Translate"
-#define CANVAS__Scale      CANVAS_PREFIX"Scale"
-#define CANVAS__Rotate     CANVAS_PREFIX"Rotate"
-#define CANVAS__Reset      CANVAS_PREFIX"Reset"
-#define CANVAS__FontSize   CANVAS_PREFIX"FontSize"
-#define CANVAS__FillText   CANVAS_PREFIX"FillText"
 
 #ifndef LV2_PATCH__Copy
 #	define LV2_PATCH__Copy LV2_PATCH_PREFIX "Copy"
@@ -1003,206 +975,6 @@ static const LV2_Worker_Interface work_iface = {
 };
 
 #ifdef BUILD_INLINE_DISPLAY
-static inline void
-_render_cmd(moony_t *moony, cairo_t *ctx, const LV2_Atom_Object *obj)
-{
-	//FIXME binary search for obj.body.otype
-	if(obj->body.otype == moony->uris.canvas_beginPath)
-	{
-		cairo_new_sub_path(ctx);
-		return;
-	}
-	if(obj->body.otype == moony->uris.canvas_closePath)
-	{
-		cairo_close_path(ctx);
-		return;
-	}
-	else if(obj->body.otype == moony->uris.canvas_stroke)
-	{
-		cairo_stroke(ctx);
-		return;
-	}
-	else if(obj->body.otype == moony->uris.canvas_fill)
-	{
-		cairo_fill(ctx);
-		return;
-	}
-	else if(obj->body.otype == moony->uris.canvas_clip)
-	{
-		cairo_clip(ctx);
-		return;
-	}
-	else if(obj->body.otype == moony->uris.canvas_save)
-	{
-		cairo_save(ctx);
-		return;
-	}
-	else if(obj->body.otype == moony->uris.canvas_restore)
-	{
-		cairo_restore(ctx);
-		return;
-	}
-	else if(obj->body.otype == moony->uris.canvas_reset)
-	{
-		cairo_identity_matrix(ctx);
-		return;
-	}
-
-	const LV2_Atom *body = NULL;
-
-	lv2_atom_object_get(obj, moony->uris.canvas_body, &body, 0);
-
-	if(!body)
-		return;
-
-	const LV2_Atom_Vector *vec = (const LV2_Atom_Vector *)body;
-	const float *flt = LV2_ATOM_CONTENTS_CONST(LV2_Atom_Vector, vec);
-	const size_t n = (vec->atom.type == moony->render.forge.Vector)
-		&& (vec->body.child_type == moony->render.forge.Float)
-		? (vec->atom.size - sizeof(LV2_Atom_Vector_Body)) / vec->body.child_size
-		: 0;
-
-	if(obj->body.otype == moony->uris.canvas_arc)
-	{
-		if(n >= 3)
-			cairo_arc(ctx, flt[0], flt[1], flt[2],
-				n >= 4 ? flt[3] : 0.0,
-				n >= 5 ? flt[4] : 2*M_PI);
-	}
-	else if(obj->body.otype == moony->uris.canvas_curveTo)
-	{
-		if(n >= 6)
-			cairo_curve_to(ctx, flt[0], flt[1], flt[2], flt[3], flt[4], flt[5]);
-	}
-	else if(obj->body.otype == moony->uris.canvas_lineTo)
-	{
-		if(n >= 2)
-			cairo_line_to(ctx, flt[0], flt[1]);
-	}
-	else if(obj->body.otype == moony->uris.canvas_moveTo)
-	{
-		if(n >= 2)
-			cairo_move_to(ctx, flt[0], flt[1]);
-	}
-	else if(obj->body.otype == moony->uris.canvas_rectangle)
-	{
-		if(n >= 4)
-			cairo_rectangle(ctx, flt[0], flt[1], flt[2], flt[3]);
-	}
-	else if(obj->body.otype == moony->uris.canvas_style)
-	{
-		const LV2_Atom_Long *col = body->type == moony->render.forge.Long
-			? (const LV2_Atom_Long *)body
-			: NULL;
-		if(col)
-			cairo_set_source_rgba(ctx,
-				(float)((col->body >> 16) & 0xff) / 0xff,
-				(float)((col->body >>  8) & 0xff) / 0xff,
-				(float)((col->body >>  0) & 0xff) / 0xff,
-				(float)((col->body >> 24) & 0xff) / 0xff);
-	}
-	else if(obj->body.otype == moony->uris.canvas_lineWidth)
-	{
-		const LV2_Atom_Float *w = body->type == moony->render.forge.Float
-			? (const LV2_Atom_Float *)body
-			: NULL;
-		if(w)
-			cairo_set_line_width(ctx, w->body);
-	}
-	else if(obj->body.otype == moony->uris.canvas_lineDash)
-	{
-		if(n >= 2)
-		{
-			const double dash [2] = {flt[0], flt[1]};
-			cairo_set_dash(ctx, dash, 2, 0);
-		}
-	}
-	else if(obj->body.otype == moony->uris.canvas_lineCap)
-	{
-		const char *str = body->type == moony->render.forge.String
-			? LV2_ATOM_BODY_CONST(body)
-			: NULL;
-		if(str)
-		{
-			cairo_line_cap_t cap = CAIRO_LINE_CAP_BUTT; //TODO use URIDs
-			if(!strcmp(str, "butt"))
-				cap = CAIRO_LINE_CAP_BUTT;
-			else if(!strcmp(str, "round"))
-				cap = CAIRO_LINE_CAP_ROUND;
-			else if(!strcmp(str, "square"))
-				cap = CAIRO_LINE_CAP_SQUARE;
-			cairo_set_line_cap(ctx, cap);
-		}
-	}
-	else if(obj->body.otype == moony->uris.canvas_lineJoin)
-	{
-		const char *str = body->type == moony->render.forge.String
-			? LV2_ATOM_BODY_CONST(body)
-			: NULL;
-		if(str)
-		{
-			cairo_line_join_t join = CAIRO_LINE_JOIN_MITER; //TODO use URIDs
-			if(!strcmp(str, "miter"))
-				join = CAIRO_LINE_JOIN_MITER;
-			else if(!strcmp(str, "round"))
-				join = CAIRO_LINE_JOIN_ROUND;
-			else if(!strcmp(str, "bevel"))
-				join = CAIRO_LINE_JOIN_BEVEL;
-			cairo_set_line_join(ctx, join);
-		}
-	}
-	else if(obj->body.otype == moony->uris.canvas_miterLimit)
-	{
-		const LV2_Atom_Float *m = body->type == moony->render.forge.Float
-			? (const LV2_Atom_Float *)body
-			: NULL;
-		if(m)
-			cairo_set_miter_limit(ctx, m->body);
-	}
-	else if(obj->body.otype == moony->uris.canvas_translate)
-	{
-		if(n >= 2)
-			cairo_translate(ctx, flt[0], flt[1]);
-	}
-	else if(obj->body.otype == moony->uris.canvas_scale)
-	{
-		if(n >= 2)
-			cairo_scale(ctx, flt[0], flt[1]);
-	}
-	else if(obj->body.otype == moony->uris.canvas_rotate)
-	{
-		const LV2_Atom_Float *r = body->type == moony->render.forge.Float
-			? (const LV2_Atom_Float *)body
-			: NULL;
-		if(r)
-			cairo_rotate(ctx, r->body);
-	}
-	else if(obj->body.otype == moony->uris.canvas_fontSize)
-	{
-		const LV2_Atom_Float *sz = body->type == moony->render.forge.Float
-			? (const LV2_Atom_Float *)body
-			: NULL;
-		if(sz)
-			cairo_set_font_size(ctx, sz->body);
-	}
-	else if(obj->body.otype == moony->uris.canvas_fillText)
-	{
-		const char *str = body->type == moony->render.forge.String
-			? LV2_ATOM_BODY_CONST(body)
-			: NULL;
-		if(str)
-		{
-			cairo_text_extents_t extents;
-			cairo_text_extents (ctx, str, &extents);
-			const float dx = (extents.width/2 + extents.x_bearing);
-			const float dy = (extents.height/2 + extents.y_bearing);
-			cairo_rel_move_to(ctx, -dx, -dy);
-			cairo_show_text(ctx, str);
-			cairo_fill(ctx);
-		}
-	}
-}
-
 static inline LV2_Inline_Display_Image_Surface *
 _cairo_init(moony_t *moony, int w, int h)
 {
@@ -1280,24 +1052,7 @@ _render(LV2_Handle instance, uint32_t w, uint32_t h)
 	_spin_lock(&moony->lock.render)
 	if(moony->render.atom && (moony->render.atom->type == moony->render.forge.Tuple))
 	{
-		// clear surface
-		cairo_set_source_rgba(moony->cairo.ctx, 0.0, 0.0, 0.0, 1.0);
-		cairo_rectangle(moony->cairo.ctx, 0.0, 0.0, 1.0, 1.0);
-		cairo_fill(moony->cairo.ctx);
-
-		// default attributes
-		cairo_set_font_size(moony->cairo.ctx, 0.1);
-		cairo_set_line_width(moony->cairo.ctx, 0.01);
-		cairo_set_source_rgba(moony->cairo.ctx, 1.0, 1.0, 1.0, 1.0);
-
-		const LV2_Atom_Tuple *tup = (const LV2_Atom_Tuple *)moony->render.atom;
-		LV2_ATOM_TUPLE_FOREACH(tup, itm)
-		{
-			if(lv2_atom_forge_is_object_type(&moony->render.forge, itm->type))
-				_render_cmd(moony, moony->cairo.ctx, (const LV2_Atom_Object *)itm);
-		}
-
-		cairo_surface_flush(moony->cairo.surface);
+		lv2_canvas_render(&moony->canvas, moony->cairo.ctx, (const LV2_Atom_Tuple *)moony->render.atom);
 	}
 	else
 	{
@@ -1440,32 +1195,10 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->uris.atom_frame_time = moony->map->map(moony->map->handle, LV2_ATOM__frameTime);
 	moony->uris.atom_beat_time = moony->map->map(moony->map->handle, LV2_ATOM__beatTime);
 
-	moony->uris.canvas_graph = moony->map->map(moony->map->handle, CANVAS__graph);
-	moony->uris.canvas_body = moony->map->map(moony->map->handle, CANVAS__body);
-	moony->uris.canvas_beginPath = moony->map->map(moony->map->handle, CANVAS__BeginPath);
-	moony->uris.canvas_closePath = moony->map->map(moony->map->handle, CANVAS__ClosePath);
-	moony->uris.canvas_arc = moony->map->map(moony->map->handle, CANVAS__Arc);
-	moony->uris.canvas_curveTo = moony->map->map(moony->map->handle, CANVAS__CurveTo);
-	moony->uris.canvas_lineTo = moony->map->map(moony->map->handle, CANVAS__LineTo);
-	moony->uris.canvas_moveTo = moony->map->map(moony->map->handle, CANVAS__MoveTo);
-	moony->uris.canvas_rectangle = moony->map->map(moony->map->handle, CANVAS__Rectangle);
-	moony->uris.canvas_style = moony->map->map(moony->map->handle, CANVAS__Style);
-	moony->uris.canvas_lineWidth = moony->map->map(moony->map->handle, CANVAS__LineWidth);
-	moony->uris.canvas_lineDash = moony->map->map(moony->map->handle, CANVAS__LineDash);
-	moony->uris.canvas_lineCap = moony->map->map(moony->map->handle, CANVAS__LineCap);
-	moony->uris.canvas_lineJoin = moony->map->map(moony->map->handle, CANVAS__LineJoin);
-	moony->uris.canvas_miterLimit = moony->map->map(moony->map->handle, CANVAS__MiterLimit);
-	moony->uris.canvas_stroke = moony->map->map(moony->map->handle, CANVAS__Stroke);
-	moony->uris.canvas_fill = moony->map->map(moony->map->handle, CANVAS__Fill);
-	moony->uris.canvas_clip = moony->map->map(moony->map->handle, CANVAS__Clip);
-	moony->uris.canvas_save = moony->map->map(moony->map->handle, CANVAS__Save);
-	moony->uris.canvas_restore = moony->map->map(moony->map->handle, CANVAS__Restore);
-	moony->uris.canvas_translate = moony->map->map(moony->map->handle, CANVAS__Translate);
-	moony->uris.canvas_scale = moony->map->map(moony->map->handle, CANVAS__Scale);
-	moony->uris.canvas_rotate = moony->map->map(moony->map->handle, CANVAS__Rotate);
-	moony->uris.canvas_reset = moony->map->map(moony->map->handle, CANVAS__Reset);
-	moony->uris.canvas_fontSize = moony->map->map(moony->map->handle, CANVAS__FontSize);
-	moony->uris.canvas_fillText= moony->map->map(moony->map->handle, CANVAS__FillText);
+#ifdef BUILD_INLINE_DISPLAY
+	lv2_canvas_init(&moony->canvas, moony->map);
+#endif
+	lv2_canvas_urid_init(&moony->canvas_urid, moony->map);
 
 	lv2_osc_urid_init(&moony->osc_urid, moony->map);
 	lv2_atom_forge_init(&moony->forge, moony->map);
@@ -1881,6 +1614,12 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 		SET_MAP(L, CANVAS__, Reset);
 		SET_MAP(L, CANVAS__, FontSize);
 		SET_MAP(L, CANVAS__, FillText);
+		SET_MAP(L, CANVAS__, lineCapButt);
+		SET_MAP(L, CANVAS__, lineCapRound);
+		SET_MAP(L, CANVAS__, lineCapSquare);
+		SET_MAP(L, CANVAS__, lineJoinMiter);
+		SET_MAP(L, CANVAS__, lineJoinRound);
+		SET_MAP(L, CANVAS__, lineJoinBevel);
 	}
 	lua_setglobal(L, "Canvas");
 
@@ -2208,7 +1947,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 					if(strlen(moony->error) > 0)
 						moony->error_out = 1;
 				}
-				else if(property->body == moony->uris.canvas_graph)
+				else if(property->body == moony->canvas_urid.Canvas_graph)
 				{
 					moony->graph_out = 1;
 				}
@@ -2461,7 +2200,7 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 			if(ref)
 				ref = lv2_atom_forge_key(forge, moony->uris.patch.property);
 			if(ref)
-				ref = lv2_atom_forge_urid(forge, moony->uris.canvas_graph);
+				ref = lv2_atom_forge_urid(forge, moony->canvas_urid.Canvas_graph);
 			if(ref)
 				ref = lv2_atom_forge_key(forge, moony->uris.patch.value);
 			if(ref)

@@ -1403,11 +1403,9 @@ _lforge_canvas_begin_path(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_beginPath))
+	if(!lv2_canvas_forge_beginPath(lforge->forge, &moony->canvas_urid) )
 		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1418,11 +1416,9 @@ _lforge_canvas_close_path(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_closePath))
+	if(!lv2_canvas_forge_closePath(lforge->forge, &moony->canvas_urid) )
 		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1433,23 +1429,14 @@ _lforge_canvas_arc(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	const float vec [5] = {
-		luaL_checknumber(L, 2),
-		luaL_checknumber(L, 3),
-		luaL_checknumber(L, 4),
-		luaL_optnumber(L, 5, 0.f),
-		luaL_optnumber(L, 6, M_PI*2)
-	};
-
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_arc))
+	if(!lv2_canvas_forge_arc(lforge->forge, &moony->canvas_urid,
+			luaL_checknumber(L, 2),
+			luaL_checknumber(L, 3),
+			luaL_checknumber(L, 4),
+			luaL_optnumber(L, 5, 0.f),
+			luaL_optnumber(L, 6, M_PI*2)) )
 		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.canvas_body))
-		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_vector(lforge->forge, sizeof(float), lforge->forge->Float, 5, vec))
-		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1460,24 +1447,15 @@ _lforge_canvas_curve_to(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	const float vec [6] = {
-		luaL_checknumber(L, 2),
-		luaL_checknumber(L, 3),
-		luaL_checknumber(L, 4),
-		luaL_checknumber(L, 5),
-		luaL_checknumber(L, 6),
-		luaL_checknumber(L, 7)
-	};
-
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_curveTo))
+	if(!lv2_canvas_forge_curveTo(lforge->forge, &moony->canvas_urid,
+			luaL_checknumber(L, 2),
+			luaL_checknumber(L, 3),
+			luaL_checknumber(L, 4),
+			luaL_checknumber(L, 5),
+			luaL_checknumber(L, 6),
+			luaL_checknumber(L, 7)) )
 		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.canvas_body))
-		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_vector(lforge->forge, sizeof(float), lforge->forge->Float, 6, vec))
-		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1488,20 +1466,11 @@ _lforge_canvas_line_to(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	const float vec [2] = {
-		luaL_checknumber(L, 2),
-		luaL_checknumber(L, 3)
-	};
-
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_lineTo))
+	if(!lv2_canvas_forge_lineTo(lforge->forge, &moony->canvas_urid,
+			luaL_checknumber(L, 2),
+			luaL_checknumber(L, 3)) )
 		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.canvas_body))
-		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_vector(lforge->forge, sizeof(float), lforge->forge->Float, 2, vec))
-		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1512,20 +1481,11 @@ _lforge_canvas_move_to(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	const float vec [2] = {
-		luaL_checknumber(L, 2),
-		luaL_checknumber(L, 3)
-	};
-
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_moveTo))
+	if(!lv2_canvas_forge_moveTo(lforge->forge, &moony->canvas_urid,
+			luaL_checknumber(L, 2),
+			luaL_checknumber(L, 3)) )
 		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.canvas_body))
-		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_vector(lforge->forge, sizeof(float), lforge->forge->Float, 2, vec))
-		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1536,22 +1496,13 @@ _lforge_canvas_rectangle(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	const float vec [4] = {
-		luaL_checknumber(L, 2),
-		luaL_checknumber(L, 3),
-		luaL_checknumber(L, 4),
-		luaL_checknumber(L, 5)
-	};
-
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_rectangle))
+	if(!lv2_canvas_forge_rectangle(lforge->forge, &moony->canvas_urid,
+			luaL_checknumber(L, 2),
+			luaL_checknumber(L, 3),
+			luaL_checknumber(L, 4),
+			luaL_checknumber(L, 5)) )
 		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.canvas_body))
-		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_vector(lforge->forge, sizeof(float), lforge->forge->Float, 4, vec))
-		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1562,17 +1513,10 @@ _lforge_canvas_style(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	const int64_t style = luaL_checkinteger(L, 2);
-
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_style))
+	if(!lv2_canvas_forge_style(lforge->forge, &moony->canvas_urid,
+			luaL_checkinteger(L, 2)) )
 		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.canvas_body))
-		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_long(lforge->forge, style))
-		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1583,17 +1527,10 @@ _lforge_canvas_line_width(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	const float val = luaL_checknumber(L, 2);
-
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_lineWidth))
+	if(!lv2_canvas_forge_lineWidth(lforge->forge, &moony->canvas_urid,
+			luaL_checknumber(L, 2)) )
 		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.canvas_body))
-		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_float(lforge->forge, val))
-		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1604,20 +1541,11 @@ _lforge_canvas_line_dash(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	const float vec [2] = {
-		luaL_checknumber(L, 2),
-		luaL_checknumber(L, 3)
-	};
-
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_lineDash))
+	if(!lv2_canvas_forge_lineDash(lforge->forge, &moony->canvas_urid,
+			luaL_checknumber(L, 2),
+			luaL_checknumber(L, 3)) )
 		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.canvas_body))
-		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_vector(lforge->forge, sizeof(float), lforge->forge->Float, 2, vec))
-		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1628,18 +1556,10 @@ _lforge_canvas_line_cap(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	size_t sz;
-	const char *str = luaL_checklstring(L, 2, &sz);
-
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_lineCap))
+	if(!lv2_canvas_forge_lineCap(lforge->forge, &moony->canvas_urid,
+			luaL_checkinteger(L, 2)) )
 		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.canvas_body))
-		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_string(lforge->forge, str, sz))
-		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1650,18 +1570,10 @@ _lforge_canvas_line_join(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	size_t sz;
-	const char *str = luaL_checklstring(L, 2, &sz);
-
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_lineJoin))
+	if(!lv2_canvas_forge_lineJoin(lforge->forge, &moony->canvas_urid,
+			luaL_checkinteger(L, 2)) )
 		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.canvas_body))
-		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_string(lforge->forge, str, sz))
-		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1672,17 +1584,10 @@ _lforge_canvas_miter_limit(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	const float val  = luaL_checknumber(L, 2);
-
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_miterLimit))
+	if(!lv2_canvas_forge_miterLimit(lforge->forge, &moony->canvas_urid,
+			luaL_checknumber(L, 2)) )
 		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.canvas_body))
-		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_float(lforge->forge, val))
-		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1693,11 +1598,9 @@ _lforge_canvas_stroke(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_stroke))
+	if(!lv2_canvas_forge_stroke(lforge->forge, &moony->canvas_urid) )
 		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1708,11 +1611,9 @@ _lforge_canvas_fill(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_fill))
+	if(!lv2_canvas_forge_fill(lforge->forge, &moony->canvas_urid) )
 		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1723,11 +1624,9 @@ _lforge_canvas_clip(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_clip))
+	if(!lv2_canvas_forge_clip(lforge->forge, &moony->canvas_urid) )
 		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1738,11 +1637,9 @@ _lforge_canvas_save(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_save))
+	if(!lv2_canvas_forge_save(lforge->forge, &moony->canvas_urid) )
 		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1753,11 +1650,9 @@ _lforge_canvas_restore(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_restore))
+	if(!lv2_canvas_forge_restore(lforge->forge, &moony->canvas_urid) )
 		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1768,20 +1663,11 @@ _lforge_canvas_translate(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	const float vec [2] = {
-		luaL_checknumber(L, 2),
-		luaL_checknumber(L, 3)
-	};
-
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_translate))
+	if(!lv2_canvas_forge_translate(lforge->forge, &moony->canvas_urid,
+			luaL_checknumber(L, 2),
+			luaL_checknumber(L, 3)) )
 		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.canvas_body))
-		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_vector(lforge->forge, sizeof(float), lforge->forge->Float, 2, vec))
-		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1792,20 +1678,11 @@ _lforge_canvas_scale(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	const float vec [2] = {
-		luaL_checknumber(L, 2),
-		luaL_checknumber(L, 3)
-	};
-
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_scale))
+	if(!lv2_canvas_forge_scale(lforge->forge, &moony->canvas_urid,
+			luaL_checknumber(L, 2),
+			luaL_checknumber(L, 3)) )
 		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.canvas_body))
-		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_vector(lforge->forge, sizeof(float), lforge->forge->Float, 2, vec))
-		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1816,17 +1693,10 @@ _lforge_canvas_rotate(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	const float val = luaL_checknumber(L, 2);
-
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_rotate))
+	if(!lv2_canvas_forge_rotate(lforge->forge, &moony->canvas_urid,
+			luaL_checknumber(L, 2)) )
 		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.canvas_body))
-		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_float(lforge->forge, val))
-		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1837,13 +1707,9 @@ _lforge_canvas_reset(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	const float val = luaL_checknumber(L, 2);
-
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_reset))
+	if(!lv2_canvas_forge_reset(lforge->forge, &moony->canvas_urid) )
 		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1854,17 +1720,10 @@ _lforge_canvas_font_size(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	const float val = luaL_checknumber(L, 2);
-
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_fontSize))
+	if(!lv2_canvas_forge_fontSize(lforge->forge, &moony->canvas_urid,
+			luaL_checknumber(L, 2)) )
 		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.canvas_body))
-		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_float(lforge->forge, val))
-		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;
@@ -1875,18 +1734,10 @@ _lforge_canvas_fill_text(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	lforge_t *lforge = lua_touserdata(L, 1);
-	LV2_Atom_Forge_Frame frame;
 
-	size_t sz;
-	const char *str = luaL_checklstring(L, 2, &sz);
-
-	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.canvas_fillText))
+	if(!lv2_canvas_forge_fillText(lforge->forge, &moony->canvas_urid,
+			luaL_checkstring(L, 2)) )
 		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.canvas_body))
-		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_string(lforge->forge, str, sz))
-		luaL_error(L, forge_buffer_overflow);
-	lv2_atom_forge_pop(lforge->forge, &frame);
 
 	lua_settop(L, 1);
 	return 1;

@@ -80,7 +80,9 @@ var LuaHighlightRules = function() {
 				// moony Units
 				"Conversion|Unit|bar|beat|bpm|cent|cm|coef|conversion|db|degree|frame|hz|inch|khz|km|m|mhz|midiNote|mile|min|mm|ms|name|oct|pc|prefixConversion|render|s|semitone12TET|symbol|unit|"+
 				// moony Canvas
-				"graph|body|BeginPath|ClosePath|Arc|CurveTo|LineTo|MoveTo|Rectangle|Style|LineWidth|LineDash|LineCap|LineJoin|MiterLimit|Stroke|Fill|Clip|Save|Restore|Translate|Scale|Rotate|Reset|FontSize|FillText|"+
+				"graph|body|BeginPath|ClosePath|Arc|CurveTo|LineTo|MoveTo|Rectangle|Style|LineWidth|LineDash|LineCap|LineJoin|"+
+				"MiterLimit|Stroke|Fill|Clip|Save|Restore|Translate|Scale|Rotate|Reset|FontSize|FillText|"+
+				"lineCapButt|lineCapRound|lineCapSquare|lineJoinMiter|lineJoinRound|lineJoinBevel|"+
 
 				// moony common
 				"type|body|"+
