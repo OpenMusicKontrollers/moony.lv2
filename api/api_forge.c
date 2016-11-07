@@ -56,6 +56,19 @@ _pushupclosure(lua_State *L, moony_t *moony, moony_upclosure_t type, bool cache)
 	*upc += 1;
 }
 
+static void
+_lforge_pop_inlined(lua_State *L, lforge_t *lforge)
+{
+	for(int i=lforge->depth; i>0; i--)
+	{
+		if(&lforge->frame[i-1] == lforge->forge->stack) // intercept assert
+			lv2_atom_forge_pop(lforge->forge, &lforge->frame[i-1]);
+		else
+			luaL_error(L, "forge frame mismatch");
+	}
+	lforge->depth = 0; // reset depth
+}
+
 static inline int
 _lforge_frame_time_inlined(lua_State *L, lforge_t *lforge, int64_t frames)
 {
@@ -805,7 +818,7 @@ _lforge_tuple_itr(lua_State *L)
 	}
 	else // 2nd invocation
 	{
-		lv2_atom_forge_pop(lframe->forge, &lframe->frame[0]);
+		_lforge_pop_inlined(L, lframe);
 
 		lua_pushnil(L); // terminate iterator
 	}
@@ -866,7 +879,7 @@ _lforge_object_itr(lua_State *L)
 	}
 	else // 2nd invocation
 	{
-		lv2_atom_forge_pop(lframe->forge, &lframe->frame[0]);
+		_lforge_pop_inlined(L, lframe);
 
 		lua_pushnil(L); // terminate iterator
 	}
@@ -1010,8 +1023,6 @@ _lforge_vector(lua_State *L)
 	else
 		luaL_error(L, "vector supports only fixed sized atoms (e.g. Int, Long, Float, Double, URID, Bool)");
 
-	if(&frame != lforge->forge->stack) // intercept assert
-		luaL_error(L, "forge frame mismatch");
 	lv2_atom_forge_pop(lforge->forge, &frame);
 	lv2_atom_forge_pad(lforge->forge, n*child_size);
 
@@ -1059,7 +1070,7 @@ _lforge_sequence_itr(lua_State *L)
 	}
 	else // 2nd invocation
 	{
-		lv2_atom_forge_pop(lframe->forge, &lframe->frame[0]);
+		_lforge_pop_inlined(L, lframe);
 
 		lua_pushnil(L); // terminate iterator
 	}
@@ -1748,13 +1759,7 @@ _lforge_pop(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
 
-	for(int i=lforge->depth; i>0; i--)
-	{
-		if(&lforge->frame[i-1] != lforge->forge->stack) // intercept assert
-			luaL_error(L, "forge frame mismatch");
-		lv2_atom_forge_pop(lforge->forge, &lforge->frame[i-1]);
-	}
-	lforge->depth = 0; // reset depth
+	_lforge_pop_inlined(L, lforge);
 
 	lua_getuservalue(L, 1); // get parent lforge
 
