@@ -149,10 +149,10 @@ _lv2_canvas_render_style(cairo_t *ctx,
 
 	if(v)
 	{
-		const float a = (float)((*v >> 24) & 0xff) / 0xff;
-		const float r = (float)((*v >> 16) & 0xff) / 0xff;
-		const float g = (float)((*v >>  8) & 0xff) / 0xff;
-		const float b = (float)((*v >>  0) & 0xff) / 0xff;
+		const float r = (float)((*v >> 24) & 0xff) / 0xff;
+		const float g = (float)((*v >> 16) & 0xff) / 0xff;
+		const float b = (float)((*v >>  8) & 0xff) / 0xff;
+		const float a = (float)((*v >>  0) & 0xff) / 0xff;
 
 		cairo_set_source_rgba(ctx, r, g, b, a);
 	}

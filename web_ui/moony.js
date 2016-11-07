@@ -869,10 +869,10 @@ function clear_log() {
 }
 
 function color(num) {
-	var a = ((num >>> 24) & 0xff) / 0xff;
-	var r =  (num >>> 16) & 0xff;
-	var g =  (num >>>  8) & 0xff;
-	var b =  (num >>>  0) & 0xff;
+	var r =  (num >>> 24) & 0xff;
+	var g =  (num >>> 16) & 0xff;
+	var b =  (num >>>  8) & 0xff;
+	var a = ((num >>>  0) & 0xff) / 0xff;
 	return 'rgba(' + [r, g, b, a].join(',') + ')';
 }
 
