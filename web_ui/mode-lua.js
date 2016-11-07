@@ -24,7 +24,7 @@ var LuaHighlightRules = function() {
 				"__concat|__len|__eq|__lt|__le|__index|__newindex|__call|"+
 				"__gc|__mode|__name|__tostring|__metatable|__pairs|"+
 				// moony basic
-				"run|once|save|restore|stash|apply|register|midi2cps|cps2midi|encrypt|decrypt|draw");
+				"run|once|save|restore|stash|apply|register|midi2cps|cps2midi|encrypt|decrypt");
 
 		var field_functions = (
 				// Lua coroutine
@@ -47,7 +47,7 @@ var LuaHighlightRules = function() {
 				"chunk|midi|raw|bundle|message|impulse|char|rgba|timetag|tuple|tuplePack|"+
 				"object|objectPack|key|property|vector|sequence|sequencePack|"+
 				"typed|get|set|put|patch|remove|add|ack|error|pop|"+
-				"beginPath|closePath|arc|curveTo|lineTo|moveTo|rectangle|style|lineWidth|lineDash|lineCap|lineJoin|miterLimig|stroke|fill|clip|save|restore|translate|scale|rotate|reset|fontSize|fillText|"+
+				"graph|beginPath|closePath|arc|curveTo|lineTo|moveTo|rectangle|style|lineWidth|lineDash|lineCap|lineJoin|miterLimig|stroke|fill|clip|save|restore|translate|scale|rotate|reset|fontSize|fillText|"+
 				// moony common
 				"foreach|unpack|clone|stash|apply|register|"+
 				// moony stash

@@ -477,55 +477,6 @@ _ldecrypt(lua_State *L)
 	return 1;
 }
 
-static int
-_ldraw(lua_State *L)
-{
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-
-	const int n = lua_gettop(L);
-
-	if(lua_isfunction(L, 1) && _try_lock(&moony->lock.render) )
-	{
-		lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, true);
-		lua_insert(L, 2); // insert at position 2
-		lframe->depth = 0;
-		lframe->last.frames = 0;
-		lframe->forge = &moony->render.forge;
-
-		atom_ser_t ser = {
-			.moony = moony,
-			.size = 1024,
-			.offset = 0
-		};
-		ser.buf = moony_alloc(moony, ser.size);
-
-		if(ser.buf)
-		{
-			memset(ser.buf, 0x0, sizeof(LV2_Atom));
-
-			lv2_atom_forge_set_sink(lframe->forge, _sink, _deref, &ser);
-			LV2_Atom_Forge_Frame tup_frame;
-			lv2_atom_forge_tuple(lframe->forge, &tup_frame);
-			lua_call(L, n, 0);
-			lv2_atom_forge_pop(lframe->forge, &tup_frame);
-
-			if(moony->render.atom)
-				moony_free(moony, moony->render.atom, moony->render.size);
-			LV2_Atom *atom = (LV2_Atom *)ser.buf;
-			moony->render.atom = atom;
-			moony->render.size = ser.size;
-
-			if(moony->render.countdown <= 0)
-				moony->render.countdown = INT32_MAX; // immediate display
-			moony->render.countup += 1;
-		}
-
-		_unlock(&moony->lock.render);
-	}
-
-	return 0;
-}
-
 LV2_Atom_Forge_Ref
 _sink(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
 {
@@ -1050,9 +1001,9 @@ _render(LV2_Handle instance, uint32_t w, uint32_t h)
 		return NULL;
 
 	_spin_lock(&moony->lock.render)
-	if(moony->render.atom && (moony->render.atom->type == moony->render.forge.Tuple))
+	if(moony->render.graph)
 	{
-		lv2_canvas_render(&moony->canvas, moony->cairo.ctx, (const LV2_Atom_Tuple *)moony->render.atom);
+		lv2_canvas_render(&moony->canvas, moony->cairo.ctx, moony->render.graph);
 	}
 	else
 	{
@@ -1204,7 +1155,6 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	lv2_atom_forge_init(&moony->forge, moony->map);
 	lv2_atom_forge_init(&moony->state_forge, moony->map);
 	lv2_atom_forge_init(&moony->stash_forge, moony->map);
-	lv2_atom_forge_init(&moony->render.forge, moony->map);
 	lv2_atom_forge_init(&moony->notify_forge, moony->map);
 	if(moony->log)
 		lv2_log_logger_init(&moony->logger, moony->map, moony->log);
@@ -1299,9 +1249,9 @@ moony_deinit(moony_t *moony)
 	moony->stash_atom = NULL;
 	moony->stash_size = 0;
 
-	if(moony->render.atom)
-		moony_free(moony, moony->render.atom, moony->render.size);
-	moony->render.atom = NULL;
+	if(moony->render.graph)
+		moony_free(moony, moony->render.graph, moony->render.size);
+	moony->render.graph = NULL;
 	moony->render.size = 0;
 
 #ifdef BUILD_INLINE_DISPLAY
@@ -1832,10 +1782,6 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	lua_pushcclosure(L, _ldecrypt, 0);
 	lua_setglobal(L, "decrypt");
 
-	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
-	lua_pushcclosure(L, _ldraw, 1);
-	lua_setglobal(L, "draw");
-
 #undef SET_MAP
 }
 
@@ -2140,6 +2086,49 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 	LV2_Atom_Forge *forge = &moony->notify_forge;
 	LV2_Atom_Forge_Ref ref = moony->notify_ref;
 
+	// intercept canvas:Graph
+	LV2_ATOM_SEQUENCE_FOREACH(notify, ev)
+	{
+		const LV2_Atom_Object *obj = (const LV2_Atom_Object *)&ev->body;
+
+		if(  lv2_atom_forge_is_object_type(forge, obj->atom.type)
+			&& (obj->body.otype == moony->uris.patch.set) )
+		{
+			const LV2_Atom_URID *property = NULL;
+			const LV2_Atom *graph = NULL;
+
+			lv2_atom_object_get(obj, moony->uris.patch.property, &property,
+				moony->uris.patch.value, &graph, 0);
+
+			if(  property && (property->atom.type == forge->URID)
+				&& (property->body == moony->canvas_urid.Canvas_graph)
+				&& graph && (graph->type == forge->Tuple) )
+			{
+				if(_try_lock(&moony->lock.render))
+				{
+					const uint32_t sz = lv2_atom_total_size(graph);
+
+					moony->render.graph = moony_realloc(moony, moony->render.graph, moony->render.size, sz);
+					if(moony->render.graph)
+					{
+						moony->render.size = sz;
+						memcpy(moony->render.graph, graph, sz);
+					}
+					else
+					{
+						moony->render.size = 0;
+					}
+
+					// update inline display
+					if(moony->queue_draw)
+						moony->queue_draw->queue_draw(moony->queue_draw->handle);
+
+					_unlock(&moony->lock.render);
+				}
+			}
+		}
+	}
+
 	if(moony->trace_out)
 	{
 		char *pch = strtok(moony->trace, "\n");
@@ -2158,37 +2147,9 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 		moony->trace_out = 0; // reset flag
 	}
 
-	// handle canvas events
-	if(moony->render.countdown > 0)
-	{
-		bool dispatch = moony->render.countup;
-
-		if(moony->render.countdown == INT32_MAX) // immediate dispatch
-		{
-			moony->render.countdown = moony->opts.sample_rate / 24; // 24 FPS
-		}
-		else // dispatch after countdown
-		{
-			moony->render.countdown -= frames + 1; // frames == last valid frame idx!
-			dispatch = dispatch && (moony->render.countdown <= 0);
-		}
-
-		if(dispatch)
-		{
-			// reset countup
-			moony->render.countup = 0;
-
-			// update inline display
-			if(moony->queue_draw)
-				moony->queue_draw->queue_draw(moony->queue_draw->handle);
-
-			moony->graph_out = 1;
-		}
-	}
-
 	if(moony->graph_out)
 	{
-		if(moony->render.atom)
+		if(moony->render.graph)
 		{
 			// update web_ui
 			LV2_Atom_Forge_Frame obj_frame;
@@ -2204,7 +2165,7 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 			if(ref)
 				ref = lv2_atom_forge_key(forge, moony->uris.patch.value);
 			if(ref)
-				ref = lv2_atom_forge_write(forge, moony->render.atom, lv2_atom_total_size(moony->render.atom));
+				ref = lv2_atom_forge_write(forge, moony->render.graph, moony->render.size);
 			if(ref)
 				lv2_atom_forge_pop(forge, &obj_frame);
 		}

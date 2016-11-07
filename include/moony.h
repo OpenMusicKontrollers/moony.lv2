@@ -317,11 +317,8 @@ struct _moony_t {
 	uint32_t stash_size;
 
 	struct {
-		LV2_Atom_Forge forge;
-		LV2_Atom *atom;
+		LV2_Atom_Tuple *graph;
 		uint32_t size;
-		int32_t countdown;
-		uint32_t countup;
 	} render;
 
 	latom_driver_hash_t atom_driver_hash [DRIVER_HASH_MAX];

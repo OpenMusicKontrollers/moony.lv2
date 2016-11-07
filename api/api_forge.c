@@ -1410,6 +1410,51 @@ _lforge_error(lua_State *L)
 }
 
 static int
+_lforge_canvas_graph(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = lua_touserdata(L, 1);
+	const LV2_URID property = moony->canvas_urid.Canvas_graph;
+	const LV2_URID subject = luaL_optinteger(L, 2, 0);
+	const int32_t sequence_num = luaL_optinteger(L, 3, 0);
+	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
+	lframe->depth = 2;
+	lframe->last.frames = lforge->last.frames;
+	lframe->forge = lforge->forge;
+
+	lua_pushvalue(L, 1); // lforge
+	lua_setuservalue(L, -2); // store parent as uservalue
+
+	if(!lv2_atom_forge_object(lforge->forge, &lframe->frame[0], 0, moony->uris.patch.set))
+		luaL_error(L, forge_buffer_overflow);
+
+	if(subject) // is optional
+	{
+		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.subject))
+			luaL_error(L, forge_buffer_overflow);
+		if(!lv2_atom_forge_urid(lforge->forge, subject))
+			luaL_error(L, forge_buffer_overflow);
+	}
+
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence))
+		luaL_error(L, forge_buffer_overflow);
+	if(!lv2_atom_forge_int(lforge->forge, sequence_num))
+		luaL_error(L, forge_buffer_overflow);
+
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.property))
+		luaL_error(L, forge_buffer_overflow);
+	if(!lv2_atom_forge_urid(lforge->forge, property))
+		luaL_error(L, forge_buffer_overflow);
+
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.value))
+		luaL_error(L, forge_buffer_overflow);
+	if(!lv2_atom_forge_tuple(lforge->forge, &lframe->frame[1]))
+		luaL_error(L, forge_buffer_overflow);
+
+	return 1; // derived forge
+}
+
+static int
 _lforge_canvas_begin_path(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1849,6 +1894,7 @@ const luaL_Reg lforge_mt [] = {
 	{"error", _lforge_error},
 
 	// canvas
+	{"graph", _lforge_canvas_graph},
 	{"beginPath", _lforge_canvas_begin_path},
 	{"closePath", _lforge_canvas_close_path},
 	{"arc", _lforge_canvas_arc},
