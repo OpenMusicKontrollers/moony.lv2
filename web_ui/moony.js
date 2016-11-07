@@ -760,21 +760,21 @@ function lv2_read_event(symbol, obj) {
 					var tracemsg = $('#tracemsg');
 					tracemsg.append(tracecnt + ': ' + value[RDF.value] + '<br />').scrollTop(tracemsg.prop('scrollHeight'));
 					tracecnt += 1;
-				} else if( (property == CANVAS.graph) ) {
-					if(value) {
+				} else if($('#toggle').prop('checked') ) { // skip if property/canvas not shown
+					if( (property == CANVAS.graph) && value) {
 						canvas_render(value);
-					}
-				} else {
-					var item = $('#' + property.replace(trim, ''));
-					var range = item.attr('data-range');
-					if(range == ATOM.Bool) {
-						item.prop('checked', value[RDF.value]);
-					} else if( (range == ATOM.URI) || (range == ATOM.URID) ) {
-						item.val(value[RDF.id]);
-					} else if( (range == ATOM.Path) || (range == ATOM.Chunk) ) {
-						// we cannot set the value of a file picker
 					} else {
-						item.val(value[RDF.value]);
+						var item = $('#' + property.replace(trim, ''));
+						var range = item.attr('data-range');
+						if(range == ATOM.Bool) {
+							item.prop('checked', value[RDF.value]);
+						} else if( (range == ATOM.URI) || (range == ATOM.URID) ) {
+							item.val(value[RDF.id]);
+						} else if( (range == ATOM.Path) || (range == ATOM.Chunk) ) {
+							// we cannot set the value of a file picker
+						} else {
+							item.val(value[RDF.value]);
+						}
 					}
 				}
 			} else {
@@ -1156,6 +1156,13 @@ $(document).ready(function() {
 	$('#clear').click(function(e) {
 		clear_log();
 		e.preventDefault();
+	});
+	$('#toggle').change(function(e) {
+		if($(this).prop('checked')) {
+			// request canvas and properties
+			lv2_get(MOONY.dsp, CANVAS.graph);
+			lv2_get_all(MOONY.dsp);
+		}
 	});
 
 	ws_connect();
