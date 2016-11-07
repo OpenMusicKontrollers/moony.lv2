@@ -189,7 +189,14 @@ var CANVAS = {
 	Rotate            : 'canvas:Rotate',
 	Reset             : 'canvas:Reset',
 	FontSize          : 'canvas:FontSize',
-	FillText          : 'canvas:FillText'
+	FillText          : 'canvas:FillText',
+
+	lineCapButt       : 'canvas:lineCapButt',
+	lineCapRound      : 'canvas:lineCapRound',
+	lineCapSquare     : 'canvas:lineCapSquare',
+	lineJoinMiter    : 'canvas:lineJoinMiter',
+	lineJoinRound    : 'canvas:lineJoinRound',
+	lineJoinBevel    : 'canvas:lineJoinBevel'
 };
 
 var format = {
@@ -950,11 +957,23 @@ function canvas_render(graph) {
 			var off = list2[1][RDF.value];
 			ctx.setLineDash([on, off]);
 		} else if(node_is_a(cmd, CANVAS.LineCap)) {
-			var value = body[RDF.value];
-			ctx.lineCap = value; // 'butt' || 'round' || 'square'
+			var value = body[RDF.id];
+			if(value == CANVAS.lineCapButt) {
+				ctx.lineCap = 'butt';
+			} else if(value == CANVAS.lineCapRound) {
+				ctx.lineCap = 'round';
+			} else if(value == CANVAS.lineCapSquare) {
+				ctx.lineCap = 'square';
+			}
 		} else if(node_is_a(cmd, CANVAS.LineJoin)) {
-			var value = body[RDF.value];
-			ctx.lineJoin = value; // 'miter' || 'round' || 'bevel'
+			var value = body[RDF.id];
+			if(value == CANVAS.lineJoinMiter) {
+				ctx.lineJoin = 'miter';
+			} else if(value == CANVAS.lineJoinRound) {
+				ctx.lineJoin = 'round';
+			} else if(value == CANVAS.lineJoinBevel) {
+				ctx.lineJoin = 'bevel';
+			}
 		} else if(node_is_a(cmd, CANVAS.MiterLimit)) {
 			var value = body[RDF.value];
 			ctx.miterLimit = value;
