@@ -189,3 +189,44 @@ moony:ui_2_simple_2_kx
 		ui:protocol atom:eventTransfer ;
 	] ;
 	lv2:requiredFeature kx:Host, ui:portMap, urid:map .
+
+moony:ui_3_nk
+	ui:portNotification [
+		ui:plugin moony:c1xc1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c2xc2 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c4xc4 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a1xa1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a2xa2 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:a4xa4 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c1a1xc1a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c2a1xc2a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] , [
+		ui:plugin moony:c4a1xc4a1 ;
+		lv2:symbol "notify" ;
+		ui:protocol atom:eventTransfer ;
+	] ;
+	lv2:requiredFeature ui:portMap, urid:map ;
+	lv2:extensionData ui:idleInterface .

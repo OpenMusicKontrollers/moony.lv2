@@ -85,15 +85,13 @@
 #define MOONY_DSP_URI					MOONY_URI"#dsp"
 #define MOONY_DESTINATION_URI	MOONY_URI"#destination"
 
-#define MOONY_COMMON_UI_URI		MOONY_URI"#ui_3_common_1_ui"
-#define MOONY_COMMON_KX_URI		MOONY_URI"#ui_3_common_2_kx"
-#define MOONY_COMMON_EO_URI		MOONY_URI"#ui_3_common_3_eo"
-
 #define MOONY_SIMPLE_UI_URI		MOONY_URI"#ui_2_simple_1_ui"
 #define MOONY_SIMPLE_KX_URI		MOONY_URI"#ui_2_simple_2_kx"
 
 #define MOONY_WEB_UI_URI			MOONY_URI"#ui_1_web_1_ui"
 #define MOONY_WEB_KX_URI			MOONY_URI"#ui_1_web_2_kx"
+
+#define MOONY_NK_URI					MOONY_URI"#ui_3_nk"
 
 #define MOONY_C1XC1_URI				MOONY_URI"#c1xc1"
 #define MOONY_C2XC2_URI				MOONY_URI"#c2xc2"
@@ -119,15 +117,13 @@ extern const LV2_Descriptor c1a1xc1a1;
 extern const LV2_Descriptor c2a1xc2a1;
 extern const LV2_Descriptor c4a1xc4a1;
 
-extern const LV2UI_Descriptor common_eo;
-extern const LV2UI_Descriptor common_ui;
-extern const LV2UI_Descriptor common_kx;
-
 extern const LV2UI_Descriptor simple_ui;
 extern const LV2UI_Descriptor simple_kx;
 
 extern const LV2UI_Descriptor web_ui;
 extern const LV2UI_Descriptor web_kx;
+
+extern const LV2UI_Descriptor nk_ui;
 
 typedef enum _moony_udata_t {
 	MOONY_UDATA_ATOM,
