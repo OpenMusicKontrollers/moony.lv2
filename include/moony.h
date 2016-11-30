@@ -429,7 +429,10 @@ typedef struct _atom_ser_t atom_ser_t;
 struct _atom_ser_t {
 	moony_t *moony; // use rt-memory pool?
 	uint32_t size;
-	uint8_t *buf;
+	union {
+		uint8_t *buf;
+		const LV2_Atom *atom;
+	};
 	uint32_t offset;
 };
 
