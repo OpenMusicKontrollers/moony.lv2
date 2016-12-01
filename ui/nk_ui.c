@@ -50,6 +50,7 @@ struct _plughandle_t {
 	LV2_URID patch_property;
 	LV2_URID patch_value;
 	LV2_URID moony_code;
+	LV2_URID moony_selection;
 	LV2_URID moony_error;
 	LV2_URID moony_trace;
 
@@ -153,6 +154,30 @@ _patch_set(plughandle_t *handle, LV2_URID property, uint32_t size, LV2_URID type
 }
 
 static void
+_clear_error(plughandle_t *handle)
+{
+	handle->error[0] = '\0';
+}
+
+static void
+_submit_selection(plughandle_t *handle, const char *sel, uint32_t sz)
+{
+	_clear_error(handle);
+
+	_patch_set(handle, handle->moony_selection,
+		sz, handle->forge.String, sel);
+}
+
+static void
+_submit_all(plughandle_t *handle)
+{
+	_clear_error(handle);
+
+	_patch_set(handle, handle->moony_code,
+		handle->code_sz, handle->forge.String, handle->code);
+}
+
+static void
 _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 {
 	plughandle_t *handle = data;
@@ -173,16 +198,14 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 		if(  nk_input_is_key_pressed(in, NK_KEY_ENTER)
 			&& nk_input_is_key_down(in, NK_KEY_SHIFT) )
 		{
-			handle->error[0] = '\0';
-			_patch_set(handle, handle->moony_code,
-				handle->code_sz, handle->forge.String, handle->code);
+			_submit_all(handle);
 			has_enter = true;
 		}
 
 		nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
 		{
 			nk_layout_row_push(ctx, 0.6);
-			handle->code_hidden = !nk_select_label(ctx, "Logic", NK_TEXT_LEFT, !handle->code_hidden);
+			handle->code_hidden = !nk_select_label(ctx, "Editor", NK_TEXT_LEFT, !handle->code_hidden);
 
 			nk_layout_row_push(ctx, 0.4);
 			handle->prop_hidden = !nk_select_label(ctx, "Properties", NK_TEXT_LEFT, !handle->prop_hidden);
@@ -206,7 +229,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 
 					nk_layout_row_dynamic(ctx, editor_h*0.1, 1);
 					struct nk_list_view lview;
-					if(nk_list_view_begin(ctx, &lview, "Traces", 0, dy, handle->n_trace))
+					if(nk_list_view_begin(ctx, &lview, "Traces", NK_WINDOW_BORDER, dy, handle->n_trace))
 					{
 						nk_layout_row_dynamic(ctx, dy, 1);
 						for(int l = lview.begin; (l < lview.end) && (l < handle->n_trace); l++)
@@ -220,17 +243,67 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					nk_layout_row_dynamic(ctx, dy, 4);
 					if(nk_button_label(ctx, "Submit all"))
 					{
-						handle->error[0] = '\0';
-						_patch_set(handle, handle->moony_code,
-							handle->code_sz, handle->forge.String, handle->code);
+						_submit_all(handle);
 					}
 					if(nk_button_label(ctx, "Submit line"))
 					{
-						//FIXME
+						struct nk_text_edit *text_edit = &ctx->text_edit;
+
+						uint32_t newlines = 0;
+						uint32_t from = 0;
+						for(int i = 0; i < text_edit->cursor; i++) // count newlines
+						{
+							if(handle->code[i] == '\n')
+							{
+								newlines += 1;
+								from = i + 1;
+							}
+						}
+
+						char *end = memchr(handle->code + from, '\n', handle->code_sz);
+						const uint32_t to = end ? end - handle->code : handle->code_sz;
+						const uint32_t len = to - from;
+						if(len > 0)
+						{
+							const uint32_t sz = newlines + len + 1;
+							char *sel = calloc(sz, sizeof(char));
+							if(sel)
+							{
+								memset(sel, '\n', newlines);
+								memcpy(sel + newlines, handle->code + from, len);
+
+								_submit_selection(handle, sel, sz);
+
+								free(sel);
+							}
+						}
 					}
 					if(nk_button_label(ctx, "Submit selection"))
 					{
-						//FIXME
+						struct nk_text_edit *text_edit = &ctx->text_edit;
+
+						const uint32_t len = text_edit->select_end - text_edit->select_start;
+						if(len > 0)
+						{
+							uint32_t newlines = 0;
+							for(int i = 0; i < text_edit->select_start; i++) // count newlines
+							{
+								if(handle->code[i] == '\n')
+									newlines += 1;
+							}
+
+							const uint32_t sz = newlines + len + 1;
+							char *sel = calloc(sz, sizeof(char));
+							if(sel)
+							{
+								memset(sel, '\n', newlines);
+								memcpy(sel + newlines, handle->code + text_edit->select_start, len);
+
+								_submit_selection(handle, sel, sz);
+
+								free(sel);
+							}
+						}
 					}
 					if(nk_button_label(ctx, "Clear log"))
 					{
@@ -342,6 +415,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	handle->patch_property = handle->map->map(handle->map->handle, LV2_PATCH__property);
 	handle->patch_value = handle->map->map(handle->map->handle, LV2_PATCH__value);
 	handle->moony_code = handle->map->map(handle->map->handle, MOONY_CODE_URI);
+	handle->moony_selection = handle->map->map(handle->map->handle, MOONY_SELECTION_URI);
 	handle->moony_error = handle->map->map(handle->map->handle, MOONY_ERROR_URI);
 	handle->moony_trace = handle->map->map(handle->map->handle, MOONY_TRACE_URI);
 
