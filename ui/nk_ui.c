@@ -27,7 +27,39 @@
 #define NK_PUGL_IMPLEMENTATION
 #include "nk_pugl/nk_pugl.h"
 
+#ifdef Bool
+#	undef Bool // Xlib.h interferes with LV2_Atom_Forge.Bool
+#endif
+
+#define RDFS_PREFIX   "http://www.w3.org/2000/01/rdf-schema#"
+
+#define RDFS__label   RDFS_PREFIX"label"
+#define RDFS__range   RDFS_PREFIX"range"
+#define RDFS__comment RDFS_PREFIX"comment"
+
+typedef union _body_t body_t;
+typedef struct _prop_t prop_t;
 typedef struct _plughandle_t plughandle_t;
+
+union _body_t {
+	int32_t i;
+	int64_t h;
+	uint32_t u;
+	float f;
+	double d;
+	char *s;
+};
+
+struct _prop_t {
+	LV2_URID key;
+	LV2_URID range;
+	LV2_URID unit;
+	char *label;
+	char *comment;
+	body_t value;
+	body_t minimum;
+	body_t maximum;
+};
 
 struct _plughandle_t {
 	LV2_URID_Map *map;
@@ -45,14 +77,28 @@ struct _plughandle_t {
 	uint32_t control;
 	uint32_t notify;
 	LV2_URID atom_eventTransfer;
+	LV2_URID patch_self;
 	LV2_URID patch_Get;
 	LV2_URID patch_Set;
+	LV2_URID patch_Patch;
+	LV2_URID patch_writable;
+	LV2_URID patch_readable;
+	LV2_URID patch_add;
+	LV2_URID patch_remove;
+	LV2_URID patch_wildcard;
 	LV2_URID patch_property;
 	LV2_URID patch_value;
+	LV2_URID patch_subject;
 	LV2_URID moony_code;
 	LV2_URID moony_selection;
 	LV2_URID moony_error;
 	LV2_URID moony_trace;
+	LV2_URID rdfs_label;
+	LV2_URID rdfs_range;
+	LV2_URID rdfs_comment;
+	LV2_URID lv2_minimum;
+	LV2_URID lv2_maximum;
+	LV2_URID units_unit;
 
 	atom_ser_t ser;
 
@@ -68,7 +114,60 @@ struct _plughandle_t {
 
 	int n_trace;
 	char **traces;
+
+	int n_writable;
+	prop_t *writables;
+	int n_readable;
+	prop_t *readables;
 };
+
+static prop_t *
+_prop_get(prop_t **properties, int *n_properties, LV2_URID key)
+{
+	for(int p = 0; p < *n_properties; p++)
+	{
+		prop_t *prop = &(*properties)[p];
+
+		if(prop->key == key)
+			return prop;
+	}
+
+	return NULL;
+}
+
+static prop_t *
+_prop_get_or_add(prop_t **properties, int *n_properties, LV2_URID key)
+{
+	prop_t *prop = _prop_get(properties, n_properties, key);
+	if(prop)
+		return prop;
+
+	*properties = realloc(*properties, (*n_properties + 1)*sizeof(prop_t));
+	prop = &(*properties)[*n_properties];
+	memset(prop, 0x0, sizeof(prop_t));
+	prop->key = key;
+	*n_properties += 1;
+
+	return prop;
+}
+
+static void
+_prop_free(plughandle_t *handle, prop_t *prop)
+{
+	if(prop->label)
+		free(prop->label);
+
+	if(prop->comment)
+		free(prop->comment);
+
+	if(  (prop->range == handle->forge.String)
+		|| (prop->range == handle->forge.URI) )
+	{
+		if(prop->value.s)
+			free(prop->value.s);
+	}
+	//FIXME chunk bodies
+}
 
 LV2_Atom_Forge_Ref
 _sink(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
@@ -175,6 +274,85 @@ _submit_all(plughandle_t *handle)
 
 	_patch_set(handle, handle->moony_code,
 		handle->code_sz, handle->forge.String, handle->code);
+}
+
+static int
+_dial_float(struct nk_context *ctx, float min, float *val, float max, float mul)
+{
+	const float tmp = *val;
+	struct nk_rect bounds = nk_layout_space_bounds(ctx);
+	const enum nk_widget_layout_states states = nk_widget(&bounds, ctx);
+
+	if(states != NK_WIDGET_INVALID)
+	{
+		const struct nk_style_item *bg = &ctx->style.progress.normal;
+		const struct nk_style_item *fg = &ctx->style.progress.cursor_normal;
+		const float range = max - min;
+
+		if(states == NK_WIDGET_VALID)
+		{
+			struct nk_input *in = &ctx->input;
+
+			const struct nk_mouse_button *btn = &in->mouse.buttons[NK_BUTTON_LEFT];;
+			const bool left_mouse_down = btn->down;
+			const bool left_mouse_click_in_cursor = nk_input_has_mouse_click_down_in_rect(in,
+				NK_BUTTON_LEFT, bounds, nk_true);
+
+			float dd = 0.f;
+
+			if(left_mouse_down && left_mouse_click_in_cursor)
+			{
+				const float dx = in->mouse.delta.x;
+				const float dy = in->mouse.delta.y;
+				dd = fabs(dx) > fabs(dy) ? dx : -dy;
+
+				bg = &ctx->style.progress.active;
+				fg = &ctx->style.progress.cursor_active;
+			}
+			else if(nk_input_is_mouse_hovering_rect(in, bounds))
+			{
+				if(in->mouse.scroll_delta != 0.f) // has scrolling
+				{
+					dd = in->mouse.scroll_delta;
+					in->mouse.scroll_delta = 0.f;
+				}
+
+				bg = &ctx->style.progress.hover;
+				fg = &ctx->style.progress.cursor_hover;
+			}
+
+			if(dd != 0.f) // update value
+			{
+				float per_pixel_inc = mul * range / bounds.w;
+				if(nk_input_is_key_down(in, NK_KEY_CTRL))
+					per_pixel_inc /= 4;
+				if(nk_input_is_key_down(in, NK_KEY_SHIFT))
+					per_pixel_inc /= 4;
+
+				*val += dd * per_pixel_inc;
+				*val = NK_CLAMP(min, *val, max);
+			}
+		}
+
+		struct nk_command_buffer *canv= nk_window_get_canvas(ctx);
+		const float perc = (*val - min) / range;
+		const float w2 = bounds.w/2;
+		const float h2 = bounds.h/2;
+		const float r1 = h2;
+		const float r2 = r1 - 12;
+		const float cx = bounds.x + w2;
+		const float cy = bounds.y + h2;
+		const float aa = M_PI/6;
+		const float a1 = M_PI/2 + aa;
+		const float a2 = 2*M_PI + M_PI/2 - aa;
+		const float a3 = a1 + (a2 - a1)*perc;
+
+		nk_fill_arc(canv, cx, cy, r1, a1, a2, bg->data.color);
+		nk_fill_arc(canv, cx, cy, r1, a1, a3, fg->data.color);
+		nk_fill_arc(canv, cx, cy, r2, 0.f, 2*M_PI, ctx->style.window.background);
+	}
+
+	return tmp != *val;
 }
 
 static void
@@ -322,12 +500,115 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 			if(!handle->prop_hidden)
 			{
 				nk_layout_row_push(ctx, handle->code_hidden ? 1.0 : 0.4);
-				if(nk_group_begin(ctx, "Properties", NK_WINDOW_BORDER))
+				if(nk_group_begin(ctx, "Properties", 0))
 				{
-					nk_layout_row_dynamic(ctx, dy, 3);
-					for(int i = 0; i < 99; i++)
-						nk_button_label(ctx, "Property");
-					//FIXME
+					const int ncol = handle->code_hidden ? 4 : 2;
+					nk_layout_row_dynamic(ctx, dy*7, ncol);
+					for(int p = 0; p < handle->n_writable; p++)
+					{
+						prop_t *prop = &handle->writables[p];
+						if(!prop->key || !prop->range || !prop->label) // marked for removal
+							continue;
+
+						if(nk_group_begin(ctx, prop->label, NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_NO_SCROLLBAR))
+						{
+							if(prop->range == handle->forge.Int)
+							{
+								nk_layout_row_dynamic(ctx, dy, 1);
+								const int32_t val = nk_propertyi(ctx, prop->label,
+									prop->minimum.i, prop->value.i, prop->maximum.i, 1.f, 0.f);
+								if(val != prop->value.i)
+								{
+									prop->value.i = val;
+									_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &val);
+								}
+							}
+							else if(prop->range == handle->forge.Long)
+							{
+								nk_layout_row_dynamic(ctx, dy, 1);
+								const int64_t val = nk_propertyi(ctx, prop->label,
+									prop->minimum.h, prop->value.h, prop->maximum.h, 1.f, 0.f);
+								if(val != prop->value.h)
+								{
+									prop->value.h = val;
+									_patch_set(handle, prop->key, sizeof(int64_t), prop->range, &val);
+								}
+							}
+							else if(prop->range == handle->forge.Float)
+							{
+								nk_layout_row_dynamic(ctx, dy*3, 1);
+								if(_dial_float(ctx, prop->minimum.f, &prop->value.f, prop->maximum.f, 1.f))
+								{
+									_patch_set(handle, prop->key, sizeof(float), prop->range, &prop->value.f);
+								}
+
+								nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
+								nk_layout_row_push(ctx, 0.9);
+								const float val = nk_propertyf(ctx, "",
+									prop->minimum.f, prop->value.f, prop->maximum.f, 0.05f, 0.f);
+								if(val != prop->value.f)
+								{
+									prop->value.f = val;
+									_patch_set(handle, prop->key, sizeof(float), prop->range, &val);
+								}
+								nk_layout_row_push(ctx, 0.1);
+								nk_label(ctx, "dB", NK_TEXT_RIGHT);
+							}
+							else if(prop->range == handle->forge.Double)
+							{
+								nk_layout_row_dynamic(ctx, dy, 1);
+								const double val = nk_propertyd(ctx, prop->label,
+									prop->minimum.d, prop->value.d, prop->maximum.d, 0.05f, 0.f);
+								if(val != prop->value.d)
+								{
+									prop->value.d = val;
+									_patch_set(handle, prop->key, sizeof(double), prop->range, &val);
+								}
+							}
+							else if(prop->range == handle->forge.Bool)
+							{
+								nk_layout_row_dynamic(ctx, dy, 1);
+								const int32_t val = nk_check_label(ctx, prop->label, prop->value.i);
+								if(val != prop->value.i)
+								{
+									prop->value.i = val;
+									_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &val);
+								}
+							}
+							else if(prop->range == handle->forge.URID)
+							{
+								//FIXME
+							}
+							else if(prop->range == handle->forge.String)
+							{
+								//FIXME
+							}
+							else if(prop->range == handle->forge.URI)
+							{
+								//FIXME
+							}
+							else if(prop->range == handle->forge.Chunk)
+							{
+								//FIXME
+							}
+							else
+							{
+								nk_layout_row_dynamic(ctx, dy, 1);
+								nk_label(ctx, prop->label, NK_TEXT_LEFT);
+							}
+
+							nk_group_end(ctx);
+						}
+					}
+					for(int p = 0; p < handle->n_readable; p++)
+					{
+						prop_t *prop = &handle->readables[p];
+						if(!prop->key || !prop->range || !prop->label) // marked for removal
+							continue;
+
+						nk_button_label(ctx, prop->label);
+						//FIXME
+					}
 
 					nk_group_end(ctx);
 				}
@@ -410,14 +691,29 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	handle->notify = port_map->port_index(port_map->handle, "notify");
 
 	handle->atom_eventTransfer = handle->map->map(handle->map->handle, LV2_ATOM__eventTransfer);
+
+	handle->patch_self = handle->map->map(handle->map->handle, plugin_uri);
 	handle->patch_Get = handle->map->map(handle->map->handle, LV2_PATCH__Get);
 	handle->patch_Set = handle->map->map(handle->map->handle, LV2_PATCH__Set);
+	handle->patch_Patch = handle->map->map(handle->map->handle, LV2_PATCH__Patch);
+	handle->patch_writable = handle->map->map(handle->map->handle, LV2_PATCH__writable);
+	handle->patch_readable = handle->map->map(handle->map->handle, LV2_PATCH__readable);
+	handle->patch_add = handle->map->map(handle->map->handle, LV2_PATCH__add);
+	handle->patch_remove = handle->map->map(handle->map->handle, LV2_PATCH__remove);
+	handle->patch_wildcard = handle->map->map(handle->map->handle, LV2_PATCH__wildcard);
 	handle->patch_property = handle->map->map(handle->map->handle, LV2_PATCH__property);
 	handle->patch_value = handle->map->map(handle->map->handle, LV2_PATCH__value);
+	handle->patch_subject = handle->map->map(handle->map->handle, LV2_PATCH__subject);
 	handle->moony_code = handle->map->map(handle->map->handle, MOONY_CODE_URI);
 	handle->moony_selection = handle->map->map(handle->map->handle, MOONY_SELECTION_URI);
 	handle->moony_error = handle->map->map(handle->map->handle, MOONY_ERROR_URI);
 	handle->moony_trace = handle->map->map(handle->map->handle, MOONY_TRACE_URI);
+	handle->rdfs_label = handle->map->map(handle->map->handle, RDFS__label);
+	handle->rdfs_range= handle->map->map(handle->map->handle, RDFS__range);
+	handle->rdfs_comment = handle->map->map(handle->map->handle, RDFS__comment);
+	handle->lv2_minimum = handle->map->map(handle->map->handle, LV2_CORE__minimum);
+	handle->lv2_maximum = handle->map->map(handle->map->handle, LV2_CORE__maximum);
+	handle->units_unit = handle->map->map(handle->map->handle, LV2_UNITS__unit);
 
 	const char *NK_SCALE = getenv("NK_SCALE");
 	const float scale = NK_SCALE ? atof(NK_SCALE) : 1.f;
@@ -456,6 +752,8 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	handle->ser.offset = 0;
 
 	_patch_get(handle, handle->moony_code);
+	_patch_get(handle, handle->moony_error);
+	_patch_get(handle, 0);
 
 	return handle;
 }
@@ -468,6 +766,16 @@ cleanup(LV2UI_Handle instance)
 	for(int i = 0; i < handle->n_trace; i++)
 		free(handle->traces[i]);
 	free(handle->traces);
+
+	for(int p = 0; p < handle->n_writable; p++)
+		_prop_free(handle, &handle->writables[p]);
+	if(handle->writables)
+		free(handle->writables);
+
+	for(int p = 0; p < handle->n_readable; p++)
+		_prop_free(handle, &handle->readables[p]);
+	if(handle->readables)
+		free(handle->readables);
 
 	if(handle->ser.buf)
 		free(handle->ser.buf);
@@ -543,6 +851,200 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 							nk_pugl_post_redisplay(&handle->win);
 						}
 					}
+					else
+					{
+						prop_t *prop = _prop_get(&handle->readables, &handle->n_readable, property->body);
+						if(!prop)
+							prop = _prop_get(&handle->writables, &handle->n_writable, property->body);
+						if(prop && (prop->range == value->type) )
+						{
+							if(prop->range == handle->forge.Int)
+							{
+								prop->value.i = ((const LV2_Atom_Int *)value)->body;
+							}
+							else if(prop->range == handle->forge.Long)
+							{
+								prop->value.h = ((const LV2_Atom_Long *)value)->body;
+							}
+							else if(prop->range == handle->forge.Float)
+							{
+								prop->value.f = ((const LV2_Atom_Float *)value)->body;
+							}
+							else if(prop->range == handle->forge.Double)
+							{
+								prop->value.d = ((const LV2_Atom_Double *)value)->body;
+							}
+							else if(prop->range == handle->forge.Bool)
+							{
+								prop->value.i = ((const LV2_Atom_Bool *)value)->body;
+							}
+							else if(prop->range == handle->forge.URID)
+							{
+								prop->value.u = ((const LV2_Atom_URID *)value)->body;
+							}
+							else if(prop->range == handle->forge.String)
+							{
+								prop->value.s = strdup(LV2_ATOM_BODY_CONST(value));
+							}
+							else if(prop->range == handle->forge.URI)
+							{
+								prop->value.s = strdup(LV2_ATOM_BODY_CONST(value));
+							}
+							else if(prop->range == handle->forge.Chunk)
+							{
+								prop->value.u = value->size; // store only chunk size
+							}
+							else
+							{
+								//FIXME
+							}
+
+							nk_pugl_post_redisplay(&handle->win);
+						}
+					}
+				}
+			}
+			else if(obj->body.otype == handle->patch_Patch)
+			{
+				const LV2_Atom_URID *subj = NULL;
+				const LV2_Atom_Object *add = NULL;
+				const LV2_Atom_Object *rem = NULL;
+
+				lv2_atom_object_get(obj,
+					handle->patch_subject, &subj,
+					handle->patch_add, &add,
+					handle->patch_remove, &rem,
+					0);
+
+				if(  add && lv2_atom_forge_is_object_type(&handle->forge, add->atom.type)
+					&& rem && lv2_atom_forge_is_object_type(&handle->forge, rem->atom.type) )
+				{
+					LV2_ATOM_OBJECT_FOREACH(rem, pro)
+					{
+						if(!subj || (subj->body == handle->patch_self))
+						{
+							const LV2_Atom_URID *property = (const LV2_Atom_URID *)&pro->value;
+
+							if(  (pro->key == handle->patch_writable)
+								&& (property->body == handle->patch_wildcard) )
+							{
+								printf("clearing patch:writable\n");
+								for(int p = 0; p < handle->n_writable; p++)
+									_prop_free(handle, &handle->writables[p]);
+
+								if(handle->writables)
+									free(handle->writables);
+
+								handle->writables = NULL;
+								handle->n_writable = 0;
+							}
+							else if( (pro->key == handle->patch_readable)
+								&& (property->body == handle->patch_wildcard) )
+							{
+								printf("clearing patch:readable\n");
+								for(int p = 0; p < handle->n_readable; p++)
+									_prop_free(handle, &handle->readables[p]);
+
+								if(handle->readables)
+									free(handle->readables);
+
+								handle->readables = NULL;
+								handle->n_readable = 0;
+							}
+							else
+							{
+								//FIXME
+							}
+						}
+						else
+						{
+							//FIXME
+						}
+					}
+
+					LV2_ATOM_OBJECT_FOREACH(add, pro)
+					{
+						if(!subj || (subj->body == handle->patch_self))
+						{
+							const LV2_Atom_URID *property = (const LV2_Atom_URID *)&pro->value;
+
+							if(pro->key == handle->patch_writable)
+							{
+								prop_t *prop = _prop_get_or_add(&handle->writables, &handle->n_writable, property->body);
+								(void)prop;
+							}
+							else if(pro->key == handle->patch_readable)
+							{
+								prop_t *prop = _prop_get_or_add(&handle->readables, &handle->n_readable, property->body);
+								(void)prop;
+							}
+						}
+						else
+						{
+							printf("reg: %u %u\n", subj->body, pro->key);
+							prop_t *prop = _prop_get(&handle->readables, &handle->n_readable, subj->body);
+							if(!prop)
+								prop = _prop_get(&handle->writables, &handle->n_writable, subj->body);
+							if(prop)
+							{
+								LV2_Atom_URID *range = NULL;
+								LV2_Atom *label = NULL;
+								LV2_Atom *comment = NULL;
+								LV2_Atom *minimum = NULL;
+								LV2_Atom *maximum = NULL;
+								LV2_Atom_URID *unit = NULL;
+
+								lv2_atom_object_get(add, 
+									handle->rdfs_range, &range,
+									handle->rdfs_label, &label,
+									handle->rdfs_comment, &comment,
+									handle->lv2_minimum, &minimum,
+									handle->lv2_maximum, &maximum,
+									handle->units_unit, &unit,
+									0);
+
+								if(range && (range->atom.type == handle->forge.URID))
+									prop->range = range->body;
+
+								if(label && (label->type == handle->forge.String))
+									prop->label = strdup(LV2_ATOM_BODY_CONST(label));
+
+								if(comment && (comment->type == handle->forge.String))
+									prop->comment = strdup(LV2_ATOM_BODY_CONST(comment));
+
+								if(unit && (unit->atom.type == handle->forge.URID))
+									prop->unit = unit->body;
+
+								if(minimum)
+								{
+									if(minimum->type == handle->forge.Int)
+										prop->minimum.i = ((const LV2_Atom_Int *)(minimum))->body;
+									else if(minimum->type == handle->forge.Long)
+										prop->minimum.h = ((const LV2_Atom_Long *)(minimum))->body;
+									else if(minimum->type == handle->forge.Float)
+										prop->minimum.f = ((const LV2_Atom_Float *)(minimum))->body;
+									else if(minimum->type == handle->forge.Double)
+										prop->minimum.d = ((const LV2_Atom_Double *)(minimum))->body;
+									//FIXME handle more types?
+								}
+								if(maximum)
+								{
+									if(maximum->type == handle->forge.Int)
+										prop->maximum.i = ((const LV2_Atom_Int *)(maximum))->body;
+									else if(maximum->type == handle->forge.Long)
+										prop->maximum.h = ((const LV2_Atom_Long *)(maximum))->body;
+									else if(maximum->type == handle->forge.Float)
+										prop->maximum.f = ((const LV2_Atom_Float *)(maximum))->body;
+									else if(maximum->type == handle->forge.Double)
+										prop->maximum.d = ((const LV2_Atom_Double *)(maximum))->body;
+									//FIXME handle more types?
+								}
+								//FIXME handle lv2:scalePoint
+							}
+						}
+					}
+
+					nk_pugl_post_redisplay(&handle->win);
 				}
 			}
 		}
