@@ -135,8 +135,20 @@ _prop_get(prop_t **properties, int *n_properties, LV2_URID key)
 	return NULL;
 }
 
+static int
+_cmp_r(const void *a, const void *b, void *data)
+{
+	LV2_URID_Unmap *unmap = data;
+	const prop_t *A = a;
+	const prop_t *B = b;
+	const char *alpha = unmap->unmap(unmap->handle, A->key);
+	const char *beta = unmap->unmap(unmap->handle, B->key);
+
+	return strcmp(alpha, beta);
+}
+
 static prop_t *
-_prop_get_or_add(prop_t **properties, int *n_properties, LV2_URID key)
+_prop_get_or_add(plughandle_t *handle, prop_t **properties, int *n_properties, LV2_URID key)
 {
 	prop_t *prop = _prop_get(properties, n_properties, key);
 	if(prop)
@@ -148,7 +160,10 @@ _prop_get_or_add(prop_t **properties, int *n_properties, LV2_URID key)
 	prop->key = key;
 	*n_properties += 1;
 
-	return prop;
+	// sort properties according to URI string comparison
+	qsort_r(*properties, *n_properties, sizeof(prop_t), _cmp_r, handle->unmap);
+
+	return _prop_get(properties, n_properties, key);
 }
 
 static void
@@ -277,82 +292,251 @@ _submit_all(plughandle_t *handle)
 }
 
 static int
-_dial_float(struct nk_context *ctx, float min, float *val, float max, float mul)
+_dial_bool(struct nk_context *ctx, int32_t *val)
 {
-	const float tmp = *val;
+	const int32_t tmp = *val;
 	struct nk_rect bounds = nk_layout_space_bounds(ctx);
-	const enum nk_widget_layout_states states = nk_widget(&bounds, ctx);
+	const enum nk_widget_layout_states layout_states = nk_widget(&bounds, ctx);
 
-	if(states != NK_WIDGET_INVALID)
+	if(layout_states != NK_WIDGET_INVALID)
 	{
-		const struct nk_style_item *bg = &ctx->style.progress.normal;
-		const struct nk_style_item *fg = &ctx->style.progress.cursor_normal;
-		const float range = max - min;
+		enum nk_widget_states states = NK_WIDGET_STATE_INACTIVE;
 
-		if(states == NK_WIDGET_VALID)
+		if(layout_states == NK_WIDGET_VALID)
 		{
 			struct nk_input *in = &ctx->input;
 
-			const struct nk_mouse_button *btn = &in->mouse.buttons[NK_BUTTON_LEFT];;
-			const bool left_mouse_down = btn->down;
 			const bool left_mouse_click_in_cursor = nk_input_has_mouse_click_down_in_rect(in,
 				NK_BUTTON_LEFT, bounds, nk_true);
+			bool mouse_has_scrolled = false;
 
-			float dd = 0.f;
-
-			if(left_mouse_down && left_mouse_click_in_cursor)
+			if(left_mouse_click_in_cursor)
 			{
-				const float dx = in->mouse.delta.x;
-				const float dy = in->mouse.delta.y;
-				dd = fabs(dx) > fabs(dy) ? dx : -dy;
-
-				bg = &ctx->style.progress.active;
-				fg = &ctx->style.progress.cursor_active;
+				states = NK_WIDGET_STATE_ACTIVED;
 			}
 			else if(nk_input_is_mouse_hovering_rect(in, bounds))
 			{
 				if(in->mouse.scroll_delta != 0.f) // has scrolling
 				{
-					dd = in->mouse.scroll_delta;
+					mouse_has_scrolled = true;
 					in->mouse.scroll_delta = 0.f;
 				}
 
+				states = NK_WIDGET_STATE_HOVER;
+			}
+
+			if(left_mouse_click_in_cursor || mouse_has_scrolled)
+			{
+				*val = !*val;
+			}
+		}
+
+		const struct nk_style_item *fg = NULL;
+		const struct nk_style_item *bg = NULL;
+
+		switch(states)
+		{
+			case NK_WIDGET_STATE_HOVER:
+			{
 				bg = &ctx->style.progress.hover;
 				fg = &ctx->style.progress.cursor_hover;
-			}
+			}	break;
+			case NK_WIDGET_STATE_ACTIVED:
+			{
+				bg = &ctx->style.progress.active;
+				fg = &ctx->style.progress.cursor_active;
+			}	break;
+			default:
+			{
+				bg = &ctx->style.progress.normal;
+				fg = &ctx->style.progress.cursor_normal;
+			}	break;
+		}
+
+		struct nk_command_buffer *canv= nk_window_get_canvas(ctx);
+		const float w2 = bounds.w/2;
+		const float h2 = bounds.h/2;
+		const float r1 = h2;
+		const float r2 = r1 / 2;
+		const float cx = bounds.x + w2;
+		const float cy = bounds.y + h2;
+
+		nk_fill_arc(canv, cx, cy, r2, 0.f, 2*M_PI, fg->data.color);
+		nk_fill_arc(canv, cx, cy, r2 - 2, 0.f, 2*M_PI, ctx->style.window.background);
+		nk_fill_arc(canv, cx, cy, r2 - 4, 0.f, 2*M_PI,
+			*val ? fg->data.color : bg->data.color);
+	}
+
+	return tmp != *val;
+}
+
+static float
+_dial_numeric_behavior(struct nk_context *ctx, struct nk_rect bounds,
+	enum nk_widget_states *states, int *divider)
+{
+	struct nk_input *in = &ctx->input;
+
+	const struct nk_mouse_button *btn = &in->mouse.buttons[NK_BUTTON_LEFT];;
+	const bool left_mouse_down = btn->down;
+	const bool left_mouse_click_in_cursor = nk_input_has_mouse_click_down_in_rect(in,
+		NK_BUTTON_LEFT, bounds, nk_true);
+
+	float dd = 0.f;
+	if(left_mouse_down && left_mouse_click_in_cursor)
+	{
+		const float dx = in->mouse.delta.x;
+		const float dy = in->mouse.delta.y;
+		dd = fabs(dx) > fabs(dy) ? dx : -dy;
+
+		*states = NK_WIDGET_STATE_ACTIVED;
+	}
+	else if(nk_input_is_mouse_hovering_rect(in, bounds))
+	{
+		if(in->mouse.scroll_delta != 0.f) // has scrolling
+		{
+			dd = in->mouse.scroll_delta;
+			in->mouse.scroll_delta = 0.f;
+		}
+
+		*states = NK_WIDGET_STATE_HOVER;
+	}
+
+	if(nk_input_is_key_down(in, NK_KEY_CTRL))
+		*divider *= 4;
+	if(nk_input_is_key_down(in, NK_KEY_SHIFT))
+		*divider *= 4;
+
+	return dd;
+}
+
+static void
+_dial_numeric_draw(struct nk_context *ctx, struct nk_rect bounds,
+	enum nk_widget_states states, float perc)
+{
+	struct nk_command_buffer *canv= nk_window_get_canvas(ctx);
+	const struct nk_style_item *bg = NULL;
+	const struct nk_style_item *fg = NULL;
+
+	switch(states)
+	{
+		case NK_WIDGET_STATE_HOVER:
+		{
+			bg = &ctx->style.progress.hover;
+			fg = &ctx->style.progress.cursor_hover;
+		}	break;
+		case NK_WIDGET_STATE_ACTIVED:
+		{
+			bg = &ctx->style.progress.active;
+			fg = &ctx->style.progress.cursor_active;
+		}	break;
+		default:
+		{
+			bg = &ctx->style.progress.normal;
+			fg = &ctx->style.progress.cursor_normal;
+		}	break;
+	}
+
+	const float w2 = bounds.w/2;
+	const float h2 = bounds.h/2;
+	const float r1 = h2;
+	const float r2 = r1 / 2;
+	const float cx = bounds.x + w2;
+	const float cy = bounds.y + h2;
+	const float aa = M_PI/6;
+	const float a1 = M_PI/2 + aa;
+	const float a2 = 2*M_PI + M_PI/2 - aa;
+	const float a3 = a1 + (a2 - a1)*perc;
+
+	nk_fill_arc(canv, cx, cy, r1, a1, a2, bg->data.color);
+	nk_fill_arc(canv, cx, cy, r1, a1, a3, fg->data.color);
+	nk_fill_arc(canv, cx, cy, r2, 0.f, 2*M_PI, ctx->style.window.background);
+}
+
+static int
+_dial_double(struct nk_context *ctx, double min, double *val, double max, float mul)
+{
+	const double tmp = *val;
+	struct nk_rect bounds = nk_layout_space_bounds(ctx);
+	const enum nk_widget_layout_states layout_states = nk_widget(&bounds, ctx);
+
+	if(layout_states != NK_WIDGET_INVALID)
+	{
+		enum nk_widget_states states = NK_WIDGET_STATE_INACTIVE;
+		const double range = max - min;
+
+		if(layout_states == NK_WIDGET_VALID)
+		{
+			int divider = 1;
+			const float dd = _dial_numeric_behavior(ctx, bounds, &states, &divider);
 
 			if(dd != 0.f) // update value
 			{
-				float per_pixel_inc = mul * range / bounds.w;
-				if(nk_input_is_key_down(in, NK_KEY_CTRL))
-					per_pixel_inc /= 4;
-				if(nk_input_is_key_down(in, NK_KEY_SHIFT))
-					per_pixel_inc /= 4;
+				const double per_pixel_inc = mul * range / bounds.w / divider;
 
 				*val += dd * per_pixel_inc;
 				*val = NK_CLAMP(min, *val, max);
 			}
 		}
 
-		struct nk_command_buffer *canv= nk_window_get_canvas(ctx);
 		const float perc = (*val - min) / range;
-		const float w2 = bounds.w/2;
-		const float h2 = bounds.h/2;
-		const float r1 = h2;
-		const float r2 = r1 - 12;
-		const float cx = bounds.x + w2;
-		const float cy = bounds.y + h2;
-		const float aa = M_PI/6;
-		const float a1 = M_PI/2 + aa;
-		const float a2 = 2*M_PI + M_PI/2 - aa;
-		const float a3 = a1 + (a2 - a1)*perc;
-
-		nk_fill_arc(canv, cx, cy, r1, a1, a2, bg->data.color);
-		nk_fill_arc(canv, cx, cy, r1, a1, a3, fg->data.color);
-		nk_fill_arc(canv, cx, cy, r2, 0.f, 2*M_PI, ctx->style.window.background);
+		_dial_numeric_draw(ctx, bounds, states, perc);
 	}
 
 	return tmp != *val;
+}
+
+static int
+_dial_long(struct nk_context *ctx, int64_t min, int64_t *val, int64_t max, float mul)
+{
+	const int64_t tmp = *val;
+	struct nk_rect bounds = nk_layout_space_bounds(ctx);
+	const enum nk_widget_layout_states layout_states = nk_widget(&bounds, ctx);
+
+	if(layout_states != NK_WIDGET_INVALID)
+	{
+		enum nk_widget_states states = NK_WIDGET_STATE_INACTIVE;
+		const int64_t range = max - min;
+
+		if(layout_states == NK_WIDGET_VALID)
+		{
+			int divider = 1;
+			const float dd = _dial_numeric_behavior(ctx, bounds, &states, &divider);
+
+			if(dd != 0.f) // update value
+			{
+				const double per_pixel_inc = mul * range / bounds.w / divider;
+
+				const double diff = dd * per_pixel_inc;
+				*val += diff < 0.0 ? floor(diff) : ceil(diff);
+				*val = NK_CLAMP(min, *val, max);
+			}
+		}
+
+		const float perc = (float)(*val - min) / range;
+		_dial_numeric_draw(ctx, bounds, states, perc);
+	}
+
+	return tmp != *val;
+}
+
+static int
+_dial_float(struct nk_context *ctx, float min, float *val, float max, float mul)
+{
+	double tmp = *val;
+	const int res = _dial_double(ctx, min, &tmp, max, mul);
+	*val = tmp;
+
+	return res;
+}
+
+static int
+_dial_int(struct nk_context *ctx, int32_t min, int32_t *val, int32_t max, float mul)
+{
+	int64_t tmp = *val;
+	const int res = _dial_long(ctx, min, &tmp, max, mul);
+	*val = tmp;
+
+	return res;
 }
 
 static void
@@ -367,6 +551,9 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 	const float header_h = 1*dy + 2*window_padding.y;
 	const float footer_h = 1*dy + 2*window_padding.y;
 	const float body_h = wbounds.h - header_h - footer_h;
+	const float header_height = ctx->style.font->height + 2*ctx->style.window.header.padding.y
+		+ 2*ctx->style.window.header.label_padding.y;
+	const float prop_h = header_height + dy*4 + group_padding.y*3 + 2*ctx->style.window.border;
 
 	if(nk_begin(ctx, "Moony", wbounds, NK_WINDOW_NO_SCROLLBAR))
 	{
@@ -502,37 +689,58 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 				nk_layout_row_push(ctx, handle->code_hidden ? 1.0 : 0.4);
 				if(nk_group_begin(ctx, "Properties", 0))
 				{
-					const int ncol = handle->code_hidden ? 4 : 2;
-					nk_layout_row_dynamic(ctx, dy*7, ncol);
+					const int ncol = handle->code_hidden ? 6 : 3;
+
+					nk_layout_row_dynamic(ctx, prop_h, ncol);
 					for(int p = 0; p < handle->n_writable; p++)
 					{
 						prop_t *prop = &handle->writables[p];
 						if(!prop->key || !prop->range || !prop->label) // marked for removal
 							continue;
 
+						const char *lab = "#";
+
 						if(nk_group_begin(ctx, prop->label, NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_NO_SCROLLBAR))
 						{
 							if(prop->range == handle->forge.Int)
 							{
-								nk_layout_row_dynamic(ctx, dy, 1);
-								const int32_t val = nk_propertyi(ctx, prop->label,
+								nk_layout_row_dynamic(ctx, dy*3, 1);
+								if(_dial_int(ctx, prop->minimum.i, &prop->value.i, prop->maximum.i, 1.f))
+								{
+									_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &prop->value.i);
+								}
+
+								nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
+								nk_layout_row_push(ctx, 0.9);
+								const int32_t val = nk_propertyi(ctx, lab,
 									prop->minimum.i, prop->value.i, prop->maximum.i, 1.f, 0.f);
 								if(val != prop->value.i)
 								{
 									prop->value.i = val;
 									_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &val);
 								}
+								nk_layout_row_push(ctx, 0.1);
+								nk_label(ctx, "dB", NK_TEXT_RIGHT);
 							}
 							else if(prop->range == handle->forge.Long)
 							{
-								nk_layout_row_dynamic(ctx, dy, 1);
-								const int64_t val = nk_propertyi(ctx, prop->label,
+								nk_layout_row_dynamic(ctx, dy*3, 1);
+								if(_dial_long(ctx, prop->minimum.h, &prop->value.h, prop->maximum.h, 1.f))
+								{
+									_patch_set(handle, prop->key, sizeof(int64_t), prop->range, &prop->value.h);
+								}
+
+								nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
+								nk_layout_row_push(ctx, 0.9);
+								const int64_t val = nk_propertyi(ctx, lab,
 									prop->minimum.h, prop->value.h, prop->maximum.h, 1.f, 0.f);
 								if(val != prop->value.h)
 								{
 									prop->value.h = val;
 									_patch_set(handle, prop->key, sizeof(int64_t), prop->range, &val);
 								}
+								nk_layout_row_push(ctx, 0.1);
+								nk_label(ctx, "dB", NK_TEXT_RIGHT);
 							}
 							else if(prop->range == handle->forge.Float)
 							{
@@ -544,7 +752,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 
 								nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
 								nk_layout_row_push(ctx, 0.9);
-								const float val = nk_propertyf(ctx, "",
+								const float val = nk_propertyf(ctx, lab,
 									prop->minimum.f, prop->value.f, prop->maximum.f, 0.05f, 0.f);
 								if(val != prop->value.f)
 								{
@@ -556,23 +764,30 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 							}
 							else if(prop->range == handle->forge.Double)
 							{
-								nk_layout_row_dynamic(ctx, dy, 1);
-								const double val = nk_propertyd(ctx, prop->label,
+								nk_layout_row_dynamic(ctx, dy*3, 1);
+								if(_dial_double(ctx, prop->minimum.d, &prop->value.d, prop->maximum.d, 1.f))
+								{
+									_patch_set(handle, prop->key, sizeof(double), prop->range, &prop->value.d);
+								}
+
+								nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
+								nk_layout_row_push(ctx, 0.9);
+								const double val = nk_propertyd(ctx, lab,
 									prop->minimum.d, prop->value.d, prop->maximum.d, 0.05f, 0.f);
 								if(val != prop->value.d)
 								{
 									prop->value.d = val;
 									_patch_set(handle, prop->key, sizeof(double), prop->range, &val);
 								}
+								nk_layout_row_push(ctx, 0.1);
+								nk_label(ctx, "dB", NK_TEXT_RIGHT);
 							}
 							else if(prop->range == handle->forge.Bool)
 							{
-								nk_layout_row_dynamic(ctx, dy, 1);
-								const int32_t val = nk_check_label(ctx, prop->label, prop->value.i);
-								if(val != prop->value.i)
+								nk_layout_row_dynamic(ctx, dy*3, 1);
+								if(_dial_bool(ctx, &prop->value.i))
 								{
-									prop->value.i = val;
-									_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &val);
+									_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &prop->value.i);
 								}
 							}
 							else if(prop->range == handle->forge.URID)
@@ -581,6 +796,16 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 							}
 							else if(prop->range == handle->forge.String)
 							{
+								nk_layout_row_dynamic(ctx, dy*4, 1);
+								const int max_len = 256;
+								static int len = 0; //FIXME
+								static char buf [max_len]; //FIXME
+								if(prop->value.s && !len)
+								{
+									strcpy(buf, prop->value.s);
+									len = strlen(prop->value.s);
+								}
+								nk_edit_string(ctx, NK_EDIT_BOX, buf, &len, max_len, nk_filter_default);
 								//FIXME
 							}
 							else if(prop->range == handle->forge.URI)
@@ -589,7 +814,13 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 							}
 							else if(prop->range == handle->forge.Chunk)
 							{
-								//FIXME
+								nk_layout_row_dynamic(ctx, dy*3, 1);
+								if(nk_button_label(ctx, "Load"))
+								{
+									//FIXME load file selector
+								}
+								nk_layout_row_dynamic(ctx, dy, 1);
+								nk_labelf(ctx, NK_TEXT_RIGHT, "%"PRIu32" bytes", prop->value.u);
 							}
 							else
 							{
@@ -970,12 +1201,12 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 
 							if(pro->key == handle->patch_writable)
 							{
-								prop_t *prop = _prop_get_or_add(&handle->writables, &handle->n_writable, property->body);
+								prop_t *prop = _prop_get_or_add(handle, &handle->writables, &handle->n_writable, property->body);
 								(void)prop;
 							}
 							else if(pro->key == handle->patch_readable)
 							{
-								prop_t *prop = _prop_get_or_add(&handle->readables, &handle->n_readable, property->body);
+								prop_t *prop = _prop_get_or_add(handle, &handle->readables, &handle->n_readable, property->body);
 								(void)prop;
 							}
 						}

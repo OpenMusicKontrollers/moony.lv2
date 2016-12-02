@@ -14441,7 +14441,7 @@ nk_do_edit(nk_flags *state, struct nk_command_buffer *out,
                 scroll_step = scroll.h * 0.10f;
                 scroll_inc = scroll.h * 0.01f;
                 scroll_target = text_size.y;
-                edit->scrollbar.y = nk_do_scrollbarv(&ws, out, scroll, 0,
+                edit->scrollbar.y = nk_do_scrollbarv(&ws, out, scroll, nk_true,
                         scroll_offset, scroll_target, scroll_step, scroll_inc,
                         &style->scrollbar, in, font);
             }
