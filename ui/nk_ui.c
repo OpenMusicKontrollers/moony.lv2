@@ -47,7 +47,6 @@ union _body_t {
 	uint32_t u;
 	float f;
 	double d;
-	char *s;
 	struct nk_text_edit editor;
 };
 
@@ -177,12 +176,10 @@ _prop_free(plughandle_t *handle, prop_t *prop)
 		free(prop->comment);
 
 	if(  (prop->range == handle->forge.String)
-		|| (prop->range == handle->forge.URI) )
+		|| (prop->range == handle->forge.URID) )
 	{
-		if(prop->value.s)
-			free(prop->value.s);
+		nk_textedit_free(&prop->value.editor);
 	}
-	//FIXME chunk bodies
 }
 
 LV2_Atom_Forge_Ref
@@ -591,10 +588,6 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					nk_flags flags = NK_EDIT_BOX;
 					if(has_enter)
 						flags |= NK_EDIT_SIG_ENTER;
-					/*
-					const nk_flags state = nk_edit_string(ctx, flags,
-						handle->code, &handle->code_sz, MOONY_MAX_CHUNK_LEN, nk_filter_default);
-					*/
 					const nk_flags state = nk_edit_buffer(ctx, flags,
 						&handle->editor, nk_filter_default);
 
@@ -801,25 +794,33 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 							}
 							else if(prop->range == handle->forge.URID)
 							{
-								//FIXME
+								nk_layout_row_dynamic(ctx, dy*4, 1);
+								const nk_flags state = nk_edit_buffer(ctx,
+									NK_EDIT_BOX | NK_EDIT_SIG_ENTER, &prop->value.editor, nk_filter_default);
+								if(state & NK_EDIT_COMMITED)
+								{
+									struct nk_str *str = &prop->value.editor.string;
+									LV2_URID urid = 0;
+									char *uri = strndup(nk_str_get_const(str), nk_str_len_char(str));
+									if(uri)
+									{
+										urid = handle->map->map(handle->map->handle, uri);
+										free(uri);
+									}
+									if(urid)
+										_patch_set(handle, prop->key, sizeof(uint32_t), prop->range, &urid);
+								}
 							}
 							else if(prop->range == handle->forge.String)
 							{
 								nk_layout_row_dynamic(ctx, dy*4, 1);
-								const int max_len = 256;
-								static int len = 0; //FIXME
-								static char buf [max_len]; //FIXME
-								if(prop->value.s && !len)
+								const nk_flags state = nk_edit_buffer(ctx,
+									NK_EDIT_BOX | NK_EDIT_SIG_ENTER, &prop->value.editor, nk_filter_default);
+								if(state & NK_EDIT_COMMITED)
 								{
-									strcpy(buf, prop->value.s);
-									len = strlen(prop->value.s);
+									struct nk_str *str = &prop->value.editor.string;
+									_patch_set(handle, prop->key, nk_str_len_char(str), prop->range, nk_str_get_const(str));
 								}
-								nk_edit_string(ctx, NK_EDIT_BOX, buf, &len, max_len, nk_filter_default);
-								//FIXME
-							}
-							else if(prop->range == handle->forge.URI)
-							{
-								//FIXME
 							}
 							else if(prop->range == handle->forge.Chunk)
 							{
@@ -1128,15 +1129,18 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 							}
 							else if(prop->range == handle->forge.URID)
 							{
-								prop->value.u = ((const LV2_Atom_URID *)value)->body;
+								const LV2_URID urid = ((const LV2_Atom_URID *)value)->body;
+								const char *uri = handle->unmap->unmap(handle->unmap->handle, urid);
+
+								struct nk_str *str = &prop->value.editor.string;
+								nk_str_clear(str);
+								nk_str_append_text_utf8(str, uri, strlen(uri));
 							}
 							else if(prop->range == handle->forge.String)
 							{
-								prop->value.s = strdup(LV2_ATOM_BODY_CONST(value));
-							}
-							else if(prop->range == handle->forge.URI)
-							{
-								prop->value.s = strdup(LV2_ATOM_BODY_CONST(value));
+								struct nk_str *str = &prop->value.editor.string;
+								nk_str_clear(str);
+								nk_str_append_text_utf8(str, LV2_ATOM_BODY_CONST(value), value->size - 1);
 							}
 							else if(prop->range == handle->forge.Chunk)
 							{
@@ -1252,7 +1256,15 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 									0);
 
 								if(range && (range->atom.type == handle->forge.URID))
+								{
 									prop->range = range->body;
+
+									if( (prop->range == handle->forge.String)
+										|| (prop->range == handle->forge.URID) )
+									{
+										nk_textedit_init_default(&prop->value.editor);
+									}
+								}
 
 								if(label && (label->type == handle->forge.String))
 									prop->label = strdup(LV2_ATOM_BODY_CONST(label));
