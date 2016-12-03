@@ -509,9 +509,6 @@ _nk_pugl_other_key(struct nk_context *ctx, const PuglEventKey *ev, int down)
 				nk_input_key(ctx, NK_KEY_TEXT_LINE_END, down);
 			}	break;
 		}
-
-		if(down)
-			nk_input_char(ctx, ev->character + 96);
 	}
 	else // !control
 	{
@@ -909,7 +906,7 @@ nk_pugl_icon_load(nk_pugl_window_t *win, const char *filename)
 
 	int w, h, n;
 	uint8_t *data = stbi_load(filename, &w, &h, &n, 0);
-	if(data && win->glGenerateMipmap)
+	if(data)
 	{
 		puglEnterContext(win->view);
 		{
@@ -919,8 +916,11 @@ nk_pugl_icon_load(nk_pugl_window_t *win, const char *filename)
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			if(!win->glGenerateMipmap) // for GL >= 1.4 && < 3.1
+				glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-			win->glGenerateMipmap(GL_TEXTURE_2D);
+			if(win->glGenerateMipmap) // for GL >= 3.1
+				win->glGenerateMipmap(GL_TEXTURE_2D);
 		}
 		puglLeaveContext(win->view, false);
 
