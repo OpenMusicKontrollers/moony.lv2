@@ -48,6 +48,7 @@ union _body_t {
 	float f;
 	double d;
 	char *s;
+	struct nk_text_edit editor;
 };
 
 struct _prop_t {
@@ -107,7 +108,7 @@ struct _plughandle_t {
 	bool prop_hidden;
 
 	char code [MOONY_MAX_CHUNK_LEN];
-	int code_sz;
+	struct nk_text_edit editor;
 
 	char error [MOONY_MAX_ERROR_LEN];
 	int error_sz;
@@ -287,8 +288,9 @@ _submit_all(plughandle_t *handle)
 {
 	_clear_error(handle);
 
+	struct nk_str *str = &handle->editor.string;
 	_patch_set(handle, handle->moony_code,
-		handle->code_sz, handle->forge.String, handle->code);
+		nk_str_len_char(str), handle->forge.String, nk_str_get_const(str));
 }
 
 static int
@@ -589,8 +591,12 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					nk_flags flags = NK_EDIT_BOX;
 					if(has_enter)
 						flags |= NK_EDIT_SIG_ENTER;
+					/*
 					const nk_flags state = nk_edit_string(ctx, flags,
 						handle->code, &handle->code_sz, MOONY_MAX_CHUNK_LEN, nk_filter_default);
+					*/
+					const nk_flags state = nk_edit_buffer(ctx, flags,
+						&handle->editor, nk_filter_default);
 
 					nk_layout_row_dynamic(ctx, editor_h*0.1, 1);
 					struct nk_list_view lview;
@@ -612,11 +618,9 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					}
 					if(nk_button_label(ctx, "Submit line"))
 					{
-						struct nk_text_edit *text_edit = &ctx->text_edit;
-
 						uint32_t newlines = 0;
 						uint32_t from = 0;
-						for(int i = 0; i < text_edit->cursor; i++) // count newlines
+						for(int i = 0; i < handle->editor.cursor; i++) // count newlines
 						{
 							if(handle->code[i] == '\n')
 							{
@@ -625,8 +629,12 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 							}
 						}
 
-						char *end = memchr(handle->code + from, '\n', handle->code_sz);
-						const uint32_t to = end ? end - handle->code : handle->code_sz;
+						// create selection with prefixed newlines
+						struct nk_str *str = &handle->editor.string;
+						const char *code = nk_str_get_const(str);
+						const int code_sz  = nk_str_len_char(str);
+						char *end = memchr(code + from, '\n', code_sz);
+						const uint32_t to = end ? end - code : code_sz;
 						const uint32_t len = to - from;
 						if(len > 0)
 						{
@@ -635,7 +643,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 							if(sel)
 							{
 								memset(sel, '\n', newlines);
-								memcpy(sel + newlines, handle->code + from, len);
+								memcpy(sel + newlines, code + from, len);
 
 								_submit_selection(handle, sel, sz);
 
@@ -645,15 +653,16 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					}
 					if(nk_button_label(ctx, "Submit selection"))
 					{
-						struct nk_text_edit *text_edit = &ctx->text_edit;
+						struct nk_str *str = &handle->editor.string;
+						const char *code = nk_str_get_const(str);
 
-						const uint32_t len = text_edit->select_end - text_edit->select_start;
+						const uint32_t len = handle->editor.select_end - handle->editor.select_start;
 						if(len > 0)
 						{
 							uint32_t newlines = 0;
-							for(int i = 0; i < text_edit->select_start; i++) // count newlines
+							for(int i = 0; i < handle->editor.select_start; i++) // count newlines
 							{
-								if(handle->code[i] == '\n')
+								if(code[i] == '\n')
 									newlines += 1;
 							}
 
@@ -662,7 +671,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 							if(sel)
 							{
 								memset(sel, '\n', newlines);
-								memcpy(sel + newlines, handle->code + text_edit->select_start, len);
+								memcpy(sel + newlines, code + handle->editor.select_start, len);
 
 								_submit_selection(handle, sel, sz);
 
@@ -982,6 +991,8 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	handle->ser.buf = malloc(1024);
 	handle->ser.offset = 0;
 
+	nk_textedit_init_fixed(&handle->editor, handle->code, MOONY_MAX_CHUNK_LEN);
+
 	_patch_get(handle, handle->moony_code);
 	_patch_get(handle, handle->moony_error);
 	_patch_get(handle, 0);
@@ -993,6 +1004,8 @@ static void
 cleanup(LV2UI_Handle instance)
 {
 	plughandle_t *handle = instance;
+
+	nk_textedit_free(&handle->editor);
 
 	for(int i = 0; i < handle->n_trace; i++)
 		free(handle->traces[i]);
@@ -1048,16 +1061,20 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 					{
 						if(value->size <= MOONY_MAX_CHUNK_LEN)
 						{
-							strncpy(handle->code, body, value->size);
-							handle->code_sz = value->size - 1;
+							struct nk_str *str = &handle->editor.string;
+							nk_str_clear(str);
 
-							// replace tab with space
-							const char *end = handle->code + handle->code_sz;
-							for(char *ptr = handle->code; ptr < end; ptr++)
+							// replace tab with 2 spaces
+							const char *end = body + value->size - 1;
+							const char *from = body;
+							for(const char *to = strchr(from, '\t');
+								to;
+								from = to + 1, to = strchr(from, '\t'))
 							{
-								if(*ptr == '\t')
-									*ptr = ' ';
+								nk_str_append_text_utf8(str, from, to-from);
+								nk_str_append_text_utf8(str, "  ", 2);
 							}
+							nk_str_append_text_utf8(str, from, end-from);
 
 							nk_pugl_post_redisplay(&handle->win);
 						}
