@@ -15646,6 +15646,7 @@ nk_style_from_table(struct nk_context *ctx, const struct nk_color *table)
     win->background = table[NK_COLOR_WINDOW];
     win->fixed_background = nk_style_item_color(table[NK_COLOR_WINDOW]);
     win->border_color = table[NK_COLOR_BORDER];
+    win->popup_border_color = table[NK_COLOR_BORDER];
     win->combo_border_color = table[NK_COLOR_BORDER];
     win->contextual_border_color = table[NK_COLOR_BORDER];
     win->menu_border_color = table[NK_COLOR_BORDER];
@@ -15663,6 +15664,7 @@ nk_style_from_table(struct nk_context *ctx, const struct nk_color *table)
     win->menu_border = 1.0f;
     win->group_border = 1.0f;
     win->tooltip_border = 1.0f;
+    win->popup_border = 1.0f;
     win->border = 2.0f;
 
     win->padding = nk_vec2(4,4);
@@ -16497,6 +16499,7 @@ nk_panel_begin(struct nk_context *ctx, const char *title, enum nk_panel_type pan
             {
                 layout->flags |= NK_WINDOW_HIDDEN;
                 layout->flags |= NK_WINDOW_CLOSED;
+                layout->flags &= ~NK_WINDOW_MINIMIZED;
             }
         }
 
@@ -16898,7 +16901,7 @@ nk_link_page_element_into_freelist(struct nk_context *ctx,
 NK_INTERN void
 nk_free_page_element(struct nk_context *ctx, struct nk_page_element *elem)
 {
-    /* fixed size pool so just add to free list */
+    /* we have a pool so just add to free list */
     if (ctx->use_pool) {
         nk_link_page_element_into_freelist(ctx, elem);
         return;
@@ -20427,7 +20430,6 @@ nk_list_view_begin(struct nk_context *ctx, struct nk_list_view *view,
     if (!ctx || !view || !title) return 0;
 
     win = ctx->current;
-    layout = win->layout;
     style = &ctx->style;
     item_spacing = style->window.spacing;
     row_height += NK_MAX(0, (int)item_spacing.y);
@@ -20746,8 +20748,8 @@ nk_tooltip_end(struct nk_context *ctx)
 {
     NK_ASSERT(ctx);
     NK_ASSERT(ctx->current);
-    if (!ctx || !ctx->current)
-        return;
+    if (!ctx || !ctx->current) return;
+    ctx->current->seq--;
     nk_popup_close(ctx);
     nk_popup_end(ctx);
 }
@@ -20978,14 +20980,14 @@ nk_contextual_end(struct nk_context *ctx)
     if (panel->flags & NK_WINDOW_DYNAMIC) {
         /* Close behavior
         This is a bit hack solution since we do not now before we end our popup
-        how big it will be. We therefore do not directly now when a
+        how big it will be. We therefore do not directly know when a
         click outside the non-blocking popup must close it at that direct frame.
         Instead it will be closed in the next frame.*/
         struct nk_rect body = {0,0,0,0};
         if (panel->at_y < (panel->bounds.y + panel->bounds.h)) {
             struct nk_vec2 padding = nk_panel_get_padding(&ctx->style, panel->type);
             body = panel->bounds;
-            body.y = (panel->at_y + panel->footer_height + panel->border + padding.y);
+            body.y = (panel->at_y + panel->footer_height + panel->border + padding.y + panel->row.height);
             body.h = (panel->bounds.y + panel->bounds.h) - body.y;
         }
 
