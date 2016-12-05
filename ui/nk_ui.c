@@ -114,6 +114,7 @@ struct _plughandle_t {
 
 	char code [MOONY_MAX_CHUNK_LEN];
 	struct nk_text_edit editor;
+	char *clipboard;
 
 	char error [MOONY_MAX_ERROR_LEN];
 	int error_sz;
@@ -553,7 +554,7 @@ _lex(void *data, const char *code, int code_sz)
 	struct nk_token *tokens = NULL;
 	const int top = lua_gettop(L);
 
-	printf("_lex: %i\n", code_sz);
+	//printf("_lex: %i\n", code_sz);
 
 	lua_getglobal(L, "lexer");
 	lua_getfield(L, -1, "lex");
@@ -625,9 +626,33 @@ _lex(void *data, const char *code, int code_sz)
 }
 
 static void
+_paste(nk_handle userdata, struct nk_text_edit* editor)
+{
+	plughandle_t *handle = userdata.ptr;
+
+	if(handle->clipboard)
+		nk_textedit_paste(editor, handle->clipboard, strlen(handle->clipboard));
+}
+
+static void
+_copy(nk_handle userdata, const char *buf, int len)
+{
+	plughandle_t *handle = userdata.ptr;
+
+	if(handle->clipboard)
+		free(handle->clipboard);
+
+	handle->clipboard = strndup(buf, len);
+}
+
+static void
 _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 {
 	plughandle_t *handle = data;
+
+	ctx->clip.paste = _paste;
+	ctx->clip.copy = _copy;
+	ctx->clip.userdata.ptr = handle;
 
 	struct nk_input *in = &ctx->input;
 	const float dy = handle->dy;
@@ -1160,6 +1185,9 @@ static void
 cleanup(LV2UI_Handle instance)
 {
 	plughandle_t *handle = instance;
+
+	if(handle->clipboard)
+		free(handle->clipboard);
 
 	if(handle->L)
 		lua_close(handle->L);
