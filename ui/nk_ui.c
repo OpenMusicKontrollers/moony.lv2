@@ -587,7 +587,7 @@ _lex(void *data, const char *code, int code_sz)
 				else if(!strcmp(token_str, "function"))
 					token->color = nk_rgb(0x00, 0xae, 0xef);
 				else if(!strcmp(token_str, "constant"))
-					token->color = nk_rgb(0x1e, 0xda, 0xfb);
+					token->color = nk_rgb(0xff, 0x66, 0x00);
 				else if(!strcmp(token_str, "library"))
 					token->color = nk_rgb(0x8d, 0xff, 0x0a);
 				else if(!strcmp(token_str, "table"))
@@ -599,9 +599,11 @@ _lex(void *data, const char *code, int code_sz)
 				else if(!strcmp(token_str, "comment"))
 					token->color = nk_rgb(0x55, 0x55, 0x55);
 				else if(!strcmp(token_str, "number"))
-					token->color = nk_rgb(0xcc, 0xcc, 0x00);
+					token->color = nk_rgb(0xfb, 0xfb, 0x00);
 				else if(!strcmp(token_str, "label"))
 					token->color = nk_rgb(0xfd, 0xc2, 0x51);
+				else if(!strcmp(token_str, "binop"))
+					token->color = nk_rgb(0xcc, 0x00, 0x00);
 				else if(!strcmp(token_str, "operator"))
 					token->color = nk_rgb(0xcc, 0x00, 0x00);
 				else if(!strcmp(token_str, "brace"))

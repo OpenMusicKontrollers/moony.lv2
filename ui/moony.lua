@@ -34,133 +34,100 @@ local number = token(l.NUMBER, l.float + lua_integer)
 
 -- Keywords.
 local keyword = token(l.KEYWORD, word_match{
-  'and', 'break', 'do', 'else', 'elseif', 'end', 'false', 'for', 'function',
-  'goto', 'if', 'in', 'local', 'nil', 'not', 'or', 'repeat', 'return', 'then',
-  'true', 'until', 'while'
+	'while', 'do', 'end', 'repeat', 'until', 'if', 'then', 'elseif', 'else', 'for', 'goto', 'break', 'return',
+	'local', 'function', 'in'
 })
 
 -- Functions.
 local func = token(l.FUNCTION, word_match{
-  'assert', 'collectgarbage', 'dofile', 'error', 'getmetatable', 'ipairs',
-  'load', 'loadfile', 'next', 'pairs', 'pcall', 'print', 'rawequal', 'rawget',
-  'rawset', 'require', 'select', 'setmetatable', 'tonumber', 'tostring', 'type',
-  'xpcall',
-  -- Added in 5.2.
-  'rawlen',
-	-- metamethods
-	'__call', '__index', '__newindex', '__add', '__sub', --TODO
-	-- Moony
-	'once', 'run', 'save', 'restore', 'stash', 'apply', 'register',
-	'Map', 'Unmap', 'HashMap', 'foreach', 'unpack',
-	'MIDIResponder', 'OSCResponder', 'StateResponder', 'TimeResponder'
-})
+	-- Lua basic
+	'collectgarbage', 'error', 'getmetatable', 'ipairs', 'load', 'next', 'pairs', 'pcall', 'print', 'rawequal', 'rawget', 'rawlen', 'rawset', 'select', 'setmetatable', 'tonumber', 'tostring', 'type', 'xpcall', 'assert',
+	-- Lua metamethods
+	'__add', '__sub', '__mul', '__div', '__mod', '__pow', '__unm', '__idiv', '__band', '__bor', '__bxor', '__bnot', '__shl', '__shr', '__concat', '__len', '__eq', '__lt', '__le', '__index', '__newindex', '__call', '__gc', '__mode', '__name', '__tostring', '__metatable', '__pairs',
+	-- moony basic
+	'run', 'once', 'save', 'restore', 'stash', 'apply', 'register', 'midi2cps', 'cps2midi', 'encrypt', 'decrypt',
+	'MIDIResponder', 'OSCResponder', 'TimeResponder', 'StateResponder', 'Map', 'Unmap', 'VoiceMap', 'Stash', 'Note', 'HashMap',
 
--- Deprecated functions.
-local deprecated_func = token('deprecated_function', word_match{
-  -- Deprecated in 5.2.
-  'getfenv', 'loadstring', 'module', 'setfenv', 'unpack'
+	-- Lua coroutine
+	'create', 'isyieldable', 'resume', 'running', 'status', 'wrap', 'yield',
+	-- Lua string
+	'byte', 'char', 'dump', 'find', 'format', 'gmatch', 'gsub', 'len', 'lower', 'match', 'pack', 'packsize', 'rep', 'reverse', 'sub', 'unpack', 'upper',
+	-- Lua UTF-8
+	'char', 'charpattern', 'codes', 'codepoint', 'len', 'offset',
+	-- Lua table
+	'concat', 'insert', 'move', 'pack', 'remove', 'sort', 'unpack',
+	-- Lua math
+	'abs', 'acos', 'asin', 'atan', 'ceil', 'cos', 'deg', 'exp', 'floor', 'fmod', 'log', 'max', 'min', 'modf',
+	'rad', 'random', 'randomseed', 'sin', 'sqrt', 'tan', 'tointeger', 'type', 'ult',
+	-- Lua debug
+	'debug', 'getuservalue', 'gethook', 'getinfo', 'getlocal', 'getregistry', 'getmetatable',
+	'getupvalue', 'upvaluejoin', 'upvalueid', 'setuservalue', 'sethook', 'setlocal',
+	'setmetatable', 'setupvalue', 'traceback',
+	-- moony forge
+	'frameTime', 'beatTime', 'time', 'atom', 'int', 'long', 'float', 'double', 'bool', 'urid', 'string', 'literal', 'uri', 'path',
+	'chunk', 'midi', 'raw', 'bundle', 'message', 'impulse', 'char', 'rgba', 'timetag', 'tuple', 'tuplePack',
+	'object', 'objectPack', 'key', 'property', 'vector', 'sequence', 'sequencePack',
+	'typed', 'get', 'set', 'put', 'patch', 'remove', 'add', 'ack', 'error', 'pop',
+	'graph', 'beginPath', 'closePath', 'arc', 'curveTo', 'lineTo', 'moveTo', 'rectangle', 'style', 'lineWidth', 'lineDash', 'lineCap', 'lineJoin', 'miterLimig', 'stroke', 'fill', 'clip', 'save', 'restore', 'translate', 'scale', 'rotate', 'reset', 'fontSize', 'fillText',
+	-- moony common
+	'foreach', 'unpack', 'clone', 'stash', 'apply', 'register',
+	-- moony stash
+	'write', 'read'
 })
 
 -- Constants.
 local constant = token(l.CONSTANT, word_match{
-  '_G', '_VERSION',
-  -- Added in 5.2.
-  '_ENV',
-	-- Atom
-	'Int', 'Long', 'Float', 'Double', 'Bool', 'URID', 'URI', 'String', 'Path',
-	'Literal', 'Chunk', 'Tuple', 'Object', 'Vector', 'Sequence',
-	-- RDFS
-	'label', 'comment', 'range',
-	-- RDF
-	'value', 'type',
-	-- Units
-	'unit',
-	-- MIDI
+  'true', 'false', 'nil', '_G', '_VERSION',
+
+	-- Lua math
+	'huge', 'maxinteger', 'mininteger', 'pi',
+	-- moony Atom
+	'Bool', 'Chunk', 'Double', 'Float', 'Int', 'Long', 'Literal', 'Object', 'Path', 'Property', 'Sequence', 'String', 'Tuple', 'URI', 'URID', 'Vector', 'frameTime', 'beatTime',
+	-- moony MIDI
 	'MidiEvent',
-	-- Core
-	'minimum', 'maximum', 'sampleRate',
-	-- Patch
-	'writable', 'readable', 'add', 'remove', 'wildcard', 'property', 'value',
-	'sequenceNumber', 'destination', 'subject', 'Get', 'Set', 'Put', 'Patch',
-	'Ack', 'Error'
+	'NoteOff', 'NoteOn', 'NotePressure', 'Controller', 'ProgramChange', 'ChannelPressure', 'Bender', 'SystemExclusive', 'QuarterFrame', 'SongPosition', 'SongSelect', 'TuneRequest', 'Clock', 'Start', 'Continue', 'Stop', 'ActiveSense', 'Reset', 'EndOfExclusive',
+	'BankSelection_MSB', 'Modulation_MSB', 'Breath_MSB', 'Foot_MSB', 'PortamentoTime_MSB', 'DataEntry_MSB', 'MainVolume_MSB', 'Balance_MSB', 'Panpot_MSB', 'Expression_MSB', 'Effect1_MSB', 'Effect2_MSB', 'GeneralPurpose1_MSB', 'GeneralPurpose2_MSB', 'GeneralPurpose3_MSB', 'GeneralPurpose4_MSB', 'BankSelection_LSB', 'Modulation_LSB', 'Breath_LSB', 'Foot_LSB', 'PortamentoTime_LSB', 'DataEntry_LSB', 'MainVolume_LSB', 'Balance_LSB', 'Panpot_LSB', 'Expression_LSB', 'Effect1_LSB', 'Effect2_LSB', 'GeneralPurpose1_LSB', 'GeneralPurpose2_LSB', 'GeneralPurpose3_LSB', 'GeneralPurpose4_LSB', 'SustainPedal', 'Portamento', 'Sostenuto', 'SoftPedal', 'LegatoFootSwitch', 'Hold2', 'SoundVariation', 'ReleaseTime', 'Timbre', 'AttackTime', 'Brightness', 'SC1', 'SC2', 'SC3', 'SC4', 'SC5', 'SC6', 'SC7', 'SC8', 'SC9', 'SC10', 'GeneralPurpose5', 'GeneralPurpose6', 'GeneralPurpose7', 'GeneralPurpose8', 'PortamentoControl', 'ReverbDepth', 'TremoloDepth', 'ChorusDepth', 'DetuneDepth', 'PhaserDepth', 'E1', 'E2', 'E3', 'E4', 'E5', 'DataIncrement', 'DataDecrement', 'NRPN_LSB', 'NRPN_MSB', 'RPN_LSB', 'RPN_MSB', 'AllSoundsOff', 'ResetControllers', 'LocalControlSwitch', 'AllNotesOff', 'OmniOff', 'OmniOn', 'Mono1', 'Mono2',
+	-- moony Time
+	'Position', 'barBeat', 'bar', 'beat', 'beatUnit', 'beatsPerBar', 'beatsPerMinute', 'frame', 'framesPerSecond', 'speed',
+	-- moony OSC
+	'Event', 'Packet', 'Bundle', 'bundleTimetag', 'bundleItems', 'Message', 'messagePath', 'messageArguments', 'Timetag', 'timetagIntegral', 'timetagFraction', 'Nil', 'Impulse', 'Char', 'RGBA',
+	-- moony Core
+	'sampleRate', 'minimum', 'maximum', 'scalePoint',
+	-- moony Buf_Size
+	'minBlockLength', 'maxBlockLength', 'sequenceSize',
+	-- moony Patch
+	'Ack', 'Delete', 'Copy', 'Error', 'Get', 'Message', 'Move', 'Patch', 'Post', 'Put', 'Request', 'Response', 'Set',
+	'add', 'body', 'destination', 'property', 'readable', 'remove', 'request', 'subject', 'sequenceNumber', 'value', 'wildcard', 'writable',
+	-- moony RDF
+	'value',
+	-- moony RDFS
+	'label', 'range', 'comment',
+	-- moony Units
+	'Conversion', 'Unit', 'bar', 'beat', 'bpm', 'cent', 'cm', 'coef', 'conversion', 'db', 'degree', 'frame', 'hz', 'inch', 'khz', 'km', 'm', 'mhz', 'midiNote', 'mile', 'min', 'mm', 'ms', 'name', 'oct', 'pc', 'prefixConversion', 'render', 's', 'semitone12TET', 'symbol', 'unit',
+	-- moony Canvas
+	'graph', 'body', 'BeginPath', 'ClosePath', 'Arc', 'CurveTo', 'LineTo', 'MoveTo', 'Rectangle', 'Style', 'LineWidth', 'LineDash', 'LineCap', 'LineJoin',
+	'MiterLimit', 'Stroke', 'Fill', 'Clip', 'Save', 'Restore', 'Translate', 'Scale', 'Rotate', 'Reset', 'FontSize', 'FillText',
+	'lineCapButt', 'lineCapRound', 'lineCapSquare', 'lineJoinMiter', 'lineJoinRound', 'lineJoinBevel',
+
+	-- moony common
+	'type', 'body',
+	-- moony sequence
+	'unit', 'pad',
+	-- moony object
+	'id', 'otype',
+	-- moony vector
+	'child_type', 'child_size',
+	-- moony literal
+	'datatype', 'lang'
 })
 
 -- Libraries.
-local library = token('library', word_match({
-  -- Coroutine.
-  'coroutine', 'coroutine.create', 'coroutine.resume', 'coroutine.running',
-  'coroutine.status', 'coroutine.wrap', 'coroutine.yield',
-  -- Coroutine added in 5.3.
-  'coroutine.isyieldable',
-  -- Module.
-  'package', 'package.cpath', 'package.loaded', 'package.loadlib',
-  'package.path', 'package.preload',
-  -- Module added in 5.2.
-  'package.config', 'package.searchers', 'package.searchpath',
-  -- UTF-8 added in 5.3.
-  'utf8', 'utf8.char', 'utf8.charpattern', 'utf8.codepoint', 'utf8.codes',
-  'utf8.len', 'utf8.offset',
-  -- String.
-  'string', 'string.byte', 'string.char', 'string.dump', 'string.find',
-  'string.format', 'string.gmatch', 'string.gsub', 'string.len', 'string.lower',
-  'string.match', 'string.rep', 'string.reverse', 'string.sub', 'string.upper',
-  -- String added in 5.3.
-  'string.pack', 'string.packsize', 'string.unpack',
-  -- Table.
-  'table', 'table.concat', 'table.insert', 'table.remove', 'table.sort',
-  -- Table added in 5.2.
-  'table.pack', 'table.unpack',
-  -- Table added in 5.3.
-  'table.move',
-  -- Math.
-  'math', 'math.abs', 'math.acos', 'math.asin', 'math.atan', 'math.ceil',
-  'math.cos', 'math.deg', 'math.exp', 'math.floor', 'math.fmod', 'math.huge',
-  'math.log', 'math.max', 'math.min', 'math.modf', 'math.pi', 'math.rad',
-  'math.random', 'math.randomseed', 'math.sin', 'math.sqrt', 'math.tan',
-  -- Math added in 5.3.
-  'math.maxinteger', 'math.mininteger', 'math.tointeger', 'math.type',
-  'math.ult',
-  -- IO.
-  'io', 'io.close', 'io.flush', 'io.input', 'io.lines', 'io.open', 'io.output',
-  'io.popen', 'io.read', 'io.stderr', 'io.stdin', 'io.stdout', 'io.tmpfile',
-  'io.type', 'io.write',
-  -- OS.
-  'os', 'os.clock', 'os.date', 'os.difftime', 'os.execute', 'os.exit',
-  'os.getenv', 'os.remove', 'os.rename', 'os.setlocale', 'os.time',
-  'os.tmpname',
-  -- Debug.
-  'debug', 'debug.debug', 'debug.gethook', 'debug.getinfo', 'debug.getlocal',
-  'debug.getmetatable', 'debug.getregistry', 'debug.getupvalue',
-  'debug.sethook', 'debug.setlocal', 'debug.setmetatable', 'debug.setupvalue',
-  'debug.traceback',
-  -- Debug added in 5.2.
-  'debug.getuservalue', 'debug.setuservalue', 'debug.upvalueid',
-  'debug.upvaluejoin',
-}, '.'))
-
-local tables = token('table', word_match{
+local library = token('library', word_match{
+	-- Lua
+	'coroutine', 'string', 'utf8', 'table', 'math', 'debug',
 	-- Moony
-	'Atom', 'RDFS', 'Core', 'RDF', 'Units', 'Patch', 'MIDI', 'OSC'
+	'Atom', 'MIDI', 'Time', 'OSC', 'Core', 'Buf_Size', 'Patch', 'RDF', 'RDFS', 'Units', 'Options', 'Canvas', 'MIDIResponder', 'OSCResponder', 'TimeResponder', 'StateResponder', 'Map', 'Unmap', 'VoiceMap', 'Stash', 'Note', 'HashMap'
 })
-
--- Deprecated libraries.
-local deprecated_library = token('deprecated_library', word_match({
-  -- Module deprecated in 5.2.
-  'package.loaders', 'package.seeall',
-  -- Table deprecated in 5.2.
-  'table.maxn',
-  -- Math deprecated in 5.2.
-  'math.log10',
-  -- Math deprecated in 5.3.
-  'math.atan2', 'math.cosh', 'math.frexp', 'math.ldexp', 'math.pow',
-  'math.sinh', 'math.tanh',
-  -- Bit32 deprecated in 5.3.
-  'bit32', 'bit32.arshift', 'bit32.band', 'bit32.bnot', 'bit32.bor',
-  'bit32.btest', 'bit32.extract', 'bit32.lrotate', 'bit32.lshift',
-  'bit32.replace', 'bit32.rrotate', 'bit32.rshift', 'bit32.xor',
-  -- Debug deprecated in 5.2.
-  'debug.getfenv', 'debug.setfenv'
-}, '.'))
 
 -- Identifiers.
 local identifier = token(l.IDENTIFIER, l.word)
@@ -169,32 +136,28 @@ local identifier = token(l.IDENTIFIER, l.word)
 local label = token(l.LABEL, '::' * l.word * '::')
 
 -- Operators.
---local operator = token(l.OPERATOR, S('+-*/%^#=<>&|~;:,.{}[]()'))
+local binops = token('binop', word_match{'and', 'or', 'not'})
 local operator = token(l.OPERATOR, S('+-*/%^#=<>&|~;:,.'))
 local braces = token('brace', S('{}[]()'))
 
 M._rules = {
   {'whitespace', ws},
   {'keyword', keyword},
-  --{'function', func + deprecated_func},
   {'function', func},
+  {'binops', binops},
+  {'library', library},
   {'constant', constant},
-  --{'library', library + deprecated_library},
-  {'library', library + tables},
   {'identifier', identifier},
   {'string', string},
   {'comment', comment},
   {'number', number},
   {'label', label},
-  --{'operator', operator},
-  {'operator', operator + braces},
+  {'operator', operator + braces}
 }
 
 M._tokenstyles = {
   longstring = l.STYLE_STRING,
-  deprecated_function = l.STYLE_FUNCTION..',italics',
   library = l.STYLE_TYPE,
-  deprecated_library = l.STYLE_TYPE..',italics'
 }
 
 local function fold_longcomment(text, pos, line, s, match)
