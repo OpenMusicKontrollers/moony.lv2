@@ -10,6 +10,7 @@ include_directories(${PROJECT_SOURCE_DIR}/osc.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/timely.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/xpress.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/lua-5.3.3)
+include_directories(${PROJECT_SOURCE_DIR}/lpeg-1.0.0)
 include_directories(${PROJECT_SOURCE_DIR}/cJSON)
 include_directories(${PROJECT_SOURCE_DIR}/tiny-AES128-C)
 include_directories(${PROJECT_SOURCE_DIR}/api)
@@ -228,7 +229,9 @@ if(BUILD_NK_UI)
 	add_library(moony_nk MODULE
 		ui/moony_nk.c
 		ui/nk_ui.c
-		${TAR_UI})
+		${TAR_UI}
+		$<TARGET_OBJECTS:lua>
+		$<TARGET_OBJECTS:lpeg>)
 	target_link_libraries(moony_nk ${LIBS_NK})
 	set_target_properties(moony_nk PROPERTIES PREFIX "")
 	if(NOT WIN32)
@@ -236,6 +239,8 @@ if(BUILD_NK_UI)
 	endif()
 	install(TARGETS moony_nk DESTINATION ${PLUGIN_DEST})
 	install(FILES ${PROJECT_SOURCE_DIR}/nuklear/extra_font/Cousine-Regular.ttf DESTINATION ${PLUGIN_DEST})
+	install(FILES ${PROJECT_SOURCE_DIR}/ui/lexer.lua DESTINATION ${PLUGIN_DEST})
+	install(FILES ${PROJECT_SOURCE_DIR}/ui/moony.lua DESTINATION ${PLUGIN_DEST})
 else()
 	set(NK_WRAP "#")
 endif()
@@ -265,8 +270,8 @@ add_library(lua OBJECT
 	#lua-5.3.3/lbitlib.c
 	#lua-5.3.3/liolib.c
 	#lua-5.3.3/loslib.c
-	#lua-5.3.3/loadlib.c
 	#lua-5.3.3/linit.c
+	lua-5.3.3/loadlib.c
 	lua-5.3.3/ldblib.c
 	lua-5.3.3/lbaselib.c
 	lua-5.3.3/lauxlib.c
@@ -277,6 +282,15 @@ add_library(lua OBJECT
 	lua-5.3.3/lutf8lib.c)
 set_target_properties(lua PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
 set_target_properties(lua PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
+
+add_library(lpeg OBJECT
+	lpeg-1.0.0/lpcap.c
+	lpeg-1.0.0/lpcode.c
+	lpeg-1.0.0/lpprint.c
+	lpeg-1.0.0/lptree.c
+	lpeg-1.0.0/lpvm.c)
+set_target_properties(lpeg PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
+set_target_properties(lpeg PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 
 add_library(api OBJECT
 	api/api.c

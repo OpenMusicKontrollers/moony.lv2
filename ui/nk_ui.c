@@ -27,6 +27,12 @@
 #define NK_PUGL_IMPLEMENTATION
 #include "nk_pugl/nk_pugl.h"
 
+#include <lua.h>
+#include <lualib.h>
+#include <lauxlib.h>
+
+extern int luaopen_lpeg(lua_State *L);
+
 #ifdef Bool
 #	undef Bool // Xlib.h interferes with LV2_Atom_Forge.Bool
 #endif
@@ -119,6 +125,8 @@ struct _plughandle_t {
 	prop_t *writables;
 	int n_readable;
 	prop_t *readables;
+
+	lua_State *L;
 };
 
 static prop_t *
@@ -538,6 +546,84 @@ _dial_int(struct nk_context *ctx, int32_t min, int32_t *val, int32_t max, float 
 	return res;
 }
 
+static struct nk_token *
+_lex(void *data, const char *code, int code_sz)
+{
+	lua_State *L = data;
+	struct nk_token *tokens = NULL;
+	const int top = lua_gettop(L);
+
+	printf("_lex: %i\n", code_sz);
+
+	lua_getglobal(L, "lexer");
+	lua_getfield(L, -1, "lex");
+	lua_getglobal(L, "moony");
+	lua_pushlstring(L, code, code_sz);
+	if(lua_pcall(L, 2, 1, 0))
+	{
+		fprintf(stderr, "err: %s\n", lua_tostring(L, -1));
+	}
+	else
+	{
+		const int len = luaL_len(L, -1);
+
+		tokens = calloc(len/2 + 1, sizeof(struct nk_token)); //FIXME use realloc
+		if(tokens)
+		{
+			for(int i = 0; i < len; i += 2)
+			{
+				struct nk_token *token = &tokens[i/2];
+
+				lua_rawgeti(L, -1, i + 1);
+				const char *token_str = luaL_checkstring(L, -1);
+				lua_pop(L, 1);
+
+				//TODO cache colors
+				if(!strcmp(token_str, "whitespace"))
+					token->color = nk_rgb(0xdd, 0xdd, 0xdd);
+				else if(!strcmp(token_str, "keyword"))
+					token->color = nk_rgb(0x00, 0x69, 0x8f);
+				else if(!strcmp(token_str, "function"))
+					token->color = nk_rgb(0x00, 0xae, 0xef);
+				else if(!strcmp(token_str, "constant"))
+					token->color = nk_rgb(0x1e, 0xda, 0xfb);
+				else if(!strcmp(token_str, "library"))
+					token->color = nk_rgb(0x8d, 0xff, 0x0a);
+				else if(!strcmp(token_str, "table"))
+					token->color = nk_rgb(0x8d, 0xff, 0x0a);
+				else if(!strcmp(token_str, "identifier"))
+					token->color = nk_rgb(0xdd, 0xdd, 0xdd);
+				else if(!strcmp(token_str, "string"))
+					token->color = nk_rgb(0x58, 0xc5, 0x54);
+				else if(!strcmp(token_str, "comment"))
+					token->color = nk_rgb(0x55, 0x55, 0x55);
+				else if(!strcmp(token_str, "number"))
+					token->color = nk_rgb(0xcc, 0xcc, 0x00);
+				else if(!strcmp(token_str, "label"))
+					token->color = nk_rgb(0xfd, 0xc2, 0x51);
+				else if(!strcmp(token_str, "operator"))
+					token->color = nk_rgb(0xcc, 0x00, 0x00);
+				else if(!strcmp(token_str, "brace"))
+					token->color = nk_rgb(0xff, 0xff, 0xff);
+				else
+					token->color = nk_rgb(0xdd, 0xdd, 0xdd);
+
+				lua_rawgeti(L, -1, i + 2);
+				const int token_offset = luaL_checkinteger(L, -1);
+				lua_pop(L, 1);
+
+				token->offset = token_offset - 1;
+			}
+
+			struct nk_token *token = &tokens[len/2];
+			token->offset = INT32_MAX;
+		}
+	}
+
+	lua_settop(L, top);
+	return tokens;
+}
+
 static void
 _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 {
@@ -572,7 +658,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 			handle->code_hidden = !nk_select_label(ctx, "Editor", NK_TEXT_LEFT, !handle->code_hidden);
 
 			nk_layout_row_push(ctx, 0.4);
-			handle->prop_hidden = !nk_select_label(ctx, "Properties", NK_TEXT_LEFT, !handle->prop_hidden);
+			handle->prop_hidden = !nk_select_label(ctx, "Parameters", NK_TEXT_LEFT, !handle->prop_hidden);
 		}
 
 		nk_layout_row_begin(ctx, NK_DYNAMIC, body_h, !handle->code_hidden + !handle->prop_hidden);
@@ -583,6 +669,8 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 				if(nk_group_begin(ctx, "Logic", NK_WINDOW_NO_SCROLLBAR))
 				{
 					const float editor_h = body_h - 1*dy - 4*group_padding.y;
+					struct nk_str *str = &handle->editor.string;
+					const int old_len = nk_str_len_char(str);
 
 					nk_layout_row_dynamic(ctx, editor_h*0.9, 1);
 					nk_flags flags = NK_EDIT_BOX;
@@ -590,6 +678,11 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						flags |= NK_EDIT_SIG_ENTER;
 					const nk_flags state = nk_edit_buffer(ctx, flags,
 						&handle->editor, nk_filter_default);
+
+					if(old_len != nk_str_len_char(str))
+					{
+						handle->editor.lexer.needs_refresh = 1;
+					}
 
 					nk_layout_row_dynamic(ctx, editor_h*0.1, 1);
 					struct nk_list_view lview;
@@ -623,7 +716,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						}
 
 						// create selection with prefixed newlines
-						struct nk_str *str = &handle->editor.string;
+						//struct nk_str *str = &handle->editor.string;
 						const char *code = nk_str_get_const(str);
 						const int code_sz  = nk_str_len_char(str);
 						char *end = memchr(code + from, '\n', code_sz);
@@ -646,7 +739,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					}
 					if(nk_button_label(ctx, "Submit selection"))
 					{
-						struct nk_str *str = &handle->editor.string;
+						//struct nk_str *str = &handle->editor.string;
 						const char *code = nk_str_get_const(str);
 
 						const uint32_t len = handle->editor.select_end - handle->editor.select_start;
@@ -998,6 +1091,68 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	_patch_get(handle, handle->moony_error);
 	_patch_get(handle, 0);
 
+	handle->L = luaL_newstate();
+	if(handle->L)
+	{
+		luaL_requiref(handle->L, "base", luaopen_base, 0);
+		luaL_requiref(handle->L, "coroutine", luaopen_coroutine, 1);
+		luaL_requiref(handle->L, "table", luaopen_table, 1);
+		luaL_requiref(handle->L, "string", luaopen_string, 1);
+		luaL_requiref(handle->L, "math", luaopen_math, 1);
+		luaL_requiref(handle->L, "utf8", luaopen_utf8, 1);
+		luaL_requiref(handle->L, "debug", luaopen_debug, 1);
+		luaL_requiref(handle->L, "lpeg", luaopen_lpeg, 1);
+		lua_pop(handle->L, 8);
+
+		//luaL_requiref(handle->L, "io", luaopen_io, 1);
+		//luaL_requiref(handle->L, "os", luaopen_os, 1);
+		//luaL_requiref(handle->L, "bit32", luaopen_bit32, 1);
+		luaL_requiref(handle->L, "package", luaopen_package, 1);
+
+		// automatic garbage collector
+		lua_gc(handle->L, LUA_GCRESTART, 0); // enable automatic garbage collection
+		lua_gc(handle->L, LUA_GCSETPAUSE, 105); // next step when memory increased by 5%
+		lua_gc(handle->L, LUA_GCSETSTEPMUL, 105); // run 5% faster than memory allocation
+
+		// set package.path
+		lua_getglobal(handle->L, "package");
+		lua_pushfstring(handle->L, "%s?.lua", bundle_path);
+		lua_setfield(handle->L, -2, "path");
+		lua_pop(handle->L, 1); // package
+
+		path = NULL;
+		if(asprintf(&path, "%s%s", bundle_path, "lexer.lua") != -1)
+		{
+			if(luaL_dofile(handle->L, path))
+			{
+				fprintf(stderr, "err: %s\n", lua_tostring(handle->L, -1));
+				lua_pop(handle->L, 1); // err
+			}
+			else
+			{
+				lua_setglobal(handle->L, "lexer");
+			}
+			free(path);
+		}
+
+		lua_getglobal(handle->L, "lexer");
+		lua_getfield(handle->L, -1, "load");
+		lua_pushstring(handle->L, "moony");
+		if(lua_pcall(handle->L, 1, 1, 0))
+		{
+			fprintf(stderr, "err: %s\n", lua_tostring(handle->L, -1));
+			lua_pop(handle->L, 1);
+		}
+		else
+		{
+			lua_setglobal(handle->L, "moony");
+		}
+		lua_pop(handle->L, 1); // lexer
+	}
+
+	handle->editor.lexer.lex = _lex;
+	handle->editor.lexer.data = handle->L;
+
 	return handle;
 }
 
@@ -1006,7 +1161,13 @@ cleanup(LV2UI_Handle instance)
 {
 	plughandle_t *handle = instance;
 
+	if(handle->L)
+		lua_close(handle->L);
+
 	nk_textedit_free(&handle->editor);
+
+	if(handle->editor.lexer.tokens)
+		free(handle->editor.lexer.tokens);
 
 	for(int i = 0; i < handle->n_trace; i++)
 		free(handle->traces[i]);
@@ -1076,6 +1237,8 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 								nk_str_append_text_utf8(str, "  ", 2);
 							}
 							nk_str_append_text_utf8(str, from, end-from);
+
+							handle->editor.lexer.needs_refresh = 1;
 
 							nk_pugl_post_redisplay(&handle->win);
 						}
@@ -1180,7 +1343,7 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 							if(  (pro->key == handle->patch_writable)
 								&& (property->body == handle->patch_wildcard) )
 							{
-								printf("clearing patch:writable\n");
+								//printf("clearing patch:writable\n");
 								for(int p = 0; p < handle->n_writable; p++)
 									_prop_free(handle, &handle->writables[p]);
 
@@ -1193,7 +1356,7 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 							else if( (pro->key == handle->patch_readable)
 								&& (property->body == handle->patch_wildcard) )
 							{
-								printf("clearing patch:readable\n");
+								//printf("clearing patch:readable\n");
 								for(int p = 0; p < handle->n_readable; p++)
 									_prop_free(handle, &handle->readables[p]);
 
@@ -1233,7 +1396,6 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 						}
 						else
 						{
-							printf("reg: %u %u\n", subj->body, pro->key);
 							prop_t *prop = _prop_get(&handle->readables, &handle->n_readable, subj->body);
 							if(!prop)
 								prop = _prop_get(&handle->writables, &handle->n_writable, subj->body);
