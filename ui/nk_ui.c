@@ -299,6 +299,93 @@ _submit_all(plughandle_t *handle)
 		nk_str_len_char(str), handle->forge.String, nk_str_get_const(str));
 }
 
+static void
+_submit_line(plughandle_t *handle)
+{
+	uint32_t newlines = 0;
+	uint32_t from = 0;
+	for(int i = 0; i < handle->editor.cursor; i++) // count newlines
+	{
+		if(handle->code[i] == '\n')
+		{
+			newlines += 1;
+			from = i + 1;
+		}
+	}
+
+	// create selection with prefixed newlines
+	struct nk_str *str = &handle->editor.string;
+	const char *code = nk_str_get_const(str);
+	const int code_sz  = nk_str_len_char(str);
+	char *end = memchr(code + from, '\n', code_sz);
+	const uint32_t to = end ? end - code : code_sz;
+	const uint32_t len = to - from;
+	if(len > 0)
+	{
+		const uint32_t sz = newlines + len + 1;
+		char *sel = calloc(sz, sizeof(char));
+		if(sel)
+		{
+			memset(sel, '\n', newlines);
+			memcpy(sel + newlines, code + from, len);
+
+			_submit_selection(handle, sel, sz);
+
+			free(sel);
+		}
+	}
+}
+
+static void
+_submit_sel(plughandle_t *handle)
+{
+	struct nk_str *str = &handle->editor.string;
+	const char *code = nk_str_get_const(str);
+
+	const uint32_t len = handle->editor.select_end - handle->editor.select_start;
+	if(len > 0)
+	{
+		uint32_t newlines = 0;
+		for(int i = 0; i < handle->editor.select_start; i++) // count newlines
+		{
+			if(code[i] == '\n')
+				newlines += 1;
+		}
+
+		const uint32_t sz = newlines + len + 1;
+		char *sel = calloc(sz, sizeof(char));
+		if(sel)
+		{
+			memset(sel, '\n', newlines);
+			memcpy(sel + newlines, code + handle->editor.select_start, len);
+
+			_submit_selection(handle, sel, sz);
+
+			free(sel);
+		}
+	}
+}
+
+static void
+_submit_line_or_sel(plughandle_t *handle)
+{
+	if(handle->editor.select_end == handle->editor.select_start)
+		_submit_line(handle);
+	else
+		_submit_sel(handle);
+}
+
+static void
+_clear_log(plughandle_t *handle)
+{
+	for(int i = 0; i < handle->n_trace; i++)
+		free(handle->traces[i]);
+	free(handle->traces);
+
+	handle->n_trace = 0;
+	handle->traces = NULL;
+}
+
 static int
 _dial_bool(struct nk_context *ctx, int32_t *val)
 {
@@ -647,6 +734,13 @@ _copy(nk_handle userdata, const char *buf, int len)
 	handle->clipboard = strndup(buf, len);
 }
 
+static bool
+_tooltip_visible(struct nk_context *ctx)
+{
+	return nk_widget_has_mouse_click_down(ctx, NK_BUTTON_RIGHT, nk_true)
+		|| (nk_widget_is_hovered(ctx) && nk_input_is_key_down(&ctx->input, NK_KEY_CTRL));
+}
+
 static void
 _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 {
@@ -724,83 +818,21 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						nk_list_view_end(&lview);
 					}
 
-					nk_layout_row_dynamic(ctx, dy, 4);
-					if(nk_button_label(ctx, "Submit all"))
-					{
+					nk_layout_row_dynamic(ctx, dy, 3);
+					if(_tooltip_visible(ctx))
+						nk_tooltip(ctx, "Shift-Enter");
+					if(nk_button_label(ctx, "Run all"))
 						_submit_all(handle);
-					}
-					if(nk_button_label(ctx, "Submit line"))
-					{
-						uint32_t newlines = 0;
-						uint32_t from = 0;
-						for(int i = 0; i < handle->editor.cursor; i++) // count newlines
-						{
-							if(handle->code[i] == '\n')
-							{
-								newlines += 1;
-								from = i + 1;
-							}
-						}
 
-						// create selection with prefixed newlines
-						//struct nk_str *str = &handle->editor.string;
-						const char *code = nk_str_get_const(str);
-						const int code_sz  = nk_str_len_char(str);
-						char *end = memchr(code + from, '\n', code_sz);
-						const uint32_t to = end ? end - code : code_sz;
-						const uint32_t len = to - from;
-						if(len > 0)
-						{
-							const uint32_t sz = newlines + len + 1;
-							char *sel = calloc(sz, sizeof(char));
-							if(sel)
-							{
-								memset(sel, '\n', newlines);
-								memcpy(sel + newlines, code + from, len);
+					if(_tooltip_visible(ctx))
+						nk_tooltip(ctx, "Ctrl-Shift-Enter");
+					if(nk_button_label(ctx, "Run line/sel."))
+						_submit_line_or_sel(handle);
 
-								_submit_selection(handle, sel, sz);
-
-								free(sel);
-							}
-						}
-					}
-					if(nk_button_label(ctx, "Submit selection"))
-					{
-						//struct nk_str *str = &handle->editor.string;
-						const char *code = nk_str_get_const(str);
-
-						const uint32_t len = handle->editor.select_end - handle->editor.select_start;
-						if(len > 0)
-						{
-							uint32_t newlines = 0;
-							for(int i = 0; i < handle->editor.select_start; i++) // count newlines
-							{
-								if(code[i] == '\n')
-									newlines += 1;
-							}
-
-							const uint32_t sz = newlines + len + 1;
-							char *sel = calloc(sz, sizeof(char));
-							if(sel)
-							{
-								memset(sel, '\n', newlines);
-								memcpy(sel + newlines, code + handle->editor.select_start, len);
-
-								_submit_selection(handle, sel, sz);
-
-								free(sel);
-							}
-						}
-					}
+					if(_tooltip_visible(ctx))
+						nk_tooltip(ctx, "Ctrl-L");
 					if(nk_button_label(ctx, "Clear log"))
-					{
-						for(int i = 0; i < handle->n_trace; i++)
-							free(handle->traces[i]);
-						free(handle->traces);
-
-						handle->n_trace = 0;
-						handle->traces = NULL;
-					}
+						_clear_log(handle);
 
 					nk_group_end(ctx);
 				}
@@ -822,6 +854,8 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 
 						const char *lab = "#";
 
+						if(prop->comment && _tooltip_visible(ctx))
+							nk_tooltip(ctx, prop->comment);
 						if(nk_group_begin(ctx, prop->label, NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_NO_SCROLLBAR))
 						{
 							if(prop->range == handle->forge.Int)
@@ -1199,9 +1233,7 @@ cleanup(LV2UI_Handle instance)
 	if(handle->editor.lexer.tokens)
 		free(handle->editor.lexer.tokens);
 
-	for(int i = 0; i < handle->n_trace; i++)
-		free(handle->traces[i]);
-	free(handle->traces);
+	_clear_log(handle);
 
 	for(int p = 0; p < handle->n_writable; p++)
 		_prop_free(handle, &handle->writables[p]);
