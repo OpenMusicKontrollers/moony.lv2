@@ -44,8 +44,6 @@ extern int luaopen_lpeg(lua_State *L);
 #define RDFS__comment RDFS_PREFIX"comment"
 
 #if defined(__WIN32)
-#	include <search.h> // qsort_s
-
 static char *
 _strndup(const char *s, size_t n)
 {
@@ -175,36 +173,48 @@ struct _plughandle_t {
 	lua_State *L;
 };
 
+static inline void
+_qsort(prop_t *a, unsigned n, LV2_URID_Unmap *unmap)
+{
+	if(n < 2)
+		return;
+
+	const prop_t *p = &a[n/2];
+
+	unsigned i, j;
+	for(i=0, j=n-1; ; i++, j--)
+	{
+		while(strcmp(unmap->unmap(unmap->handle, a[i].key), unmap->unmap(unmap->handle, p->key)) < 0)
+			i++;
+
+		while(strcmp(unmap->unmap(unmap->handle, p->key), unmap->unmap(unmap->handle, a[j].key)) < 0)
+			j--;
+
+		if(i >= j)
+			break;
+
+		const prop_t t = a[i];
+		a[i] = a[j];
+		a[j] = t;
+	}
+
+	_qsort(a, i, unmap);
+	_qsort(&a[i], n - i, unmap);
+}
+
 static prop_t *
 _prop_get(prop_t **properties, int *n_properties, LV2_URID key)
 {
-	for(int p = 0; p < *n_properties; p++)
+	// we cannot easily speed this up, as properties are ordered according to URI, not URID
+	for(int i = 0; i < *n_properties; i++)
 	{
-		prop_t *prop = &(*properties)[p];
+		prop_t *prop = &(*properties)[i];
 
 		if(prop->key == key)
 			return prop;
 	}
 
 	return NULL;
-}
-
-static int
-_cmp_r(const void *a, const void *b, void *data)
-{
-	LV2_URID_Unmap *unmap = data;
-	const prop_t *A = a;
-	const prop_t *B = b;
-	const char *alpha = unmap->unmap(unmap->handle, A->key);
-	const char *beta = unmap->unmap(unmap->handle, B->key);
-
-	return strcmp(alpha, beta);
-}
-
-static int
-_cmp_s(void *data, const void *a, const void *b)
-{
-	return _cmp_r(a, b, data);
 }
 
 static prop_t *
@@ -222,13 +232,7 @@ _prop_get_or_add(plughandle_t *handle, prop_t **properties, int *n_properties, L
 	*n_properties += 1;
 
 	// sort properties according to URI string comparison
-#if defined(_WIN32)
-	qsort_s(*properties, *n_properties, sizeof(prop_t), _cmp_s, handle->unmap);
-#elif defined(__APPLE__)
-	qsort_r(*properties, *n_properties, sizeof(prop_t), handle->unmap, _cmp_s);
-#else
-	qsort_r(*properties, *n_properties, sizeof(prop_t), _cmp_r, handle->unmap);
-#endif
+	_qsort(*properties, *n_properties, handle->unmap);
 
 	return _prop_get(properties, n_properties, key);
 }
@@ -916,7 +920,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 			if(!handle->prop_hidden)
 			{
 				nk_layout_row_push(ctx, handle->code_hidden ? 1.0 : 0.4);
-				if(nk_group_begin(ctx, "Properties", 0))
+				if(nk_group_begin(ctx, "Parameters", 0))
 				{
 					const int ncol = handle->code_hidden ? 6 : 3;
 
