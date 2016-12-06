@@ -47,7 +47,10 @@ local func = token(l.FUNCTION, word_match{
 	-- moony basic
 	'run', 'once', 'save', 'restore', 'stash', 'apply', 'register', 'midi2cps', 'cps2midi', 'encrypt', 'decrypt',
 	'MIDIResponder', 'OSCResponder', 'TimeResponder', 'StateResponder', 'Map', 'Unmap', 'VoiceMap', 'Stash', 'Note', 'HashMap',
+})
 
+-- Field funcions
+local field_func = token(l.OPERATOR, S('.:')) * token(l.FUNCTION, word_match{
 	-- Lua coroutine
 	'create', 'isyieldable', 'resume', 'running', 'status', 'wrap', 'yield',
 	-- Lua string
@@ -77,8 +80,11 @@ local func = token(l.FUNCTION, word_match{
 
 -- Constants.
 local constant = token(l.CONSTANT, word_match{
-  'true', 'false', 'nil', '_G', '_VERSION',
+  'true', 'false', 'nil', '_G', '_VERSION'
+})
 
+-- Field constants.
+local field_constant = token(l.OPERATOR, P('.')) * token(l.CONSTANT, word_match{
 	-- Lua math
 	'huge', 'maxinteger', 'mininteger', 'pi',
 	-- moony Atom
@@ -126,7 +132,7 @@ local library = token('library', word_match{
 	-- Lua
 	'coroutine', 'string', 'utf8', 'table', 'math', 'debug',
 	-- Moony
-	'Atom', 'MIDI', 'Time', 'OSC', 'Core', 'Buf_Size', 'Patch', 'RDF', 'RDFS', 'Units', 'Options', 'Canvas', 'MIDIResponder', 'OSCResponder', 'TimeResponder', 'StateResponder', 'Map', 'Unmap', 'VoiceMap', 'Stash', 'Note', 'HashMap'
+	'Atom', 'MIDI', 'Time', 'OSC', 'Core', 'Buf_Size', 'Patch', 'RDF', 'RDFS', 'Units', 'Options', 'Canvas'
 })
 
 -- Identifiers.
@@ -143,10 +149,10 @@ local braces = token('brace', S('{}[]()'))
 M._rules = {
   {'whitespace', ws},
   {'keyword', keyword},
-  {'function', func},
+  {'constant', constant + field_constant},
+  {'function', func + field_func},
   {'binops', binops},
   {'library', library},
-  {'constant', constant},
   {'identifier', identifier},
   {'string', string},
   {'comment', comment},
