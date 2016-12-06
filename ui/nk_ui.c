@@ -391,6 +391,7 @@ _dial_bool(struct nk_context *ctx, int32_t *val)
 {
 	const int32_t tmp = *val;
 	struct nk_rect bounds = nk_layout_space_bounds(ctx);
+	const bool left_mouse_click_in_cursor = nk_widget_is_mouse_clicked(ctx, NK_BUTTON_LEFT);
 	const enum nk_widget_layout_states layout_states = nk_widget(&bounds, ctx);
 
 	if(layout_states != NK_WIDGET_INVALID)
@@ -400,9 +401,6 @@ _dial_bool(struct nk_context *ctx, int32_t *val)
 		if(layout_states == NK_WIDGET_VALID)
 		{
 			struct nk_input *in = &ctx->input;
-
-			const bool left_mouse_click_in_cursor = nk_input_has_mouse_click_down_in_rect(in,
-				NK_BUTTON_LEFT, bounds, nk_true);
 			bool mouse_has_scrolled = false;
 
 			if(left_mouse_click_in_cursor)
