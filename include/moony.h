@@ -58,7 +58,6 @@
 
 #include <canvas.lv2/forge.h>
 #ifdef BUILD_INLINE_DISPLAY
-#	include <cairo.h>
 #	include <canvas.lv2/render.h>
 #endif
 
