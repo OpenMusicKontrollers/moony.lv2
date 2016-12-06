@@ -59,7 +59,7 @@ union _body_t {
 struct _prop_t {
 	LV2_URID key;
 	LV2_URID range;
-	LV2_URID unit;
+	char *unit;
 	char *label;
 	char *comment;
 	body_t value;
@@ -104,7 +104,31 @@ struct _plughandle_t {
 	LV2_URID rdfs_comment;
 	LV2_URID lv2_minimum;
 	LV2_URID lv2_maximum;
+	LV2_URID units_symbol;
 	LV2_URID units_unit;
+	LV2_URID units_bar;
+	LV2_URID units_beat;
+	LV2_URID units_bpm;
+	LV2_URID units_cent;
+	LV2_URID units_cm;
+	LV2_URID units_db;
+	LV2_URID units_degree;
+	LV2_URID units_frame;
+	LV2_URID units_hz;
+	LV2_URID units_inch;
+	LV2_URID units_khz;
+	LV2_URID units_km;
+	LV2_URID units_m;
+	LV2_URID units_mhz;
+	LV2_URID units_midiNote;
+	LV2_URID units_mile;
+	LV2_URID units_min;
+	LV2_URID units_mm;
+	LV2_URID units_ms;
+	LV2_URID units_oct;
+	LV2_URID units_pc;
+	LV2_URID units_s;
+	LV2_URID units_semitone12TET;
 
 	atom_ser_t ser;
 
@@ -183,6 +207,9 @@ _prop_free(plughandle_t *handle, prop_t *prop)
 
 	if(prop->comment)
 		free(prop->comment);
+
+	if(prop->unit)
+		free(prop->unit);
 
 	if(  (prop->range == handle->forge.String)
 		|| (prop->range == handle->forge.URID) )
@@ -874,7 +901,10 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 									_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &val);
 								}
 								nk_layout_row_push(ctx, 0.1);
-								nk_label(ctx, "dB", NK_TEXT_RIGHT);
+								if(prop->unit)
+									nk_label(ctx, prop->unit, NK_TEXT_RIGHT);
+								else
+									nk_spacing(ctx, 1);
 							}
 							else if(prop->range == handle->forge.Long)
 							{
@@ -894,7 +924,10 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 									_patch_set(handle, prop->key, sizeof(int64_t), prop->range, &val);
 								}
 								nk_layout_row_push(ctx, 0.1);
-								nk_label(ctx, "dB", NK_TEXT_RIGHT);
+								if(prop->unit)
+									nk_label(ctx, prop->unit, NK_TEXT_RIGHT);
+								else
+									nk_spacing(ctx, 1);
 							}
 							else if(prop->range == handle->forge.Float)
 							{
@@ -914,7 +947,10 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 									_patch_set(handle, prop->key, sizeof(float), prop->range, &val);
 								}
 								nk_layout_row_push(ctx, 0.1);
-								nk_label(ctx, "dB", NK_TEXT_RIGHT);
+								if(prop->unit)
+									nk_label(ctx, prop->unit, NK_TEXT_RIGHT);
+								else
+									nk_spacing(ctx, 1);
 							}
 							else if(prop->range == handle->forge.Double)
 							{
@@ -934,7 +970,10 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 									_patch_set(handle, prop->key, sizeof(double), prop->range, &val);
 								}
 								nk_layout_row_push(ctx, 0.1);
-								nk_label(ctx, "dB", NK_TEXT_RIGHT);
+								if(prop->unit)
+									nk_label(ctx, prop->unit, NK_TEXT_RIGHT);
+								else
+									nk_spacing(ctx, 1);
 							}
 							else if(prop->range == handle->forge.Bool)
 							{
@@ -1106,7 +1145,32 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	handle->rdfs_comment = handle->map->map(handle->map->handle, RDFS__comment);
 	handle->lv2_minimum = handle->map->map(handle->map->handle, LV2_CORE__minimum);
 	handle->lv2_maximum = handle->map->map(handle->map->handle, LV2_CORE__maximum);
+
+	handle->units_symbol = handle->map->map(handle->map->handle, LV2_UNITS__symbol);
 	handle->units_unit = handle->map->map(handle->map->handle, LV2_UNITS__unit);
+	handle->units_bar = handle->map->map(handle->map->handle, LV2_UNITS__bar);
+	handle->units_beat = handle->map->map(handle->map->handle, LV2_UNITS__beat);
+	handle->units_bpm = handle->map->map(handle->map->handle, LV2_UNITS__bpm);
+	handle->units_cent = handle->map->map(handle->map->handle, LV2_UNITS__cent);
+	handle->units_cm = handle->map->map(handle->map->handle, LV2_UNITS__cm);
+	handle->units_db = handle->map->map(handle->map->handle, LV2_UNITS__db);
+	handle->units_degree = handle->map->map(handle->map->handle, LV2_UNITS__degree);
+	handle->units_frame = handle->map->map(handle->map->handle, LV2_UNITS__frame);
+	handle->units_hz = handle->map->map(handle->map->handle, LV2_UNITS__hz);
+	handle->units_inch = handle->map->map(handle->map->handle, LV2_UNITS__inch);
+	handle->units_khz = handle->map->map(handle->map->handle, LV2_UNITS__khz);
+	handle->units_km = handle->map->map(handle->map->handle, LV2_UNITS__km);
+	handle->units_m = handle->map->map(handle->map->handle, LV2_UNITS__m);
+	handle->units_mhz = handle->map->map(handle->map->handle, LV2_UNITS__mhz);
+	handle->units_midiNote = handle->map->map(handle->map->handle, LV2_UNITS__midiNote);
+	handle->units_mile = handle->map->map(handle->map->handle, LV2_UNITS__mile);
+	handle->units_min = handle->map->map(handle->map->handle, LV2_UNITS__min);
+	handle->units_mm = handle->map->map(handle->map->handle, LV2_UNITS__mm);
+	handle->units_ms = handle->map->map(handle->map->handle, LV2_UNITS__ms);
+	handle->units_oct = handle->map->map(handle->map->handle, LV2_UNITS__oct);
+	handle->units_pc = handle->map->map(handle->map->handle, LV2_UNITS__pc);
+	handle->units_s = handle->map->map(handle->map->handle, LV2_UNITS__s);
+	handle->units_semitone12TET = handle->map->map(handle->map->handle, LV2_UNITS__semitone12TET);
 
 	const char *NK_SCALE = getenv("NK_SCALE");
 	const float scale = NK_SCALE ? atof(NK_SCALE) : 1.f;
@@ -1466,6 +1530,7 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 								LV2_Atom *comment = NULL;
 								LV2_Atom *minimum = NULL;
 								LV2_Atom *maximum = NULL;
+								LV2_Atom *symbol = NULL;
 								LV2_Atom_URID *unit = NULL;
 
 								lv2_atom_object_get(add, 
@@ -1474,6 +1539,7 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 									handle->rdfs_comment, &comment,
 									handle->lv2_minimum, &minimum,
 									handle->lv2_maximum, &maximum,
+									handle->units_symbol, &symbol,
 									handle->units_unit, &unit,
 									0);
 
@@ -1494,8 +1560,58 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 								if(comment && (comment->type == handle->forge.String))
 									prop->comment = strdup(LV2_ATOM_BODY_CONST(comment));
 
-								if(unit && (unit->atom.type == handle->forge.URID))
-									prop->unit = unit->body;
+								if(symbol && (symbol->type == handle->forge.String))
+									prop->unit = strdup(LV2_ATOM_BODY_CONST(symbol));
+								else if(unit && (unit->atom.type == handle->forge.URID))
+								{
+									//TODO use binary lookup
+									if(unit->body == handle->units_bar)
+										prop->unit = strdup("bars");
+									else if(unit->body == handle->units_beat)
+										prop->unit = strdup("beats");
+									else if(unit->body == handle->units_bpm)
+										prop->unit = strdup("BPM");
+									else if(unit->body == handle->units_cent)
+										prop->unit = strdup("ct");
+									else if(unit->body == handle->units_cm)
+										prop->unit = strdup("cm");
+									else if(unit->body == handle->units_db)
+										prop->unit = strdup("dB");
+									else if(unit->body == handle->units_degree)
+										prop->unit = strdup("deg");
+									else if(unit->body == handle->units_frame)
+										prop->unit = strdup("frames");
+									else if(unit->body == handle->units_hz)
+										prop->unit = strdup("Hz");
+									else if(unit->body == handle->units_inch)
+										prop->unit = strdup("in");
+									else if(unit->body == handle->units_khz)
+										prop->unit = strdup("kHz");
+									else if(unit->body == handle->units_km)
+										prop->unit = strdup("km");
+									else if(unit->body == handle->units_m)
+										prop->unit = strdup("m");
+									else if(unit->body == handle->units_mhz)
+										prop->unit = strdup("MHz");
+									else if(unit->body == handle->units_midiNote)
+										prop->unit = strdup("note");
+									else if(unit->body == handle->units_mile)
+										prop->unit = strdup("mi");
+									else if(unit->body == handle->units_min)
+										prop->unit = strdup("min");
+									else if(unit->body == handle->units_mm)
+										prop->unit = strdup("mm");
+									else if(unit->body == handle->units_ms)
+										prop->unit = strdup("ms");
+									else if(unit->body == handle->units_oct)
+										prop->unit = strdup("oct");
+									else if(unit->body == handle->units_pc)
+										prop->unit = strdup("%");
+									else if(unit->body == handle->units_s)
+										prop->unit = strdup("s");
+									else if(unit->body == handle->units_semitone12TET)
+										prop->unit = strdup("semi");
+								}
 
 								if(minimum)
 								{

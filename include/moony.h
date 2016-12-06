@@ -255,6 +255,7 @@ struct _moony_t {
 		LV2_URID core_micro_version;
 
 		LV2_URID units_unit;
+		LV2_URID units_symbol;
 
 		LV2_URID atom_beat_time;
 		LV2_URID atom_frame_time;

@@ -1142,6 +1142,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->uris.core_micro_version= moony->map->map(moony->map->handle, LV2_CORE__microVersion);
 
 	moony->uris.units_unit = moony->map->map(moony->map->handle, LV2_UNITS__unit);
+	moony->uris.units_symbol = moony->map->map(moony->map->handle, LV2_UNITS__symbol);
 
 	moony->uris.atom_frame_time = moony->map->map(moony->map->handle, LV2_ATOM__frameTime);
 	moony->uris.atom_beat_time = moony->map->map(moony->map->handle, LV2_ATOM__beatTime);
