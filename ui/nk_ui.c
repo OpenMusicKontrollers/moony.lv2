@@ -65,6 +65,7 @@ struct _prop_t {
 	body_t value;
 	body_t minimum;
 	body_t maximum;
+	struct nk_color color;
 };
 
 struct _plughandle_t {
@@ -129,6 +130,7 @@ struct _plughandle_t {
 	LV2_URID units_pc;
 	LV2_URID units_s;
 	LV2_URID units_semitone12TET;
+	LV2_URID canvas_Style;
 
 	atom_ser_t ser;
 
@@ -191,6 +193,7 @@ _prop_get_or_add(plughandle_t *handle, prop_t **properties, int *n_properties, L
 	prop = &(*properties)[*n_properties];
 	memset(prop, 0x0, sizeof(prop_t));
 	prop->key = key;
+	prop->color = nk_white;
 	*n_properties += 1;
 
 	// sort properties according to URI string comparison
@@ -414,7 +417,7 @@ _clear_log(plughandle_t *handle)
 }
 
 static int
-_dial_bool(struct nk_context *ctx, int32_t *val)
+_dial_bool(struct nk_context *ctx, int32_t *val, struct nk_color color) //FIXME use color
 {
 	const int32_t tmp = *val;
 	struct nk_rect bounds = nk_layout_space_bounds(ctx);
@@ -473,6 +476,14 @@ _dial_bool(struct nk_context *ctx, int32_t *val)
 			}	break;
 		}
 
+		const struct nk_color bg_color = bg->data.color;
+		struct nk_color fg_color = fg->data.color;
+
+		fg_color.r = (int)fg_color.r * color.r / 0xff;
+		fg_color.g = (int)fg_color.g * color.g / 0xff;
+		fg_color.b = (int)fg_color.b * color.b / 0xff;
+		fg_color.a = (int)fg_color.a * color.a / 0xff;
+
 		struct nk_command_buffer *canv= nk_window_get_canvas(ctx);
 		const float w2 = bounds.w/2;
 		const float h2 = bounds.h/2;
@@ -481,10 +492,10 @@ _dial_bool(struct nk_context *ctx, int32_t *val)
 		const float cx = bounds.x + w2;
 		const float cy = bounds.y + h2;
 
-		nk_fill_arc(canv, cx, cy, r2, 0.f, 2*M_PI, fg->data.color);
+		nk_fill_arc(canv, cx, cy, r2, 0.f, 2*M_PI, fg_color);
 		nk_fill_arc(canv, cx, cy, r2 - 2, 0.f, 2*M_PI, ctx->style.window.background);
 		nk_fill_arc(canv, cx, cy, r2 - 4, 0.f, 2*M_PI,
-			*val ? fg->data.color : bg->data.color);
+			*val ? fg_color : bg_color);
 	}
 
 	return tmp != *val;
@@ -531,7 +542,7 @@ _dial_numeric_behavior(struct nk_context *ctx, struct nk_rect bounds,
 
 static void
 _dial_numeric_draw(struct nk_context *ctx, struct nk_rect bounds,
-	enum nk_widget_states states, float perc)
+	enum nk_widget_states states, float perc, struct nk_color color)
 {
 	struct nk_command_buffer *canv= nk_window_get_canvas(ctx);
 	const struct nk_style_item *bg = NULL;
@@ -556,6 +567,14 @@ _dial_numeric_draw(struct nk_context *ctx, struct nk_rect bounds,
 		}	break;
 	}
 
+	const struct nk_color bg_color = bg->data.color;
+	struct nk_color fg_color = fg->data.color;
+
+	fg_color.r = (int)fg_color.r * color.r / 0xff;
+	fg_color.g = (int)fg_color.g * color.g / 0xff;
+	fg_color.b = (int)fg_color.b * color.b / 0xff;
+	fg_color.a = (int)fg_color.a * color.a / 0xff;
+
 	const float w2 = bounds.w/2;
 	const float h2 = bounds.h/2;
 	const float r1 = h2;
@@ -567,13 +586,13 @@ _dial_numeric_draw(struct nk_context *ctx, struct nk_rect bounds,
 	const float a2 = 2*M_PI + M_PI/2 - aa;
 	const float a3 = a1 + (a2 - a1)*perc;
 
-	nk_fill_arc(canv, cx, cy, r1, a1, a2, bg->data.color);
-	nk_fill_arc(canv, cx, cy, r1, a1, a3, fg->data.color);
+	nk_fill_arc(canv, cx, cy, r1, a1, a2, bg_color);
+	nk_fill_arc(canv, cx, cy, r1, a1, a3, fg_color);
 	nk_fill_arc(canv, cx, cy, r2, 0.f, 2*M_PI, ctx->style.window.background);
 }
 
 static int
-_dial_double(struct nk_context *ctx, double min, double *val, double max, float mul)
+_dial_double(struct nk_context *ctx, double min, double *val, double max, float mul, struct nk_color color)
 {
 	const double tmp = *val;
 	struct nk_rect bounds = nk_layout_space_bounds(ctx);
@@ -599,14 +618,14 @@ _dial_double(struct nk_context *ctx, double min, double *val, double max, float 
 		}
 
 		const float perc = (*val - min) / range;
-		_dial_numeric_draw(ctx, bounds, states, perc);
+		_dial_numeric_draw(ctx, bounds, states, perc, color);
 	}
 
 	return tmp != *val;
 }
 
 static int
-_dial_long(struct nk_context *ctx, int64_t min, int64_t *val, int64_t max, float mul)
+_dial_long(struct nk_context *ctx, int64_t min, int64_t *val, int64_t max, float mul, struct nk_color color)
 {
 	const int64_t tmp = *val;
 	struct nk_rect bounds = nk_layout_space_bounds(ctx);
@@ -633,27 +652,27 @@ _dial_long(struct nk_context *ctx, int64_t min, int64_t *val, int64_t max, float
 		}
 
 		const float perc = (float)(*val - min) / range;
-		_dial_numeric_draw(ctx, bounds, states, perc);
+		_dial_numeric_draw(ctx, bounds, states, perc, color);
 	}
 
 	return tmp != *val;
 }
 
 static int
-_dial_float(struct nk_context *ctx, float min, float *val, float max, float mul)
+_dial_float(struct nk_context *ctx, float min, float *val, float max, float mul, struct nk_color color)
 {
 	double tmp = *val;
-	const int res = _dial_double(ctx, min, &tmp, max, mul);
+	const int res = _dial_double(ctx, min, &tmp, max, mul, color);
 	*val = tmp;
 
 	return res;
 }
 
 static int
-_dial_int(struct nk_context *ctx, int32_t min, int32_t *val, int32_t max, float mul)
+_dial_int(struct nk_context *ctx, int32_t min, int32_t *val, int32_t max, float mul, struct nk_color color)
 {
 	int64_t tmp = *val;
-	const int res = _dial_long(ctx, min, &tmp, max, mul);
+	const int res = _dial_long(ctx, min, &tmp, max, mul, color);
 	*val = tmp;
 
 	return res;
@@ -886,7 +905,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 							if(prop->range == handle->forge.Int)
 							{
 								nk_layout_row_dynamic(ctx, dy*3, 1);
-								if(_dial_int(ctx, prop->minimum.i, &prop->value.i, prop->maximum.i, 1.f))
+								if(_dial_int(ctx, prop->minimum.i, &prop->value.i, prop->maximum.i, 1.f, prop->color))
 								{
 									_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &prop->value.i);
 								}
@@ -909,7 +928,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 							else if(prop->range == handle->forge.Long)
 							{
 								nk_layout_row_dynamic(ctx, dy*3, 1);
-								if(_dial_long(ctx, prop->minimum.h, &prop->value.h, prop->maximum.h, 1.f))
+								if(_dial_long(ctx, prop->minimum.h, &prop->value.h, prop->maximum.h, 1.f, prop->color))
 								{
 									_patch_set(handle, prop->key, sizeof(int64_t), prop->range, &prop->value.h);
 								}
@@ -932,7 +951,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 							else if(prop->range == handle->forge.Float)
 							{
 								nk_layout_row_dynamic(ctx, dy*3, 1);
-								if(_dial_float(ctx, prop->minimum.f, &prop->value.f, prop->maximum.f, 1.f))
+								if(_dial_float(ctx, prop->minimum.f, &prop->value.f, prop->maximum.f, 1.f, prop->color))
 								{
 									_patch_set(handle, prop->key, sizeof(float), prop->range, &prop->value.f);
 								}
@@ -955,7 +974,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 							else if(prop->range == handle->forge.Double)
 							{
 								nk_layout_row_dynamic(ctx, dy*3, 1);
-								if(_dial_double(ctx, prop->minimum.d, &prop->value.d, prop->maximum.d, 1.f))
+								if(_dial_double(ctx, prop->minimum.d, &prop->value.d, prop->maximum.d, 1.f, prop->color))
 								{
 									_patch_set(handle, prop->key, sizeof(double), prop->range, &prop->value.d);
 								}
@@ -978,7 +997,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 							else if(prop->range == handle->forge.Bool)
 							{
 								nk_layout_row_dynamic(ctx, dy*3, 1);
-								if(_dial_bool(ctx, &prop->value.i))
+								if(_dial_bool(ctx, &prop->value.i, prop->color))
 								{
 									_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &prop->value.i);
 								}
@@ -1171,6 +1190,8 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	handle->units_pc = handle->map->map(handle->map->handle, LV2_UNITS__pc);
 	handle->units_s = handle->map->map(handle->map->handle, LV2_UNITS__s);
 	handle->units_semitone12TET = handle->map->map(handle->map->handle, LV2_UNITS__semitone12TET);
+
+	handle->canvas_Style = handle->map->map(handle->map->handle, CANVAS__Style);
 
 	const char *NK_SCALE = getenv("NK_SCALE");
 	const float scale = NK_SCALE ? atof(NK_SCALE) : 1.f;
@@ -1532,6 +1553,7 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 								LV2_Atom *maximum = NULL;
 								LV2_Atom *symbol = NULL;
 								LV2_Atom_URID *unit = NULL;
+								LV2_Atom_Long *style = NULL;
 
 								lv2_atom_object_get(add, 
 									handle->rdfs_range, &range,
@@ -1541,6 +1563,7 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 									handle->lv2_maximum, &maximum,
 									handle->units_symbol, &symbol,
 									handle->units_unit, &unit,
+									handle->canvas_Style, &style,
 									0);
 
 								if(range && (range->atom.type == handle->forge.URID))
@@ -1611,6 +1634,15 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 										prop->unit = strdup("s");
 									else if(unit->body == handle->units_semitone12TET)
 										prop->unit = strdup("semi");
+								}
+
+								if(style && (style->atom.type == handle->forge.Long))
+								{
+									prop->color = nk_rgba(
+										(style->body >> 24) & 0xff,
+										(style->body >> 16) & 0xff,
+										(style->body >>  8) & 0xff,
+										(style->body >>  0) & 0xff);
 								}
 
 								if(minimum)

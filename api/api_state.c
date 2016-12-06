@@ -121,6 +121,9 @@ _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 					|| !lv2_atom_forge_key(lforge->forge, moony->uris.units_symbol)
 					|| !lv2_atom_forge_urid(lforge->forge, moony->uris.patch.wildcard)
 
+					|| !lv2_atom_forge_key(lforge->forge, moony->canvas.urid.Canvas_Style)
+					|| !lv2_atom_forge_urid(lforge->forge, moony->uris.patch.wildcard)
+
 					|| !lv2_atom_forge_key(lforge->forge, moony->uris.core_scale_point)
 					|| !lv2_atom_forge_urid(lforge->forge, moony->uris.patch.wildcard) )
 					luaL_error(L, forge_buffer_overflow);
@@ -179,6 +182,15 @@ _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 					const char *symbol = lua_tolstring(L, -1, &len);
 					if(  !lv2_atom_forge_key(lforge->forge, moony->uris.units_symbol)
 						|| !lv2_atom_forge_string(lforge->forge, symbol, len) )
+						luaL_error(L, forge_buffer_overflow);
+				}
+				lua_pop(L, 1); // symbol
+
+				if(lua_geti(L, -1, moony->canvas.urid.Canvas_Style) == LUA_TNUMBER)
+				{
+					const uint32_t col = lua_tointeger(L, -1);
+					if(  !lv2_atom_forge_key(lforge->forge, moony->canvas.urid.Canvas_Style)
+						|| !lv2_atom_forge_long(lforge->forge, col) )
 						luaL_error(L, forge_buffer_overflow);
 				}
 				lua_pop(L, 1); // symbol
