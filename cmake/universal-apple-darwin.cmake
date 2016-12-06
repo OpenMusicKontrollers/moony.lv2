@@ -10,7 +10,7 @@ set(CMAKE_C_COMPILER "/usr/${TOOLCHAIN}/bin/x86_64-apple-darwin15-clang")
 set(CMAKE_CXX_COMPILER "/usr/${TOOLCHAIN}/bin/x86_64-apple-darwin15-clang++")
 
 # here is the target environment located
-set(CMAKE_FIND_ROOT_PATH "/usr/${TOOLCHAIN}")
+set(CMAKE_FIND_ROOT_PATH "/usr/${TOOLCHAIN}/SDK/MacOSX10.11.sdk")
 
 # adjust the default behaviour of the FIND_XXX() commands:
 # search headers and libraries in the target environment, search 

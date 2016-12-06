@@ -43,6 +43,25 @@ extern int luaopen_lpeg(lua_State *L);
 #define RDFS__range   RDFS_PREFIX"range"
 #define RDFS__comment RDFS_PREFIX"comment"
 
+#if defined(__WIN32)
+#	include <search.h> // qsort_s
+
+static char *
+_strndup(const char *s, size_t n)
+{
+	size_t len = strnlen(s, n);
+	char *new = (char *) malloc(len + 1);
+
+  if(new == NULL)
+		return NULL;
+
+  new[len] = '\0';
+  return memcpy(new, s, len);
+}
+#else
+#	define _strndup strndup
+#endif
+
 typedef union _body_t body_t;
 typedef struct _prop_t prop_t;
 typedef struct _plughandle_t plughandle_t;
@@ -182,6 +201,12 @@ _cmp_r(const void *a, const void *b, void *data)
 	return strcmp(alpha, beta);
 }
 
+static int
+_cmp_s(void *data, const void *a, const void *b)
+{
+	return _cmp_r(a, b, data);
+}
+
 static prop_t *
 _prop_get_or_add(plughandle_t *handle, prop_t **properties, int *n_properties, LV2_URID key)
 {
@@ -197,7 +222,13 @@ _prop_get_or_add(plughandle_t *handle, prop_t **properties, int *n_properties, L
 	*n_properties += 1;
 
 	// sort properties according to URI string comparison
+#if defined(_WIN32)
+	qsort_s(*properties, *n_properties, sizeof(prop_t), _cmp_s, handle->unmap);
+#elif defined(__APPLE__)
+	qsort_r(*properties, *n_properties, sizeof(prop_t), handle->unmap, _cmp_s);
+#else
 	qsort_r(*properties, *n_properties, sizeof(prop_t), _cmp_r, handle->unmap);
+#endif
 
 	return _prop_get(properties, n_properties, key);
 }
@@ -775,7 +806,7 @@ _copy(nk_handle userdata, const char *buf, int len)
 	if(handle->clipboard)
 		free(handle->clipboard);
 
-	handle->clipboard = strndup(buf, len);
+	handle->clipboard = _strndup(buf, len);
 }
 
 static bool
@@ -1011,7 +1042,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 								{
 									struct nk_str *str = &prop->value.editor.string;
 									LV2_URID urid = 0;
-									char *uri = strndup(nk_str_get_const(str), nk_str_len_char(str));
+									char *uri = _strndup(nk_str_get_const(str), nk_str_len_char(str));
 									if(uri)
 									{
 										urid = handle->map->map(handle->map->handle, uri);
