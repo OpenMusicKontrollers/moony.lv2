@@ -35,8 +35,6 @@ moony:c1xc1
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
 	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	@WEB_WRAP@ui:ui moony:ui_1_web_1_ui ;
-	@WEB_WRAP@ui:ui moony:ui_1_web_2_kx ;
 	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_1_ui ;
 	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_2_kx ;
 	@NK_WRAP@ui:ui moony:ui_3_nk ;
@@ -47,8 +45,6 @@ moony:c2xc2
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
 	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	@WEB_WRAP@ui:ui moony:ui_1_web_1_ui ;
-	@WEB_WRAP@ui:ui moony:ui_1_web_2_kx ;
 	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_1_ui ;
 	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_2_kx ;
 	@NK_WRAP@ui:ui moony:ui_3_nk ;
@@ -59,8 +55,6 @@ moony:c4xc4
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
 	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	@WEB_WRAP@ui:ui moony:ui_1_web_1_ui ;
-	@WEB_WRAP@ui:ui moony:ui_1_web_2_kx ;
 	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_1_ui ;
 	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_2_kx ;
 	@NK_WRAP@ui:ui moony:ui_3_nk ;
@@ -72,8 +66,6 @@ moony:a1xa1
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
 	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	@WEB_WRAP@ui:ui moony:ui_1_web_1_ui ;
-	@WEB_WRAP@ui:ui moony:ui_1_web_2_kx ;
 	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_1_ui ;
 	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_2_kx ;
 	@NK_WRAP@ui:ui moony:ui_3_nk ;
@@ -84,8 +76,6 @@ moony:a2xa2
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
 	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	@WEB_WRAP@ui:ui moony:ui_1_web_1_ui ;
-	@WEB_WRAP@ui:ui moony:ui_1_web_2_kx ;
 	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_1_ui ;
 	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_2_kx ;
 	@NK_WRAP@ui:ui moony:ui_3_nk ;
@@ -96,8 +86,6 @@ moony:a4xa4
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
 	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	@WEB_WRAP@ui:ui moony:ui_1_web_1_ui ;
-	@WEB_WRAP@ui:ui moony:ui_1_web_2_kx ;
 	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_1_ui ;
 	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_2_kx ;
 	@NK_WRAP@ui:ui moony:ui_3_nk ;
@@ -109,8 +97,6 @@ moony:c1a1xc1a1
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
 	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	@WEB_WRAP@ui:ui moony:ui_1_web_1_ui ;
-	@WEB_WRAP@ui:ui moony:ui_1_web_2_kx ;
 	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_1_ui ;
 	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_2_kx ;
 	@NK_WRAP@ui:ui moony:ui_3_nk ;
@@ -121,8 +107,6 @@ moony:c2a1xc2a1
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
 	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	@WEB_WRAP@ui:ui moony:ui_1_web_1_ui ;
-	@WEB_WRAP@ui:ui moony:ui_1_web_2_kx ;
 	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_1_ui ;
 	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_2_kx ;
 	@NK_WRAP@ui:ui moony:ui_3_nk ;
@@ -133,8 +117,6 @@ moony:c4a1xc4a1
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
 	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	@WEB_WRAP@ui:ui moony:ui_1_web_1_ui ;
-	@WEB_WRAP@ui:ui moony:ui_1_web_2_kx ;
 	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_1_ui ;
 	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_2_kx ;
 	@NK_WRAP@ui:ui moony:ui_3_nk ;

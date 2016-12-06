@@ -18,13 +18,6 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
-set(STATIC_LWS "/opt/${TOOLCHAIN}/lib/libwebsockets_static.a")
-set(STATIC_SERD "/opt/${TOOLCHAIN}/lib/libserd-0.a")
-set(STATIC_SORD "/opt/${TOOLCHAIN}/lib/libsord-0.a")
-set(STATIC_CAIRO "/opt/${TOOLCHAIN}/lib/libcairo.a")
-set(STATIC_PIXMAN "/opt/${TOOLCHAIN}/lib/libpixman-1.a")
-
 set(LIBS ${LIBS} "-static-libgcc -lws2_32")
-set(LIBS_WEB ${LIBS_WEB} "-static-libgcc -lws2_32")
 
 set(WINE wine64)

@@ -72,11 +72,9 @@ set(LIBS ${LIBS} ${LV2_LDFLAGS})
 # options
 include(CMakeDependentOption)
 option(BUILD_SIMPLE_UI "Build simple external UI" OFF)
-option(BUILD_WEB_UI "Build web-based external UI" ON)
 option(BUILD_NK_UI "Build nuklear UI" ON)
 option(BUILD_INLINE_DISPLAY "Build inline display" ON)
 option(USE_MANUAL_GC "Use manual garbage collection" OFF)
-option(USE_VERBOSE_LOG "Use verbose log for websocket" OFF)
 
 if(BUILD_INLINE_DISPLAY)
 	add_definitions("-DBUILD_INLINE_DISPLAY")
@@ -98,10 +96,6 @@ if(USE_MANUAL_GC)
 	add_definitions("-DUSE_MANUAL_GC")
 endif()
 
-if(USE_VERBOSE_LOG)
-	add_definitions("-DUSE_VERBOSE_LOG")
-endif()
-
 if(BUILD_SIMPLE_UI)
 	add_library(moony_simple MODULE
 		ui/moony_simple.c
@@ -118,50 +112,8 @@ else()
 	set(SIMPLE_WRAP "#")
 endif()
 
-if(BUILD_WEB_UI)
-	set(LIBS_WEB ${LIBS_WEB} m)
-
-	pkg_search_module(LWS REQUIRED libwebsockets>=1.7.0)
-	include_directories(${LWS_INCLUDE_DIRS})
-	if(DEFINED STATIC_LWS)
-		set(LIBS_WEB ${STATIC_LWS} ${LIBS_WEB})
-	else()
-		set(LIBS_WEB ${LIBS_WEB} ${LWS_LDFLAGS})
-	endif()
-
-	configure_file(${PROJECT_SOURCE_DIR}/web_ui/index.html.in ${PROJECT_BINARY_DIR}/index.html)
-	configure_file(${PROJECT_SOURCE_DIR}/web_ui/manual.html.in ${PROJECT_BINARY_DIR}/manual.html)
-
-	add_library(moony_web MODULE
-		cJSON/cJSON.c
-		ui/moony_web.c
-		ui/web_ui.c)
-	target_link_libraries(moony_web ${LIBS_WEB})
-	set_target_properties(moony_web PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
-	set_target_properties(moony_web PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
-	set_target_properties(moony_web PROPERTIES PREFIX "")
-	if(NOT WIN32)
-		set_target_properties(moony_web PROPERTIES LINK_FLAGS "-Wl,-e,lv2ui_descriptor")
-	endif()
-	install(TARGETS moony_web DESTINATION ${PLUGIN_DEST})
-	install(FILES ${PROJECT_BINARY_DIR}/index.html DESTINATION ${PLUGIN_DEST}/web_ui)
-	install(FILES ${PROJECT_BINARY_DIR}/manual.html DESTINATION ${PLUGIN_DEST}/web_ui)
-	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/libreJS.html DESTINATION ${PLUGIN_DEST}/web_ui)
-	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/favicon.png DESTINATION ${PLUGIN_DEST}/web_ui)
-	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/jquery-3.1.0.min.js DESTINATION ${PLUGIN_DEST}/web_ui)
-	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/jquery.knob.js DESTINATION ${PLUGIN_DEST}/web_ui)
-	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/jsonld.js DESTINATION ${PLUGIN_DEST}/web_ui)
-	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/moony.js DESTINATION ${PLUGIN_DEST}/web_ui)
-	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/style.css DESTINATION ${PLUGIN_DEST}/web_ui)
-	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/Chango-Regular.ttf DESTINATION ${PLUGIN_DEST}/web_ui)
-	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/ace.js DESTINATION ${PLUGIN_DEST}/web_ui)
-	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/mode-lua.js DESTINATION ${PLUGIN_DEST}/web_ui)
-	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/theme-chaos.js DESTINATION ${PLUGIN_DEST}/web_ui)
-	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/keybinding-vim.js DESTINATION ${PLUGIN_DEST}/web_ui)
-	install(FILES ${PROJECT_SOURCE_DIR}/web_ui/keybinding-emacs.js DESTINATION ${PLUGIN_DEST}/web_ui)
-else()
-	set(WEB_WRAP "#")
-endif()
+# manual
+configure_file(${PROJECT_SOURCE_DIR}/manual/manual.html.in ${PROJECT_BINARY_DIR}/manual.html)
 
 if(BUILD_NK_UI)
 	set(LIBS_NK ${LIBS_NK} m)
@@ -351,10 +303,10 @@ if(${BUILD_TESTING})
 		COMMAND ${XSLTPROC} ARGS
 			"--html"
 			"--output" ${PROJECT_BINARY_DIR}/moony_manual.lua
-			${PROJECT_SOURCE_DIR}/web_ui/manual.xslt
+			${PROJECT_SOURCE_DIR}/manual/manual.xslt
 			${PROJECT_BINARY_DIR}/manual.html
 		DEPENDS
-			${PROJECT_SOURCE_DIR}/web_ui/manual.xslt
+			${PROJECT_SOURCE_DIR}/manual/manual.xslt
 			${PROJECT_BINARY_DIR}/manual.html)
 	add_custom_target(MOONY_MANUAL_TEST ALL DEPENDS ${PROJECT_BINARY_DIR}/moony_manual.lua)
 

@@ -22,93 +22,8 @@
 
 @prefix moony:	<http://open-music-kontrollers.ch/lv2/moony#> .
 
-# Web UI
-moony:ui_1_web_1_ui
-	a ui:UI ;
-	ui:portNotification [
-		ui:plugin moony:c1xc1 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-	] , [
-		ui:plugin moony:c2xc2 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-	] , [
-		ui:plugin moony:c4xc4 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-	] , [
-		ui:plugin moony:a1xa1 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-	] , [
-		ui:plugin moony:a2xa2 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-	] , [
-		ui:plugin moony:a4xa4 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-	] , [
-		ui:plugin moony:c1a1xc1a1 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-	] , [
-		ui:plugin moony:c2a1xc2a1 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-	] , [
-		ui:plugin moony:c4a1xc4a1 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-	] ;
-	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map, urid:unmap ;
-  lv2:extensionData ui:idleInterface, ui:showInterface .
-
-moony:ui_1_web_2_kx
-	a kx:Widget ;
-	ui:portNotification [
-		ui:plugin moony:c1xc1 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-	] , [
-		ui:plugin moony:c2xc2 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-	] , [
-		ui:plugin moony:c4xc4 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-	] , [
-		ui:plugin moony:a1xa1 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-	] , [
-		ui:plugin moony:a2xa2 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-	] , [
-		ui:plugin moony:a4xa4 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-	] , [
-		ui:plugin moony:c1a1xc1a1 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-	] , [
-		ui:plugin moony:c2a1xc2a1 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-	] , [
-		ui:plugin moony:c4a1xc4a1 ;
-		lv2:symbol "notify" ;
-		ui:protocol atom:eventTransfer ;
-	] ;
-	lv2:requiredFeature kx:Host, ui:portMap, urid:map, urid:unmap .
-
 # Simple UI
 moony:ui_2_simple_1_ui
-	a ui:UI ;
 	ui:portNotification [
 		ui:plugin moony:c1xc1 ;
 		lv2:symbol "notify" ;
@@ -150,7 +65,6 @@ moony:ui_2_simple_1_ui
   lv2:extensionData ui:idleInterface, ui:showInterface .
 
 moony:ui_2_simple_2_kx
-	a kx:Widget ;
 	ui:portNotification [
 		ui:plugin moony:c1xc1 ;
 		lv2:symbol "notify" ;
