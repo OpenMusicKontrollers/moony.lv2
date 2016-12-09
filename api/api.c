@@ -774,6 +774,9 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 	{
 		if(size <= MOONY_MAX_CHUNK_LEN)
 		{
+			// lock Lua state, so it cannot be accessed by realtime thread
+			_spin_lock(&moony->lock.state);
+
 			strncpy(moony->chunk, chunk, size);
 
 			_clear_global_callbacks(L);
@@ -783,8 +786,11 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 				moony->error[0] = 0x0; // reset error flag
 
 			moony->dirty_out = 1; // trigger update of UI
+			moony->error_out = 1; // trigger update of UI
 			moony->props_out = 1; // trigger update of UI
 			moony->once = true; // trigger call of 'once'
+
+			_unlock(&moony->lock.state);
 		}
 		else
 		{
@@ -806,13 +812,17 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 
 	if(body && size && type)
 	{
-		if(moony->state_atom) // clear old state_atom
-			free(moony->state_atom);
-
 		// allocate new state_atom
-		moony->state_atom = malloc(sizeof(LV2_Atom) + size);
-		if(moony->state_atom) // fill new restore atom
+		LV2_Atom *state_atom = malloc(sizeof(LV2_Atom) + size);
+		if(state_atom)
 		{
+			// lock Lua state, so it cannot be accessed by realtime thread
+			_spin_lock(&moony->lock.state);
+
+			if(moony->state_atom) // clear old state_atom
+				free(moony->state_atom);
+			moony->state_atom = state_atom;
+
 			moony->state_atom->size = size;
 			moony->state_atom->type = type;
 			memcpy(LV2_ATOM_BODY(moony->state_atom), body, size);
@@ -828,6 +838,8 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 #ifdef USE_MANUAL_GC
 			lua_gc(L, LUA_GCSTEP, 0);
 #endif
+
+			_unlock(&moony->lock.state);
 		}
 	}
 

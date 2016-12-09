@@ -1410,7 +1410,7 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 							const char *end = body + value->size - 1;
 							const char *from = body;
 							for(const char *to = strchr(from, '\t');
-								to;
+								to && (to < end);
 								from = to + 1, to = strchr(from, '\t'))
 							{
 								nk_str_append_text_utf8(str, from, to-from);
@@ -1705,6 +1705,8 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 									//FIXME handle more types?
 								}
 								//FIXME handle lv2:scalePoint
+
+								_patch_get(handle, subj->body);
 							}
 						}
 					}
