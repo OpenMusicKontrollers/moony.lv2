@@ -85,9 +85,10 @@ struct _nk_pugl_window_t {
 
 	PuglView *view;
 	int quit;
-	bool input_active;
 
 	struct nk_buffer cmds;
+	struct nk_buffer vbuf;
+	struct nk_buffer ebuf;
 	struct nk_draw_null_texture null;
 	struct nk_context ctx;
 	struct nk_font_atlas atlas;
@@ -293,6 +294,7 @@ _nk_pugl_render_gl2(nk_pugl_window_t *win)
 {
 	nk_pugl_config_t *cfg = &win->cfg;
 
+#if !defined(_WIN32)
 	// compare current command buffer with last one to defer any changes
 	bool has_changes = false;
 	const size_t size = win->ctx.memory.allocated;
@@ -316,12 +318,10 @@ _nk_pugl_render_gl2(nk_pugl_window_t *win)
 
 	// only render if there were actually any changes
 	if(has_changes)
+#endif
 	{
-		// convert shapes into vertexes
-		struct nk_buffer vbuf, ebuf;
-		nk_buffer_init_default(&vbuf);
-		nk_buffer_init_default(&ebuf);
-		nk_convert(&win->ctx, &win->cmds, &vbuf, &ebuf, &win->conv);
+		// convert shapes into vertexes if there were changes
+		nk_convert(&win->ctx, &win->cmds, &win->vbuf, &win->ebuf, &win->conv);
 
 		_nk_pugl_render_gl2_push(cfg->width, cfg->height);
 
@@ -330,13 +330,13 @@ _nk_pugl_render_gl2(nk_pugl_window_t *win)
 		const size_t vp = offsetof(nk_pugl_vertex_t, position);
 		const size_t vt = offsetof(nk_pugl_vertex_t, uv);
 		const size_t vc = offsetof(nk_pugl_vertex_t, col);
-		const nk_byte *vertices = nk_buffer_memory_const(&vbuf);
+		const nk_byte *vertices = nk_buffer_memory_const(&win->vbuf);
 		glVertexPointer(2, GL_FLOAT, vs, &vertices[vp]);
 		glTexCoordPointer(2, GL_FLOAT, vs, &vertices[vt]);
 		glColorPointer(4, GL_UNSIGNED_BYTE, vs, &vertices[vc]);
 
 		// iterate over and execute each draw command
-		const nk_draw_index *offset = nk_buffer_memory_const(&ebuf);
+		const nk_draw_index *offset = nk_buffer_memory_const(&win->ebuf);
 		const struct nk_draw_command *cmd;
 		nk_draw_foreach(cmd, &win->ctx, &win->cmds)
 		{
@@ -356,8 +356,8 @@ _nk_pugl_render_gl2(nk_pugl_window_t *win)
 
 		_nk_pugl_render_gl2_pop();
 
-		nk_buffer_free(&vbuf);
-		nk_buffer_free(&ebuf);
+		nk_buffer_clear(&win->vbuf);
+		nk_buffer_clear(&win->ebuf);
 	}
 
 	nk_clear(&win->ctx);
@@ -519,7 +519,7 @@ _nk_pugl_other_key(struct nk_context *ctx, const PuglEventKey *ev, int down)
 
 			default:
 			{
-				if(down)
+				if(down && isprint(ev->character))
 					nk_input_char(ctx, character);
 			} break;
 		}
@@ -563,7 +563,7 @@ _nk_pugl_other_key(struct nk_context *ctx, const PuglEventKey *ev, int down)
 					} break;
 				}
 
-				if(down)
+				if(down && isprint(ev->character))
 					nk_input_glyph(ctx, (const char *)ev->utf8);
 			}	break;
 		}
@@ -659,13 +659,10 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 		}
 		case PUGL_EXPOSE:
 		{
-			if(win->input_active)
-			{
-				win->input_active = false;
-				nk_input_end(ctx);
-			}
-
+			nk_input_end(ctx);
 			_nk_pugl_expose(win->view);
+			nk_input_begin(ctx);
+
 			break;
 		}
 		case PUGL_CLOSE:
@@ -754,6 +751,8 @@ nk_pugl_init(nk_pugl_window_t *win)
 	{
 		// init nuklear
 		nk_buffer_init_default(&win->cmds);
+		nk_buffer_init_default(&win->vbuf);
+		nk_buffer_init_default(&win->ebuf);
 		nk_init_default(&win->ctx, 0);
 
 		// init nuklear font
@@ -785,6 +784,7 @@ nk_pugl_init(nk_pugl_window_t *win)
 	conv->line_AA = NK_ANTI_ALIASING_ON;
 
 	puglSetEventFunc(win->view, _nk_pugl_event_func);
+	nk_input_begin(&win->ctx);
 
 	win->widget = puglGetNativeWindow(win->view);
 	return win->widget;
@@ -814,6 +814,8 @@ nk_pugl_shutdown(nk_pugl_window_t *win)
 	if(!win->view)
 		return;
 
+	nk_input_end(&win->ctx);
+
 	if(win->last.buffer)
 		free(win->last.buffer);
 
@@ -827,6 +829,8 @@ nk_pugl_shutdown(nk_pugl_window_t *win)
 		// shutdown nuklear
 		nk_free(&win->ctx);
 		nk_buffer_free(&win->cmds);
+		nk_buffer_free(&win->vbuf);
+		nk_buffer_free(&win->ebuf);
 	}
 	puglLeaveContext(win->view, false);
 
@@ -855,12 +859,6 @@ nk_pugl_process_events(nk_pugl_window_t *win)
 		return 1; // quit
 
 	struct nk_context *ctx = &win->ctx;
-
-	if(!win->input_active)
-	{
-		win->input_active = true;
-		nk_input_begin(ctx);
-	}
 
 	PuglStatus stat = puglProcessEvents(win->view);
 	(void)stat;
