@@ -44,7 +44,7 @@ extern int luaopen_lpeg(lua_State *L);
 #define RDFS__range   RDFS_PREFIX"range"
 #define RDFS__comment RDFS_PREFIX"comment"
 
-#define MAX_PATH_LEN 512
+#define MAX_PATH_LEN 1024
 
 #if defined(__WIN32)
 static char *
@@ -214,6 +214,7 @@ struct _plughandle_t {
 	lua_State *L;
 	
 	browser_t browser;
+	const char *bundle_path;
 };
 
 static uint8_t *
@@ -1480,7 +1481,7 @@ _icon_load(void *data, const char *file)
 
 	struct nk_image img;
 	char *path;
-	if(asprintf(&path, "%s%s", "/usr/local/lib/lv2/moony.lv2/", file) != -1)
+	if(asprintf(&path, "%s%s", handle->bundle_path, file) != -1)
 	{
 		img = nk_pugl_icon_load(&handle->win, path);
 		free(path);
@@ -1508,6 +1509,8 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	plughandle_t *handle = calloc(1, sizeof(plughandle_t));
 	if(!handle)
 		return NULL;
+
+	handle->bundle_path = bundle_path;
 
 	void *parent = NULL;
 	LV2UI_Resize *host_resize = NULL;
