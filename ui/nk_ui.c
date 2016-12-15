@@ -38,8 +38,10 @@ extern int luaopen_lpeg(lua_State *L);
 #	undef Bool // Xlib.h interferes with LV2_Atom_Forge.Bool
 #endif
 
+#define RDF_PREFIX    "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 #define RDFS_PREFIX   "http://www.w3.org/2000/01/rdf-schema#"
 
+#define RDF__value    RDF_PREFIX"value"
 #define RDFS__label   RDFS_PREFIX"label"
 #define RDFS__range   RDFS_PREFIX"range"
 #define RDFS__comment RDFS_PREFIX"comment"
@@ -103,6 +105,7 @@ struct _prop_t {
 	body_t value;
 	body_t minimum;
 	body_t maximum;
+	LV2_Atom_Tuple *points;
 	struct nk_color color;
 };
 
@@ -160,8 +163,10 @@ struct _plughandle_t {
 	LV2_URID rdfs_label;
 	LV2_URID rdfs_range;
 	LV2_URID rdfs_comment;
+	LV2_URID rdf_value;
 	LV2_URID lv2_minimum;
 	LV2_URID lv2_maximum;
+	LV2_URID lv2_scalePoint;
 	LV2_URID units_symbol;
 	LV2_URID units_unit;
 	LV2_URID units_bar;
@@ -591,6 +596,9 @@ _prop_free(plughandle_t *handle, prop_t *prop)
 	{
 		nk_textedit_free(&prop->value.editor);
 	}
+
+	if(prop->points)
+		free(prop->points);
 }
 
 LV2_Atom_Forge_Ref
@@ -1274,7 +1282,108 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 							nk_tooltip(ctx, prop->comment);
 						if(nk_group_begin(ctx, prop->label, NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_NO_SCROLLBAR))
 						{
-							if(prop->range == handle->forge.Int)
+							if(prop->points)
+							{
+								const char *header = NULL;
+								float diff = HUGE_VAL;
+								LV2_ATOM_TUPLE_FOREACH(prop->points, itm)
+								{
+									const LV2_Atom_Object *obj = (const LV2_Atom_Object *)itm;
+
+									if(!lv2_atom_forge_is_object_type(&handle->forge, obj->atom.type))
+										continue;
+
+									const LV2_Atom *label = NULL;
+									const LV2_Atom *value = NULL;
+
+									lv2_atom_object_get(obj,
+										handle->rdfs_label, &label,
+										handle->rdf_value, &value,
+										0);
+
+									if(label && (label->type == handle->forge.String)
+										&& value && (value->type == prop->range))
+									{
+										float d = HUGE_VAL;
+
+										if(value->type == handle->forge.Int)
+											d = abs(((const LV2_Atom_Int *)value)->body - prop->value.i);
+										else if(value->type == handle->forge.Bool)
+											d = abs(((const LV2_Atom_Bool *)value)->body - prop->value.i);
+										else if(value->type == handle->forge.Long)
+											d = labs(((const LV2_Atom_Long *)value)->body - prop->value.h);
+										else if(value->type == handle->forge.Float)
+											d = fabs(((const LV2_Atom_Float *)value)->body - prop->value.f);
+										else if(value->type == handle->forge.Double)
+											d = fabs(((const LV2_Atom_Double *)value)->body - prop->value.d);
+
+										if(d < diff)
+										{
+											header = LV2_ATOM_BODY(label);
+											diff = d;
+										}
+									}
+								}
+
+								nk_layout_row_dynamic(ctx, dy, 1);
+								if(!header)
+									nk_spacing(ctx, 1);
+								else if(nk_combo_begin_label(ctx, header, nk_vec2(nk_widget_width(ctx), 7*dy)))
+								{
+									nk_layout_row_dynamic(ctx, dy, 1);
+									LV2_ATOM_TUPLE_FOREACH(prop->points, itm)
+									{
+										const LV2_Atom_Object *obj = (const LV2_Atom_Object *)itm;
+
+										if(!lv2_atom_forge_is_object_type(&handle->forge, obj->atom.type))
+											continue;
+
+										const LV2_Atom *label = NULL;
+										const LV2_Atom *value = NULL;
+
+										lv2_atom_object_get(obj,
+											handle->rdfs_label, &label,
+											handle->rdf_value, &value,
+											0);
+
+										if(label && (label->type == handle->forge.String)
+											&& value && (value->type == prop->range))
+										{
+											if(nk_combo_item_label(ctx, LV2_ATOM_BODY_CONST(label), NK_TEXT_LEFT))
+											{
+												if(value->type == handle->forge.Int)
+												{
+													prop->value.i = ((const LV2_Atom_Int *)value)->body;
+													_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &prop->value.i);
+												}
+												else if (value->type == handle->forge.Bool)
+												{
+													prop->value.i = ((const LV2_Atom_Bool *)value)->body;
+													_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &prop->value.i);
+												}
+												else if (value->type == handle->forge.Long)
+												{
+													prop->value.h = ((const LV2_Atom_Long *)value)->body;
+													_patch_set(handle, prop->key, sizeof(int64_t), prop->range, &prop->value.h);
+												}
+												else if (value->type == handle->forge.Float)
+												{
+													prop->value.f = ((const LV2_Atom_Float *)value)->body;
+													_patch_set(handle, prop->key, sizeof(float), prop->range, &prop->value.f);
+												}
+												else if (value->type == handle->forge.Double)
+												{
+													prop->value.d = ((const LV2_Atom_Double *)value)->body;
+													_patch_set(handle, prop->key, sizeof(double), prop->range, &prop->value.d);
+												}
+											}
+										}
+									}
+
+									nk_combo_end(ctx);
+								}
+							}
+							else if(prop->range == handle->forge.Int)
 							{
 								nk_layout_row_dynamic(ctx, dy*3, 1);
 								if(_dial_int(ctx, prop->minimum.i, &prop->value.i, prop->maximum.i, 1.f, prop->color))
@@ -1406,7 +1515,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 							}
 							else if(prop->range == handle->forge.Chunk)
 							{
-								nk_layout_row_dynamic(ctx, dy*3, 1);
+								nk_layout_row_dynamic(ctx, dy, 1);
 								if(nk_button_label(ctx, "Load"))
 								{
 									handle->browser_target = prop;
@@ -1585,8 +1694,10 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	handle->rdfs_label = handle->map->map(handle->map->handle, RDFS__label);
 	handle->rdfs_range= handle->map->map(handle->map->handle, RDFS__range);
 	handle->rdfs_comment = handle->map->map(handle->map->handle, RDFS__comment);
+	handle->rdf_value = handle->map->map(handle->map->handle, RDF__value);
 	handle->lv2_minimum = handle->map->map(handle->map->handle, LV2_CORE__minimum);
 	handle->lv2_maximum = handle->map->map(handle->map->handle, LV2_CORE__maximum);
+	handle->lv2_scalePoint = handle->map->map(handle->map->handle, LV2_CORE__scalePoint);
 
 	handle->units_symbol = handle->map->map(handle->map->handle, LV2_UNITS__symbol);
 	handle->units_unit = handle->map->map(handle->map->handle, LV2_UNITS__unit);
@@ -1981,6 +2092,7 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 								LV2_Atom *symbol = NULL;
 								LV2_Atom_URID *unit = NULL;
 								LV2_Atom_Long *style = NULL;
+								LV2_Atom_Tuple *points = NULL;
 
 								lv2_atom_object_get(add, 
 									handle->rdfs_range, &range,
@@ -1991,6 +2103,7 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 									handle->units_symbol, &symbol,
 									handle->units_unit, &unit,
 									handle->canvas_Style, &style,
+									handle->lv2_scalePoint, &points,
 									0);
 
 								if(range && (range->atom.type == handle->forge.URID))
@@ -2096,7 +2209,13 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 										prop->maximum.d = ((const LV2_Atom_Double *)(maximum))->body;
 									//FIXME handle more types?
 								}
-								//FIXME handle lv2:scalePoint
+								if(points && (points->atom.type == handle->forge.Tuple))
+								{
+									const uint32_t sz = lv2_atom_total_size(&points->atom);
+									prop->points = malloc(sz);
+									if(prop->points)
+										memcpy(prop->points, points, sz);
+								}
 
 								_patch_get(handle, subj->body);
 							}
