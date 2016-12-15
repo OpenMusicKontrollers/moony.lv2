@@ -46,7 +46,7 @@ local func = token(l.FUNCTION, word_match{
 	'__add', '__sub', '__mul', '__div', '__mod', '__pow', '__unm', '__idiv', '__band', '__bor', '__bxor', '__bnot', '__shl', '__shr', '__concat', '__len', '__eq', '__lt', '__le', '__index', '__newindex', '__call', '__gc', '__mode', '__name', '__tostring', '__metatable', '__pairs',
 	-- moony basic
 	'run', 'once', 'save', 'restore', 'stash', 'apply', 'register', 'midi2cps', 'cps2midi', 'encrypt', 'decrypt',
-	'MIDIResponder', 'OSCResponder', 'TimeResponder', 'StateResponder', 'Map', 'Unmap', 'VoiceMap', 'Stash', 'Note', 'HashMap',
+	'MIDIResponder', 'OSCResponder', 'TimeResponder', 'StateResponder', 'Map', 'Unmap', 'VoiceMap', 'Stash', 'Note', 'HashMap', 'Parameter',
 })
 
 -- Field funcions

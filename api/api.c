@@ -32,6 +32,7 @@
 #include <api_osc.h>
 #include <api_time.h>
 #include <api_state.h>
+#include <api_parameter.h>
 
 #define RDF_PREFIX    "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 #define RDFS_PREFIX   "http://www.w3.org/2000/01/rdf-schema#"
@@ -1700,6 +1701,19 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	lua_pushcclosure(L, _lstateresponder, 1);
 	lua_setglobal(L, "StateResponder");
+
+	// Parameter metatable
+	luaL_newmetatable(L, "lparameter");
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	luaL_setfuncs (L, lparameter_mt, 1);
+	_protect_metatable(L, -1);
+	//_index_metatable(L, -1);
+	lua_pop(L, 1);
+
+	// Parameter factory
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	lua_pushcclosure(L, _lparameter, 1);
+	lua_setglobal(L, "Parameter");
 
 	// Stash factory
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1

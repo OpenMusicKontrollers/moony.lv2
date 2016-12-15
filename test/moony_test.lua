@@ -1404,13 +1404,17 @@ do
 	local flt_get_responded = false
 	local flt_set_responded = false
 
-	local state_int = {
+	local state_int = Parameter{
 		[RDFS.label] = 'Int',
 		[RDFS.range] = Atom.Int,
 		[Core.minimum] = 0,
 		[Core.maximum] = 10,
-		[RDF.value] = 1
+		[RDF.value] = 2
 	}
+
+	assert(state_int() == 2)
+	assert(state_int(1) == 2)
+	assert(state_int() == 1)
 
 	local state_flt = {
 		[RDFS.label] = 'Flt',

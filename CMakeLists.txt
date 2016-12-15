@@ -257,6 +257,7 @@ add_library(api OBJECT
 	api/api_osc.c
 	api/api_time.c
 	api/api_state.c
+	api/api_parameter.c
 	api/api_vm.c
 	tlsf-3.0/tlsf.c
 	tiny-AES128-C/aes.c)
