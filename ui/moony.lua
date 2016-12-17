@@ -23,8 +23,8 @@ local block_comment = '--' * longstring
 local comment = token(l.COMMENT, block_comment + line_comment)
 
 -- Strings.
-local sq_str = l.delimited_range("'")
-local dq_str = l.delimited_range('"')
+local sq_str = l.delimited_range("'", true, false, true)
+local dq_str = l.delimited_range('"', true, false, true)
 local string = token(l.STRING, sq_str + dq_str) +
                token('longstring', longstring)
 
