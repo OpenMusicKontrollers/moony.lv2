@@ -12646,7 +12646,8 @@ nk_widget_text(struct nk_command_buffer *o, struct nk_rect b,
 NK_INTERN void
 nk_widget_text_lexed(struct nk_command_buffer *o, struct nk_rect b,
     const char *string, int len, const struct nk_text *t,
-    nk_flags a, const struct nk_user_font *f, struct nk_token *tokens, int offset)
+    nk_flags a, const struct nk_user_font *f, struct nk_token *tokens,
+		int offset)
 {
     struct nk_rect label;
     float text_width;
@@ -12689,10 +12690,15 @@ nk_widget_text_lexed(struct nk_command_buffer *o, struct nk_rect b,
     }
 
 		//FIXME do this chunk-wise instead of character-wise
-		for(int i = 0; i < len; i++)
+		const int glyph_max = nk_utf_len(string, len);
+		const float dd = text_width/glyph_max;
+		for(int i = 0, u = 0; i < len; u++)
 		{
+			nk_rune unicode;
+			const int glyph_len = nk_utf_decode(string + i, &unicode, len - i);
+
 			const struct nk_rect dst = {
-				.x = label.x + i*text_width/len,
+				.x = label.x + u*dd,
 				.y = label.y,
 				.w = text_width,
 				.h = label.h
@@ -12705,8 +12711,8 @@ nk_widget_text_lexed(struct nk_command_buffer *o, struct nk_rect b,
 				token++;
 
 			fg = token->color;
-
-			nk_draw_text(o, dst, string + i, 1, f, bg, fg);
+			nk_draw_text(o, dst, string + i, glyph_len, f, bg, fg);
+			i += glyph_len;
 		}
 }
 
@@ -14127,7 +14133,8 @@ nk_edit_draw_text(struct nk_command_buffer *out,
     const struct nk_style_edit *style, float pos_x, float pos_y,
     float x_offset, const char *text, int byte_len, float row_height,
     const struct nk_user_font *font, struct nk_color background,
-    struct nk_color foreground, int is_selected, struct nk_lexer *lexer, int offset)
+    struct nk_color foreground, int is_selected, struct nk_lexer *lexer,
+		int offset)
 {
     NK_ASSERT(out);
     NK_ASSERT(font);
@@ -14647,6 +14654,11 @@ nk_do_edit(nk_flags *state, struct nk_command_buffer *out,
                     row_height, font, background_color, text_color, nk_false, &edit->lexer, 0);
             }
             if (edit->select_start != edit->select_end) {
+								const int offset = edit->select_start < edit->select_end ? edit->select_start : edit->select_end;
+								int glyph_offset;
+								nk_rune unicode;
+								const char *ptr = nk_str_at_const(&edit->string, offset, &unicode, &glyph_offset);
+								const int offset2 = ptr - nk_str_get_const(&edit->string);
                 /* draw selected text */
                 NK_ASSERT(select_begin_ptr);
                 if (!select_end_ptr) {
@@ -14659,7 +14671,7 @@ nk_do_edit(nk_flags *state, struct nk_command_buffer *out,
                     selection_offset_start.x,
                     select_begin_ptr, (int)(select_end_ptr - select_begin_ptr),
                     row_height, font, sel_background_color, sel_text_color, nk_true,
-										&edit->lexer, edit->select_start < edit->select_end ? edit->select_start : edit->select_end);
+										&edit->lexer, offset2);
             }
             if ((edit->select_start != edit->select_end &&
                 selection_end < edit->string.len))
@@ -14668,6 +14680,11 @@ nk_do_edit(nk_flags *state, struct nk_command_buffer *out,
                 const char *begin = select_end_ptr;
                 const char *end = nk_str_get_const(&edit->string) +
                                     nk_str_len_char(&edit->string);
+								const int offset = edit->select_start < edit->select_end ? edit->select_end : edit->select_start;
+								int glyph_offset;
+								nk_rune unicode;
+								const char *ptr = nk_str_at_const(&edit->string, offset, &unicode, &glyph_offset);
+								const int offset2 = ptr - nk_str_get_const(&edit->string);
                 NK_ASSERT(select_end_ptr);
                 nk_edit_draw_text(out, style,
                     area.x - edit->scrollbar.x,
@@ -14675,7 +14692,7 @@ nk_do_edit(nk_flags *state, struct nk_command_buffer *out,
                     selection_offset_end.x,
                     begin, (int)(end - begin), row_height, font,
                     background_color, text_color, nk_false,
-										&edit->lexer, edit->select_start < edit->select_end ? edit->select_end : edit->select_start);
+										&edit->lexer, offset2);
             }
         }
 
