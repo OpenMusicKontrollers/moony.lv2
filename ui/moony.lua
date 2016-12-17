@@ -66,6 +66,8 @@ local field_func = token(l.OPERATOR, S('.:')) * token(l.FUNCTION, word_match{
 	'debug', 'getuservalue', 'gethook', 'getinfo', 'getlocal', 'getregistry', 'getmetatable',
 	'getupvalue', 'upvaluejoin', 'upvalueid', 'setuservalue', 'sethook', 'setlocal',
 	'setmetatable', 'setupvalue', 'traceback',
+	-- Lua lpeg
+	'setmaxstack', 'Ct', 'Cp', 'pcode', 'S', 'Cc', 'Cb', 'version', 'match', 'locale', 'Cf', 'Cg', 'B', 'C', 'V', 'Cs', 'R', 'P', 'Carg', 'ptree', 'type', 'Cmt',
 	-- moony forge
 	'frameTime', 'beatTime', 'time', 'atom', 'int', 'long', 'float', 'double', 'bool', 'urid', 'string', 'literal', 'uri', 'path',
 	'chunk', 'midi', 'raw', 'bundle', 'message', 'impulse', 'char', 'rgba', 'timetag', 'tuple', 'tuplePack',
@@ -130,7 +132,7 @@ local field_constant = token(l.OPERATOR, P('.')) * token(l.CONSTANT, word_match{
 -- Libraries.
 local library = token('library', word_match{
 	-- Lua
-	'coroutine', 'string', 'utf8', 'table', 'math', 'debug',
+	'coroutine', 'string', 'utf8', 'table', 'math', 'debug', 'lpeg',
 	-- Moony
 	'Atom', 'MIDI', 'Time', 'OSC', 'Core', 'Buf_Size', 'Patch', 'RDF', 'RDFS', 'Units', 'Options', 'Canvas'
 })

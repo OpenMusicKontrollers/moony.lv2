@@ -28,6 +28,8 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
+extern int luaopen_lpeg(lua_State *L);
+
 #define MEM_SIZE 0x40000UL // 256KB
 
 //#define MOONY_LOG_MEM
@@ -171,6 +173,8 @@ moony_vm_init(moony_vm_t *vm)
 	luaL_requiref(vm->L, "math", luaopen_math, 1);
 	luaL_requiref(vm->L, "utf8", luaopen_utf8, 1);
 	luaL_requiref(vm->L, "debug", luaopen_debug, 1);
+
+	luaL_requiref(vm->L, "lpeg", luaopen_lpeg, 1);
 	lua_pop(vm->L, 7);
 
 	//luaL_requiref(vm->L, "io", luaopen_io, 1);

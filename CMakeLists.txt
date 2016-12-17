@@ -270,7 +270,8 @@ add_library(moony MODULE
 	plugin/axa.c
 	plugin/caxca.c
 	$<TARGET_OBJECTS:api>
-	$<TARGET_OBJECTS:lua>)
+	$<TARGET_OBJECTS:lua>
+	$<TARGET_OBJECTS:lpeg>)
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	target_compile_definitions(moony PUBLIC -DLUA_USE_LINUX)
 elseif(WIN32)
@@ -331,7 +332,8 @@ if(${BUILD_TESTING})
 	add_executable(moony_test
 		test/moony_test.c
 		$<TARGET_OBJECTS:api>
-		$<TARGET_OBJECTS:lua>)
+		$<TARGET_OBJECTS:lua>
+		$<TARGET_OBJECTS:lpeg>)
 	if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 		target_compile_definitions(moony_test PUBLIC -DLUA_USE_LINUX)
 	elseif(WIN32)
