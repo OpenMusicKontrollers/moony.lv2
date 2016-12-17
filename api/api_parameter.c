@@ -26,12 +26,16 @@ _lparameter__call(lua_State *L)
 	// 1: self
 	// 2: value or nil
 
+	// get current value
 	lua_geti(L, 1, moony->uris.rdf_value);
+	//TODO call patch:Get?
 
 	if(!lua_isnil(L, 2))
 	{
-		lua_insert(L, 2);
+		// set new value
+		lua_pushvalue(L, 2);
 		lua_seti(L, 1, moony->uris.rdf_value);
+		//TODO call patch:Set?
 	}
 
 	return 1;
