@@ -19,7 +19,7 @@
 #define _NK_PUGL_H
 
 #include <stdatomic.h>
-#include <ctype.h> // isprint
+#include <ctype.h> // isalpha
 
 #ifdef __cplusplus
 extern C {
@@ -519,7 +519,7 @@ _nk_pugl_other_key(struct nk_context *ctx, const PuglEventKey *ev, int down)
 
 			default:
 			{
-				if(down && isprint(ev->character))
+				if(down && isalpha(character))
 					nk_input_char(ctx, character);
 			} break;
 		}
@@ -563,7 +563,7 @@ _nk_pugl_other_key(struct nk_context *ctx, const PuglEventKey *ev, int down)
 					} break;
 				}
 
-				if(down && isprint(ev->character))
+				if(down)
 					nk_input_glyph(ctx, (const char *)ev->utf8);
 			}	break;
 		}
@@ -758,7 +758,18 @@ nk_pugl_init(nk_pugl_window_t *win)
 		// init nuklear font
 		struct nk_font *ttf = NULL;
 		struct nk_font_config fcfg = nk_font_config(cfg->font.size);
-		fcfg.range = nk_font_cyrillic_glyph_ranges();
+		const nk_rune range [] = {
+			0x0020, 0x007F, // Basic Latin
+			0x00A0, 0x00FF, // Latin-1 Supplement
+			0x0100, 0x017F, // Latin Extended-A
+			0x0180, 0x024F, // Latin Extended-B
+			0x0300, 0x036F, // Combining Diacritical Marks
+			0x0370, 0x03FF, // Greek and Coptic
+			0x0400, 0x04FF, // Cyrillic
+			0x0500, 0x052F, // Cyrillic Supplementary
+			0
+		};
+    fcfg.range = range;
 
 		_nk_pugl_font_stash_begin(win);
 		if(cfg->font.face && cfg->font.size)
