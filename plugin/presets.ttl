@@ -34,6 +34,18 @@ moony:code
 moony:state
 	a rdf:Property ;
 	rdfs:label "Lua code state" .
+moony:editorHidden
+	a rdf:Property ;
+	rdfs:label "Editor tab hidden state" .
+moony:paramHidden
+	a rdf:Property ;
+	rdfs:label "Parameter tab hidden state" .
+moony:paramCols
+	a rdf:Property ;
+	rdfs:label "Parameter tab columns" .
+moony:paramRows
+	a rdf:Property ;
+	rdfs:label "Parameter tab rows" .
 
 stateR:pBool
 	a lv2:Parameter ;
@@ -72,6 +84,10 @@ moony:bank-through_control-through
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
+		moony:editorHidden false ;
+		moony:paramHidden true ;
+		moony:paramCols 3 ;
+		moony:paramRows 6 ;
 		moony:code """function run(n, control, notify, ...)
 	return ...
 end"""
@@ -81,6 +97,10 @@ moony:bank-through_atom-through
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
+		moony:editorHidden false ;
+		moony:paramHidden true ;
+		moony:paramCols 3 ;
+		moony:paramRows 6 ;
 		moony:code """function run(n, control, notify, seq, forge, ...)
 	for frames, atom in seq:foreach() do
 		forge:time(frames):atom(atom)
@@ -94,6 +114,10 @@ moony:bank-through_atom-through2
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
+		moony:editorHidden false ;
+		moony:paramHidden true ;
+		moony:paramCols 3 ;
+		moony:paramRows 6 ;
 		moony:code """function run(n, control, notify, seq1, forge1, seq2, forge2)
 	for frames, atom in seq1:foreach() do
 		forge1:time(frames):atom(atom)
@@ -109,6 +133,10 @@ moony:bank-through_atom-through4
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
+		moony:editorHidden false ;
+		moony:paramHidden true ;
+		moony:paramCols 3 ;
+		moony:paramRows 6 ;
 		moony:code """function run(n, control, notify, seq1, forge1, seq2, forge2, seq3, forge3, seq4, forge4)
 	for frames, atom in seq1:foreach() do
 		forge1:time(frames):atom(atom)
@@ -132,6 +160,10 @@ moony:bank-multiplex_atom-multiplex2
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
+		moony:editorHidden false ;
+		moony:paramHidden true ;
+		moony:paramCols 3 ;
+		moony:paramRows 6 ;
 		moony:code """function run(n, control, notify, seq1, forge1, seq2, forge2)
 	for frames, atom in seq1:foreach(seq2) do
 		forge1:time(frames):atom(atom)
@@ -144,6 +176,10 @@ moony:bank-multiplex_atom-multiplex4
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
+		moony:editorHidden false ;
+		moony:paramHidden true ;
+		moony:paramCols 3 ;
+		moony:paramRows 6 ;
 		moony:code """function run(n, control, notify, seq1, forge1, seq2, forge2, seq3, forge3, seq4, forge4)
 	for frames, atom in seq1:foreach(seq2, seq3, seq4) do
 		forge1:time(frames):atom(atom)
@@ -158,6 +194,10 @@ moony:bank-midi_midi-responder
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
+		moony:editorHidden false ;
+		moony:paramHidden true ;
+		moony:paramCols 3 ;
+		moony:paramRows 6 ;
 		moony:code """local midiR = MIDIResponder({
 	[MIDI.NoteOn] = function(self, frames, forge, chan, note, vel)
 		forge:time(frames):midi(MIDI.NoteOn | chan, note, vel)
@@ -178,6 +218,10 @@ moony:bank-time_midi-sequencer
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
+		moony:editorHidden false ;
+		moony:paramHidden true ;
+		moony:paramCols 3 ;
+		moony:paramRows 6 ;
 		moony:code """local timeR = TimeResponder({
   [Time.speed] = function(self, frames, forge, speed)
     self.rolling = speed > 0.0
@@ -222,6 +266,10 @@ moony:bank-osc_osc-responder
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
+		moony:editorHidden false ;
+		moony:paramHidden true ;
+		moony:paramCols 3 ;
+		moony:paramRows 6 ;
 		moony:code """local oscR = OSCResponder({
 	['/ping'] = function(self, frames, forge, fmt, ...)
 		forge:time(frames):message('/pong', fmt, ...)
@@ -242,6 +290,10 @@ moony:bank-state_state-responder
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
+		moony:editorHidden false ;
+		moony:paramHidden true ;
+		moony:paramCols 3 ;
+		moony:paramRows 6 ;
 		moony:code """local urid = HashMap('urn:moony:stateR#')
 
 local pLong
@@ -424,6 +476,10 @@ moony:bank-tutorial_part-1
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
+		moony:editorHidden false ;
+		moony:paramHidden true ;
+		moony:paramCols 3 ;
+		moony:paramRows 6 ;
 		moony:code """-- Tutorial 1: MIDI Channel Blocker
 
 -- define table which holds active MIDI channels
@@ -460,6 +516,10 @@ moony:bank-tutorial_part-2
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
+		moony:editorHidden false ;
+		moony:paramHidden true ;
+		moony:paramCols 3 ;
+		moony:paramRows 6 ;
 		moony:code """-- Tutorial 2: MIDI Chorder
 
 -- define table that holds number of chord notes and their offsets
@@ -496,6 +556,10 @@ moony:bank-tutorial_part-3
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
+		moony:editorHidden false ;
+		moony:paramHidden true ;
+		moony:paramCols 3 ;
+		moony:paramRows 6 ;
 		moony:code """-- Tutorial 3: MIDI Sample & Hold
 
 local urn = HashMap('urn:moony:tutorial-3#') -- prefix of this presets URIs
@@ -583,6 +647,10 @@ moony:bank-tutorial_part-4
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
+		moony:editorHidden false ;
+		moony:paramHidden true ;
+		moony:paramCols 3 ;
+		moony:paramRows 6 ;
 		moony:code """-- Tutorial 4: MIDI Arpeggiator
 
 local schar = string.char -- local variable is more efficient to look up
@@ -665,6 +733,10 @@ moony:bank-tutorial_part-5
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
+		moony:editorHidden false ;
+		moony:paramHidden true ;
+		moony:paramCols 3 ;
+		moony:paramRows 6 ;
 		moony:code """-- Tutorial 5: MIDI Velocity Curve Interpolator
 
 local X = {0, 15, 112, 127} -- X-coordinates of curve
@@ -718,6 +790,10 @@ moony:bank-tutorial_part-6
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
+		moony:editorHidden false ;
+		moony:paramHidden true ;
+		moony:paramCols 3 ;
+		moony:paramRows 6 ;
 		moony:code """-- Tutorial 6: MIDI Sequencer
 
 local urn = HashMap('urn:moony:tutorial-6#')
@@ -811,6 +887,10 @@ moony:bank-template_part-1
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
+		moony:editorHidden false ;
+		moony:paramHidden true ;
+		moony:paramCols 3 ;
+		moony:paramRows 6 ;
 		moony:code """-- Template 1: MIDI Responder
 
 local block = false -- route unmatched messages as-is
@@ -887,6 +967,10 @@ moony:bank-template_part-2
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
+		moony:editorHidden false ;
+		moony:paramHidden true ;
+		moony:paramCols 3 ;
+		moony:paramRows 6 ;
 		moony:code """-- Template 2: Time Responder
 
 -- define a TimeResponder object
@@ -944,6 +1028,10 @@ moony:bank-template_part-3
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
+		moony:editorHidden false ;
+		moony:paramHidden true ;
+		moony:paramCols 3 ;
+		moony:paramRows 6 ;
 		moony:code """-- Template 3: OSC Responder
 
 -- define an OSCResponder object
@@ -967,6 +1055,10 @@ moony:bank-template_part-4
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
 	state:state [
+		moony:editorHidden false ;
+		moony:paramHidden true ;
+		moony:paramCols 3 ;
+		moony:paramRows 6 ;
 		moony:code """-- Template 4: State Responder
 
 -- define URI prefix for state parameters

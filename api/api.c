@@ -644,6 +644,46 @@ _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 		LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
 	(void)status; //TODO check status
 
+	int32_t i32 = atomic_load_explicit(&moony->editor_hidden, memory_order_acquire);
+	status = store(
+		state,
+		moony->uris.moony_editorHidden,
+		&i32,
+		sizeof(int32_t),
+		moony->forge.Bool,
+		LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
+	(void)status; //TODO check status
+
+	i32 = atomic_load_explicit(&moony->param_hidden, memory_order_acquire);
+	status = store(
+		state,
+		moony->uris.moony_paramHidden,
+		&i32,
+		sizeof(int32_t),
+		moony->forge.Bool,
+		LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
+	(void)status; //TODO check status
+
+	i32 = atomic_load_explicit(&moony->param_cols, memory_order_acquire);
+	status = store(
+		state,
+		moony->uris.moony_paramCols,
+		&i32,
+		sizeof(int32_t),
+		moony->forge.Int,
+		LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
+	(void)status; //TODO check status
+
+	i32 = atomic_load_explicit(&moony->param_rows, memory_order_acquire);
+	status = store(
+		state,
+		moony->uris.moony_paramRows,
+		&i32,
+		sizeof(int32_t),
+		moony->forge.Int,
+		LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
+	(void)status; //TODO check status
+
 	atom_ser_t ser = {
 		.moony = NULL,
 		.size = 1024,
@@ -762,6 +802,54 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 		micro_version = NULL;
 
 	//TODO check preset version with current plugin version for API compatibility
+
+	// get moony:editorHidden
+	const int32_t *i32 = retrieve(
+		state,
+		moony->uris.moony_editorHidden,
+		&size,
+		&type,
+		&flags2);
+	if(i32 && (size == sizeof(int32_t)) && (type == moony->forge.Bool) )
+	{
+		atomic_store_explicit(&moony->editor_hidden, *i32, memory_order_release);
+	}
+
+	// get moony:paramHidden
+	i32 = retrieve(
+		state,
+		moony->uris.moony_paramHidden,
+		&size,
+		&type,
+		&flags2);
+	if(i32 && (size == sizeof(int32_t)) && (type == moony->forge.Bool) )
+	{
+		atomic_store_explicit(&moony->param_hidden, *i32, memory_order_release);
+	}
+
+	// get moony:paramCols
+	i32 = retrieve(
+		state,
+		moony->uris.moony_paramCols,
+		&size,
+		&type,
+		&flags2);
+	if(i32 && (size == sizeof(int32_t)) && (type == moony->forge.Int) )
+	{
+		atomic_store_explicit(&moony->param_cols, *i32, memory_order_release);
+	}
+
+	// get moony:paramRows
+	i32 = retrieve(
+		state,
+		moony->uris.moony_paramRows,
+		&size,
+		&type,
+		&flags2);
+	if(i32 && (size == sizeof(int32_t)) && (type == moony->forge.Int) )
+	{
+		atomic_store_explicit(&moony->param_rows, *i32, memory_order_release);
+	}
 
 	// get code chunk
 	const char *chunk = retrieve(
@@ -1112,6 +1200,10 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->uris.moony_error = moony->map->map(moony->map->handle, MOONY_ERROR_URI);
 	moony->uris.moony_trace = moony->map->map(moony->map->handle, MOONY_TRACE_URI);
 	moony->uris.moony_state = moony->map->map(moony->map->handle, MOONY_STATE_URI);
+	moony->uris.moony_editorHidden = moony->map->map(moony->map->handle, MOONY_EDITOR_HIDDEN_URI);
+	moony->uris.moony_paramHidden = moony->map->map(moony->map->handle, MOONY_PARAM_HIDDEN_URI);
+	moony->uris.moony_paramCols = moony->map->map(moony->map->handle, MOONY_PARAM_COLS_URI);
+	moony->uris.moony_paramRows = moony->map->map(moony->map->handle, MOONY_PARAM_ROWS_URI);
 
 	moony->uris.midi_event = moony->map->map(moony->map->handle, LV2_MIDI__MidiEvent);
 
@@ -1247,6 +1339,11 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	atomic_flag_clear_explicit(&moony->lock.render, memory_order_relaxed);
 
 	moony_freeuserdata(moony);
+
+	moony->editor_hidden = ATOMIC_VAR_INIT(0);
+	moony->param_hidden = ATOMIC_VAR_INIT(1);
+	moony->param_cols = ATOMIC_VAR_INIT(3);
+	moony->param_rows = ATOMIC_VAR_INIT(6);
 
 	return 0;
 }
@@ -1870,6 +1967,30 @@ moony_pre(moony_t *moony, LV2_Atom_Sequence *notify)
 	moony->notify_ref = lv2_atom_forge_sequence_head(&moony->notify_forge, &moony->notify_frame, 0);
 }
 
+static LV2_Atom_Forge_Ref
+_patch_set(patch_t *patch, LV2_Atom_Forge *forge, LV2_URID property, uint32_t size, LV2_URID type, const void *body)
+{
+	LV2_Atom_Forge_Frame frame;
+	LV2_Atom_Forge_Ref ref = lv2_atom_forge_object(forge, &frame, 0, patch->set);
+
+	if(ref)
+		ref = lv2_atom_forge_key(forge, patch->property);
+	if(ref)
+		ref = lv2_atom_forge_urid(forge, property);
+
+	if(ref)
+		ref = lv2_atom_forge_key(forge, patch->value);
+	if(ref)
+		ref = lv2_atom_forge_atom(forge, size, type);
+	if(ref)
+		ref = lv2_atom_forge_write(forge, body, size);
+
+	if(ref)
+		lv2_atom_forge_pop(forge, &frame);
+
+	return ref;
+}
+
 bool
 moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *notify)
 {
@@ -1924,6 +2045,38 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 				{
 					moony->graph_out = 1;
 				}
+				else if(property->body == moony->uris.moony_editorHidden)
+				{
+					const int32_t i32 = atomic_load_explicit(&moony->editor_hidden, memory_order_acquire);
+					if(ref)
+						ref = lv2_atom_forge_frame_time(forge, 0); //FIXME
+					if(ref)
+						ref = _patch_set(&moony->uris.patch, forge, property->body, sizeof(int32_t), forge->Bool, &i32);
+				}
+				else if(property->body == moony->uris.moony_paramHidden)
+				{
+					const int32_t i32 = atomic_load_explicit(&moony->param_hidden, memory_order_acquire);
+					if(ref)
+						ref = lv2_atom_forge_frame_time(forge, 0); //FIXME
+					if(ref)
+						ref = _patch_set(&moony->uris.patch, forge, property->body, sizeof(int32_t), forge->Bool, &i32);
+				}
+				else if(property->body == moony->uris.moony_paramCols)
+				{
+					const int32_t i32 = atomic_load_explicit(&moony->param_cols, memory_order_acquire);
+					if(ref)
+						ref = lv2_atom_forge_frame_time(forge, 0); //FIXME
+					if(ref)
+						ref = _patch_set(&moony->uris.patch, forge, property->body, sizeof(int32_t), forge->Int, &i32);
+				}
+				else if(property->body == moony->uris.moony_paramRows)
+				{
+					const int32_t i32 = atomic_load_explicit(&moony->param_rows, memory_order_acquire);
+					if(ref)
+						ref = lv2_atom_forge_frame_time(forge, 0); //FIXME
+					if(ref)
+						ref = _patch_set(&moony->uris.patch, forge, property->body, sizeof(int32_t), forge->Int, &i32);
+				}
 			}
 			else // !property
 			{
@@ -1957,10 +2110,9 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 				continue; // subject does not match
 
 			if(  property && value
-				&& (property->atom.type == moony->forge.URID)
-				&& (value->type == moony->forge.String) )
+				&& (property->atom.type == moony->forge.URID) )
 			{
-				if(property->body == moony->uris.moony_code)
+				if( (property->body == moony->uris.moony_code) && (value->type == forge->String) )
 				{
 					// stash
 					lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_STASH);
@@ -2018,7 +2170,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 						moony->stash_size = 0;
 					}
 				}
-				else if(property->body == moony->uris.moony_selection)
+				else if( (property->body == moony->uris.moony_selection) && (value->type == forge->String) )
 				{
 					// we do not do any stash, apply and restore for selections
 
@@ -2032,6 +2184,22 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 					{
 						moony->error[0] = 0x0; // reset error flag
 					}
+				}
+				else if( (property->body == moony->uris.moony_editorHidden) && (value->type == forge->Bool) )
+				{
+					atomic_store_explicit(&moony->editor_hidden, ((const LV2_Atom_Bool *)value)->body, memory_order_release);
+				}
+				else if( (property->body == moony->uris.moony_paramHidden) && (value->type == forge->Bool) )
+				{
+					atomic_store_explicit(&moony->param_hidden, ((const LV2_Atom_Bool *)value)->body, memory_order_release);
+				}
+				else if( (property->body == moony->uris.moony_paramCols) && (value->type == forge->Int) )
+				{
+					atomic_store_explicit(&moony->param_cols, ((const LV2_Atom_Int *)value)->body, memory_order_release);
+				}
+				else if( (property->body == moony->uris.moony_paramRows) && (value->type == forge->Int) )
+				{
+					atomic_store_explicit(&moony->param_rows, ((const LV2_Atom_Int *)value)->body, memory_order_release);
 				}
 			}
 		}

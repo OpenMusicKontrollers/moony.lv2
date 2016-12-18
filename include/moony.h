@@ -80,9 +80,11 @@
 #define MOONY_TRACE_URI				MOONY_URI"#trace"
 #define MOONY_STATE_URI				MOONY_URI"#state"
 
-#define MOONY_UI_URI					MOONY_URI"#ui"
-#define MOONY_DSP_URI					MOONY_URI"#dsp"
-#define MOONY_DESTINATION_URI	MOONY_URI"#destination"
+#define MOONY_EDITOR_HIDDEN_URI	MOONY_URI"#editorHidden"
+#define MOONY_PARAM_HIDDEN_URI	MOONY_URI"#parameterHidden"
+
+#define MOONY_PARAM_COLS_URI	MOONY_URI"#parameterCols"
+#define MOONY_PARAM_ROWS_URI	MOONY_URI"#parameterRows"
 
 #define MOONY_SIMPLE_UI_URI		MOONY_URI"#ui_2_simple_1_ui"
 #define MOONY_SIMPLE_KX_URI		MOONY_URI"#ui_2_simple_2_kx"
@@ -229,6 +231,10 @@ struct _moony_t {
 		LV2_URID moony_error;
 		LV2_URID moony_trace;
 		LV2_URID moony_state;
+		LV2_URID moony_editorHidden;
+		LV2_URID moony_paramHidden;
+		LV2_URID moony_paramCols;
+		LV2_URID moony_paramRows;
 
 		LV2_URID midi_event;
 
@@ -316,6 +322,10 @@ struct _moony_t {
 
 	latom_driver_hash_t atom_driver_hash [DRIVER_HASH_MAX];
 
+	_Atomic int32_t editor_hidden;
+	_Atomic int32_t param_hidden;
+	_Atomic int32_t param_cols;
+	_Atomic int32_t param_rows;
 	char error [MOONY_MAX_ERROR_LEN];
 	char trace [MOONY_MAX_ERROR_LEN];
 	char chunk [MOONY_MAX_CHUNK_LEN];
