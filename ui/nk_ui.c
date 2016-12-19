@@ -1203,11 +1203,15 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 	{
 		nk_window_set_bounds(ctx, wbounds);
 
+		const bool has_control = nk_input_is_key_down(in, NK_KEY_CTRL);
 		bool has_enter = false;
 		if(  nk_input_is_key_pressed(in, NK_KEY_ENTER)
 			&& nk_input_is_key_down(in, NK_KEY_SHIFT) )
 		{
-			_submit_all(handle);
+			if(has_control)
+				_submit_line_or_sel(handle);
+			else
+				_submit_all(handle);
 			has_enter = true;
 		}
 
