@@ -682,8 +682,15 @@ _patch_set(plughandle_t *handle, LV2_URID property, uint32_t size, LV2_URID type
 	lv2_atom_forge_urid(forge, property);
 
 	lv2_atom_forge_key(forge, handle->patch_value);
-	lv2_atom_forge_atom(forge, size, type);
-	lv2_atom_forge_write(forge, body, size);
+	if(type == forge->String)
+	{
+		lv2_atom_forge_string(forge, body, size);
+	}
+	else // !String
+	{
+		lv2_atom_forge_atom(forge, size, type);
+		lv2_atom_forge_write(forge, body, size);
+	}
 
 	lv2_atom_forge_pop(forge, &frame);
 
