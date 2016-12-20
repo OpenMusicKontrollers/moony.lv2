@@ -1203,12 +1203,11 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 	{
 		nk_window_set_bounds(ctx, wbounds);
 
-		bool has_enter = false;
+		bool has_shift_enter = false;
 		if(  nk_input_is_key_pressed(in, NK_KEY_ENTER)
 			&& nk_input_is_key_down(in, NK_KEY_SHIFT) )
 		{
-			_submit_all(handle);
-			has_enter = true;
+			has_shift_enter = true;
 		}
 
 		nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
@@ -1234,19 +1233,15 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 				if(nk_group_begin(ctx, "Logic", NK_WINDOW_NO_SCROLLBAR))
 				{
 					const float editor_h = body_h - 1*dy - 4*group_padding.y;
-					struct nk_str *str = &handle->editor.string;
-					const int old_len = nk_str_len_char(str);
-
 					nk_layout_row_dynamic(ctx, editor_h*0.9, 1);
 					nk_flags flags = NK_EDIT_BOX;
-					if(has_enter)
+					if(has_shift_enter)
 						flags |= NK_EDIT_SIG_ENTER;
 					const nk_flags state = nk_edit_buffer(ctx, flags,
 						&handle->editor, nk_filter_default);
-
-					if(old_len != nk_str_len_char(str))
+					if(state & NK_EDIT_COMMITED)
 					{
-						handle->editor.lexer.needs_refresh = 1;
+						_submit_all(handle);
 					}
 
 					nk_layout_row_dynamic(ctx, editor_h*0.1, 1);
@@ -1508,8 +1503,10 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 								else if(prop->range == handle->forge.URID)
 								{
 									nk_layout_row_dynamic(ctx, dy*4, 1);
-									const nk_flags state = nk_edit_buffer(ctx,
-										NK_EDIT_BOX | NK_EDIT_SIG_ENTER, &prop->value.editor, nk_filter_default);
+									nk_flags flags = NK_EDIT_BOX;
+									if(has_shift_enter)
+										flags |= NK_EDIT_SIG_ENTER;
+									const nk_flags state = nk_edit_buffer(ctx, flags, &prop->value.editor, nk_filter_default);
 									if(state & NK_EDIT_COMMITED)
 									{
 										struct nk_str *str = &prop->value.editor.string;
@@ -1527,8 +1524,11 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 								else if(prop->range == handle->forge.String)
 								{
 									nk_layout_row_dynamic(ctx, dy*4, 1);
-									const nk_flags state = nk_edit_buffer(ctx,
-										NK_EDIT_BOX | NK_EDIT_SIG_ENTER, &prop->value.editor, nk_filter_default);
+									nk_flags flags = NK_EDIT_BOX;
+									if(has_shift_enter)
+										flags |= NK_EDIT_SIG_ENTER;
+									const nk_flags state = nk_edit_buffer(ctx, flags,
+										&prop->value.editor, nk_filter_default);
 									if(state & NK_EDIT_COMMITED)
 									{
 										struct nk_str *str = &prop->value.editor.string;
