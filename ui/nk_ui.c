@@ -1203,6 +1203,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 	{
 		nk_window_set_bounds(ctx, wbounds);
 
+		const bool has_control = nk_input_is_key_down(in, NK_KEY_CTRL);
 		bool has_shift_enter = false;
 		if(  nk_input_is_key_pressed(in, NK_KEY_ENTER)
 			&& nk_input_is_key_down(in, NK_KEY_SHIFT) )
@@ -1241,7 +1242,10 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						&handle->editor, nk_filter_default);
 					if(state & NK_EDIT_COMMITED)
 					{
-						_submit_all(handle);
+						if(has_control)
+							_submit_line_or_sel(handle);
+						else
+							_submit_all(handle);
 					}
 
 					nk_layout_row_dynamic(ctx, editor_h*0.1, 1);
