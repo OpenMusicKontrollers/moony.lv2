@@ -491,65 +491,65 @@ _nk_pugl_other_key(struct nk_context *ctx, const PuglEventKey *ev, int down)
 {
 	const bool control = ev->state & PUGL_MOD_CTRL;
 
-	if(control)
+	switch(ev->character)
 	{
-		const uint32_t character = ev->character + 96; //FIXME why +96?
-		switch(character)
+		case '\r':
 		{
-			case 'c':
-			{
-				nk_input_key(ctx, NK_KEY_COPY, down);
-			}	break;
-			case 'v':
-			{
-				nk_input_key(ctx, NK_KEY_PASTE, down);
-			}	break;
-			case 'x':
-			{
-				nk_input_key(ctx, NK_KEY_CUT, down);
-			}	break;
-			case 'z':
-			{
-				nk_input_key(ctx, NK_KEY_TEXT_UNDO, down);
-			}	break;
-			case 'r':
-			{
-				nk_input_key(ctx, NK_KEY_TEXT_REDO, down);
-			}	break;
-
-			default:
-			{
-				if(down && isalpha(character))
-					nk_input_char(ctx, character);
-			} break;
-		}
-	}
-	else // !control
-	{
-		switch(ev->character)
+			nk_input_key(ctx, NK_KEY_ENTER, down);
+		}	break;
+		case '\t':
 		{
-			case '\r':
-			{
-				nk_input_key(ctx, NK_KEY_ENTER, down);
-			}	break;
-			case '\t':
-			{
-				nk_input_key(ctx, NK_KEY_TAB, down);
-			}	break;
-			case PUGL_CHAR_DELETE:
-			{
-				nk_input_key(ctx, NK_KEY_DEL, down);
-			}	break;
-			case PUGL_CHAR_BACKSPACE:
-			{
-				nk_input_key(ctx, NK_KEY_BACKSPACE, down);
-			}	break;
-			case PUGL_CHAR_ESCAPE:
-			{
-				nk_input_key(ctx, NK_KEY_TEXT_RESET_MODE, down);
-			} break;
+			nk_input_key(ctx, NK_KEY_TAB, down);
+		}	break;
+		case PUGL_CHAR_DELETE:
+		{
+			nk_input_key(ctx, NK_KEY_DEL, down);
+		}	break;
+		case PUGL_CHAR_BACKSPACE:
+		{
+			nk_input_key(ctx, NK_KEY_BACKSPACE, down);
+		}	break;
+		case PUGL_CHAR_ESCAPE:
+		{
+			nk_input_key(ctx, NK_KEY_TEXT_RESET_MODE, down);
+		} break;
 
-			default:
+		default:
+		{
+			if(control)
+			{
+				const uint32_t character = ev->character + 96; //FIXME why +96?
+				switch(character)
+				{
+					case 'c':
+					{
+						nk_input_key(ctx, NK_KEY_COPY, down);
+					}	break;
+					case 'v':
+					{
+						nk_input_key(ctx, NK_KEY_PASTE, down);
+					}	break;
+					case 'x':
+					{
+						nk_input_key(ctx, NK_KEY_CUT, down);
+					}	break;
+					case 'z':
+					{
+						nk_input_key(ctx, NK_KEY_TEXT_UNDO, down);
+					}	break;
+					case 'r':
+					{
+						nk_input_key(ctx, NK_KEY_TEXT_REDO, down);
+					}	break;
+
+					default:
+					{
+						if(down && isalpha(character))
+							nk_input_char(ctx, character);
+					} break;
+				}
+			}
+			else // !control
 			{
 				switch(ev->character)
 				{
@@ -565,8 +565,8 @@ _nk_pugl_other_key(struct nk_context *ctx, const PuglEventKey *ev, int down)
 
 				if(down)
 					nk_input_glyph(ctx, (const char *)ev->utf8);
-			}	break;
-		}
+			}
+		} break;
 	}
 }
 
