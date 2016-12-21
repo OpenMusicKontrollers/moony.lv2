@@ -1206,21 +1206,57 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 		const bool has_control_down = nk_input_is_key_down(in, NK_KEY_CTRL);
 		const bool has_shift_down = nk_input_is_key_down(in, NK_KEY_SHIFT);
 		const bool has_enter_pressed = nk_input_is_key_pressed(in, NK_KEY_ENTER);
+		bool has_l_pressed = false;
+		bool has_e_pressed = false;
+		bool has_p_pressed = false;
+		if(in->keyboard.text_len == 1)
+		{
+			switch(in->keyboard.text[0])
+			{
+				case 'l':
+				{
+					has_l_pressed = true;
+					in->keyboard.text_len = 0;
+				} break;
+				case 'e':
+				{
+					has_e_pressed = true;
+					in->keyboard.text_len = 0;
+				} break;
+				case 'p':
+				{
+					has_p_pressed = true;
+					in->keyboard.text_len = 0;
+				} break;
+			}
+		}
 		const bool has_shift_enter = has_shift_down && has_enter_pressed;
 		const bool has_control_enter = has_control_down && has_enter_pressed;
+		const bool has_control_l = has_control_down && has_l_pressed;
+		const bool has_control_e = has_control_down && has_e_pressed;
+		const bool has_control_p = has_control_down && has_p_pressed;
+		bool has_commited = false;
 
 		nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
 		{
 			nk_layout_row_push(ctx, 0.6);
+			if(_tooltip_visible(ctx))
+				nk_tooltip(ctx, "Ctrl-E");
+			if(has_e_pressed)
+				handle->code_hidden = !handle->code_hidden;
 			const bool code_hidden = handle->code_hidden;
 			handle->code_hidden = !nk_select_label(ctx, "Editor", NK_TEXT_LEFT, !handle->code_hidden);
-			if(code_hidden != handle->code_hidden)
+			if( (code_hidden != handle->code_hidden) || has_e_pressed)
 				_patch_set(handle, handle->moony_editorHidden, sizeof(int32_t), handle->forge.Bool, &handle->code_hidden);
 
 			nk_layout_row_push(ctx, 0.4);
+			if(_tooltip_visible(ctx))
+				nk_tooltip(ctx, "Ctrl-P");
+			if(has_p_pressed)
+				handle->prop_hidden = !handle->prop_hidden;
 			const bool prop_hidden = handle->prop_hidden;
 			handle->prop_hidden = !nk_select_label(ctx, "Parameters", NK_TEXT_LEFT, !handle->prop_hidden);
-			if(prop_hidden != handle->prop_hidden)
+			if( (prop_hidden != handle->prop_hidden) || has_p_pressed)
 				_patch_set(handle, handle->moony_paramHidden, sizeof(int32_t), handle->forge.Bool, &handle->prop_hidden);
 		}
 
@@ -1244,6 +1280,8 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 							_submit_line_or_sel(handle);
 						else if(has_shift_down)
 							_submit_all(handle);
+
+						has_commited = true;
 					}
 
 					nk_layout_row_dynamic(ctx, editor_h*0.1, 1);
@@ -1262,18 +1300,30 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					nk_layout_row_dynamic(ctx, dy, 3);
 					if(_tooltip_visible(ctx))
 						nk_tooltip(ctx, "Shift-Enter");
+					nk_style_push_style_item(ctx, &ctx->style.button.normal, has_shift_enter && has_commited
+						? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
+						: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
 					if(nk_button_label(ctx, "Run all"))
 						_submit_all(handle);
+					nk_style_pop_style_item(ctx);
 
 					if(_tooltip_visible(ctx))
 						nk_tooltip(ctx, "Ctrl-Enter");
+					nk_style_push_style_item(ctx, &ctx->style.button.normal, has_control_enter && has_commited
+						? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
+						: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
 					if(nk_button_label(ctx, "Run line/sel."))
 						_submit_line_or_sel(handle);
+					nk_style_pop_style_item(ctx);
 
 					if(_tooltip_visible(ctx))
 						nk_tooltip(ctx, "Ctrl-L");
-					if(nk_button_label(ctx, "Clear log"))
+					nk_style_push_style_item(ctx, &ctx->style.button.normal, has_control_l
+						? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
+						: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
+					if(nk_button_label(ctx, "Clear log") || has_control_l)
 						_clear_log(handle);
+					nk_style_pop_style_item(ctx);
 
 					nk_group_end(ctx);
 				}
