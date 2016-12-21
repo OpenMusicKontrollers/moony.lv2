@@ -1575,17 +1575,26 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 								}
 								else if(prop->range == handle->forge.String)
 								{
-									nk_layout_row_dynamic(ctx, dy*4, 1);
+									bool prop_commited = false;
+									nk_layout_row_dynamic(ctx, dy*3, 1);
 									nk_flags flags = NK_EDIT_BOX;
 									if(has_shift_enter)
 										flags |= NK_EDIT_SIG_ENTER;
 									const nk_flags state = nk_edit_buffer(ctx, flags,
 										&prop->value.editor, nk_filter_default);
 									if(state & NK_EDIT_COMMITED)
+										prop_commited = true;
+
+									nk_layout_row_dynamic(ctx, dy, 1);
+									nk_style_push_style_item(ctx, &ctx->style.button.normal, prop_commited
+										? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
+										: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
+									if(nk_button_label(ctx, "Submit") || prop_commited)
 									{
 										struct nk_str *str = &prop->value.editor.string;
 										_patch_set(handle, prop->key, nk_str_len_char(str), prop->range, nk_str_get_const(str));
 									}
+									nk_style_pop_style_item(ctx);
 								}
 								else if(prop->range == handle->forge.Chunk)
 								{
