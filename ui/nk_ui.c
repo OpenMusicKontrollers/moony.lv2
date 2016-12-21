@@ -1203,13 +1203,11 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 	{
 		nk_window_set_bounds(ctx, wbounds);
 
-		const bool has_control = nk_input_is_key_down(in, NK_KEY_CTRL);
-		bool has_shift_enter = false;
-		if(  nk_input_is_key_pressed(in, NK_KEY_ENTER)
-			&& nk_input_is_key_down(in, NK_KEY_SHIFT) )
-		{
-			has_shift_enter = true;
-		}
+		const bool has_control_down = nk_input_is_key_down(in, NK_KEY_CTRL);
+		const bool has_shift_down = nk_input_is_key_down(in, NK_KEY_SHIFT);
+		const bool has_enter_pressed = nk_input_is_key_pressed(in, NK_KEY_ENTER);
+		const bool has_shift_enter = has_shift_down && has_enter_pressed;
+		const bool has_control_enter = has_control_down && has_enter_pressed;
 
 		nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
 		{
@@ -1236,15 +1234,15 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					const float editor_h = body_h - 1*dy - 4*group_padding.y;
 					nk_layout_row_dynamic(ctx, editor_h*0.9, 1);
 					nk_flags flags = NK_EDIT_BOX;
-					if(has_shift_enter)
+					if(has_shift_enter || has_control_enter)
 						flags |= NK_EDIT_SIG_ENTER;
 					const nk_flags state = nk_edit_buffer(ctx, flags,
 						&handle->editor, nk_filter_default);
 					if(state & NK_EDIT_COMMITED)
 					{
-						if(has_control)
+						if(has_control_down)
 							_submit_line_or_sel(handle);
-						else
+						else if(has_shift_down)
 							_submit_all(handle);
 					}
 
@@ -1268,7 +1266,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						_submit_all(handle);
 
 					if(_tooltip_visible(ctx))
-						nk_tooltip(ctx, "Ctrl-Shift-Enter");
+						nk_tooltip(ctx, "Ctrl-Enter");
 					if(nk_button_label(ctx, "Run line/sel."))
 						_submit_line_or_sel(handle);
 
