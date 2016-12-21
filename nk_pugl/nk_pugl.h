@@ -97,6 +97,7 @@ struct _nk_pugl_window_t {
 		void *buffer;
 		size_t size;
 	} last;
+	bool was_left;
 
 	GLuint font_tex;
 	nkglGenerateMipmap glGenerateMipmap;
@@ -300,7 +301,7 @@ _nk_pugl_render_gl2(nk_pugl_window_t *win)
 	const size_t size = win->ctx.memory.allocated;
 	const void *commands = nk_buffer_memory_const(&win->ctx.memory);
 
-	if( (size != win->last.size) || memcmp(commands, win->last.buffer, size))
+	if( (size != win->last.size) || memcmp(commands, win->last.buffer, size) )
 	{
 		// swap last buffer with current one for next comparison
 		win->last.buffer = realloc(win->last.buffer, size);
@@ -317,7 +318,7 @@ _nk_pugl_render_gl2(nk_pugl_window_t *win)
 	}
 
 	// only render if there were actually any changes
-	if(has_changes)
+	if(has_changes || win->was_left)
 #endif
 	{
 		// convert shapes into vertexes if there were changes
@@ -707,14 +708,19 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 			puglPostRedisplay(win->view);
 			break;
 		}
-		case PUGL_ENTER_NOTIFY:
-			// fall-through
 		case PUGL_LEAVE_NOTIFY:
-			// fall-through
-		case PUGL_FOCUS_IN:
 			// fall-through
 		case PUGL_FOCUS_OUT:
 		{
+			win->was_left = true;
+			puglPostRedisplay(win->view);
+			break;
+		}
+		case PUGL_ENTER_NOTIFY:
+			// fall-through
+		case PUGL_FOCUS_IN:
+		{
+			win->was_left = false;
 			puglPostRedisplay(win->view);
 			break;
 		}
