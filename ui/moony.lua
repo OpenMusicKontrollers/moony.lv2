@@ -142,6 +142,7 @@ local identifier = token(l.IDENTIFIER, l.word)
 
 -- Labels.
 local label = token(l.LABEL, '::' * l.word * '::')
+local self = token(l.LABEL, P('self'))
 
 -- Operators.
 local binops = token('binop', word_match{'and', 'or', 'not'})
@@ -155,11 +156,11 @@ M._rules = {
   {'function', func + field_func},
   {'binops', binops},
   {'library', library},
+  {'label', label + self},
   {'identifier', identifier},
   {'string', string},
   {'comment', comment},
   {'number', number},
-  {'label', label},
   {'operator', operator + braces}
 }
 
