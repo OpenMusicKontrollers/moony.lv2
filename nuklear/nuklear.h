@@ -14289,7 +14289,11 @@ nk_do_edit(nk_flags *state, struct nk_command_buffer *out,
     if (!prev_state && edit->active) {
         const enum nk_text_edit_type type = (flags & NK_EDIT_MULTILINE) ?
             NK_TEXT_EDIT_MULTI_LINE: NK_TEXT_EDIT_SINGLE_LINE;
+        const int cursor = edit->cursor;
+        const struct nk_vec2 scrollbar = edit->scrollbar;
         nk_textedit_clear_state(edit, type, filter);
+        edit->cursor = cursor;
+        edit->scrollbar = scrollbar;
         if (flags & NK_EDIT_ALWAYS_INSERT_MODE)
             edit->mode = NK_TEXT_EDIT_MODE_INSERT;
         if (flags & NK_EDIT_AUTO_SELECT)
