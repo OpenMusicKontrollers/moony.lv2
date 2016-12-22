@@ -811,7 +811,7 @@ _clear_log(plughandle_t *handle)
 }
 
 static int
-_dial_bool(struct nk_context *ctx, int32_t *val, struct nk_color color) //FIXME use color
+_dial_bool(struct nk_context *ctx, int32_t *val, struct nk_color color)
 {
 	const int32_t tmp = *val;
 	struct nk_rect bounds = nk_layout_space_bounds(ctx);
@@ -1180,6 +1180,18 @@ _tooltip_visible(struct nk_context *ctx)
 }
 
 static void
+_select_draw_end(struct nk_command_buffer *canv, nk_handle userdata)
+{
+	struct nk_context *ctx = userdata.ptr;
+	struct nk_rect bounds = nk_layout_space_bounds(ctx);
+
+	const float x0 = bounds.x;
+	const float x1 = bounds.x + bounds.w;
+	const float y = bounds.y + bounds.h;
+	nk_stroke_line(canv, x0, y, x1, y, ctx->style.button.border*2, ctx->style.button.border_color);
+}
+
+static void
 _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 {
 	plughandle_t *handle = data;
@@ -1221,13 +1233,24 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 
 		nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
 		{
+			ctx->style.selectable.normal = nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]);
+			ctx->style.selectable.hover = nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_HOVER]);
+			ctx->style.selectable.pressed = nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE]);
+
+			ctx->style.selectable.normal_active = nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE]);
+			ctx->style.selectable.hover_active = nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_HOVER]);
+			ctx->style.selectable.pressed_active = nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE]);
+
+			ctx->style.selectable.userdata = nk_handle_ptr(ctx);
+			ctx->style.selectable.draw_end = _select_draw_end;
+
 			nk_layout_row_push(ctx, 0.6);
 			if(_tooltip_visible(ctx))
 				nk_tooltip(ctx, "Ctrl-E");
 			if(has_control_e)
 				handle->code_hidden = !handle->code_hidden;
 			const bool code_hidden = handle->code_hidden;
-			handle->code_hidden = !nk_select_label(ctx, "Editor", NK_TEXT_LEFT, !handle->code_hidden);
+			handle->code_hidden = !nk_select_label(ctx, "- Editor -", NK_TEXT_CENTERED, !handle->code_hidden);
 			if( (code_hidden != handle->code_hidden) || has_control_e)
 				_patch_set(handle, handle->moony_editorHidden, sizeof(int32_t), handle->forge.Bool, &handle->code_hidden);
 
@@ -1237,7 +1260,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 			if(has_control_p)
 				handle->prop_hidden = !handle->prop_hidden;
 			const bool prop_hidden = handle->prop_hidden;
-			handle->prop_hidden = !nk_select_label(ctx, "Parameters", NK_TEXT_LEFT, !handle->prop_hidden);
+			handle->prop_hidden = !nk_select_label(ctx, "- Parameters -", NK_TEXT_CENTERED, !handle->prop_hidden);
 			if( (prop_hidden != handle->prop_hidden) || has_control_p)
 				_patch_set(handle, handle->moony_paramHidden, sizeof(int32_t), handle->forge.Bool, &handle->prop_hidden);
 		}
