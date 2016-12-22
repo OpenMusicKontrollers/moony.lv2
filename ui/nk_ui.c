@@ -2041,8 +2041,22 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 					{
 						if(value->size <= MOONY_MAX_CHUNK_LEN)
 						{
-							handle->traces = realloc(handle->traces, (handle->n_trace + 1)*sizeof(char *));
-							handle->traces[handle->n_trace++] = strdup(body);
+							char *trace = strdup(body);
+							if(trace)
+							{
+								handle->traces = realloc(handle->traces, (handle->n_trace + 1)*sizeof(char *));
+								handle->traces[handle->n_trace++] = trace;
+
+								// replace tab with 1 space
+								const char *end = trace + value->size - 1;
+								const char *from = trace;
+								for(char *to = strchr(from, '\t');
+									to && (to < end);
+									from = to + 1, to = strchr(from, '\t'))
+								{
+									*to = ' ';
+								}
+							}
 
 							nk_pugl_post_redisplay(&handle->win);
 						}
