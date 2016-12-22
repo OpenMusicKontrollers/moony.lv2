@@ -1206,35 +1206,17 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 		const bool has_control_down = nk_input_is_key_down(in, NK_KEY_CTRL);
 		const bool has_shift_down = nk_input_is_key_down(in, NK_KEY_SHIFT);
 		const bool has_enter_pressed = nk_input_is_key_pressed(in, NK_KEY_ENTER);
-		bool has_l_pressed = false;
-		bool has_e_pressed = false;
-		bool has_p_pressed = false;
-		if(in->keyboard.text_len == 1)
+		char control_letter = 0;
+		if(has_control_down && (in->keyboard.text_len == 1) )
 		{
-			switch(in->keyboard.text[0])
-			{
-				case 'l':
-				{
-					has_l_pressed = true;
-					in->keyboard.text_len = 0;
-				} break;
-				case 'e':
-				{
-					has_e_pressed = true;
-					in->keyboard.text_len = 0;
-				} break;
-				case 'p':
-				{
-					has_p_pressed = true;
-					in->keyboard.text_len = 0;
-				} break;
-			}
+			control_letter = in->keyboard.text[0];
+			in->keyboard.text_len = 0;
 		}
 		const bool has_shift_enter = has_shift_down && has_enter_pressed;
 		const bool has_control_enter = has_control_down && has_enter_pressed;
-		const bool has_control_l = has_control_down && has_l_pressed;
-		const bool has_control_e = has_control_down && has_e_pressed;
-		const bool has_control_p = has_control_down && has_p_pressed;
+		const bool has_control_l = control_letter == 'l';
+		const bool has_control_e = control_letter == 'e';
+		const bool has_control_p = control_letter == 'p';
 		bool has_commited = false;
 
 		nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
@@ -1242,21 +1224,21 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 			nk_layout_row_push(ctx, 0.6);
 			if(_tooltip_visible(ctx))
 				nk_tooltip(ctx, "Ctrl-E");
-			if(has_e_pressed)
+			if(has_control_e)
 				handle->code_hidden = !handle->code_hidden;
 			const bool code_hidden = handle->code_hidden;
 			handle->code_hidden = !nk_select_label(ctx, "Editor", NK_TEXT_LEFT, !handle->code_hidden);
-			if( (code_hidden != handle->code_hidden) || has_e_pressed)
+			if( (code_hidden != handle->code_hidden) || has_control_e)
 				_patch_set(handle, handle->moony_editorHidden, sizeof(int32_t), handle->forge.Bool, &handle->code_hidden);
 
 			nk_layout_row_push(ctx, 0.4);
 			if(_tooltip_visible(ctx))
 				nk_tooltip(ctx, "Ctrl-P");
-			if(has_p_pressed)
+			if(has_control_p)
 				handle->prop_hidden = !handle->prop_hidden;
 			const bool prop_hidden = handle->prop_hidden;
 			handle->prop_hidden = !nk_select_label(ctx, "Parameters", NK_TEXT_LEFT, !handle->prop_hidden);
-			if( (prop_hidden != handle->prop_hidden) || has_p_pressed)
+			if( (prop_hidden != handle->prop_hidden) || has_control_p)
 				_patch_set(handle, handle->moony_paramHidden, sizeof(int32_t), handle->forge.Bool, &handle->prop_hidden);
 		}
 
