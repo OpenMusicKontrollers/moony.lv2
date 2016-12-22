@@ -1272,8 +1272,18 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 				nk_layout_row_push(ctx, handle->prop_hidden ? 1.0 : 0.6);
 				if(nk_group_begin(ctx, "Logic", NK_WINDOW_NO_SCROLLBAR))
 				{
+					const struct nk_style *style = &ctx->style;
 					const float editor_h = body_h - 1*dy - 4*group_padding.y;
-					nk_layout_row_dynamic(ctx, editor_h*0.9, 1);
+					const float text_width = style->font->width(style->font->userdata,
+						style->font->height, "     ", 5); //TODO calculate only once?
+
+					const float ratio [2] = {text_width, nk_window_get_content_region_size(ctx).x - 3*group_padding.x - text_width};
+					nk_layout_row(ctx, NK_STATIC, editor_h*0.9, 2, ratio);
+
+					// reserve space for line numbers
+					struct nk_rect line_number_bounds = nk_layout_space_bounds(ctx);
+					const enum nk_widget_layout_states line_number_states = nk_widget(&line_number_bounds, ctx);
+
 					nk_flags flags = NK_EDIT_BOX;
 					if(has_shift_enter || has_control_enter)
 						flags |= NK_EDIT_SIG_ENTER;
@@ -1287,6 +1297,40 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 							_submit_all(handle);
 
 						has_commited = true;
+					}
+
+					// actually draw line numbers (after editor window)
+					if(line_number_states != NK_WIDGET_INVALID)
+					{
+						const float y0 = line_number_bounds.y + style->edit.padding.y + style->edit.border - handle->editor.scrollbar.y;
+						struct nk_command_buffer *canv = nk_window_get_canvas(ctx);
+
+						struct nk_rect old_clip = canv->clip;
+						nk_push_scissor(canv, line_number_bounds);
+						for(int i = 0; ; i++)
+						{
+							struct nk_rect bb = line_number_bounds;
+							bb.h = style->font->height + style->edit.row_padding;
+							bb.y = y0 + bb.h * i;
+
+							if(bb.y + bb.h < line_number_bounds.y)
+								continue; // skip, not visible
+							else if(bb.y > line_number_bounds.y + line_number_bounds.h)
+								break; // break out of loop, rest not visible
+
+							struct nk_window *win = ctx->current;
+							struct nk_vec2 item_padding = style->text.padding;
+							struct nk_text text;
+							text.padding.x = item_padding.x;
+							text.padding.y = item_padding.y;
+							text.background = style->window.background;
+							text.text = style->text.color;
+
+							char tmp [16];
+							snprintf(tmp, 16, "%i", i + 1);
+							nk_widget_text(&win->buffer, bb, tmp, strlen(tmp), &text, NK_TEXT_RIGHT, style->font);
+						}
+						nk_push_scissor(canv, old_clip);
 					}
 
 					nk_layout_row_dynamic(ctx, editor_h*0.1, 1);
