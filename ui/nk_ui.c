@@ -2083,7 +2083,7 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 					}
 					else if(property->body == handle->moony_trace)
 					{
-						if(value->size <= MOONY_MAX_CHUNK_LEN)
+						if(value->size <= MOONY_MAX_TRACE_LEN)
 						{
 							char *trace = strdup(body);
 							if(trace)
@@ -2107,12 +2107,15 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 					}
 					else if(property->body == handle->moony_error)
 					{
-						if(value->size <= MOONY_MAX_CHUNK_LEN)
+						if(value->size <= MOONY_MAX_ERROR_LEN)
 						{
-							strncpy(handle->error, body, value->size);
-							handle->error_sz = value->size - 1;
+							if(handle->error[0] == 0) // do not overwrite previously received error message
+							{
+								strncpy(handle->error, body, value->size);
+								handle->error_sz = value->size - 1;
 
-							nk_pugl_post_redisplay(&handle->win);
+								nk_pugl_post_redisplay(&handle->win);
+							}
 						}
 					}
 					else if(property->body == handle->moony_editorHidden)

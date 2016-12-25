@@ -354,7 +354,7 @@ _log(lua_State *L)
 			*end++ = '\n'; // append to
 			*end = '\0';
 		}
-		const size_t remaining = MOONY_MAX_ERROR_LEN - (end - moony->trace);
+		const size_t remaining = MOONY_MAX_TRACE_LEN - (end - moony->trace);
 		snprintf(end, remaining, "%s", res);
 		moony->trace_out = 1; // set flag
 	}
@@ -2114,6 +2114,8 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 			{
 				if( (property->body == moony->uris.moony_code) && (value->type == forge->String) )
 				{
+					moony->error[0] = 0x0; // reset error flag
+
 					// stash
 					lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_STASH);
 					if(lua_pcall(L, 0, 0, 0))
@@ -2134,7 +2136,6 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 						else // succeeded loading chunk
 						{
 							strncpy(moony->chunk, str, value->size);
-							moony->error[0] = 0x0; // reset error flag
 
 							if(moony->state_atom)
 							{
@@ -2250,7 +2251,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 
 	if(moony->dirty_out)
 	{
-		uint32_t len = strlen(moony->chunk);
+		const uint32_t len = strlen(moony->chunk);
 		if(ref)
 			ref = lv2_atom_forge_frame_time(forge, 0);
 		if(ref)
@@ -2261,7 +2262,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 
 	if(moony->error_out)
 	{
-		uint32_t len = strlen(moony->error);
+		const uint32_t len = strlen(moony->error);
 		if(ref)
 			ref = lv2_atom_forge_frame_time(forge, 0);
 		if(ref)

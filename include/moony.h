@@ -71,6 +71,7 @@
 
 #define MOONY_MAX_CHUNK_LEN		0x20000 // 128KB
 #define MOONY_MAX_ERROR_LEN		0x800 // 2KB
+#define MOONY_MAX_TRACE_LEN		0x800 // 2KB
 
 #define MOONY_URI							"http://open-music-kontrollers.ch/lv2/moony"
 
@@ -327,7 +328,7 @@ struct _moony_t {
 	_Atomic int32_t param_cols;
 	_Atomic int32_t param_rows;
 	char error [MOONY_MAX_ERROR_LEN];
-	char trace [MOONY_MAX_ERROR_LEN];
+	char trace [MOONY_MAX_TRACE_LEN];
 	char chunk [MOONY_MAX_CHUNK_LEN];
 };
 
