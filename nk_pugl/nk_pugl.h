@@ -769,7 +769,7 @@ nk_pugl_init(nk_pugl_window_t *win)
 		// init nuklear font
 		struct nk_font *ttf = NULL;
 		struct nk_font_config fcfg = nk_font_config(cfg->font.size);
-		const nk_rune range [] = {
+		static const nk_rune range [] = {
 			0x0020, 0x007F, // Basic Latin
 			0x00A0, 0x00FF, // Latin-1 Supplement
 			0x0100, 0x017F, // Latin Extended-A
