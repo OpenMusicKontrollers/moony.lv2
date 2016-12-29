@@ -1278,7 +1278,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						style->font->height, "     ", 5); //TODO calculate only once?
 
 					const float ratio [2] = {text_width, nk_window_get_content_region_size(ctx).x - 3*group_padding.x - text_width};
-					nk_layout_row(ctx, NK_STATIC, editor_h*0.9, 2, ratio);
+					nk_layout_row(ctx, NK_STATIC, editor_h*0.85, 2, ratio);
 
 					// reserve space for line numbers
 					struct nk_rect line_number_bounds = nk_layout_space_bounds(ctx);
@@ -1333,14 +1333,15 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						nk_push_scissor(canv, old_clip);
 					}
 
-					nk_layout_row_dynamic(ctx, editor_h*0.1, 1);
+					nk_layout_row_dynamic(ctx, editor_h*0.15, 1);
 					struct nk_list_view lview;
-					if(nk_list_view_begin(ctx, &lview, "Traces", NK_WINDOW_BORDER, dy, handle->n_trace))
+					const float dh = style->font->height + style->edit.row_padding;
+					if(nk_list_view_begin(ctx, &lview, "Traces", NK_WINDOW_BORDER, dh, handle->n_trace))
 					{
-						nk_layout_row_dynamic(ctx, dy, 1);
+						nk_layout_row_dynamic(ctx, dh, 1);
 						for(int l = lview.begin; (l < lview.end) && (l < handle->n_trace); l++)
 						{
-							nk_labelf(ctx, NK_TEXT_LEFT, "%i: %s", l + 1, handle->traces[l]);
+							nk_labelf(ctx, NK_TEXT_LEFT, "%4i %s", l + 1, handle->traces[l]);
 						}
 
 						nk_list_view_end(&lview);
