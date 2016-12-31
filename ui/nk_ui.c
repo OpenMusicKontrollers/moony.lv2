@@ -147,6 +147,7 @@ struct _plughandle_t {
 	LV2_URID patch_self;
 	LV2_URID patch_Get;
 	LV2_URID patch_Set;
+	LV2_URID patch_Put;
 	LV2_URID patch_Patch;
 	LV2_URID patch_writable;
 	LV2_URID patch_readable;
@@ -154,6 +155,7 @@ struct _plughandle_t {
 	LV2_URID patch_remove;
 	LV2_URID patch_wildcard;
 	LV2_URID patch_property;
+	LV2_URID patch_body;
 	LV2_URID patch_value;
 	LV2_URID patch_subject;
 	LV2_URID moony_code;
@@ -1826,6 +1828,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	handle->patch_self = handle->map->map(handle->map->handle, plugin_uri);
 	handle->patch_Get = handle->map->map(handle->map->handle, LV2_PATCH__Get);
 	handle->patch_Set = handle->map->map(handle->map->handle, LV2_PATCH__Set);
+	handle->patch_Put = handle->map->map(handle->map->handle, LV2_PATCH__Put);
 	handle->patch_Patch = handle->map->map(handle->map->handle, LV2_PATCH__Patch);
 	handle->patch_writable = handle->map->map(handle->map->handle, LV2_PATCH__writable);
 	handle->patch_readable = handle->map->map(handle->map->handle, LV2_PATCH__readable);
@@ -1833,6 +1836,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	handle->patch_remove = handle->map->map(handle->map->handle, LV2_PATCH__remove);
 	handle->patch_wildcard = handle->map->map(handle->map->handle, LV2_PATCH__wildcard);
 	handle->patch_property = handle->map->map(handle->map->handle, LV2_PATCH__property);
+	handle->patch_body = handle->map->map(handle->map->handle, LV2_PATCH__body);
 	handle->patch_value = handle->map->map(handle->map->handle, LV2_PATCH__value);
 	handle->patch_subject = handle->map->map(handle->map->handle, LV2_PATCH__subject);
 	handle->moony_code = handle->map->map(handle->map->handle, MOONY_CODE_URI);
@@ -2032,6 +2036,317 @@ cleanup(LV2UI_Handle instance)
 }
 
 static void
+_patch_set_parameter_value(plughandle_t *handle, LV2_URID property,
+	const LV2_Atom *value)
+{
+	const char *body = LV2_ATOM_BODY_CONST(value);
+
+	prop_t *prop = _prop_get(&handle->readables, &handle->n_readable, property);
+	if(!prop)
+		prop = _prop_get(&handle->writables, &handle->n_writable, property);
+	if(prop && (prop->range == value->type) )
+	{
+		if(prop->range == handle->forge.Int)
+		{
+			prop->value.i = ((const LV2_Atom_Int *)value)->body;
+		}
+		else if(prop->range == handle->forge.Long)
+		{
+			prop->value.h = ((const LV2_Atom_Long *)value)->body;
+		}
+		else if(prop->range == handle->forge.Float)
+		{
+			prop->value.f = ((const LV2_Atom_Float *)value)->body;
+		}
+		else if(prop->range == handle->forge.Double)
+		{
+			prop->value.d = ((const LV2_Atom_Double *)value)->body;
+		}
+		else if(prop->range == handle->forge.Bool)
+		{
+			prop->value.i = ((const LV2_Atom_Bool *)value)->body;
+		}
+		else if(prop->range == handle->forge.URID)
+		{
+			const LV2_URID urid = ((const LV2_Atom_URID *)value)->body;
+			const char *uri = handle->unmap->unmap(handle->unmap->handle, urid);
+
+			struct nk_str *str = &prop->value.editor.string;
+			nk_str_clear(str);
+			nk_str_append_text_utf8(str, uri, strlen(uri));
+		}
+		else if(prop->range == handle->forge.String)
+		{
+			struct nk_str *str = &prop->value.editor.string;
+			nk_str_clear(str);
+			nk_str_append_text_utf8(str, LV2_ATOM_BODY_CONST(value), value->size - 1);
+		}
+		else if(prop->range == handle->forge.Chunk)
+		{
+			prop->value.u = value->size; // store only chunk size
+		}
+		else
+		{
+			//FIXME
+		}
+
+		nk_pugl_post_redisplay(&handle->win);
+	}
+}
+
+static void
+_patch_set_parameter_property(plughandle_t *handle, LV2_URID subject, LV2_URID property,
+	const LV2_Atom *value)
+{
+	const char *body = LV2_ATOM_BODY_CONST(value);
+
+	prop_t *prop = _prop_get(&handle->readables, &handle->n_readable, subject);
+	if(!prop)
+		prop = _prop_get(&handle->writables, &handle->n_writable, subject);
+	if(prop)
+	{
+		if(  (property == handle->rdfs_range)
+			&& (value->type == handle->forge.URID) )
+		{
+			const LV2_Atom_URID *range = (const LV2_Atom_URID *)value;
+
+			prop->range = range->body;
+
+			if( (prop->range == handle->forge.String)
+				|| (prop->range == handle->forge.URID) )
+			{
+				nk_textedit_init_default(&prop->value.editor);
+			}
+
+			_patch_get(handle, subject); // rdfs:range is mandatory, so will always be sent
+		}
+		else if( (property == handle->rdfs_label)
+			&& (value->type == handle->forge.String) )
+		{
+			prop->label = strdup(LV2_ATOM_BODY_CONST(value));
+		}
+		else if( (property == handle->rdfs_comment)
+			&& (value->type == handle->forge.String) )
+		{
+			prop->comment= strdup(LV2_ATOM_BODY_CONST(value));
+		}
+		else if( (property == handle->units_symbol)
+			&& (value->type == handle->forge.String) )
+		{
+			prop->unit= strdup(LV2_ATOM_BODY_CONST(value));
+		}
+		else if( (property == handle->units_unit)
+			&& (value->type == handle->forge.URID) )
+		{
+			const LV2_Atom_URID *unit = (const LV2_Atom_URID *)value;
+
+			//TODO use binary lookup
+			if(unit->body == handle->units_bar)
+				prop->unit = strdup("bars");
+			else if(unit->body == handle->units_beat)
+				prop->unit = strdup("beats");
+			else if(unit->body == handle->units_bpm)
+				prop->unit = strdup("BPM");
+			else if(unit->body == handle->units_cent)
+				prop->unit = strdup("ct");
+			else if(unit->body == handle->units_cm)
+				prop->unit = strdup("cm");
+			else if(unit->body == handle->units_db)
+				prop->unit = strdup("dB");
+			else if(unit->body == handle->units_degree)
+				prop->unit = strdup("deg");
+			else if(unit->body == handle->units_frame)
+				prop->unit = strdup("frames");
+			else if(unit->body == handle->units_hz)
+				prop->unit = strdup("Hz");
+			else if(unit->body == handle->units_inch)
+				prop->unit = strdup("in");
+			else if(unit->body == handle->units_khz)
+				prop->unit = strdup("kHz");
+			else if(unit->body == handle->units_km)
+				prop->unit = strdup("km");
+			else if(unit->body == handle->units_m)
+				prop->unit = strdup("m");
+			else if(unit->body == handle->units_mhz)
+				prop->unit = strdup("MHz");
+			else if(unit->body == handle->units_midiNote)
+				prop->unit = strdup("note");
+			else if(unit->body == handle->units_mile)
+				prop->unit = strdup("mi");
+			else if(unit->body == handle->units_min)
+				prop->unit = strdup("min");
+			else if(unit->body == handle->units_mm)
+				prop->unit = strdup("mm");
+			else if(unit->body == handle->units_ms)
+				prop->unit = strdup("ms");
+			else if(unit->body == handle->units_oct)
+				prop->unit = strdup("oct");
+			else if(unit->body == handle->units_pc)
+				prop->unit = strdup("%");
+			else if(unit->body == handle->units_s)
+				prop->unit = strdup("s");
+			else if(unit->body == handle->units_semitone12TET)
+				prop->unit = strdup("semi");
+		}
+		else if( (property == handle->canvas_Style)
+			&& (value->type == handle->forge.Long) )
+		{
+			const LV2_Atom_Long *style = (const LV2_Atom_Long *)value;
+
+			prop->color = nk_rgba(
+				(style->body >> 24) & 0xff,
+				(style->body >> 16) & 0xff,
+				(style->body >>  8) & 0xff,
+				(style->body >>  0) & 0xff);
+		}
+		else if( (property == handle->lv2_minimum)
+			&& (!prop->range || (prop->range == value->type)) )
+		{
+			if(value->type == handle->forge.Int)
+				prop->minimum.i = ((const LV2_Atom_Int *)(value))->body;
+			else if(value->type == handle->forge.Long)
+				prop->minimum.h = ((const LV2_Atom_Long *)(value))->body;
+			else if(value->type == handle->forge.Float)
+				prop->minimum.f = ((const LV2_Atom_Float *)(value))->body;
+			else if(value->type == handle->forge.Double)
+				prop->minimum.d = ((const LV2_Atom_Double *)(value))->body;
+			//FIXME handle more types?
+		}
+		else if( (property == handle->lv2_maximum)
+			&& (!prop->range || (prop->range == value->type)) )
+		{
+			if(value->type == handle->forge.Int)
+				prop->maximum.i = ((const LV2_Atom_Int *)(value))->body;
+			else if(value->type == handle->forge.Long)
+				prop->maximum.h = ((const LV2_Atom_Long *)(value))->body;
+			else if(value->type == handle->forge.Float)
+				prop->maximum.f = ((const LV2_Atom_Float *)(value))->body;
+			else if(value->type == handle->forge.Double)
+				prop->maximum.d = ((const LV2_Atom_Double *)(value))->body;
+			//FIXME handle more types?
+		}
+		else if( (property == handle->lv2_scalePoint)
+			&& (value->type == handle->forge.Tuple) )
+		{
+			const LV2_Atom_Tuple *points = (const LV2_Atom_Tuple *)value;
+
+			const uint32_t sz = lv2_atom_total_size(&points->atom);
+			prop->points = malloc(sz);
+			if(prop->points)
+				memcpy(prop->points, points, sz);
+		}
+	}
+}
+
+static void
+_patch_set_self(plughandle_t *handle, LV2_URID property, const LV2_Atom *value)
+{
+	const char *body = LV2_ATOM_BODY_CONST(value);
+
+	if(property == handle->moony_code)
+	{
+		if(value->size <= MOONY_MAX_CHUNK_LEN)
+		{
+			struct nk_str *str = &handle->editor.string;
+			nk_str_clear(str);
+
+			// replace tab with 2 spaces
+			const char *end = body + value->size - 1;
+			const char *from = body;
+			for(const char *to = strchr(from, '\t');
+				to && (to < end);
+				from = to + 1, to = strchr(from, '\t'))
+			{
+				nk_str_append_text_utf8(str, from, to-from);
+				nk_str_append_text_utf8(str, "  ", 2);
+			}
+			nk_str_append_text_utf8(str, from, end-from);
+
+			handle->editor.lexer.needs_refresh = 1;
+
+			nk_pugl_post_redisplay(&handle->win);
+		}
+	}
+	else if(property == handle->moony_trace)
+	{
+		if(value->size <= MOONY_MAX_TRACE_LEN)
+		{
+			char *trace = strdup(body);
+			if(trace)
+			{
+				handle->traces = realloc(handle->traces, (handle->n_trace + 1)*sizeof(char *));
+				handle->traces[handle->n_trace++] = trace;
+
+				// replace tab with 1 space
+				const char *end = trace + value->size - 1;
+				const char *from = trace;
+				for(char *to = strchr(from, '\t');
+					to && (to < end);
+					from = to + 1, to = strchr(from, '\t'))
+				{
+					*to = ' ';
+				}
+			}
+
+			nk_pugl_post_redisplay(&handle->win);
+		}
+	}
+	else if(property == handle->moony_error)
+	{
+		if(value->size <= MOONY_MAX_ERROR_LEN)
+		{
+			if(handle->error[0] == 0) // do not overwrite previously received error message
+			{
+				strncpy(handle->error, body, value->size);
+				handle->error_sz = value->size - 1;
+
+				nk_pugl_post_redisplay(&handle->win);
+			}
+		}
+	}
+	else if(property == handle->moony_editorHidden)
+	{
+		if(value->type == handle->forge.Bool)
+		{
+			handle->code_hidden = ((const LV2_Atom_Bool *)value)->body;
+
+			nk_pugl_post_redisplay(&handle->win);
+		}
+	}
+	else if(property == handle->moony_paramHidden)
+	{
+		if(value->type == handle->forge.Bool)
+		{
+			handle->prop_hidden = ((const LV2_Atom_Bool *)value)->body;
+
+			nk_pugl_post_redisplay(&handle->win);
+		}
+	}
+	else if(property == handle->moony_paramCols)
+	{
+		if(value->type == handle->forge.Int)
+		{
+			handle->col_divider = ((const LV2_Atom_Int *)value)->body;
+
+			nk_pugl_post_redisplay(&handle->win);
+		}
+	}
+	else if(property == handle->moony_paramRows)
+	{
+		if(value->type == handle->forge.Int)
+		{
+			handle->row_divider = ((const LV2_Atom_Int *)value)->body;
+
+			nk_pugl_post_redisplay(&handle->win);
+		}
+	}
+	else
+	{
+		_patch_set_parameter_value(handle, property, value);
+	}
+}
+
+static void
 port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 	uint32_t protocol, const void *buf)
 {
@@ -2045,168 +2360,55 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 		{
 			if(obj->body.otype == handle->patch_Set)
 			{
+				const LV2_Atom_URID *subj = NULL;
 				const LV2_Atom_URID *property = NULL;
 				const LV2_Atom *value = NULL;
 
 				lv2_atom_object_get(obj,
+					handle->patch_subject, &subj,
 					handle->patch_property, &property,
 					handle->patch_value, &value,
 					0);
 
 				if(  property && (property->atom.type == handle->forge.URID)
+					&& (!subj || (subj->atom.type == handle->forge.URID))
 					&& value)
 				{
-					const char *body = LV2_ATOM_BODY_CONST(value);
-
-					if(property->body == handle->moony_code)
+					if(!subj || (subj->body == handle->patch_self) ) // destined for plugin
 					{
-						if(value->size <= MOONY_MAX_CHUNK_LEN)
+						_patch_set_self(handle, property->body, value);
+					}
+					else // destined for parameter
+					{
+						_patch_set_parameter_property(handle, subj->body, property->body, value);
+					}
+				}
+			}
+			else if(obj->body.otype == handle->patch_Put)
+			{
+				const LV2_Atom_URID *subj = NULL;
+				const LV2_Atom_Object *body= NULL;
+
+				lv2_atom_object_get(obj,
+					handle->patch_subject, &subj,
+					handle->patch_body, &body,
+					0);
+
+				if(  (!subj || (subj->atom.type == handle->forge.URID))
+					&& body && lv2_atom_forge_is_object_type(&handle->forge, body->atom.type) )
+				{
+					if(!subj || (subj->body == handle->patch_self) ) // destined for plugin
+					{
+						LV2_ATOM_OBJECT_FOREACH(body, pro)
 						{
-							struct nk_str *str = &handle->editor.string;
-							nk_str_clear(str);
-
-							// replace tab with 2 spaces
-							const char *end = body + value->size - 1;
-							const char *from = body;
-							for(const char *to = strchr(from, '\t');
-								to && (to < end);
-								from = to + 1, to = strchr(from, '\t'))
-							{
-								nk_str_append_text_utf8(str, from, to-from);
-								nk_str_append_text_utf8(str, "  ", 2);
-							}
-							nk_str_append_text_utf8(str, from, end-from);
-
-							handle->editor.lexer.needs_refresh = 1;
-
-							nk_pugl_post_redisplay(&handle->win);
+							_patch_set_self(handle, pro->key, &pro->value);
 						}
 					}
-					else if(property->body == handle->moony_trace)
+					else // destined for parameter
 					{
-						if(value->size <= MOONY_MAX_TRACE_LEN)
+						LV2_ATOM_OBJECT_FOREACH(body, pro)
 						{
-							char *trace = strdup(body);
-							if(trace)
-							{
-								handle->traces = realloc(handle->traces, (handle->n_trace + 1)*sizeof(char *));
-								handle->traces[handle->n_trace++] = trace;
-
-								// replace tab with 1 space
-								const char *end = trace + value->size - 1;
-								const char *from = trace;
-								for(char *to = strchr(from, '\t');
-									to && (to < end);
-									from = to + 1, to = strchr(from, '\t'))
-								{
-									*to = ' ';
-								}
-							}
-
-							nk_pugl_post_redisplay(&handle->win);
-						}
-					}
-					else if(property->body == handle->moony_error)
-					{
-						if(value->size <= MOONY_MAX_ERROR_LEN)
-						{
-							if(handle->error[0] == 0) // do not overwrite previously received error message
-							{
-								strncpy(handle->error, body, value->size);
-								handle->error_sz = value->size - 1;
-
-								nk_pugl_post_redisplay(&handle->win);
-							}
-						}
-					}
-					else if(property->body == handle->moony_editorHidden)
-					{
-						if(value->type == handle->forge.Bool)
-						{
-							handle->code_hidden = ((const LV2_Atom_Bool *)value)->body;
-
-							nk_pugl_post_redisplay(&handle->win);
-						}
-					}
-					else if(property->body == handle->moony_paramHidden)
-					{
-						if(value->type == handle->forge.Bool)
-						{
-							handle->prop_hidden = ((const LV2_Atom_Bool *)value)->body;
-
-							nk_pugl_post_redisplay(&handle->win);
-						}
-					}
-					else if(property->body == handle->moony_paramCols)
-					{
-						if(value->type == handle->forge.Int)
-						{
-							handle->col_divider = ((const LV2_Atom_Int *)value)->body;
-
-							nk_pugl_post_redisplay(&handle->win);
-						}
-					}
-					else if(property->body == handle->moony_paramRows)
-					{
-						if(value->type == handle->forge.Int)
-						{
-							handle->row_divider = ((const LV2_Atom_Int *)value)->body;
-
-							nk_pugl_post_redisplay(&handle->win);
-						}
-					}
-					else
-					{
-						prop_t *prop = _prop_get(&handle->readables, &handle->n_readable, property->body);
-						if(!prop)
-							prop = _prop_get(&handle->writables, &handle->n_writable, property->body);
-						if(prop && (prop->range == value->type) )
-						{
-							if(prop->range == handle->forge.Int)
-							{
-								prop->value.i = ((const LV2_Atom_Int *)value)->body;
-							}
-							else if(prop->range == handle->forge.Long)
-							{
-								prop->value.h = ((const LV2_Atom_Long *)value)->body;
-							}
-							else if(prop->range == handle->forge.Float)
-							{
-								prop->value.f = ((const LV2_Atom_Float *)value)->body;
-							}
-							else if(prop->range == handle->forge.Double)
-							{
-								prop->value.d = ((const LV2_Atom_Double *)value)->body;
-							}
-							else if(prop->range == handle->forge.Bool)
-							{
-								prop->value.i = ((const LV2_Atom_Bool *)value)->body;
-							}
-							else if(prop->range == handle->forge.URID)
-							{
-								const LV2_URID urid = ((const LV2_Atom_URID *)value)->body;
-								const char *uri = handle->unmap->unmap(handle->unmap->handle, urid);
-
-								struct nk_str *str = &prop->value.editor.string;
-								nk_str_clear(str);
-								nk_str_append_text_utf8(str, uri, strlen(uri));
-							}
-							else if(prop->range == handle->forge.String)
-							{
-								struct nk_str *str = &prop->value.editor.string;
-								nk_str_clear(str);
-								nk_str_append_text_utf8(str, LV2_ATOM_BODY_CONST(value), value->size - 1);
-							}
-							else if(prop->range == handle->forge.Chunk)
-							{
-								prop->value.u = value->size; // store only chunk size
-							}
-							else
-							{
-								//FIXME
-							}
-
-							nk_pugl_post_redisplay(&handle->win);
+							_patch_set_parameter_property(handle, subj->body, pro->key, &pro->value);
 						}
 					}
 				}
@@ -2223,7 +2425,8 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 					handle->patch_remove, &rem,
 					0);
 
-				if(  add && lv2_atom_forge_is_object_type(&handle->forge, add->atom.type)
+				if(  (!subj || (subj->atom.type == handle->forge.URID))
+					&& add && lv2_atom_forge_is_object_type(&handle->forge, add->atom.type)
 					&& rem && lv2_atom_forge_is_object_type(&handle->forge, rem->atom.type) )
 				{
 					LV2_ATOM_OBJECT_FOREACH(rem, pro)
@@ -2258,14 +2461,6 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 								handle->readables = NULL;
 								handle->n_readable = 0;
 							}
-							else
-							{
-								//FIXME
-							}
-						}
-						else
-						{
-							//FIXME
 						}
 					}
 
@@ -2273,7 +2468,7 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 					{
 						if(!subj || (subj->body == handle->patch_self))
 						{
-							const LV2_Atom_URID *property = (const LV2_Atom_URID *)&pro->value;
+							const LV2_Atom_URID *property = (const LV2_Atom_URID *)&pro->value; //FIXME check atom.type
 
 							if(pro->key == handle->patch_writable)
 							{
@@ -2288,146 +2483,7 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 						}
 						else
 						{
-							prop_t *prop = _prop_get(&handle->readables, &handle->n_readable, subj->body);
-							if(!prop)
-								prop = _prop_get(&handle->writables, &handle->n_writable, subj->body);
-							if(prop)
-							{
-								LV2_Atom_URID *range = NULL;
-								LV2_Atom *label = NULL;
-								LV2_Atom *comment = NULL;
-								LV2_Atom *minimum = NULL;
-								LV2_Atom *maximum = NULL;
-								LV2_Atom *symbol = NULL;
-								LV2_Atom_URID *unit = NULL;
-								LV2_Atom_Long *style = NULL;
-								LV2_Atom_Tuple *points = NULL;
-
-								lv2_atom_object_get(add, 
-									handle->rdfs_range, &range,
-									handle->rdfs_label, &label,
-									handle->rdfs_comment, &comment,
-									handle->lv2_minimum, &minimum,
-									handle->lv2_maximum, &maximum,
-									handle->units_symbol, &symbol,
-									handle->units_unit, &unit,
-									handle->canvas_Style, &style,
-									handle->lv2_scalePoint, &points,
-									0);
-
-								if(range && (range->atom.type == handle->forge.URID))
-								{
-									prop->range = range->body;
-
-									if( (prop->range == handle->forge.String)
-										|| (prop->range == handle->forge.URID) )
-									{
-										nk_textedit_init_default(&prop->value.editor);
-									}
-								}
-
-								if(label && (label->type == handle->forge.String))
-									prop->label = strdup(LV2_ATOM_BODY_CONST(label));
-
-								if(comment && (comment->type == handle->forge.String))
-									prop->comment = strdup(LV2_ATOM_BODY_CONST(comment));
-
-								if(symbol && (symbol->type == handle->forge.String))
-									prop->unit = strdup(LV2_ATOM_BODY_CONST(symbol));
-								else if(unit && (unit->atom.type == handle->forge.URID))
-								{
-									//TODO use binary lookup
-									if(unit->body == handle->units_bar)
-										prop->unit = strdup("bars");
-									else if(unit->body == handle->units_beat)
-										prop->unit = strdup("beats");
-									else if(unit->body == handle->units_bpm)
-										prop->unit = strdup("BPM");
-									else if(unit->body == handle->units_cent)
-										prop->unit = strdup("ct");
-									else if(unit->body == handle->units_cm)
-										prop->unit = strdup("cm");
-									else if(unit->body == handle->units_db)
-										prop->unit = strdup("dB");
-									else if(unit->body == handle->units_degree)
-										prop->unit = strdup("deg");
-									else if(unit->body == handle->units_frame)
-										prop->unit = strdup("frames");
-									else if(unit->body == handle->units_hz)
-										prop->unit = strdup("Hz");
-									else if(unit->body == handle->units_inch)
-										prop->unit = strdup("in");
-									else if(unit->body == handle->units_khz)
-										prop->unit = strdup("kHz");
-									else if(unit->body == handle->units_km)
-										prop->unit = strdup("km");
-									else if(unit->body == handle->units_m)
-										prop->unit = strdup("m");
-									else if(unit->body == handle->units_mhz)
-										prop->unit = strdup("MHz");
-									else if(unit->body == handle->units_midiNote)
-										prop->unit = strdup("note");
-									else if(unit->body == handle->units_mile)
-										prop->unit = strdup("mi");
-									else if(unit->body == handle->units_min)
-										prop->unit = strdup("min");
-									else if(unit->body == handle->units_mm)
-										prop->unit = strdup("mm");
-									else if(unit->body == handle->units_ms)
-										prop->unit = strdup("ms");
-									else if(unit->body == handle->units_oct)
-										prop->unit = strdup("oct");
-									else if(unit->body == handle->units_pc)
-										prop->unit = strdup("%");
-									else if(unit->body == handle->units_s)
-										prop->unit = strdup("s");
-									else if(unit->body == handle->units_semitone12TET)
-										prop->unit = strdup("semi");
-								}
-
-								if(style && (style->atom.type == handle->forge.Long))
-								{
-									prop->color = nk_rgba(
-										(style->body >> 24) & 0xff,
-										(style->body >> 16) & 0xff,
-										(style->body >>  8) & 0xff,
-										(style->body >>  0) & 0xff);
-								}
-
-								if(minimum)
-								{
-									if(minimum->type == handle->forge.Int)
-										prop->minimum.i = ((const LV2_Atom_Int *)(minimum))->body;
-									else if(minimum->type == handle->forge.Long)
-										prop->minimum.h = ((const LV2_Atom_Long *)(minimum))->body;
-									else if(minimum->type == handle->forge.Float)
-										prop->minimum.f = ((const LV2_Atom_Float *)(minimum))->body;
-									else if(minimum->type == handle->forge.Double)
-										prop->minimum.d = ((const LV2_Atom_Double *)(minimum))->body;
-									//FIXME handle more types?
-								}
-								if(maximum)
-								{
-									if(maximum->type == handle->forge.Int)
-										prop->maximum.i = ((const LV2_Atom_Int *)(maximum))->body;
-									else if(maximum->type == handle->forge.Long)
-										prop->maximum.h = ((const LV2_Atom_Long *)(maximum))->body;
-									else if(maximum->type == handle->forge.Float)
-										prop->maximum.f = ((const LV2_Atom_Float *)(maximum))->body;
-									else if(maximum->type == handle->forge.Double)
-										prop->maximum.d = ((const LV2_Atom_Double *)(maximum))->body;
-									//FIXME handle more types?
-								}
-								if(points && (points->atom.type == handle->forge.Tuple))
-								{
-									const uint32_t sz = lv2_atom_total_size(&points->atom);
-									prop->points = malloc(sz);
-									if(prop->points)
-										memcpy(prop->points, points, sz);
-								}
-
-								_patch_get(handle, subj->body);
-							}
+							_patch_set_parameter_property(handle, subj->body, pro->key, &pro->value);
 						}
 					}
 
