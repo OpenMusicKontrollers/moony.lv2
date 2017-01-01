@@ -813,7 +813,7 @@ _clear_log(plughandle_t *handle)
 }
 
 static int
-_dial_bool(struct nk_context *ctx, int32_t *val, struct nk_color color)
+_dial_bool(struct nk_context *ctx, int32_t *val, struct nk_color color, bool editable)
 {
 	const int32_t tmp = *val;
 	struct nk_rect bounds = nk_layout_space_bounds(ctx);
@@ -824,7 +824,7 @@ _dial_bool(struct nk_context *ctx, int32_t *val, struct nk_color color)
 	{
 		enum nk_widget_states states = NK_WIDGET_STATE_INACTIVE;
 
-		if(layout_states == NK_WIDGET_VALID)
+		if(editable && (layout_states == NK_WIDGET_VALID) )
 		{
 			struct nk_input *in = &ctx->input;
 			bool mouse_has_scrolled = false;
@@ -988,7 +988,8 @@ _dial_numeric_draw(struct nk_context *ctx, struct nk_rect bounds,
 }
 
 static int
-_dial_double(struct nk_context *ctx, double min, double *val, double max, float mul, struct nk_color color)
+_dial_double(struct nk_context *ctx, double min, double *val, double max, float mul,
+	struct nk_color color, bool editable)
 {
 	const double tmp = *val;
 	struct nk_rect bounds = nk_layout_space_bounds(ctx);
@@ -999,7 +1000,7 @@ _dial_double(struct nk_context *ctx, double min, double *val, double max, float 
 		enum nk_widget_states states = NK_WIDGET_STATE_INACTIVE;
 		const double range = max - min;
 
-		if(layout_states == NK_WIDGET_VALID)
+		if(editable && (layout_states == NK_WIDGET_VALID) )
 		{
 			int divider = 1;
 			const float dd = _dial_numeric_behavior(ctx, bounds, &states, &divider);
@@ -1021,7 +1022,8 @@ _dial_double(struct nk_context *ctx, double min, double *val, double max, float 
 }
 
 static int
-_dial_long(struct nk_context *ctx, int64_t min, int64_t *val, int64_t max, float mul, struct nk_color color)
+_dial_long(struct nk_context *ctx, int64_t min, int64_t *val, int64_t max, float mul,
+	struct nk_color color, bool editable)
 {
 	const int64_t tmp = *val;
 	struct nk_rect bounds = nk_layout_space_bounds(ctx);
@@ -1032,7 +1034,7 @@ _dial_long(struct nk_context *ctx, int64_t min, int64_t *val, int64_t max, float
 		enum nk_widget_states states = NK_WIDGET_STATE_INACTIVE;
 		const int64_t range = max - min;
 
-		if(layout_states == NK_WIDGET_VALID)
+		if(editable && (layout_states == NK_WIDGET_VALID) )
 		{
 			int divider = 1;
 			const float dd = _dial_numeric_behavior(ctx, bounds, &states, &divider);
@@ -1055,20 +1057,22 @@ _dial_long(struct nk_context *ctx, int64_t min, int64_t *val, int64_t max, float
 }
 
 static int
-_dial_float(struct nk_context *ctx, float min, float *val, float max, float mul, struct nk_color color)
+_dial_float(struct nk_context *ctx, float min, float *val, float max, float mul,
+	struct nk_color color, bool editable)
 {
 	double tmp = *val;
-	const int res = _dial_double(ctx, min, &tmp, max, mul, color);
+	const int res = _dial_double(ctx, min, &tmp, max, mul, color, editable);
 	*val = tmp;
 
 	return res;
 }
 
 static int
-_dial_int(struct nk_context *ctx, int32_t min, int32_t *val, int32_t max, float mul, struct nk_color color)
+_dial_int(struct nk_context *ctx, int32_t min, int32_t *val, int32_t max, float mul,
+	struct nk_color color, bool editable)
 {
 	int64_t tmp = *val;
-	const int res = _dial_long(ctx, min, &tmp, max, mul, color);
+	const int res = _dial_long(ctx, min, &tmp, max, mul, color, editable);
 	*val = tmp;
 
 	return res;
@@ -1241,9 +1245,7 @@ _parameter_widget_enum(plughandle_t *handle, struct nk_context *ctx, prop_t *pro
 	}
 
 	nk_layout_row_dynamic(ctx, dy, 1);
-	if(!header)
-		nk_spacing(ctx, 1);
-	else if(nk_combo_begin_label(ctx, header, nk_vec2(nk_widget_width(ctx), 7*dy)))
+	if(header && nk_combo_begin_label(ctx, header, nk_vec2(nk_widget_width(ctx), 7*dy)))
 	{
 		nk_layout_row_dynamic(ctx, dy, 1);
 		LV2_ATOM_TUPLE_FOREACH(prop->points, itm)
@@ -1264,7 +1266,7 @@ _parameter_widget_enum(plughandle_t *handle, struct nk_context *ctx, prop_t *pro
 			if(label && (label->type == handle->forge.String)
 				&& value && (value->type == prop->range))
 			{
-				if(nk_combo_item_label(ctx, LV2_ATOM_BODY_CONST(label), NK_TEXT_LEFT))
+				if(nk_combo_item_label(ctx, LV2_ATOM_BODY_CONST(label), NK_TEXT_LEFT) && editable)
 				{
 					if(value->type == handle->forge.Int)
 					{
@@ -1303,20 +1305,29 @@ static void
 _parameter_widget_int(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
 	bool editable, bool has_shift_enter, float dy)
 {
+	// draw dial
 	nk_layout_row_dynamic(ctx, dy*3, 1);
-	if(_dial_int(ctx, prop->minimum.i, &prop->value.i, prop->maximum.i, 1.f, prop->color))
+	if(_dial_int(ctx, prop->minimum.i, &prop->value.i, prop->maximum.i, 1.f,
+		prop->color, editable))
 	{
 		_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &prop->value.i);
 	}
 
 	nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
 	nk_layout_row_push(ctx, 0.9);
-	const int32_t val = nk_propertyi(ctx, lab,
-		prop->minimum.i, prop->value.i, prop->maximum.i, 1.f, 0.f);
-	if(val != prop->value.i)
+	if(editable)
 	{
-		prop->value.i = val;
-		_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &val);
+		const int32_t val = nk_propertyi(ctx, lab,
+			prop->minimum.i, prop->value.i, prop->maximum.i, 1.f, 0.f);
+		if(val != prop->value.i)
+		{
+			prop->value.i = val;
+			_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &val);
+		}
+	}
+	else // !editable
+	{
+		nk_labelf(ctx, NK_TEXT_RIGHT, "%"PRIi32, prop->value.i);
 	}
 	nk_layout_row_push(ctx, 0.1);
 	if(prop->unit)
@@ -1330,19 +1341,27 @@ _parameter_widget_long(plughandle_t *handle, struct nk_context *ctx, prop_t *pro
 	bool editable, bool has_shift_enter, float dy)
 {
 	nk_layout_row_dynamic(ctx, dy*3, 1);
-	if(_dial_long(ctx, prop->minimum.h, &prop->value.h, prop->maximum.h, 1.f, prop->color))
+	if(_dial_long(ctx, prop->minimum.h, &prop->value.h, prop->maximum.h, 1.f,
+		prop->color, editable))
 	{
 		_patch_set(handle, prop->key, sizeof(int64_t), prop->range, &prop->value.h);
 	}
 
 	nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
 	nk_layout_row_push(ctx, 0.9);
-	const int64_t val = nk_propertyi(ctx, lab,
-		prop->minimum.h, prop->value.h, prop->maximum.h, 1.f, 0.f);
-	if(val != prop->value.h)
+	if(editable)
 	{
-		prop->value.h = val;
-		_patch_set(handle, prop->key, sizeof(int64_t), prop->range, &val);
+		const int64_t val = nk_propertyi(ctx, lab,
+			prop->minimum.h, prop->value.h, prop->maximum.h, 1.f, 0.f);
+		if(val != prop->value.h)
+		{
+			prop->value.h = val;
+			_patch_set(handle, prop->key, sizeof(int64_t), prop->range, &val);
+		}
+	}
+	else // !editable
+	{
+		nk_labelf(ctx, NK_TEXT_RIGHT, "%"PRIi64, prop->value.h);
 	}
 	nk_layout_row_push(ctx, 0.1);
 	if(prop->unit)
@@ -1356,19 +1375,27 @@ _parameter_widget_float(plughandle_t *handle, struct nk_context *ctx, prop_t *pr
 	bool editable, bool has_shift_enter, float dy)
 {
 	nk_layout_row_dynamic(ctx, dy*3, 1);
-	if(_dial_float(ctx, prop->minimum.f, &prop->value.f, prop->maximum.f, 1.f, prop->color))
+	if(_dial_float(ctx, prop->minimum.f, &prop->value.f, prop->maximum.f, 1.f,
+		prop->color, editable))
 	{
 		_patch_set(handle, prop->key, sizeof(float), prop->range, &prop->value.f);
 	}
 
 	nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
 	nk_layout_row_push(ctx, 0.9);
-	const float val = nk_propertyf(ctx, lab,
-		prop->minimum.f, prop->value.f, prop->maximum.f, 0.05f, 0.f);
-	if(val != prop->value.f)
+	if(editable)
 	{
-		prop->value.f = val;
-		_patch_set(handle, prop->key, sizeof(float), prop->range, &val);
+		const float val = nk_propertyf(ctx, lab,
+			prop->minimum.f, prop->value.f, prop->maximum.f, 0.05f, 0.f);
+		if(val != prop->value.f)
+		{
+			prop->value.f = val;
+			_patch_set(handle, prop->key, sizeof(float), prop->range, &val);
+		}
+	}
+	else // !editable
+	{
+		nk_labelf(ctx, NK_TEXT_RIGHT, "%f", prop->value.f);
 	}
 	nk_layout_row_push(ctx, 0.1);
 	if(prop->unit)
@@ -1382,19 +1409,27 @@ _parameter_widget_double(plughandle_t *handle, struct nk_context *ctx, prop_t *p
 	bool editable, bool has_shift_enter, float dy)
 {
 	nk_layout_row_dynamic(ctx, dy*3, 1);
-	if(_dial_double(ctx, prop->minimum.d, &prop->value.d, prop->maximum.d, 1.f, prop->color))
+	if(_dial_double(ctx, prop->minimum.d, &prop->value.d, prop->maximum.d, 1.f,
+		prop->color, editable))
 	{
 		_patch_set(handle, prop->key, sizeof(double), prop->range, &prop->value.d);
 	}
 
 	nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
 	nk_layout_row_push(ctx, 0.9);
-	const double val = nk_propertyd(ctx, lab,
-		prop->minimum.d, prop->value.d, prop->maximum.d, 0.05f, 0.f);
-	if(val != prop->value.d)
+	if(editable)
 	{
-		prop->value.d = val;
-		_patch_set(handle, prop->key, sizeof(double), prop->range, &val);
+		const double val = nk_propertyd(ctx, lab,
+			prop->minimum.d, prop->value.d, prop->maximum.d, 0.05f, 0.f);
+		if(val != prop->value.d)
+		{
+			prop->value.d = val;
+			_patch_set(handle, prop->key, sizeof(double), prop->range, &val);
+		}
+	}
+	else // !editable
+	{
+		nk_labelf(ctx, NK_TEXT_RIGHT, "%lf", prop->value.d);
 	}
 	nk_layout_row_push(ctx, 0.1);
 	if(prop->unit)
@@ -1408,7 +1443,7 @@ _parameter_widget_bool(plughandle_t *handle, struct nk_context *ctx, prop_t *pro
 	bool editable, bool has_shift_enter, float dy)
 {
 	nk_layout_row_dynamic(ctx, dy*3, 1);
-	if(_dial_bool(ctx, &prop->value.i, prop->color))
+	if(_dial_bool(ctx, &prop->value.i, prop->color, editable))
 	{
 		_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &prop->value.i);
 	}
@@ -1418,14 +1453,29 @@ static void
 _parameter_widget_urid(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
 	bool editable, bool has_shift_enter, float dy)
 {
-	nk_layout_row_dynamic(ctx, dy*4, 1);
+	bool prop_commited = false;
+
+	nk_layout_row_dynamic(ctx, dy*3, 1);
 	nk_flags flags = NK_EDIT_BOX;
 	if(has_shift_enter)
 		flags |= NK_EDIT_SIG_ENTER;
+	if(!editable)
+		flags |= NK_EDIT_READ_ONLY;
 	const nk_flags state = nk_edit_buffer(ctx, flags, &prop->value.editor, nk_filter_default);
 	if(state & NK_EDIT_COMMITED)
+		prop_commited = true;
+
+	if(!editable)
+		return;
+
+	nk_layout_row_dynamic(ctx, dy, 1);
+	nk_style_push_style_item(ctx, &ctx->style.button.normal, prop_commited
+		? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
+		: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
+	if(nk_button_label(ctx, "Submit") || prop_commited)
 	{
 		struct nk_str *str = &prop->value.editor.string;
+
 		LV2_URID urid = 0;
 		char *uri = _strndup(nk_str_get_const(str), nk_str_len_char(str));
 		if(uri)
@@ -1436,6 +1486,7 @@ _parameter_widget_urid(plughandle_t *handle, struct nk_context *ctx, prop_t *pro
 		if(urid)
 			_patch_set(handle, prop->key, sizeof(uint32_t), prop->range, &urid);
 	}
+	nk_style_pop_style_item(ctx);
 }
 
 static void
@@ -1443,14 +1494,20 @@ _parameter_widget_string(plughandle_t *handle, struct nk_context *ctx, prop_t *p
 	bool editable, bool has_shift_enter, float dy)
 {
 	bool prop_commited = false;
+
 	nk_layout_row_dynamic(ctx, dy*3, 1);
 	nk_flags flags = NK_EDIT_BOX;
+	if(!editable)
+		flags |= NK_EDIT_READ_ONLY;
 	if(has_shift_enter)
 		flags |= NK_EDIT_SIG_ENTER;
 	const nk_flags state = nk_edit_buffer(ctx, flags,
 		&prop->value.editor, nk_filter_default);
 	if(state & NK_EDIT_COMMITED)
 		prop_commited = true;
+
+	if(!editable)
+		return;
 
 	nk_layout_row_dynamic(ctx, dy, 1);
 	nk_style_push_style_item(ctx, &ctx->style.button.normal, prop_commited
@@ -1459,6 +1516,7 @@ _parameter_widget_string(plughandle_t *handle, struct nk_context *ctx, prop_t *p
 	if(nk_button_label(ctx, "Submit") || prop_commited)
 	{
 		struct nk_str *str = &prop->value.editor.string;
+
 		_patch_set(handle, prop->key, nk_str_len_char(str), prop->range, nk_str_get_const(str));
 	}
 	nk_style_pop_style_item(ctx);
@@ -1470,6 +1528,9 @@ _parameter_widget_chunk(plughandle_t *handle, struct nk_context *ctx, prop_t *pr
 {
 	nk_layout_row_dynamic(ctx, dy*3, 1);
 	nk_labelf(ctx, NK_TEXT_CENTERED, "%"PRIu32" bytes", prop->value.u);
+
+	if(!editable)
+		return;
 
 	nk_layout_row_dynamic(ctx, dy, 1);
 	if(nk_button_label(ctx, "Load"))
