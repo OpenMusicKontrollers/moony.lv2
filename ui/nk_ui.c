@@ -1650,13 +1650,14 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 								}
 								else if(prop->range == handle->forge.Chunk)
 								{
+									nk_layout_row_dynamic(ctx, dy*3, 1);
+									nk_labelf(ctx, NK_TEXT_CENTERED, "%"PRIu32" bytes", prop->value.u);
+
 									nk_layout_row_dynamic(ctx, dy, 1);
 									if(nk_button_label(ctx, "Load"))
 									{
 										handle->browser_target = prop;
 									}
-									nk_layout_row_dynamic(ctx, dy, 1);
-									nk_labelf(ctx, NK_TEXT_RIGHT, "%"PRIu32" bytes", prop->value.u);
 								}
 								else
 								{
