@@ -1193,6 +1193,344 @@ _select_draw_end(struct nk_command_buffer *canv, nk_handle userdata)
 	nk_stroke_line(canv, x0, y, x1, y, ctx->style.button.border*2, ctx->style.button.border_color);
 }
 
+const char *lab = "#"; //FIXME
+
+static void
+_parameter_widget_enum(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
+	bool editable, bool has_shift_enter, float dy)
+{
+	const char *header = NULL;
+	float diff = HUGE_VAL;
+	LV2_ATOM_TUPLE_FOREACH(prop->points, itm)
+	{
+		const LV2_Atom_Object *obj = (const LV2_Atom_Object *)itm;
+
+		if(!lv2_atom_forge_is_object_type(&handle->forge, obj->atom.type))
+			continue;
+
+		const LV2_Atom *label = NULL;
+		const LV2_Atom *value = NULL;
+
+		lv2_atom_object_get(obj,
+			handle->rdfs_label, &label,
+			handle->rdf_value, &value,
+			0);
+
+		if(label && (label->type == handle->forge.String)
+			&& value && (value->type == prop->range))
+		{
+			float d = HUGE_VAL;
+
+			if(value->type == handle->forge.Int)
+				d = abs(((const LV2_Atom_Int *)value)->body - prop->value.i);
+			else if(value->type == handle->forge.Bool)
+				d = abs(((const LV2_Atom_Bool *)value)->body - prop->value.i);
+			else if(value->type == handle->forge.Long)
+				d = labs(((const LV2_Atom_Long *)value)->body - prop->value.h);
+			else if(value->type == handle->forge.Float)
+				d = fabs(((const LV2_Atom_Float *)value)->body - prop->value.f);
+			else if(value->type == handle->forge.Double)
+				d = fabs(((const LV2_Atom_Double *)value)->body - prop->value.d);
+
+			if(d < diff)
+			{
+				header = LV2_ATOM_BODY(label);
+				diff = d;
+			}
+		}
+	}
+
+	nk_layout_row_dynamic(ctx, dy, 1);
+	if(!header)
+		nk_spacing(ctx, 1);
+	else if(nk_combo_begin_label(ctx, header, nk_vec2(nk_widget_width(ctx), 7*dy)))
+	{
+		nk_layout_row_dynamic(ctx, dy, 1);
+		LV2_ATOM_TUPLE_FOREACH(prop->points, itm)
+		{
+			const LV2_Atom_Object *obj = (const LV2_Atom_Object *)itm;
+
+			if(!lv2_atom_forge_is_object_type(&handle->forge, obj->atom.type))
+				continue;
+
+			const LV2_Atom *label = NULL;
+			const LV2_Atom *value = NULL;
+
+			lv2_atom_object_get(obj,
+				handle->rdfs_label, &label,
+				handle->rdf_value, &value,
+				0);
+
+			if(label && (label->type == handle->forge.String)
+				&& value && (value->type == prop->range))
+			{
+				if(nk_combo_item_label(ctx, LV2_ATOM_BODY_CONST(label), NK_TEXT_LEFT))
+				{
+					if(value->type == handle->forge.Int)
+					{
+						prop->value.i = ((const LV2_Atom_Int *)value)->body;
+						_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &prop->value.i);
+					}
+					else if (value->type == handle->forge.Bool)
+					{
+						prop->value.i = ((const LV2_Atom_Bool *)value)->body;
+						_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &prop->value.i);
+					}
+					else if (value->type == handle->forge.Long)
+					{
+						prop->value.h = ((const LV2_Atom_Long *)value)->body;
+						_patch_set(handle, prop->key, sizeof(int64_t), prop->range, &prop->value.h);
+					}
+					else if (value->type == handle->forge.Float)
+					{
+						prop->value.f = ((const LV2_Atom_Float *)value)->body;
+						_patch_set(handle, prop->key, sizeof(float), prop->range, &prop->value.f);
+					}
+					else if (value->type == handle->forge.Double)
+					{
+						prop->value.d = ((const LV2_Atom_Double *)value)->body;
+						_patch_set(handle, prop->key, sizeof(double), prop->range, &prop->value.d);
+					}
+				}
+			}
+		}
+
+		nk_combo_end(ctx);
+	}
+}
+
+static void
+_parameter_widget_int(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
+	bool editable, bool has_shift_enter, float dy)
+{
+	nk_layout_row_dynamic(ctx, dy*3, 1);
+	if(_dial_int(ctx, prop->minimum.i, &prop->value.i, prop->maximum.i, 1.f, prop->color))
+	{
+		_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &prop->value.i);
+	}
+
+	nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
+	nk_layout_row_push(ctx, 0.9);
+	const int32_t val = nk_propertyi(ctx, lab,
+		prop->minimum.i, prop->value.i, prop->maximum.i, 1.f, 0.f);
+	if(val != prop->value.i)
+	{
+		prop->value.i = val;
+		_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &val);
+	}
+	nk_layout_row_push(ctx, 0.1);
+	if(prop->unit)
+		nk_label(ctx, prop->unit, NK_TEXT_RIGHT);
+	else
+		nk_spacing(ctx, 1);
+}
+
+static void
+_parameter_widget_long(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
+	bool editable, bool has_shift_enter, float dy)
+{
+	nk_layout_row_dynamic(ctx, dy*3, 1);
+	if(_dial_long(ctx, prop->minimum.h, &prop->value.h, prop->maximum.h, 1.f, prop->color))
+	{
+		_patch_set(handle, prop->key, sizeof(int64_t), prop->range, &prop->value.h);
+	}
+
+	nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
+	nk_layout_row_push(ctx, 0.9);
+	const int64_t val = nk_propertyi(ctx, lab,
+		prop->minimum.h, prop->value.h, prop->maximum.h, 1.f, 0.f);
+	if(val != prop->value.h)
+	{
+		prop->value.h = val;
+		_patch_set(handle, prop->key, sizeof(int64_t), prop->range, &val);
+	}
+	nk_layout_row_push(ctx, 0.1);
+	if(prop->unit)
+		nk_label(ctx, prop->unit, NK_TEXT_RIGHT);
+	else
+		nk_spacing(ctx, 1);
+}
+
+static void
+_parameter_widget_float(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
+	bool editable, bool has_shift_enter, float dy)
+{
+	nk_layout_row_dynamic(ctx, dy*3, 1);
+	if(_dial_float(ctx, prop->minimum.f, &prop->value.f, prop->maximum.f, 1.f, prop->color))
+	{
+		_patch_set(handle, prop->key, sizeof(float), prop->range, &prop->value.f);
+	}
+
+	nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
+	nk_layout_row_push(ctx, 0.9);
+	const float val = nk_propertyf(ctx, lab,
+		prop->minimum.f, prop->value.f, prop->maximum.f, 0.05f, 0.f);
+	if(val != prop->value.f)
+	{
+		prop->value.f = val;
+		_patch_set(handle, prop->key, sizeof(float), prop->range, &val);
+	}
+	nk_layout_row_push(ctx, 0.1);
+	if(prop->unit)
+		nk_label(ctx, prop->unit, NK_TEXT_RIGHT);
+	else
+		nk_spacing(ctx, 1);
+}
+
+static void
+_parameter_widget_double(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
+	bool editable, bool has_shift_enter, float dy)
+{
+	nk_layout_row_dynamic(ctx, dy*3, 1);
+	if(_dial_double(ctx, prop->minimum.d, &prop->value.d, prop->maximum.d, 1.f, prop->color))
+	{
+		_patch_set(handle, prop->key, sizeof(double), prop->range, &prop->value.d);
+	}
+
+	nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
+	nk_layout_row_push(ctx, 0.9);
+	const double val = nk_propertyd(ctx, lab,
+		prop->minimum.d, prop->value.d, prop->maximum.d, 0.05f, 0.f);
+	if(val != prop->value.d)
+	{
+		prop->value.d = val;
+		_patch_set(handle, prop->key, sizeof(double), prop->range, &val);
+	}
+	nk_layout_row_push(ctx, 0.1);
+	if(prop->unit)
+		nk_label(ctx, prop->unit, NK_TEXT_RIGHT);
+	else
+		nk_spacing(ctx, 1);
+}
+
+static void
+_parameter_widget_bool(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
+	bool editable, bool has_shift_enter, float dy)
+{
+	nk_layout_row_dynamic(ctx, dy*3, 1);
+	if(_dial_bool(ctx, &prop->value.i, prop->color))
+	{
+		_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &prop->value.i);
+	}
+}
+
+static void
+_parameter_widget_urid(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
+	bool editable, bool has_shift_enter, float dy)
+{
+	nk_layout_row_dynamic(ctx, dy*4, 1);
+	nk_flags flags = NK_EDIT_BOX;
+	if(has_shift_enter)
+		flags |= NK_EDIT_SIG_ENTER;
+	const nk_flags state = nk_edit_buffer(ctx, flags, &prop->value.editor, nk_filter_default);
+	if(state & NK_EDIT_COMMITED)
+	{
+		struct nk_str *str = &prop->value.editor.string;
+		LV2_URID urid = 0;
+		char *uri = _strndup(nk_str_get_const(str), nk_str_len_char(str));
+		if(uri)
+		{
+			urid = handle->map->map(handle->map->handle, uri);
+			free(uri);
+		}
+		if(urid)
+			_patch_set(handle, prop->key, sizeof(uint32_t), prop->range, &urid);
+	}
+}
+
+static void
+_parameter_widget_string(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
+	bool editable, bool has_shift_enter, float dy)
+{
+	bool prop_commited = false;
+	nk_layout_row_dynamic(ctx, dy*3, 1);
+	nk_flags flags = NK_EDIT_BOX;
+	if(has_shift_enter)
+		flags |= NK_EDIT_SIG_ENTER;
+	const nk_flags state = nk_edit_buffer(ctx, flags,
+		&prop->value.editor, nk_filter_default);
+	if(state & NK_EDIT_COMMITED)
+		prop_commited = true;
+
+	nk_layout_row_dynamic(ctx, dy, 1);
+	nk_style_push_style_item(ctx, &ctx->style.button.normal, prop_commited
+		? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
+		: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
+	if(nk_button_label(ctx, "Submit") || prop_commited)
+	{
+		struct nk_str *str = &prop->value.editor.string;
+		_patch_set(handle, prop->key, nk_str_len_char(str), prop->range, nk_str_get_const(str));
+	}
+	nk_style_pop_style_item(ctx);
+}
+
+static void
+_parameter_widget_chunk(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
+	bool editable, bool has_shift_enter, float dy)
+{
+	nk_layout_row_dynamic(ctx, dy*3, 1);
+	nk_labelf(ctx, NK_TEXT_CENTERED, "%"PRIu32" bytes", prop->value.u);
+
+	nk_layout_row_dynamic(ctx, dy, 1);
+	if(nk_button_label(ctx, "Load"))
+	{
+		handle->browser_target = prop;
+	}
+}
+
+static void
+_parameter_widget(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
+	bool editable, bool has_shift_enter, float dy)
+{
+	if(prop->comment && _tooltip_visible(ctx))
+		nk_tooltip(ctx, prop->comment);
+	if(nk_group_begin(ctx, prop->label, NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_NO_SCROLLBAR))
+	{
+		if(prop->points) // an Enumerator
+		{
+			_parameter_widget_enum(handle, ctx, prop, editable, has_shift_enter, dy);
+		}
+		else if(prop->range == handle->forge.Int)
+		{
+			_parameter_widget_int(handle, ctx, prop, editable, has_shift_enter, dy);
+		}
+		else if(prop->range == handle->forge.Long)
+		{
+			_parameter_widget_long(handle, ctx, prop, editable, has_shift_enter, dy);
+		}
+		else if(prop->range == handle->forge.Float)
+		{
+			_parameter_widget_float(handle, ctx, prop, editable, has_shift_enter, dy);
+		}
+		else if(prop->range == handle->forge.Double)
+		{
+			_parameter_widget_double(handle, ctx, prop, editable, has_shift_enter, dy);
+		}
+		else if(prop->range == handle->forge.Bool)
+		{
+			_parameter_widget_bool(handle, ctx, prop, editable, has_shift_enter, dy);
+		}
+		else if(prop->range == handle->forge.URID)
+		{
+			_parameter_widget_urid(handle, ctx, prop, editable, has_shift_enter, dy);
+		}
+		else if(prop->range == handle->forge.String)
+		{
+			_parameter_widget_string(handle, ctx, prop, editable, has_shift_enter, dy);
+		}
+		else if(prop->range == handle->forge.Chunk)
+		{
+			_parameter_widget_chunk(handle, ctx, prop, editable, has_shift_enter, dy);
+		}
+		else
+		{
+			// ignore unsupported types
+		}
+
+		nk_group_end(ctx);
+	}
+}
+
 static void
 _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 {
@@ -1397,276 +1735,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 							if(!prop->key || !prop->range || !prop->label) // marked for removal
 								continue;
 
-							const char *lab = "#";
-
-							if(prop->comment && _tooltip_visible(ctx))
-								nk_tooltip(ctx, prop->comment);
-							if(nk_group_begin(ctx, prop->label, NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_NO_SCROLLBAR))
-							{
-								if(prop->points)
-								{
-									const char *header = NULL;
-									float diff = HUGE_VAL;
-									LV2_ATOM_TUPLE_FOREACH(prop->points, itm)
-									{
-										const LV2_Atom_Object *obj = (const LV2_Atom_Object *)itm;
-
-										if(!lv2_atom_forge_is_object_type(&handle->forge, obj->atom.type))
-											continue;
-
-										const LV2_Atom *label = NULL;
-										const LV2_Atom *value = NULL;
-
-										lv2_atom_object_get(obj,
-											handle->rdfs_label, &label,
-											handle->rdf_value, &value,
-											0);
-
-										if(label && (label->type == handle->forge.String)
-											&& value && (value->type == prop->range))
-										{
-											float d = HUGE_VAL;
-
-											if(value->type == handle->forge.Int)
-												d = abs(((const LV2_Atom_Int *)value)->body - prop->value.i);
-											else if(value->type == handle->forge.Bool)
-												d = abs(((const LV2_Atom_Bool *)value)->body - prop->value.i);
-											else if(value->type == handle->forge.Long)
-												d = labs(((const LV2_Atom_Long *)value)->body - prop->value.h);
-											else if(value->type == handle->forge.Float)
-												d = fabs(((const LV2_Atom_Float *)value)->body - prop->value.f);
-											else if(value->type == handle->forge.Double)
-												d = fabs(((const LV2_Atom_Double *)value)->body - prop->value.d);
-
-											if(d < diff)
-											{
-												header = LV2_ATOM_BODY(label);
-												diff = d;
-											}
-										}
-									}
-
-									nk_layout_row_dynamic(ctx, dy, 1);
-									if(!header)
-										nk_spacing(ctx, 1);
-									else if(nk_combo_begin_label(ctx, header, nk_vec2(nk_widget_width(ctx), 7*dy)))
-									{
-										nk_layout_row_dynamic(ctx, dy, 1);
-										LV2_ATOM_TUPLE_FOREACH(prop->points, itm)
-										{
-											const LV2_Atom_Object *obj = (const LV2_Atom_Object *)itm;
-
-											if(!lv2_atom_forge_is_object_type(&handle->forge, obj->atom.type))
-												continue;
-
-											const LV2_Atom *label = NULL;
-											const LV2_Atom *value = NULL;
-
-											lv2_atom_object_get(obj,
-												handle->rdfs_label, &label,
-												handle->rdf_value, &value,
-												0);
-
-											if(label && (label->type == handle->forge.String)
-												&& value && (value->type == prop->range))
-											{
-												if(nk_combo_item_label(ctx, LV2_ATOM_BODY_CONST(label), NK_TEXT_LEFT))
-												{
-													if(value->type == handle->forge.Int)
-													{
-														prop->value.i = ((const LV2_Atom_Int *)value)->body;
-														_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &prop->value.i);
-													}
-													else if (value->type == handle->forge.Bool)
-													{
-														prop->value.i = ((const LV2_Atom_Bool *)value)->body;
-														_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &prop->value.i);
-													}
-													else if (value->type == handle->forge.Long)
-													{
-														prop->value.h = ((const LV2_Atom_Long *)value)->body;
-														_patch_set(handle, prop->key, sizeof(int64_t), prop->range, &prop->value.h);
-													}
-													else if (value->type == handle->forge.Float)
-													{
-														prop->value.f = ((const LV2_Atom_Float *)value)->body;
-														_patch_set(handle, prop->key, sizeof(float), prop->range, &prop->value.f);
-													}
-													else if (value->type == handle->forge.Double)
-													{
-														prop->value.d = ((const LV2_Atom_Double *)value)->body;
-														_patch_set(handle, prop->key, sizeof(double), prop->range, &prop->value.d);
-													}
-												}
-											}
-										}
-
-										nk_combo_end(ctx);
-									}
-								}
-								else if(prop->range == handle->forge.Int)
-								{
-									nk_layout_row_dynamic(ctx, dy*3, 1);
-									if(_dial_int(ctx, prop->minimum.i, &prop->value.i, prop->maximum.i, 1.f, prop->color))
-									{
-										_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &prop->value.i);
-									}
-
-									nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
-									nk_layout_row_push(ctx, 0.9);
-									const int32_t val = nk_propertyi(ctx, lab,
-										prop->minimum.i, prop->value.i, prop->maximum.i, 1.f, 0.f);
-									if(val != prop->value.i)
-									{
-										prop->value.i = val;
-										_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &val);
-									}
-									nk_layout_row_push(ctx, 0.1);
-									if(prop->unit)
-										nk_label(ctx, prop->unit, NK_TEXT_RIGHT);
-									else
-										nk_spacing(ctx, 1);
-								}
-								else if(prop->range == handle->forge.Long)
-								{
-									nk_layout_row_dynamic(ctx, dy*3, 1);
-									if(_dial_long(ctx, prop->minimum.h, &prop->value.h, prop->maximum.h, 1.f, prop->color))
-									{
-										_patch_set(handle, prop->key, sizeof(int64_t), prop->range, &prop->value.h);
-									}
-
-									nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
-									nk_layout_row_push(ctx, 0.9);
-									const int64_t val = nk_propertyi(ctx, lab,
-										prop->minimum.h, prop->value.h, prop->maximum.h, 1.f, 0.f);
-									if(val != prop->value.h)
-									{
-										prop->value.h = val;
-										_patch_set(handle, prop->key, sizeof(int64_t), prop->range, &val);
-									}
-									nk_layout_row_push(ctx, 0.1);
-									if(prop->unit)
-										nk_label(ctx, prop->unit, NK_TEXT_RIGHT);
-									else
-										nk_spacing(ctx, 1);
-								}
-								else if(prop->range == handle->forge.Float)
-								{
-									nk_layout_row_dynamic(ctx, dy*3, 1);
-									if(_dial_float(ctx, prop->minimum.f, &prop->value.f, prop->maximum.f, 1.f, prop->color))
-									{
-										_patch_set(handle, prop->key, sizeof(float), prop->range, &prop->value.f);
-									}
-
-									nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
-									nk_layout_row_push(ctx, 0.9);
-									const float val = nk_propertyf(ctx, lab,
-										prop->minimum.f, prop->value.f, prop->maximum.f, 0.05f, 0.f);
-									if(val != prop->value.f)
-									{
-										prop->value.f = val;
-										_patch_set(handle, prop->key, sizeof(float), prop->range, &val);
-									}
-									nk_layout_row_push(ctx, 0.1);
-									if(prop->unit)
-										nk_label(ctx, prop->unit, NK_TEXT_RIGHT);
-									else
-										nk_spacing(ctx, 1);
-								}
-								else if(prop->range == handle->forge.Double)
-								{
-									nk_layout_row_dynamic(ctx, dy*3, 1);
-									if(_dial_double(ctx, prop->minimum.d, &prop->value.d, prop->maximum.d, 1.f, prop->color))
-									{
-										_patch_set(handle, prop->key, sizeof(double), prop->range, &prop->value.d);
-									}
-
-									nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
-									nk_layout_row_push(ctx, 0.9);
-									const double val = nk_propertyd(ctx, lab,
-										prop->minimum.d, prop->value.d, prop->maximum.d, 0.05f, 0.f);
-									if(val != prop->value.d)
-									{
-										prop->value.d = val;
-										_patch_set(handle, prop->key, sizeof(double), prop->range, &val);
-									}
-									nk_layout_row_push(ctx, 0.1);
-									if(prop->unit)
-										nk_label(ctx, prop->unit, NK_TEXT_RIGHT);
-									else
-										nk_spacing(ctx, 1);
-								}
-								else if(prop->range == handle->forge.Bool)
-								{
-									nk_layout_row_dynamic(ctx, dy*3, 1);
-									if(_dial_bool(ctx, &prop->value.i, prop->color))
-									{
-										_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &prop->value.i);
-									}
-								}
-								else if(prop->range == handle->forge.URID)
-								{
-									nk_layout_row_dynamic(ctx, dy*4, 1);
-									nk_flags flags = NK_EDIT_BOX;
-									if(has_shift_enter)
-										flags |= NK_EDIT_SIG_ENTER;
-									const nk_flags state = nk_edit_buffer(ctx, flags, &prop->value.editor, nk_filter_default);
-									if(state & NK_EDIT_COMMITED)
-									{
-										struct nk_str *str = &prop->value.editor.string;
-										LV2_URID urid = 0;
-										char *uri = _strndup(nk_str_get_const(str), nk_str_len_char(str));
-										if(uri)
-										{
-											urid = handle->map->map(handle->map->handle, uri);
-											free(uri);
-										}
-										if(urid)
-											_patch_set(handle, prop->key, sizeof(uint32_t), prop->range, &urid);
-									}
-								}
-								else if(prop->range == handle->forge.String)
-								{
-									bool prop_commited = false;
-									nk_layout_row_dynamic(ctx, dy*3, 1);
-									nk_flags flags = NK_EDIT_BOX;
-									if(has_shift_enter)
-										flags |= NK_EDIT_SIG_ENTER;
-									const nk_flags state = nk_edit_buffer(ctx, flags,
-										&prop->value.editor, nk_filter_default);
-									if(state & NK_EDIT_COMMITED)
-										prop_commited = true;
-
-									nk_layout_row_dynamic(ctx, dy, 1);
-									nk_style_push_style_item(ctx, &ctx->style.button.normal, prop_commited
-										? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
-										: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
-									if(nk_button_label(ctx, "Submit") || prop_commited)
-									{
-										struct nk_str *str = &prop->value.editor.string;
-										_patch_set(handle, prop->key, nk_str_len_char(str), prop->range, nk_str_get_const(str));
-									}
-									nk_style_pop_style_item(ctx);
-								}
-								else if(prop->range == handle->forge.Chunk)
-								{
-									nk_layout_row_dynamic(ctx, dy*3, 1);
-									nk_labelf(ctx, NK_TEXT_CENTERED, "%"PRIu32" bytes", prop->value.u);
-
-									nk_layout_row_dynamic(ctx, dy, 1);
-									if(nk_button_label(ctx, "Load"))
-									{
-										handle->browser_target = prop;
-									}
-								}
-								else
-								{
-									nk_layout_row_dynamic(ctx, dy, 1);
-									nk_label(ctx, prop->label, NK_TEXT_LEFT);
-								}
-
-								nk_group_end(ctx);
-							}
+							_parameter_widget(handle, ctx, prop, true, has_shift_enter, dy);
 						}
 						for(int p = 0; p < handle->n_readable; p++)
 						{
@@ -1674,8 +1743,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 							if(!prop->key || !prop->range || !prop->label) // marked for removal
 								continue;
 
-							nk_button_label(ctx, prop->label);
-							//FIXME
+							_parameter_widget(handle, ctx, prop, false, has_shift_enter, dy);
 						}
 
 						nk_group_end(ctx);
