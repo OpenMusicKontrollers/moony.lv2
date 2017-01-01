@@ -1201,7 +1201,7 @@ const char *lab = "#"; //FIXME
 
 static void
 _parameter_widget_enum(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
-	bool editable, bool has_shift_enter, float dy)
+	bool editable, bool has_shift_enter, float dy, int ndy)
 {
 	const char *header = NULL;
 	float diff = HUGE_VAL;
@@ -1303,10 +1303,10 @@ _parameter_widget_enum(plughandle_t *handle, struct nk_context *ctx, prop_t *pro
 
 static void
 _parameter_widget_int(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
-	bool editable, bool has_shift_enter, float dy)
+	bool editable, bool has_shift_enter, float dy, int ndy)
 {
 	// draw dial
-	nk_layout_row_dynamic(ctx, dy*3, 1);
+	nk_layout_row_dynamic(ctx, dy*(ndy-1), 1);
 	if(_dial_int(ctx, prop->minimum.i, &prop->value.i, prop->maximum.i, 1.f,
 		prop->color, editable))
 	{
@@ -1338,9 +1338,9 @@ _parameter_widget_int(plughandle_t *handle, struct nk_context *ctx, prop_t *prop
 
 static void
 _parameter_widget_long(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
-	bool editable, bool has_shift_enter, float dy)
+	bool editable, bool has_shift_enter, float dy, int ndy)
 {
-	nk_layout_row_dynamic(ctx, dy*3, 1);
+	nk_layout_row_dynamic(ctx, dy*(ndy-1), 1);
 	if(_dial_long(ctx, prop->minimum.h, &prop->value.h, prop->maximum.h, 1.f,
 		prop->color, editable))
 	{
@@ -1372,9 +1372,9 @@ _parameter_widget_long(plughandle_t *handle, struct nk_context *ctx, prop_t *pro
 
 static void
 _parameter_widget_float(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
-	bool editable, bool has_shift_enter, float dy)
+	bool editable, bool has_shift_enter, float dy, int ndy)
 {
-	nk_layout_row_dynamic(ctx, dy*3, 1);
+	nk_layout_row_dynamic(ctx, dy*(ndy-1), 1);
 	if(_dial_float(ctx, prop->minimum.f, &prop->value.f, prop->maximum.f, 1.f,
 		prop->color, editable))
 	{
@@ -1406,9 +1406,9 @@ _parameter_widget_float(plughandle_t *handle, struct nk_context *ctx, prop_t *pr
 
 static void
 _parameter_widget_double(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
-	bool editable, bool has_shift_enter, float dy)
+	bool editable, bool has_shift_enter, float dy, int ndy)
 {
-	nk_layout_row_dynamic(ctx, dy*3, 1);
+	nk_layout_row_dynamic(ctx, dy*(ndy-1), 1);
 	if(_dial_double(ctx, prop->minimum.d, &prop->value.d, prop->maximum.d, 1.f,
 		prop->color, editable))
 	{
@@ -1440,9 +1440,9 @@ _parameter_widget_double(plughandle_t *handle, struct nk_context *ctx, prop_t *p
 
 static void
 _parameter_widget_bool(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
-	bool editable, bool has_shift_enter, float dy)
+	bool editable, bool has_shift_enter, float dy, int ndy)
 {
-	nk_layout_row_dynamic(ctx, dy*3, 1);
+	nk_layout_row_dynamic(ctx, dy*(ndy-1), 1);
 	if(_dial_bool(ctx, &prop->value.i, prop->color, editable))
 	{
 		_patch_set(handle, prop->key, sizeof(int32_t), prop->range, &prop->value.i);
@@ -1451,11 +1451,11 @@ _parameter_widget_bool(plughandle_t *handle, struct nk_context *ctx, prop_t *pro
 
 static void
 _parameter_widget_urid(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
-	bool editable, bool has_shift_enter, float dy)
+	bool editable, bool has_shift_enter, float dy, int ndy)
 {
 	bool prop_commited = false;
 
-	nk_layout_row_dynamic(ctx, dy*3, 1);
+	nk_layout_row_dynamic(ctx, dy*(ndy-1), 1);
 	nk_flags flags = NK_EDIT_BOX;
 	if(has_shift_enter)
 		flags |= NK_EDIT_SIG_ENTER;
@@ -1491,11 +1491,11 @@ _parameter_widget_urid(plughandle_t *handle, struct nk_context *ctx, prop_t *pro
 
 static void
 _parameter_widget_string(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
-	bool editable, bool has_shift_enter, float dy)
+	bool editable, bool has_shift_enter, float dy, int ndy)
 {
 	bool prop_commited = false;
 
-	nk_layout_row_dynamic(ctx, dy*3, 1);
+	nk_layout_row_dynamic(ctx, dy*(ndy-1), 1);
 	nk_flags flags = NK_EDIT_BOX;
 	if(!editable)
 		flags |= NK_EDIT_READ_ONLY;
@@ -1524,9 +1524,9 @@ _parameter_widget_string(plughandle_t *handle, struct nk_context *ctx, prop_t *p
 
 static void
 _parameter_widget_chunk(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
-	bool editable, bool has_shift_enter, float dy)
+	bool editable, bool has_shift_enter, float dy, int ndy)
 {
-	nk_layout_row_dynamic(ctx, dy*3, 1);
+	nk_layout_row_dynamic(ctx, dy*(ndy-1), 1);
 	nk_labelf(ctx, NK_TEXT_CENTERED, "%"PRIu32" bytes", prop->value.u);
 
 	if(!editable)
@@ -1541,7 +1541,7 @@ _parameter_widget_chunk(plughandle_t *handle, struct nk_context *ctx, prop_t *pr
 
 static void
 _parameter_widget(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
-	bool editable, bool has_shift_enter, float dy)
+	bool editable, bool has_shift_enter, float dy, int ndy)
 {
 	if(prop->comment && _tooltip_visible(ctx))
 		nk_tooltip(ctx, prop->comment);
@@ -1549,39 +1549,39 @@ _parameter_widget(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
 	{
 		if(prop->points) // an Enumerator
 		{
-			_parameter_widget_enum(handle, ctx, prop, editable, has_shift_enter, dy);
+			_parameter_widget_enum(handle, ctx, prop, editable, has_shift_enter, dy, ndy);
 		}
 		else if(prop->range == handle->forge.Int)
 		{
-			_parameter_widget_int(handle, ctx, prop, editable, has_shift_enter, dy);
+			_parameter_widget_int(handle, ctx, prop, editable, has_shift_enter, dy, ndy);
 		}
 		else if(prop->range == handle->forge.Long)
 		{
-			_parameter_widget_long(handle, ctx, prop, editable, has_shift_enter, dy);
+			_parameter_widget_long(handle, ctx, prop, editable, has_shift_enter, dy, ndy);
 		}
 		else if(prop->range == handle->forge.Float)
 		{
-			_parameter_widget_float(handle, ctx, prop, editable, has_shift_enter, dy);
+			_parameter_widget_float(handle, ctx, prop, editable, has_shift_enter, dy, ndy);
 		}
 		else if(prop->range == handle->forge.Double)
 		{
-			_parameter_widget_double(handle, ctx, prop, editable, has_shift_enter, dy);
+			_parameter_widget_double(handle, ctx, prop, editable, has_shift_enter, dy, ndy);
 		}
 		else if(prop->range == handle->forge.Bool)
 		{
-			_parameter_widget_bool(handle, ctx, prop, editable, has_shift_enter, dy);
+			_parameter_widget_bool(handle, ctx, prop, editable, has_shift_enter, dy, ndy);
 		}
 		else if(prop->range == handle->forge.URID)
 		{
-			_parameter_widget_urid(handle, ctx, prop, editable, has_shift_enter, dy);
+			_parameter_widget_urid(handle, ctx, prop, editable, has_shift_enter, dy, ndy);
 		}
 		else if(prop->range == handle->forge.String)
 		{
-			_parameter_widget_string(handle, ctx, prop, editable, has_shift_enter, dy);
+			_parameter_widget_string(handle, ctx, prop, editable, has_shift_enter, dy, ndy);
 		}
 		else if(prop->range == handle->forge.Chunk)
 		{
-			_parameter_widget_chunk(handle, ctx, prop, editable, has_shift_enter, dy);
+			_parameter_widget_chunk(handle, ctx, prop, editable, has_shift_enter, dy, ndy);
 		}
 		else
 		{
@@ -1610,7 +1610,6 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 	const float body_h = wbounds.h - header_h - footer_h;
 	const float header_height = ctx->style.font->height + 2*ctx->style.window.header.padding.y
 		+ 2*ctx->style.window.header.label_padding.y;
-	const float prop_h = header_height + dy*4 + group_padding.y*3 + 2*ctx->style.window.border;
 
 	if(nk_begin(ctx, "Moony", wbounds, NK_WINDOW_NO_SCROLLBAR))
 	{
@@ -1786,17 +1785,23 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 				if(nk_group_begin(ctx, "Parameters", NK_WINDOW_NO_SCROLLBAR))
 				{
 					const float box_h = body_h - 1*dy - 3*group_padding.y;
+
+					const float prop_h = (box_h - (handle->row_divider + 1) * group_padding.y) / handle->row_divider;
+					const float rest = header_height + 3*group_padding.y + 2*ctx->style.window.border;
+					const int ndy = ceilf(prop_h - rest) / dy;
+					const float prop_h_2 = ndy*dy + rest;
+
 					nk_layout_row_dynamic(ctx, box_h, 1);
 					if(nk_group_begin(ctx, "Widgets", 0))
 					{
-						nk_layout_row_dynamic(ctx, prop_h, handle->col_divider);
+						nk_layout_row_dynamic(ctx, prop_h_2, handle->col_divider);
 						for(int p = 0; p < handle->n_writable; p++)
 						{
 							prop_t *prop = &handle->writables[p];
 							if(!prop->key || !prop->range || !prop->label) // marked for removal
 								continue;
 
-							_parameter_widget(handle, ctx, prop, true, has_shift_enter, dy);
+							_parameter_widget(handle, ctx, prop, true, has_shift_enter, dy, ndy);
 						}
 						for(int p = 0; p < handle->n_readable; p++)
 						{
@@ -1804,7 +1809,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 							if(!prop->key || !prop->range || !prop->label) // marked for removal
 								continue;
 
-							_parameter_widget(handle, ctx, prop, false, has_shift_enter, dy);
+							_parameter_widget(handle, ctx, prop, false, has_shift_enter, dy, ndy);
 						}
 
 						nk_group_end(ctx);
