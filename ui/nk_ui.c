@@ -149,6 +149,8 @@ struct _plughandle_t {
 	LV2_URID patch_Set;
 	LV2_URID patch_Put;
 	LV2_URID patch_Patch;
+	LV2_URID patch_Ack;
+	LV2_URID patch_Error;
 	LV2_URID patch_writable;
 	LV2_URID patch_readable;
 	LV2_URID patch_add;
@@ -158,6 +160,7 @@ struct _plughandle_t {
 	LV2_URID patch_body;
 	LV2_URID patch_value;
 	LV2_URID patch_subject;
+	LV2_URID patch_sequenceNumber;
 	LV2_URID moony_code;
 	LV2_URID moony_selection;
 	LV2_URID moony_error;
@@ -647,6 +650,60 @@ _deref(LV2_Atom_Forge_Sink_Handle handle, LV2_Atom_Forge_Ref ref)
 }
 
 static void
+_patch_ack(plughandle_t *handle, int32_t sequence_number)
+{
+	if(!sequence_number)
+		return;
+
+	LV2_Atom_Forge *forge = &handle->forge;
+	atom_ser_t *ser = &handle->ser;
+
+	ser->offset = 0;
+	lv2_atom_forge_set_sink(forge, _sink, _deref, ser);
+
+	LV2_Atom_Forge_Frame frame;
+	lv2_atom_forge_object(forge, &frame, 0, handle->patch_Ack);
+
+	lv2_atom_forge_key(forge, handle->patch_subject);
+	lv2_atom_forge_urid(forge, handle->patch_self);
+
+	lv2_atom_forge_key(forge, handle->patch_sequenceNumber);
+	lv2_atom_forge_int(forge, sequence_number);
+
+	lv2_atom_forge_pop(forge, &frame);
+
+	const uint32_t sz = lv2_atom_total_size(ser->atom);
+	handle->writer(handle->controller, handle->control, sz, handle->atom_eventTransfer, ser->atom);
+}
+
+static void
+_patch_error(plughandle_t *handle, int32_t sequence_number)
+{
+	if(!sequence_number)
+		return;
+
+	LV2_Atom_Forge *forge = &handle->forge;
+	atom_ser_t *ser = &handle->ser;
+
+	ser->offset = 0;
+	lv2_atom_forge_set_sink(forge, _sink, _deref, ser);
+
+	LV2_Atom_Forge_Frame frame;
+	lv2_atom_forge_object(forge, &frame, 0, handle->patch_Error);
+
+	lv2_atom_forge_key(forge, handle->patch_subject);
+	lv2_atom_forge_urid(forge, handle->patch_self);
+
+	lv2_atom_forge_key(forge, handle->patch_sequenceNumber);
+	lv2_atom_forge_int(forge, sequence_number);
+
+	lv2_atom_forge_pop(forge, &frame);
+
+	const uint32_t sz = lv2_atom_total_size(ser->atom);
+	handle->writer(handle->controller, handle->control, sz, handle->atom_eventTransfer, ser->atom);
+}
+
+static void
 _patch_get(plughandle_t *handle, LV2_URID property)
 {
 	LV2_Atom_Forge *forge = &handle->forge;
@@ -659,6 +716,12 @@ _patch_get(plughandle_t *handle, LV2_URID property)
 	lv2_atom_forge_object(forge, &frame, 0, handle->patch_Get);
 	if(property)
 	{
+		lv2_atom_forge_key(forge, handle->patch_subject);
+		lv2_atom_forge_urid(forge, handle->patch_self);
+
+		lv2_atom_forge_key(forge, handle->patch_sequenceNumber);
+		lv2_atom_forge_int(forge, 0);
+
 		lv2_atom_forge_key(forge, handle->patch_property);
 		lv2_atom_forge_urid(forge, property);
 	}
@@ -669,7 +732,8 @@ _patch_get(plughandle_t *handle, LV2_URID property)
 }
 
 static void
-_patch_set(plughandle_t *handle, LV2_URID property, uint32_t size, LV2_URID type, const void *body)
+_patch_set(plughandle_t *handle, LV2_URID property, uint32_t size, LV2_URID type,
+	const void *body)
 {
 	LV2_Atom_Forge *forge = &handle->forge;
 	atom_ser_t *ser = &handle->ser;
@@ -679,6 +743,12 @@ _patch_set(plughandle_t *handle, LV2_URID property, uint32_t size, LV2_URID type
 
 	LV2_Atom_Forge_Frame frame;
 	lv2_atom_forge_object(forge, &frame, 0, handle->patch_Set);
+
+	lv2_atom_forge_key(forge, handle->patch_subject);
+	lv2_atom_forge_urid(forge, handle->patch_self);
+
+	lv2_atom_forge_key(forge, handle->patch_sequenceNumber);
+	lv2_atom_forge_int(forge, 0);
 
 	lv2_atom_forge_key(forge, handle->patch_property);
 	lv2_atom_forge_urid(forge, property);
@@ -2002,6 +2072,8 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	handle->patch_Set = handle->map->map(handle->map->handle, LV2_PATCH__Set);
 	handle->patch_Put = handle->map->map(handle->map->handle, LV2_PATCH__Put);
 	handle->patch_Patch = handle->map->map(handle->map->handle, LV2_PATCH__Patch);
+	handle->patch_Ack = handle->map->map(handle->map->handle, LV2_PATCH__Ack);
+	handle->patch_Error = handle->map->map(handle->map->handle, LV2_PATCH__Error);
 	handle->patch_writable = handle->map->map(handle->map->handle, LV2_PATCH__writable);
 	handle->patch_readable = handle->map->map(handle->map->handle, LV2_PATCH__readable);
 	handle->patch_add = handle->map->map(handle->map->handle, LV2_PATCH__add);
@@ -2011,6 +2083,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	handle->patch_body = handle->map->map(handle->map->handle, LV2_PATCH__body);
 	handle->patch_value = handle->map->map(handle->map->handle, LV2_PATCH__value);
 	handle->patch_subject = handle->map->map(handle->map->handle, LV2_PATCH__subject);
+	handle->patch_sequenceNumber = handle->map->map(handle->map->handle, LV2_PATCH__sequenceNumber);
 	handle->moony_code = handle->map->map(handle->map->handle, MOONY_CODE_URI);
 	handle->moony_selection = handle->map->map(handle->map->handle, MOONY_SELECTION_URI);
 	handle->moony_error = handle->map->map(handle->map->handle, MOONY_ERROR_URI);
@@ -2407,6 +2480,8 @@ _patch_set_parameter_property(plughandle_t *handle, LV2_URID subject, LV2_URID p
 			if(prop->points)
 				memcpy(prop->points, points, sz);
 		}
+
+		nk_pugl_post_redisplay(&handle->win);
 	}
 }
 
@@ -2533,14 +2608,20 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 			if(obj->body.otype == handle->patch_Set)
 			{
 				const LV2_Atom_URID *subj = NULL;
+				const LV2_Atom_Int *seqn = NULL;
 				const LV2_Atom_URID *property = NULL;
 				const LV2_Atom *value = NULL;
 
 				lv2_atom_object_get(obj,
 					handle->patch_subject, &subj,
+					handle->patch_sequenceNumber, &seqn,
 					handle->patch_property, &property,
 					handle->patch_value, &value,
 					0);
+
+				int32_t sequence_number = 0;
+				if(seqn && (seqn->atom.type == handle->forge.Int) )
+					sequence_number = seqn->body;
 
 				if(  property && (property->atom.type == handle->forge.URID)
 					&& (!subj || (subj->atom.type == handle->forge.URID))
@@ -2554,17 +2635,29 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 					{
 						_patch_set_parameter_property(handle, subj->body, property->body, value);
 					}
+
+					_patch_ack(handle, sequence_number); //TODO handle errors in _patch_set_*
+				}
+				else
+				{
+					_patch_error(handle, sequence_number);
 				}
 			}
 			else if(obj->body.otype == handle->patch_Put)
 			{
 				const LV2_Atom_URID *subj = NULL;
+				const LV2_Atom_Int *seqn = NULL;
 				const LV2_Atom_Object *body= NULL;
 
 				lv2_atom_object_get(obj,
 					handle->patch_subject, &subj,
+					handle->patch_sequenceNumber, &seqn,
 					handle->patch_body, &body,
 					0);
+
+				int32_t sequence_number = 0;
+				if(seqn && (seqn->atom.type == handle->forge.Int) )
+					sequence_number = seqn->body;
 
 				if(  (!subj || (subj->atom.type == handle->forge.URID))
 					&& body && lv2_atom_forge_is_object_type(&handle->forge, body->atom.type) )
@@ -2583,19 +2676,31 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 							_patch_set_parameter_property(handle, subj->body, pro->key, &pro->value);
 						}
 					}
+
+					_patch_ack(handle, sequence_number); //TODO handle errors in _patch_set_*
+				}
+				else
+				{
+					_patch_error(handle, sequence_number);
 				}
 			}
 			else if(obj->body.otype == handle->patch_Patch)
 			{
 				const LV2_Atom_URID *subj = NULL;
+				const LV2_Atom_Int *seqn = NULL;
 				const LV2_Atom_Object *add = NULL;
 				const LV2_Atom_Object *rem = NULL;
 
 				lv2_atom_object_get(obj,
 					handle->patch_subject, &subj,
+					handle->patch_sequenceNumber, &seqn,
 					handle->patch_add, &add,
 					handle->patch_remove, &rem,
 					0);
+
+				int32_t sequence_number = 0;
+				if(seqn && (seqn->atom.type == handle->forge.Int) )
+					sequence_number = seqn->body;
 
 				if(  (!subj || (subj->atom.type == handle->forge.URID))
 					&& add && lv2_atom_forge_is_object_type(&handle->forge, add->atom.type)
@@ -2659,7 +2764,11 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 						}
 					}
 
-					nk_pugl_post_redisplay(&handle->win);
+					_patch_ack(handle, sequence_number); //TODO handle errors in _patch_get/set_*
+				}
+				else
+				{
+					_patch_error(handle, sequence_number);
 				}
 			}
 		}
