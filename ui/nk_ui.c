@@ -1674,11 +1674,12 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 				{
 					const struct nk_style *style = &ctx->style;
 					const float editor_h = body_h - 1*dy - 4*group_padding.y;
-					const float text_width = style->font->width(style->font->userdata,
+					const float left_width = style->font->width(style->font->userdata,
 						style->font->height, "     ", 5); //TODO calculate only once?
+					const float left_rel = left_width / nk_window_get_content_region_size(ctx).x;
 
-					const float ratio [2] = {text_width, nk_window_get_content_region_size(ctx).x - 3*group_padding.x - text_width};
-					nk_layout_row(ctx, NK_STATIC, editor_h*0.85, 2, ratio);
+					const float ratio [2] = {left_rel, NK_UNDEFINED};
+					nk_layout_row(ctx, NK_DYNAMIC, editor_h*0.9, 2, ratio);
 
 					// reserve space for line numbers
 					struct nk_rect line_number_bounds = nk_layout_space_bounds(ctx);
@@ -1733,7 +1734,12 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						nk_push_scissor(canv, old_clip);
 					}
 
-					nk_layout_row_dynamic(ctx, editor_h*0.15, 1);
+					nk_layout_row(ctx, NK_DYNAMIC, editor_h*0.1, 2, ratio);
+
+					// reserve space for trance numbers
+					struct nk_rect trace_number_bounds = nk_layout_space_bounds(ctx);
+					const enum nk_widget_layout_states trace_number_states = nk_widget(&trace_number_bounds, ctx);
+
 					struct nk_list_view lview;
 					const float dh = style->font->height + style->edit.row_padding;
 					if(nk_list_view_begin(ctx, &lview, "Traces", NK_WINDOW_BORDER, dh, handle->n_trace))
@@ -1741,10 +1747,41 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						nk_layout_row_dynamic(ctx, dh, 1);
 						for(int l = lview.begin; (l < lview.end) && (l < handle->n_trace); l++)
 						{
-							nk_labelf(ctx, NK_TEXT_LEFT, "%4i %s", l + 1, handle->traces[l]);
+							nk_label(ctx, handle->traces[l], NK_TEXT_LEFT);
 						}
 
 						nk_list_view_end(&lview);
+					}
+
+					// actually draw trace numbers (after trace list)
+					if(trace_number_states != NK_WIDGET_INVALID)
+					{
+						const float y0 = trace_number_bounds.y + group_padding.y - 1.f;
+						struct nk_command_buffer *canv = nk_window_get_canvas(ctx);
+
+						struct nk_rect old_clip = canv->clip;
+						nk_push_scissor(canv, trace_number_bounds);
+						for(int l = lview.begin; (l < lview.end) && (l < handle->n_trace); l++)
+						{
+							const int i = l - lview.begin;
+							struct nk_rect bb = trace_number_bounds;
+							bb.h = dh + group_padding.y;
+							bb.y = y0 + bb.h * i;
+
+							struct nk_window *win = ctx->current;
+							struct nk_vec2 item_padding = style->text.padding;
+							struct nk_text text;
+							text.padding.x = item_padding.x;
+							text.padding.y = item_padding.y;
+							text.background = style->window.background;
+							//text.text = style->text.color;
+							text.text = nk_rgb(100, 100, 100);
+
+							char tmp [16];
+							snprintf(tmp, 16, "%i", l + 1);
+							nk_widget_text(&win->buffer, bb, tmp, strlen(tmp), &text, NK_TEXT_RIGHT, style->font);
+						}
+						nk_push_scissor(canv, old_clip);
 					}
 
 					nk_layout_row_dynamic(ctx, dy, 3);
