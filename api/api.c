@@ -245,7 +245,7 @@ static const char *note_keys [12] = {
 	"F", "F#",
 	"G", "G#",
 	"A", "A#",
-	"H"
+	"B"
 };
 
 static int

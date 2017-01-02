@@ -1502,7 +1502,7 @@ do
 	assert(Note.foo == nil)
 	assert(Note.bar == nil)
 
-	local keys = {'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'H'}
+	local keys = {'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'}
 
 	local function itr()
 		return coroutine.wrap(function()
