@@ -880,6 +880,8 @@ _clear_log(plughandle_t *handle)
 
 	handle->n_trace = 0;
 	handle->traces = NULL;
+
+	nk_pugl_post_redisplay(&handle->win);
 }
 
 static int
