@@ -104,6 +104,7 @@ struct _nk_pugl_window_t {
 	nkglGenerateMipmap glGenerateMipmap;
 
 	intptr_t widget;
+	PuglMod state;
 #if !defined(__APPLE__) && !defined(_WIN32)
 	atomic_flag async;
 	Display *disp;
@@ -392,8 +393,16 @@ _nk_pugl_font_stash_end(nk_pugl_window_t *win)
 }
 
 static void
-_nk_pugl_special_key(struct nk_context *ctx, const PuglEventKey *ev, int down)
+_nk_pugl_key_press(struct nk_context *ctx, enum nk_keys key)
 {
+	nk_input_key(ctx, key, nk_true);
+	nk_input_key(ctx, key, nk_false);
+}
+
+static bool
+_nk_pugl_special_key_down(nk_pugl_window_t *win, const PuglEventKey *ev)
+{
+	struct nk_context *ctx = &win->ctx;
 	const bool control = ev->state & PUGL_MOD_CTRL;
 
 	switch(ev->special)
@@ -416,106 +425,165 @@ _nk_pugl_special_key(struct nk_context *ctx, const PuglEventKey *ev, int down)
 		case PUGL_KEY_LEFT:
 		{
 			if(control)
-				nk_input_key(ctx, NK_KEY_TEXT_WORD_LEFT, down);
+				_nk_pugl_key_press(ctx, NK_KEY_TEXT_WORD_LEFT);
 			else
-				nk_input_key(ctx, NK_KEY_LEFT, down);
+				_nk_pugl_key_press(ctx, NK_KEY_LEFT);
 		}	break;
 		case PUGL_KEY_RIGHT:
 		{
 			if(control)
-				nk_input_key(ctx, NK_KEY_TEXT_WORD_RIGHT, down);
+				_nk_pugl_key_press(ctx, NK_KEY_TEXT_WORD_RIGHT);
 			else
-				nk_input_key(ctx, NK_KEY_RIGHT, down);
+				_nk_pugl_key_press(ctx, NK_KEY_RIGHT);
 		}	break;
 		case PUGL_KEY_UP:
 		{
-			nk_input_key(ctx, NK_KEY_UP, down);
+			_nk_pugl_key_press(ctx, NK_KEY_UP);
 		}	break;
 		case PUGL_KEY_DOWN:
 		{
-			nk_input_key(ctx, NK_KEY_DOWN, down);
+			_nk_pugl_key_press(ctx, NK_KEY_DOWN);
 		}	break;
 		case PUGL_KEY_PAGE_UP:
 		{
-			nk_input_key(ctx, NK_KEY_SCROLL_UP, down);
+			_nk_pugl_key_press(ctx, NK_KEY_SCROLL_UP);
 		}	break;
 		case PUGL_KEY_PAGE_DOWN:
 		{
-			nk_input_key(ctx, NK_KEY_SCROLL_DOWN, down);
+			_nk_pugl_key_press(ctx, NK_KEY_SCROLL_DOWN);
 		}	break;
 		case PUGL_KEY_HOME:
 		{
 			if(control)
 			{
-				nk_input_key(ctx, NK_KEY_TEXT_START, down);
-				nk_input_key(ctx, NK_KEY_SCROLL_START, down);
+				_nk_pugl_key_press(ctx, NK_KEY_TEXT_START);
+				_nk_pugl_key_press(ctx, NK_KEY_SCROLL_START);
 			}
 			else
 			{
-				nk_input_key(ctx, NK_KEY_TEXT_LINE_START, down);
+				_nk_pugl_key_press(ctx, NK_KEY_TEXT_LINE_START);
 			}
 		}	break;
 		case PUGL_KEY_END:
 		{
 			if(control)
 			{
-				nk_input_key(ctx, NK_KEY_TEXT_END, down);
-				nk_input_key(ctx, NK_KEY_SCROLL_END, down);
+				_nk_pugl_key_press(ctx, NK_KEY_TEXT_END);
+				_nk_pugl_key_press(ctx, NK_KEY_SCROLL_END);
 			}
 			else
 			{
-				nk_input_key(ctx, NK_KEY_TEXT_LINE_END, down);
+				_nk_pugl_key_press(ctx, NK_KEY_TEXT_LINE_END);
 			}
-		}	break;
-		case PUGL_KEY_SHIFT:
-		{
-			nk_input_key(ctx, NK_KEY_SHIFT, down);
-		}	break;
-		case PUGL_KEY_CTRL:
-		{
-			nk_input_key(ctx, NK_KEY_CTRL, down);
 		}	break;
 		case PUGL_KEY_INSERT:
 		{
 			//TODO
 		}	break;
+		case PUGL_KEY_SHIFT:
+		{
+			win->state |= PUGL_MOD_SHIFT;
+			nk_input_key(ctx, NK_KEY_SHIFT, nk_true);
+		}	return true;
+		case PUGL_KEY_CTRL:
+		{
+			win->state |= PUGL_MOD_CTRL;
+			nk_input_key(ctx, NK_KEY_CTRL, nk_true);
+		}	return true;
 		case PUGL_KEY_ALT:
 		{
-			//TODO
+			// TODO
 		}	break;
 		case PUGL_KEY_SUPER:
 		{
-			//TODO
+			// TODO
 		}	break;
 	}
+
+	return false;
 }
 
-static void
-_nk_pugl_other_key(struct nk_context *ctx, const PuglEventKey *ev, int down)
+static bool
+_nk_pugl_special_key_up(nk_pugl_window_t *win, const PuglEventKey *ev)
 {
+	struct nk_context *ctx = &win->ctx;
+
+	switch(ev->special)
+	{
+		case PUGL_KEY_F1:
+		case PUGL_KEY_F2:
+		case PUGL_KEY_F3:
+		case PUGL_KEY_F4:
+		case PUGL_KEY_F5:
+		case PUGL_KEY_F6:
+		case PUGL_KEY_F7:
+		case PUGL_KEY_F8:
+		case PUGL_KEY_F9:
+		case PUGL_KEY_F10:
+		case PUGL_KEY_F11:
+		case PUGL_KEY_F12:
+		case PUGL_KEY_LEFT:
+		case PUGL_KEY_RIGHT:
+		case PUGL_KEY_UP:
+		case PUGL_KEY_DOWN:
+		case PUGL_KEY_PAGE_UP:
+		case PUGL_KEY_PAGE_DOWN:
+		case PUGL_KEY_HOME:
+		case PUGL_KEY_END:
+		case PUGL_KEY_INSERT:
+		{
+			// ignore
+		}	break;
+		case PUGL_KEY_SHIFT:
+		{
+			nk_input_key(ctx, NK_KEY_SHIFT, nk_false);
+			win->state &= ~PUGL_MOD_SHIFT;
+		}	return true;
+		case PUGL_KEY_CTRL:
+		{
+			nk_input_key(ctx, NK_KEY_CTRL, nk_false);
+			win->state &= ~PUGL_MOD_CTRL;
+		}	return true;
+		case PUGL_KEY_ALT:
+		{
+			// TODO
+		}	break;
+		case PUGL_KEY_SUPER:
+		{
+			// TODO
+		}	break;
+	}
+
+	return false;
+}
+
+static bool
+_nk_pugl_other_key_down(nk_pugl_window_t *win, const PuglEventKey *ev)
+{
+	struct nk_context *ctx = &win->ctx;
 	const bool control = ev->state & PUGL_MOD_CTRL;
 
 	switch(ev->character)
 	{
 		case '\r':
 		{
-			nk_input_key(ctx, NK_KEY_ENTER, down);
+			_nk_pugl_key_press(ctx, NK_KEY_ENTER);
 		}	break;
 		case '\t':
 		{
-			nk_input_key(ctx, NK_KEY_TAB, down);
+			_nk_pugl_key_press(ctx, NK_KEY_TAB);
 		}	break;
 		case PUGL_CHAR_DELETE:
 		{
-			nk_input_key(ctx, NK_KEY_DEL, down);
+			_nk_pugl_key_press(ctx, NK_KEY_DEL);
 		}	break;
 		case PUGL_CHAR_BACKSPACE:
 		{
-			nk_input_key(ctx, NK_KEY_BACKSPACE, down);
+			_nk_pugl_key_press(ctx, NK_KEY_BACKSPACE);
 		}	break;
 		case PUGL_CHAR_ESCAPE:
 		{
-			nk_input_key(ctx, NK_KEY_TEXT_RESET_MODE, down);
+			_nk_pugl_key_press(ctx, NK_KEY_TEXT_RESET_MODE);
 		} break;
 
 		default:
@@ -527,28 +595,28 @@ _nk_pugl_other_key(struct nk_context *ctx, const PuglEventKey *ev, int down)
 				{
 					case 'c':
 					{
-						nk_input_key(ctx, NK_KEY_COPY, down);
+						_nk_pugl_key_press(ctx, NK_KEY_COPY);
 					}	break;
 					case 'v':
 					{
-						nk_input_key(ctx, NK_KEY_PASTE, down);
+						_nk_pugl_key_press(ctx, NK_KEY_PASTE);
 					}	break;
 					case 'x':
 					{
-						nk_input_key(ctx, NK_KEY_CUT, down);
+						_nk_pugl_key_press(ctx, NK_KEY_CUT);
 					}	break;
 					case 'z':
 					{
-						nk_input_key(ctx, NK_KEY_TEXT_UNDO, down);
+						_nk_pugl_key_press(ctx, NK_KEY_TEXT_UNDO);
 					}	break;
 					case 'r':
 					{
-						nk_input_key(ctx, NK_KEY_TEXT_REDO, down);
+						_nk_pugl_key_press(ctx, NK_KEY_TEXT_REDO);
 					}	break;
 
 					default:
 					{
-						if(down && isalpha(character))
+						if(isprint(character))
 							nk_input_char(ctx, character);
 					} break;
 				}
@@ -559,28 +627,63 @@ _nk_pugl_other_key(struct nk_context *ctx, const PuglEventKey *ev, int down)
 				{
 					case 'i':
 					{
-						nk_input_key(ctx, NK_KEY_TEXT_INSERT_MODE, down);
+						_nk_pugl_key_press(ctx, NK_KEY_TEXT_INSERT_MODE);
 					} break;
 					case 'r':
 					{
-						nk_input_key(ctx, NK_KEY_TEXT_REPLACE_MODE, down);
+						_nk_pugl_key_press(ctx, NK_KEY_TEXT_REPLACE_MODE);
 					} break;
 				}
 
-				if(down)
-					nk_input_glyph(ctx, (const char *)ev->utf8);
+				nk_input_glyph(ctx, (const char *)ev->utf8);
 			}
 		} break;
 	}
+
+	return false;
 }
 
 static void
-_nk_pugl_key(struct nk_context *ctx, const PuglEventKey *ev, int down)
+_nk_pugl_modifiers(nk_pugl_window_t *win, PuglMod state)
+{
+	struct nk_context *ctx = &win->ctx;
+
+	if(win->state != state) // modifiers changed
+	{
+		if( (win->state & PUGL_MOD_SHIFT) != (state & PUGL_MOD_SHIFT))
+			nk_input_key(ctx, NK_KEY_SHIFT, (state & PUGL_MOD_SHIFT) == PUGL_MOD_SHIFT);
+
+		if( (win->state & PUGL_MOD_CTRL) != (state & PUGL_MOD_CTRL))
+			nk_input_key(ctx, NK_KEY_CTRL, (state & PUGL_MOD_CTRL) == PUGL_MOD_CTRL);
+
+		if( (win->state & PUGL_MOD_ALT) != (state & PUGL_MOD_ALT))
+			; // not yet supported in nuklear
+
+		if( (win->state & PUGL_MOD_SUPER) != (state & PUGL_MOD_SUPER))
+			; // not yet supported in nuklear
+
+		win->state = state; // switch old and new modifier states
+	}
+}
+
+static bool
+_nk_pugl_key_down(nk_pugl_window_t *win, const PuglEventKey *ev)
 {
 	if(ev->special)
-		_nk_pugl_special_key(ctx, ev, down);
+		return _nk_pugl_special_key_down(win, ev);
 	else if(ev->character && !ev->filter)
-		_nk_pugl_other_key(ctx, ev, down);
+		return _nk_pugl_other_key_down(win, ev);
+
+	return false;
+}
+
+static bool
+_nk_pugl_key_up(nk_pugl_window_t *win, const PuglEventKey *ev)
+{
+	if(ev->special)
+		return _nk_pugl_special_key_up(win, ev);
+
+	return false;
 }
 
 static inline void
@@ -637,6 +740,7 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 		{
 			const PuglEventButton *ev = (const PuglEventButton *)e;
 
+			_nk_pugl_modifiers(win, ev->state);
 			nk_input_button(ctx, ev->button - 1, ev->x, ev->y, 1);
 
 			puglPostRedisplay(win->view);
@@ -646,6 +750,7 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 		{
 			const PuglEventButton *ev = (const PuglEventButton *)e;
 
+			_nk_pugl_modifiers(win, ev->state);
 			nk_input_button(ctx, ev->button - 1, ev->x, ev->y, 0);
 
 			puglPostRedisplay(win->view);
@@ -679,7 +784,8 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 		{
 			const PuglEventKey *ev = (const PuglEventKey *)e;
 
-			_nk_pugl_key(ctx, ev, 1);
+			if(!_nk_pugl_key_down(win, ev)) // no modifier change
+				_nk_pugl_modifiers(win, ev->state);
 
 			puglPostRedisplay(win->view);
 			break;
@@ -688,7 +794,8 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 		{
 			const PuglEventKey *ev = (const PuglEventKey *)e;
 
-			_nk_pugl_key(ctx, ev, 0);
+			if(!_nk_pugl_key_up(win, ev)) // no modifier change
+				_nk_pugl_modifiers(win, ev->state);
 
 			puglPostRedisplay(win->view);
 			break;
@@ -697,6 +804,7 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 		{
 			const PuglEventMotion *ev = (const PuglEventMotion *)e;
 
+			_nk_pugl_modifiers(win, ev->state);
 			nk_input_motion(ctx, ev->x, ev->y);
 
 			puglPostRedisplay(win->view);
@@ -706,13 +814,19 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 		{
 			const PuglEventScroll *ev = (const PuglEventScroll *)e;
 
+			_nk_pugl_modifiers(win, ev->state);
 			nk_input_scroll(ctx, ev->dy);
 
 			puglPostRedisplay(win->view);
 			break;
 		}
 		case PUGL_LEAVE_NOTIFY:
+		{
+			const PuglEventCrossing *ev = (const PuglEventCrossing *)e;
+
+			_nk_pugl_modifiers(win, ev->state);
 			// fall-through
+		}
 		case PUGL_FOCUS_OUT:
 		{
 			win->has_left = true;
@@ -720,7 +834,12 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 			break;
 		}
 		case PUGL_ENTER_NOTIFY:
+		{
+			const PuglEventCrossing *ev = (const PuglEventCrossing *)e;
+
+			_nk_pugl_modifiers(win, ev->state);
 			// fall-through
+		}
 		case PUGL_FOCUS_IN:
 		{
 			win->has_left = false;
