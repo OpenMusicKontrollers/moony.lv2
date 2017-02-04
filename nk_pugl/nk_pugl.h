@@ -63,6 +63,8 @@ typedef void (*nk_pugl_expose_t)(struct nk_context *ctx,
 struct _nk_pugl_config_t {
 	unsigned width;
 	unsigned height;
+	unsigned min_width;
+	unsigned min_height;
 
 	bool resizable;
 	bool ignore;
@@ -866,7 +868,7 @@ nk_pugl_init(nk_pugl_window_t *win)
 	win->view = puglInit(NULL, NULL);
 	puglInitWindowClass(win->view, cfg->class ? cfg->class : "nuklear");
 	puglInitWindowSize(win->view, cfg->width, cfg->height);
-	puglInitWindowMinSize(win->view, cfg->width, cfg->height);
+	puglInitWindowMinSize(win->view, cfg->min_width, cfg->min_height);
 	puglInitResizable(win->view, cfg->resizable);
 	puglInitWindowParent(win->view, cfg->parent);
 	puglInitTransientFor(win->view, cfg->parent);
