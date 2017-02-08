@@ -82,6 +82,7 @@
 #define MOONY_STATE_URI				MOONY_URI"#state"
 
 #define MOONY_EDITOR_HIDDEN_URI	MOONY_URI"#editorHidden"
+#define MOONY_LOG_HIDDEN_URI	MOONY_URI"#logHidden"
 #define MOONY_PARAM_HIDDEN_URI	MOONY_URI"#parameterHidden"
 
 #define MOONY_PARAM_COLS_URI	MOONY_URI"#parameterCols"
@@ -233,6 +234,7 @@ struct _moony_t {
 		LV2_URID moony_trace;
 		LV2_URID moony_state;
 		LV2_URID moony_editorHidden;
+		LV2_URID moony_logHidden;
 		LV2_URID moony_paramHidden;
 		LV2_URID moony_paramCols;
 		LV2_URID moony_paramRows;
@@ -324,6 +326,7 @@ struct _moony_t {
 	latom_driver_hash_t atom_driver_hash [DRIVER_HASH_MAX];
 
 	_Atomic int32_t editor_hidden;
+	_Atomic int32_t log_hidden;
 	_Atomic int32_t param_hidden;
 	_Atomic int32_t param_cols;
 	_Atomic int32_t param_rows;

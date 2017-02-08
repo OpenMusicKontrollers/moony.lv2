@@ -166,6 +166,7 @@ struct _plughandle_t {
 	LV2_URID moony_error;
 	LV2_URID moony_trace;
 	LV2_URID moony_editorHidden;
+	LV2_URID moony_logHidden;
 	LV2_URID moony_paramHidden;
 	LV2_URID moony_paramCols;
 	LV2_URID moony_paramRows;
@@ -228,10 +229,11 @@ struct _plughandle_t {
 	browser_t browser;
 	const char *bundle_path;
 
-	int32_t code_hidden;
-	int32_t prop_hidden;
-	int32_t row_divider;
-	int32_t col_divider;
+	int32_t editor_hidden;
+	int32_t log_hidden;
+	int32_t param_hidden;
+	int32_t param_rows;
+	int32_t param_cols;
 };
 
 static uint8_t *
@@ -1699,11 +1701,12 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 		const bool has_shift_enter = has_shift_down && has_enter_pressed;
 		const bool has_control_enter = has_control_down && has_enter_pressed;
 		const bool has_control_l = control_letter == 'l';
+		const bool has_control_d = control_letter == 'd';
 		const bool has_control_e = control_letter == 'e';
 		const bool has_control_p = control_letter == 'p';
 		bool has_commited = false;
 
-		nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
+		nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 3);
 		{
 			ctx->style.selectable.normal = nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]);
 			ctx->style.selectable.hover = nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_HOVER]);
@@ -1720,38 +1723,50 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 			if(_tooltip_visible(ctx))
 				nk_tooltip(ctx, "Ctrl-E");
 			if(has_control_e)
-				handle->code_hidden = !handle->code_hidden;
-			const bool code_hidden = handle->code_hidden;
-			handle->code_hidden = !nk_select_label(ctx, "- Editor -", NK_TEXT_CENTERED, !handle->code_hidden);
-			if( (code_hidden != handle->code_hidden) || has_control_e)
-				_patch_set(handle, handle->moony_editorHidden, sizeof(int32_t), handle->forge.Bool, &handle->code_hidden);
+				handle->editor_hidden = !handle->editor_hidden;
+			const bool editor_hidden = handle->editor_hidden;
+			handle->editor_hidden = !nk_select_label(ctx, "- Editor -", NK_TEXT_CENTERED, !handle->editor_hidden);
+			if( (editor_hidden != handle->editor_hidden) || has_control_e)
+				_patch_set(handle, handle->moony_editorHidden, sizeof(int32_t), handle->forge.Bool, &handle->editor_hidden);
 
-			nk_layout_row_push(ctx, 0.4);
+			nk_layout_row_push(ctx, 0.2);
+			if(_tooltip_visible(ctx))
+				nk_tooltip(ctx, "Ctrl-L");
+			if(has_control_l)
+				handle->log_hidden = !handle->log_hidden;
+			const bool log_hidden = handle->log_hidden;
+			handle->log_hidden = !nk_select_label(ctx, "- Log -", NK_TEXT_CENTERED, !handle->log_hidden);
+			if( (log_hidden != handle->log_hidden) || has_control_l)
+				_patch_set(handle, handle->moony_logHidden, sizeof(int32_t), handle->forge.Bool, &handle->log_hidden);
+
+			nk_layout_row_push(ctx, 0.2);
 			if(_tooltip_visible(ctx))
 				nk_tooltip(ctx, "Ctrl-P");
 			if(has_control_p)
-				handle->prop_hidden = !handle->prop_hidden;
-			const bool prop_hidden = handle->prop_hidden;
-			handle->prop_hidden = !nk_select_label(ctx, "- Parameters -", NK_TEXT_CENTERED, !handle->prop_hidden);
-			if( (prop_hidden != handle->prop_hidden) || has_control_p)
-				_patch_set(handle, handle->moony_paramHidden, sizeof(int32_t), handle->forge.Bool, &handle->prop_hidden);
+				handle->param_hidden = !handle->param_hidden;
+			const bool param_hidden = handle->param_hidden;
+			handle->param_hidden = !nk_select_label(ctx, "- Parameters -", NK_TEXT_CENTERED, !handle->param_hidden);
+			if( (param_hidden != handle->param_hidden) || has_control_p)
+				_patch_set(handle, handle->moony_paramHidden, sizeof(int32_t), handle->forge.Bool, &handle->param_hidden);
 		}
+		nk_layout_row_end(ctx);
 
-		nk_layout_row_begin(ctx, NK_DYNAMIC, body_h, !handle->code_hidden + !handle->prop_hidden);
+		nk_layout_row_begin(ctx, NK_DYNAMIC, body_h, !handle->editor_hidden + !handle->log_hidden + !handle->param_hidden);
 		{
-			if(!handle->code_hidden)
+			const struct nk_style *style = &ctx->style;
+			const float box_h = body_h - 1*dy - 3*group_padding.y;
+
+			if(!handle->editor_hidden)
 			{
-				nk_layout_row_push(ctx, handle->prop_hidden ? 1.0 : 0.6);
+				nk_layout_row_push(ctx, (handle->log_hidden && handle->param_hidden) ? 1.0 : 0.6);
 				if(nk_group_begin(ctx, "Logic", NK_WINDOW_NO_SCROLLBAR))
 				{
-					const struct nk_style *style = &ctx->style;
-					const float editor_h = body_h - 1*dy - 4*group_padding.y;
 					const float left_width = style->font->width(style->font->userdata,
 						style->font->height, "     ", 5); //TODO calculate only once?
 					const float left_rel = left_width / nk_window_get_content_region_size(ctx).x;
 
 					const float ratio [2] = {left_rel, NK_UNDEFINED};
-					nk_layout_row(ctx, NK_DYNAMIC, editor_h*0.9, 2, ratio);
+					nk_layout_row(ctx, NK_DYNAMIC, box_h, 2, ratio);
 
 					// reserve space for line numbers
 					struct nk_rect line_number_bounds = nk_layout_space_bounds(ctx);
@@ -1806,57 +1821,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						nk_push_scissor(canv, old_clip);
 					}
 
-					nk_layout_row(ctx, NK_DYNAMIC, editor_h*0.1, 2, ratio);
-
-					// reserve space for trance numbers
-					struct nk_rect trace_number_bounds = nk_layout_space_bounds(ctx);
-					const enum nk_widget_layout_states trace_number_states = nk_widget(&trace_number_bounds, ctx);
-
-					struct nk_list_view lview;
-					const float dh = style->font->height + style->edit.row_padding;
-					if(nk_list_view_begin(ctx, &lview, "Traces", NK_WINDOW_BORDER, dh, handle->n_trace))
-					{
-						nk_layout_row_dynamic(ctx, dh, 1);
-						for(int l = lview.begin; (l < lview.end) && (l < handle->n_trace); l++)
-						{
-							nk_label(ctx, handle->traces[l], NK_TEXT_LEFT);
-						}
-
-						nk_list_view_end(&lview);
-					}
-
-					// actually draw trace numbers (after trace list)
-					if(trace_number_states != NK_WIDGET_INVALID)
-					{
-						const float y0 = trace_number_bounds.y + group_padding.y - 1.f;
-						struct nk_command_buffer *canv = nk_window_get_canvas(ctx);
-
-						struct nk_rect old_clip = canv->clip;
-						nk_push_scissor(canv, trace_number_bounds);
-						for(int l = lview.begin; (l < lview.end) && (l < handle->n_trace); l++)
-						{
-							const int i = l - lview.begin;
-							struct nk_rect bb = trace_number_bounds;
-							bb.h = dh + group_padding.y;
-							bb.y = y0 + bb.h * i;
-
-							struct nk_window *win = ctx->current;
-							struct nk_vec2 item_padding = style->text.padding;
-							struct nk_text text;
-							text.padding.x = item_padding.x;
-							text.padding.y = item_padding.y;
-							text.background = style->window.background;
-							//text.text = style->text.color;
-							text.text = nk_rgb(100, 100, 100);
-
-							char tmp [16];
-							snprintf(tmp, 16, "%i", l + 1);
-							nk_widget_text(&win->buffer, bb, tmp, strlen(tmp), &text, NK_TEXT_RIGHT, style->font);
-						}
-						nk_push_scissor(canv, old_clip);
-					}
-
-					nk_layout_row_dynamic(ctx, dy, 3);
+					nk_layout_row_dynamic(ctx, dy, 2);
 					if(_tooltip_visible(ctx))
 						nk_tooltip(ctx, "Shift-Enter");
 					nk_style_push_style_item(ctx, &ctx->style.button.normal, has_shift_enter && has_commited
@@ -1875,12 +1840,42 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						_submit_line_or_sel(handle);
 					nk_style_pop_style_item(ctx);
 
+					nk_group_end(ctx);
+				}
+			}
+
+			if(!handle->log_hidden)
+			{
+				nk_layout_row_push(ctx, (handle->param_hidden ? 0.4 : 0.2) * (handle->editor_hidden ? 2.5 : 1) );
+				if(nk_group_begin(ctx, "Utils", NK_WINDOW_NO_SCROLLBAR))
+				{
+					nk_layout_row_dynamic(ctx, box_h, 1);
+					struct nk_list_view lview;
+					const float dh = style->font->height + style->edit.row_padding;
+					if(nk_list_view_begin(ctx, &lview, "Traces", NK_WINDOW_BORDER, dh, handle->n_trace))
+					{
+						nk_layout_row_dynamic(ctx, dh, 1);
+						for(int l = lview.begin; (l < lview.end) && (l < handle->n_trace); l++)
+						{
+							if(l % 2)
+							{
+								struct nk_command_buffer *canvas = nk_window_get_canvas(ctx);
+								struct nk_rect b1 = nk_widget_bounds(ctx);
+								nk_fill_rect(canvas, b1, 0.f, nk_rgb(0x37, 0x37, 0x37));
+							}
+							nk_label(ctx, handle->traces[l], NK_TEXT_LEFT);
+						}
+
+						nk_list_view_end(&lview);
+					}
+
+					nk_layout_row_dynamic(ctx, dy, 1);
 					if(_tooltip_visible(ctx))
-						nk_tooltip(ctx, "Ctrl-L");
-					nk_style_push_style_item(ctx, &ctx->style.button.normal, has_control_l
+						nk_tooltip(ctx, "Ctrl-D");
+					nk_style_push_style_item(ctx, &ctx->style.button.normal, has_control_d
 						? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
 						: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
-					if(nk_button_label(ctx, "Clear log") || has_control_l)
+					if(nk_button_label(ctx, "Clear log") || has_control_d)
 						_clear_log(handle);
 					nk_style_pop_style_item(ctx);
 
@@ -1888,14 +1883,12 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 				}
 			}
 
-			if(!handle->prop_hidden)
+			if(!handle->param_hidden)
 			{
-				nk_layout_row_push(ctx, handle->code_hidden ? 1.0 : 0.4);
+				nk_layout_row_push(ctx, (handle->log_hidden ? 0.4 : 0.2) * (handle->editor_hidden ? 2.5 : 1) );
 				if(nk_group_begin(ctx, "Parameters", NK_WINDOW_NO_SCROLLBAR))
 				{
-					const float box_h = body_h - 1*dy - 3*group_padding.y;
-
-					const float prop_h = (box_h - (handle->row_divider + 1) * group_padding.y) / handle->row_divider;
+					const float prop_h = (box_h - (handle->param_rows + 1) * group_padding.y) / handle->param_rows;
 					const float rest = header_height + 3*group_padding.y + 2*ctx->style.window.border;
 					const int ndy = ceilf(prop_h - rest) / dy;
 					const float prop_h_2 = ndy*dy + rest;
@@ -1903,7 +1896,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					nk_layout_row_dynamic(ctx, box_h, 1);
 					if(nk_group_begin(ctx, "Widgets", 0))
 					{
-						nk_layout_row_dynamic(ctx, prop_h_2, handle->col_divider);
+						nk_layout_row_dynamic(ctx, prop_h_2, handle->param_cols);
 						for(int p = 0; p < handle->n_writable; p++)
 						{
 							prop_t *prop = &handle->writables[p];
@@ -1926,15 +1919,15 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 
 					nk_layout_row_dynamic(ctx, dy, 2);
 
-					const int row_divider = handle->row_divider;
-					handle->row_divider = nk_propertyi(ctx, "Rows", 1, handle->row_divider, 16, 1, 0.f);
-					if(row_divider != handle->row_divider)
-						_patch_set(handle, handle->moony_paramRows, sizeof(int32_t), handle->forge.Int, &handle->row_divider);
+					const int param_rows = handle->param_rows;
+					handle->param_rows = nk_propertyi(ctx, "Rows", 1, handle->param_rows, 16, 1, 0.f);
+					if(param_rows != handle->param_rows)
+						_patch_set(handle, handle->moony_paramRows, sizeof(int32_t), handle->forge.Int, &handle->param_rows);
 
-					const int col_divider = handle->col_divider;
-					handle->col_divider = nk_propertyi(ctx, "Columns", 1, handle->col_divider, 16, 1, 0.f);
-					if(col_divider != handle->col_divider)
-						_patch_set(handle, handle->moony_paramCols, sizeof(int32_t), handle->forge.Int, &handle->col_divider);
+					const int param_cols = handle->param_cols;
+					handle->param_cols = nk_propertyi(ctx, "Columns", 1, handle->param_cols, 16, 1, 0.f);
+					if(param_cols != handle->param_cols)
+						_patch_set(handle, handle->moony_paramCols, sizeof(int32_t), handle->forge.Int, &handle->param_cols);
 
 					nk_group_end(ctx);
 				}
@@ -2091,6 +2084,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	handle->moony_error = handle->map->map(handle->map->handle, MOONY_ERROR_URI);
 	handle->moony_trace = handle->map->map(handle->map->handle, MOONY_TRACE_URI);
 	handle->moony_editorHidden = handle->map->map(handle->map->handle, MOONY_EDITOR_HIDDEN_URI);
+	handle->moony_logHidden = handle->map->map(handle->map->handle, MOONY_LOG_HIDDEN_URI);
 	handle->moony_paramHidden = handle->map->map(handle->map->handle, MOONY_PARAM_HIDDEN_URI);
 	handle->moony_paramCols = handle->map->map(handle->map->handle, MOONY_PARAM_COLS_URI);
 	handle->moony_paramRows = handle->map->map(handle->map->handle, MOONY_PARAM_ROWS_URI);
@@ -2171,6 +2165,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	_patch_get(handle, handle->moony_code);
 	_patch_get(handle, handle->moony_error);
 	_patch_get(handle, handle->moony_editorHidden);
+	_patch_get(handle, handle->moony_logHidden);
 	_patch_get(handle, handle->moony_paramHidden);
 	_patch_get(handle, handle->moony_paramCols);
 	_patch_get(handle, handle->moony_paramRows);
@@ -2557,7 +2552,16 @@ _patch_set_self(plughandle_t *handle, LV2_URID property, const LV2_Atom *value)
 	{
 		if(value->type == handle->forge.Bool)
 		{
-			handle->code_hidden = ((const LV2_Atom_Bool *)value)->body;
+			handle->editor_hidden = ((const LV2_Atom_Bool *)value)->body;
+
+			nk_pugl_post_redisplay(&handle->win);
+		}
+	}
+	else if(property == handle->moony_logHidden)
+	{
+		if(value->type == handle->forge.Bool)
+		{
+			handle->log_hidden = ((const LV2_Atom_Bool *)value)->body;
 
 			nk_pugl_post_redisplay(&handle->win);
 		}
@@ -2566,7 +2570,7 @@ _patch_set_self(plughandle_t *handle, LV2_URID property, const LV2_Atom *value)
 	{
 		if(value->type == handle->forge.Bool)
 		{
-			handle->prop_hidden = ((const LV2_Atom_Bool *)value)->body;
+			handle->param_hidden = ((const LV2_Atom_Bool *)value)->body;
 
 			nk_pugl_post_redisplay(&handle->win);
 		}
@@ -2575,7 +2579,7 @@ _patch_set_self(plughandle_t *handle, LV2_URID property, const LV2_Atom *value)
 	{
 		if(value->type == handle->forge.Int)
 		{
-			handle->col_divider = ((const LV2_Atom_Int *)value)->body;
+			handle->param_cols = ((const LV2_Atom_Int *)value)->body;
 
 			nk_pugl_post_redisplay(&handle->win);
 		}
@@ -2584,7 +2588,7 @@ _patch_set_self(plughandle_t *handle, LV2_URID property, const LV2_Atom *value)
 	{
 		if(value->type == handle->forge.Int)
 		{
-			handle->row_divider = ((const LV2_Atom_Int *)value)->body;
+			handle->param_rows = ((const LV2_Atom_Int *)value)->body;
 
 			nk_pugl_post_redisplay(&handle->win);
 		}
