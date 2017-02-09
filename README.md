@@ -33,7 +33,7 @@ Get more information at: [http://open-music-kontrollers.ch/lv2/moony](http://ope
 ### Dependencies
 
 * [LV2](http://lv2plug.in) (LV2 Plugin Standard)
-* [libwebsockets](https://libwebsockets.org/) (Lightweight pure C websocket library)
+* [cairo](http://cairographics.org) (Cairo Vector Graphics Library)
 
 ### Build / install
 
