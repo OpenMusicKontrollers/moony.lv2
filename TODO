@@ -1,2 +1,7 @@
-* document Parameter
-* document Canvas
+* doc: Parameter
+* doc: Canvas
+* api: atom:read(), forge:write() methods
+* api: xpress
+* gui: script import/export
+* gui: clipboard support
+* gui: external editor
