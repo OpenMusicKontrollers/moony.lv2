@@ -84,6 +84,7 @@ _strndup(const char *s, size_t n)
 
 typedef union _body_t body_t;
 typedef struct _prop_t prop_t;
+typedef enum _browser_type_t browser_type_t;
 typedef struct _browser_t browser_t;
 typedef struct _plughandle_t plughandle_t;
 
@@ -109,6 +110,13 @@ struct _prop_t {
 	struct nk_color color;
 };
 
+enum _browser_type_t {
+	BROWSER_NONE = 0,
+	BROWSER_IMPORT,
+	BROWSER_EXPORT,
+	BROWSER_PROPERTY
+};
+
 struct _browser_t {
 	char file[MAX_PATH_LEN];
 	char home[MAX_PATH_LEN];
@@ -119,6 +127,8 @@ struct _browser_t {
 	size_t file_count;
 	size_t dir_count;
 	ssize_t selected;
+	int return_hidden;
+	int return_lua_only;
 
 	struct {
 		struct nk_image home;
@@ -207,6 +217,7 @@ struct _plughandle_t {
 	atom_ser_t ser;
 
 	float dy;
+	browser_type_t browser_type;
 	prop_t *browser_target;
 
 	char code [MOONY_MAX_CHUNK_LEN];
@@ -235,6 +246,9 @@ struct _plughandle_t {
 	int32_t param_rows;
 	int32_t param_cols;
 };
+
+static void
+_patch_set_code(plughandle_t *handle, uint32_t size, const char *body);
 
 static uint8_t *
 file_load(const char *path, size_t *siz)
@@ -273,7 +287,8 @@ _cmp(const void *a, const void *b)
 }
 
 static char**
-dir_list(const char *dir, int return_subdirs, int return_hidden, size_t *count)
+dir_list(const char *dir, int return_subdirs, int return_hidden,
+	int return_lua_only, size_t *count)
 {
 	size_t n = 0;
 	char buffer[MAX_PATH_LEN];
@@ -306,6 +321,16 @@ dir_list(const char *dir, int return_subdirs, int return_hidden, size_t *count)
 			if(  (data->d_name[0] == '.')
 				&& (!return_hidden || ( (data->d_name[1] == '\0') || (data->d_name[1] == '.'))) )
 				continue;
+
+			if(return_lua_only)
+			{
+				char *point = strchr(data->d_name, '.');
+				if(!point) // no suffix
+					continue;
+
+				if(strcmp(point, ".lua")) // no *.lua suffix
+					continue;
+			}
 			
 			strncpy(buffer + n, data->d_name, MAX_PATH_LEN-n);
 			y = opendir(buffer);
@@ -343,19 +368,18 @@ dir_list(const char *dir, int return_subdirs, int return_hidden, size_t *count)
 }
 
 static void
-file_browser_reload_directory_content(browser_t *browser, const char *path,
-	int return_hidden)
+file_browser_reload_directory_content(browser_t *browser, const char *path)
 {
 	strncpy(browser->directory, path, MAX_PATH_LEN);
 	dir_free_list(browser->files, browser->file_count);
 	dir_free_list(browser->directories, browser->dir_count);
-	browser->files = dir_list(path, 0, return_hidden, &browser->file_count);
-	browser->directories = dir_list(path, 1, return_hidden, &browser->dir_count);
+	browser->files = dir_list(path, 0, browser->return_hidden, browser->return_lua_only, &browser->file_count);
+	browser->directories = dir_list(path, 1, browser->return_hidden, 0, &browser->dir_count);
 	browser->selected = -1;
 }
 
 static void
-file_browser_init(browser_t *browser, int return_hidden,
+file_browser_init(browser_t *browser, int return_hidden, int return_lua_only,
 	struct nk_image (*icon_load)(void *data, const char *filename), void *data)
 {
 	memset(browser, 0, sizeof(*browser));
@@ -374,6 +398,8 @@ file_browser_init(browser_t *browser, int return_hidden,
 	strcpy(browser->directory, browser->home);
 	
 	browser->selected = -1;
+	browser->return_hidden = return_hidden;
+	browser->return_lua_only = return_lua_only;
 
 	if(icon_load)
 	{
@@ -408,17 +434,16 @@ file_browser_free(browser_t *browser,
 }
 
 static int
-file_browser_run(browser_t *browser, struct nk_context *ctx, const char *title,
-	int return_hidden, struct nk_rect bounds)
+file_browser_run(browser_t *browser, struct nk_context *ctx, float dy,
+	const char *title, struct nk_rect bounds)
 {
 	int ret = 0;
-	struct nk_rect total_space;
 
 	// delayed initial loading
 	if(!browser->files)
-		browser->files = dir_list(browser->directory, 0, return_hidden, &browser->file_count);
+		browser->files = dir_list(browser->directory, 0, browser->return_hidden, browser->return_lua_only, &browser->file_count);
 	if(!browser->directories)
-		browser->directories = dir_list(browser->directory, 1, return_hidden, &browser->dir_count);
+		browser->directories = dir_list(browser->directory, 1, browser->return_hidden, 0, &browser->dir_count);
 	
 	if(nk_begin(ctx, title, bounds,
 		NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_CLOSABLE))
@@ -432,7 +457,7 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, const char *title,
 		{
 			char *d = browser->directory;
 			char *begin = d + 1;
-			nk_layout_row_dynamic(ctx, 25, 6);
+			nk_layout_row_dynamic(ctx, dy, 6);
 			while(*d++)
 			{
 				if(*d == SLASH_CHAR)
@@ -441,19 +466,22 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, const char *title,
 					if(nk_button_label(ctx, begin))
 					{
 						*d++ = SLASH_CHAR; *d = '\0';
-						file_browser_reload_directory_content(browser, browser->directory, return_hidden);
+						file_browser_reload_directory_content(browser, browser->directory);
 						break;
 					}
 					*d = SLASH_CHAR;
 					begin = d + 1;
 				}
 			}
+
+			nk_layout_row_dynamic(ctx, dy, 1);
+			nk_label(ctx, browser->directory, NK_TEXT_LEFT); //FIXME show editor for export
 		}
 		nk_menubar_end(ctx);
 		ctx->style.window.spacing.x = spacing_x;
 		
 		/* window layout */
-		total_space = nk_window_get_content_region(ctx);
+		struct nk_rect total_space = nk_window_get_content_region(ctx);
 		nk_layout_row(ctx, NK_DYNAMIC, total_space.h, 2, ratio);
 		
 		/* output directory content window */
@@ -461,7 +489,7 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, const char *title,
 		{
 			ssize_t count = browser->dir_count + browser->file_count;
 			
-			nk_layout_row_dynamic(ctx, 20, 1);
+			nk_layout_row_dynamic(ctx, dy, 1);
 			for(ssize_t j = 0; j < count; j++)
 			{
 				if(j < (ssize_t)browser->dir_count)
@@ -482,20 +510,26 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, const char *title,
 			nk_group_end(ctx);
 		}
 
+		/* special buttons */
 		nk_group_begin(ctx, "Special", NK_WINDOW_NO_SCROLLBAR);
 		{
 			nk_layout_row_dynamic(ctx, 40, 1);
-			if(nk_button_image_label(ctx, browser->icons.home, "home", NK_TEXT_RIGHT))
-				file_browser_reload_directory_content(browser, browser->home, return_hidden);
-			if(nk_button_image_label(ctx, browser->icons.computer, "computer", NK_TEXT_RIGHT))
+			if(nk_button_image_label(ctx, browser->icons.home, "Home", NK_TEXT_RIGHT))
+				file_browser_reload_directory_content(browser, browser->home);
+			if(nk_button_image_label(ctx, browser->icons.computer, "Computer", NK_TEXT_RIGHT))
 #ifdef _WIN32
-				file_browser_reload_directory_content(browser, "C:\\", return_hidden);
+				file_browser_reload_directory_content(browser, "C:\\");
 #else
-				file_browser_reload_directory_content(browser, SLASH_STRING, return_hidden);
+				file_browser_reload_directory_content(browser, SLASH_STRING);
 #endif
-			nk_spacing(ctx, 1);
 
-			if(nk_button_label(ctx, "open"))
+			if(nk_checkbox_label(ctx, "Show hidden", &browser->return_hidden))
+				file_browser_reload_directory_content(browser, browser->directory);
+
+			if(nk_checkbox_label(ctx, "Show *.lua only", &browser->return_lua_only))
+				file_browser_reload_directory_content(browser, browser->directory);
+
+			if(nk_button_label(ctx, "Select"))
 			{
 				if(browser->selected >= (ssize_t)browser->dir_count)
 				{
@@ -516,8 +550,7 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, const char *title,
 						browser->directory[n] = SLASH_CHAR;
 						browser->directory[n+1] = '\0';
 					}
-					file_browser_reload_directory_content(browser, browser->directory, return_hidden);
-					//TODO nk_pugl_push_redisplay
+					file_browser_reload_directory_content(browser, browser->directory);
 				}
 			}
 
@@ -1609,6 +1642,7 @@ _parameter_widget_chunk(plughandle_t *handle, struct nk_context *ctx, prop_t *pr
 	nk_layout_row_dynamic(ctx, dy, 1);
 	if(nk_button_label(ctx, "Load"))
 	{
+		handle->browser_type = BROWSER_PROPERTY;
 		handle->browser_target = prop;
 	}
 }
@@ -1704,6 +1738,8 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 		const bool has_control_d = control_letter == 'd';
 		const bool has_control_e = control_letter == 'e';
 		const bool has_control_p = control_letter == 'p';
+		const bool has_control_f = control_letter == 'f';
+		const bool has_control_t = control_letter == 't';
 		bool has_commited = false;
 
 		nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 3);
@@ -1748,6 +1784,8 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 			handle->param_hidden = !nk_select_label(ctx, "- Parameters -", NK_TEXT_CENTERED, !handle->param_hidden);
 			if( (param_hidden != handle->param_hidden) || has_control_p)
 				_patch_set(handle, handle->moony_paramHidden, sizeof(int32_t), handle->forge.Bool, &handle->param_hidden);
+
+			ctx->style.selectable.draw_end = NULL;
 		}
 		nk_layout_row_end(ctx);
 
@@ -1821,7 +1859,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						nk_push_scissor(canv, old_clip);
 					}
 
-					nk_layout_row_dynamic(ctx, dy, 2);
+					nk_layout_row_dynamic(ctx, dy, 3);
 					if(_tooltip_visible(ctx))
 						nk_tooltip(ctx, "Shift-Enter");
 					nk_style_push_style_item(ctx, &ctx->style.button.normal, has_shift_enter && has_commited
@@ -1839,6 +1877,26 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					if(nk_button_label(ctx, "Run line/sel."))
 						_submit_line_or_sel(handle);
 					nk_style_pop_style_item(ctx);
+
+					if(_tooltip_visible(ctx))
+						nk_tooltip(ctx, "Ctrl-F");
+					nk_style_push_style_item(ctx, &ctx->style.button.normal, has_control_f
+						? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
+						: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
+					if(nk_button_label(ctx, "Import from") || has_control_f)
+						handle->browser_type = BROWSER_IMPORT;
+					nk_style_pop_style_item(ctx);
+
+					/* FIXME export
+					if(_tooltip_visible(ctx))
+						nk_tooltip(ctx, "Ctrl-E");
+					nk_style_push_style_item(ctx, &ctx->style.button.normal, has_control_t
+						? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
+						: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
+					if(nk_button_label(ctx, "Export to") || has_control_t)
+						handle->browser_type = BROWSER_EXPORT;
+					nk_style_pop_style_item(ctx);
+					*/
 
 					nk_group_end(ctx);
 				}
@@ -1946,28 +2004,61 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 	}
 	nk_end(ctx);
 
-	if(!handle->browser_target)
+	if(handle->browser_type == BROWSER_NONE)
 		return;
 
 	const struct nk_vec2 browser_padding = nk_vec2(wbounds.w/4, wbounds.h/4);
-	if(file_browser_run(&handle->browser, ctx, "FileBrowser", 1, nk_pad_rect(wbounds, browser_padding)))
+	if(file_browser_run(&handle->browser, ctx, dy, "File browser", nk_pad_rect(wbounds, browser_padding)))
 	{
-		prop_t *prop = handle->browser_target;
-		handle->browser_target = NULL;
-
-		size_t sz;
-		uint8_t *chunk = file_load(handle->browser.file, &sz);
-		if(chunk)
+		switch(handle->browser_type)
 		{
-			prop->value.u = sz;
-			_patch_set(handle, prop->key, sz, prop->range, &chunk);
+			case BROWSER_NONE:
+				break;
+			case BROWSER_IMPORT:
+			{
+				size_t sz;
+				uint8_t *chunk = file_load(handle->browser.file, &sz);
+				if(chunk)
+				{
+					_patch_set_code(handle, sz, (const char *)chunk);
+					free(chunk);
+				}
+			} break;
+			case BROWSER_EXPORT:
+			{
+				FILE *f = fopen(handle->browser.file, "wb");
+				if(f)
+				{
+					struct nk_str *str = &handle->editor.string;
+					if(fwrite(nk_str_get_const(str), nk_str_len_char(str), 1, f) != 1)
+						; //TODO handle error
+					fclose(f);
+				}
+			} break;
+			case BROWSER_PROPERTY:
+			{
+				prop_t *prop = handle->browser_target;
 
-			free(chunk);
+				size_t sz;
+				uint8_t *chunk = file_load(handle->browser.file, &sz);
+				if(chunk)
+				{
+					prop->value.u = sz;
+					_patch_set(handle, prop->key, sz, prop->range, &chunk);
+					free(chunk);
+				}
+			} break;
 		}
+
+		nk_window_close(ctx, "File browser");
 	}
 
-	if(nk_window_is_closed(ctx, "FileBrowser"))
+	if(nk_window_is_closed(ctx, "File browser") || nk_input_is_key_pressed(in, NK_KEY_TEXT_RESET_MODE)) // or escape
+	{
+		// reset browser type and target
+		handle->browser_type = BROWSER_NONE;
 		handle->browser_target = NULL;
+	}
 }
 
 static struct nk_image
@@ -2233,7 +2324,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	handle->editor.lexer.lex = _lex;
 	handle->editor.lexer.data = handle->L;
 
-	file_browser_init(&handle->browser, 1, _icon_load, handle);
+	file_browser_init(&handle->browser, 0, 1, _icon_load, handle);
 
 	return handle;
 }
@@ -2483,33 +2574,39 @@ _patch_set_parameter_property(plughandle_t *handle, LV2_URID subject, LV2_URID p
 }
 
 static void
+_patch_set_code(plughandle_t *handle, uint32_t size, const char *body)
+{
+	if(size <= MOONY_MAX_CHUNK_LEN)
+	{
+		struct nk_str *str = &handle->editor.string;
+		nk_str_clear(str);
+
+		// replace tab with 2 spaces
+		const char *end = body + size - 1;
+		const char *from = body;
+		for(const char *to = strchr(from, '\t');
+			to && (to < end);
+			from = to + 1, to = strchr(from, '\t'))
+		{
+			nk_str_append_text_utf8(str, from, to-from);
+			nk_str_append_text_utf8(str, "  ", 2);
+		}
+		nk_str_append_text_utf8(str, from, end-from);
+
+		handle->editor.lexer.needs_refresh = 1;
+
+		nk_pugl_post_redisplay(&handle->win);
+	}
+}
+
+static void
 _patch_set_self(plughandle_t *handle, LV2_URID property, const LV2_Atom *value)
 {
 	const char *body = LV2_ATOM_BODY_CONST(value);
 
 	if(property == handle->moony_code)
 	{
-		if(value->size <= MOONY_MAX_CHUNK_LEN)
-		{
-			struct nk_str *str = &handle->editor.string;
-			nk_str_clear(str);
-
-			// replace tab with 2 spaces
-			const char *end = body + value->size - 1;
-			const char *from = body;
-			for(const char *to = strchr(from, '\t');
-				to && (to < end);
-				from = to + 1, to = strchr(from, '\t'))
-			{
-				nk_str_append_text_utf8(str, from, to-from);
-				nk_str_append_text_utf8(str, "  ", 2);
-			}
-			nk_str_append_text_utf8(str, from, end-from);
-
-			handle->editor.lexer.needs_refresh = 1;
-
-			nk_pugl_post_redisplay(&handle->win);
-		}
+		_patch_set_code(handle, value->size, body);
 	}
 	else if(property == handle->moony_trace)
 	{
