@@ -121,6 +121,7 @@ struct _browser_t {
 	char file[MAX_PATH_LEN];
 	char home[MAX_PATH_LEN];
 	char directory[MAX_PATH_LEN];
+	char export[MAX_PATH_LEN];
 
 	char **files;
 	char **directories;
@@ -435,7 +436,7 @@ file_browser_free(browser_t *browser,
 
 static int
 file_browser_run(browser_t *browser, struct nk_context *ctx, float dy,
-	const char *title, struct nk_rect bounds)
+	const char *title, browser_type_t browser_type, struct nk_rect bounds)
 {
 	int ret = 0;
 
@@ -475,7 +476,20 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, float dy,
 			}
 
 			nk_layout_row_dynamic(ctx, dy, 1);
-			nk_label(ctx, browser->directory, NK_TEXT_LEFT); //FIXME show editor for export
+			nk_label(ctx, browser->directory, NK_TEXT_LEFT);
+			if(browser_type == BROWSER_EXPORT)
+			{
+				nk_flags flags = NK_EDIT_FIELD | NK_EDIT_SIG_ENTER;
+				const nk_flags state = nk_edit_string_zero_terminated(ctx, flags,
+					browser->export, MAX_PATH_LEN, nk_filter_ascii);
+				if( (state & NK_EDIT_COMMITED) && (strlen(browser->export) > 0) )
+				{
+					strncpy(browser->file, browser->directory, MAX_PATH_LEN);
+					const size_t n = strlen(browser->file);
+					strncpy(browser->file + n, browser->export, MAX_PATH_LEN - n);
+					ret = 1;
+				}
+			}
 		}
 		nk_menubar_end(ctx);
 		ctx->style.window.spacing.x = spacing_x;
@@ -496,14 +510,19 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, float dy,
 				{
 					const int selected = (browser->selected == j);
 					if(nk_select_image_label(ctx, browser->icons.directory, browser->directories[j], NK_TEXT_LEFT, selected) != selected)
+					{
 						browser->selected = j;
+					}
 				}
 				else
 				{
 					const int k = j - browser->dir_count;
 					const int selected = (browser->selected == j);
 					if(nk_select_image_label(ctx, browser->icons.default_file, browser->files[k], NK_TEXT_LEFT, selected) != selected)
+					{
 						browser->selected = j;
+						strncpy(browser->export, browser->files[k], MAX_PATH_LEN);
+					}
 				}
 			}
 			
@@ -531,7 +550,15 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, float dy,
 
 			if(nk_button_label(ctx, "Select"))
 			{
-				if(browser->selected >= (ssize_t)browser->dir_count)
+				if( (browser_type == BROWSER_EXPORT) && (strlen(browser->export) > 0) )
+				{
+					//FIXME remove duplicate code
+					strncpy(browser->file, browser->directory, MAX_PATH_LEN);
+					const size_t n = strlen(browser->file);
+					strncpy(browser->file + n, browser->export, MAX_PATH_LEN - n);
+					ret = 1;
+				}
+				else if(browser->selected >= (ssize_t)browser->dir_count)
 				{
 					const int k = browser->selected - browser->dir_count;
 					strncpy(browser->file, browser->directory, MAX_PATH_LEN);
@@ -1859,7 +1886,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						nk_push_scissor(canv, old_clip);
 					}
 
-					nk_layout_row_dynamic(ctx, dy, 3);
+					nk_layout_row_dynamic(ctx, dy, 4);
 					if(_tooltip_visible(ctx))
 						nk_tooltip(ctx, "Shift-Enter");
 					nk_style_push_style_item(ctx, &ctx->style.button.normal, has_shift_enter && has_commited
@@ -1887,7 +1914,6 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						handle->browser_type = BROWSER_IMPORT;
 					nk_style_pop_style_item(ctx);
 
-					/* FIXME export
 					if(_tooltip_visible(ctx))
 						nk_tooltip(ctx, "Ctrl-E");
 					nk_style_push_style_item(ctx, &ctx->style.button.normal, has_control_t
@@ -1896,7 +1922,6 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					if(nk_button_label(ctx, "Export to") || has_control_t)
 						handle->browser_type = BROWSER_EXPORT;
 					nk_style_pop_style_item(ctx);
-					*/
 
 					nk_group_end(ctx);
 				}
@@ -2008,7 +2033,8 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 		return;
 
 	const struct nk_vec2 browser_padding = nk_vec2(wbounds.w/4, wbounds.h/4);
-	if(file_browser_run(&handle->browser, ctx, dy, "File browser", nk_pad_rect(wbounds, browser_padding)))
+	if(file_browser_run(&handle->browser, ctx, dy, "File browser",
+		handle->browser_type, nk_pad_rect(wbounds, browser_padding)))
 	{
 		switch(handle->browser_type)
 		{
@@ -2053,7 +2079,13 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 		nk_window_close(ctx, "File browser");
 	}
 
-	if(nk_window_is_closed(ctx, "File browser") || nk_input_is_key_pressed(in, NK_KEY_TEXT_RESET_MODE)) // or escape
+	if(  !nk_window_is_active(ctx, "File browser")
+		|| nk_input_is_key_pressed(in, NK_KEY_TEXT_RESET_MODE)) // or escape
+	{
+		nk_window_close(ctx, "File browser");
+	}
+
+	if(nk_window_is_closed(ctx, "File browser"))
 	{
 		// reset browser type and target
 		handle->browser_type = BROWSER_NONE;

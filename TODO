@@ -2,6 +2,5 @@
 * doc: Canvas
 * api: atom:read(), forge:write() methods
 * api: xpress
-* gui: script export
 * gui: clipboard support
 * gui: external editor
