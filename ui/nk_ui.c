@@ -1675,6 +1675,14 @@ _parameter_widget_chunk(plughandle_t *handle, struct nk_context *ctx, prop_t *pr
 }
 
 static void
+_parameter_widget_unsupported(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
+	bool editable, bool has_shift_enter, float dy, int ndy)
+{
+	nk_layout_row_dynamic(ctx, dy*(ndy-1), 1);
+	nk_label(ctx, "unsupported", NK_TEXT_CENTERED);
+}
+
+static void
 _parameter_widget(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
 	bool editable, bool has_shift_enter, float dy, int ndy)
 {
@@ -1720,7 +1728,7 @@ _parameter_widget(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
 		}
 		else
 		{
-			// ignore unsupported types
+			_parameter_widget_unsupported(handle, ctx, prop, editable, has_shift_enter, dy, ndy);
 		}
 
 		nk_group_end(ctx);
