@@ -1367,7 +1367,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->log_hidden = ATOMIC_VAR_INIT(1);
 	moony->param_hidden = ATOMIC_VAR_INIT(1);
 	moony->param_cols = ATOMIC_VAR_INIT(3);
-	moony->param_rows = ATOMIC_VAR_INIT(6);
+	moony->param_rows = ATOMIC_VAR_INIT(4);
 
 	return 0;
 }

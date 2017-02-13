@@ -124,7 +124,7 @@ moony:c1xc1
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """function run(n, control, notify, c1)
 	return c1
 end"""
@@ -202,7 +202,7 @@ moony:c2xc2
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """function run(n, control, notify, c1, c2)
 	return c1, c2
 end"""
@@ -310,7 +310,7 @@ moony:c4xc4
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """function run(n, control, notify, c1, c2, c3, c4)
 	return c1, c2, c3, c4
 end"""
@@ -380,7 +380,7 @@ moony:a1xa1
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """function run(n, control, notify, seq, forge)
 	for frames, atom in seq:foreach() do
 		forge:time(frames):atom(atom)
@@ -472,7 +472,7 @@ moony:a2xa2
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """function run(n, control, notify, seq1, forge1, seq2, forge2)
 	for frames, atom in seq1:foreach() do
 		forge1:time(frames):atom(atom)
@@ -608,7 +608,7 @@ moony:a4xa4
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """function run(n, control, notify, seq1, forge1, seq2, forge2, seq3, forge3, seq4, forge4)
 	for frames, atom in seq1:foreach() do
 		forge1:time(frames):atom(atom)
@@ -709,7 +709,7 @@ moony:c1a1xc1a1
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """function run(n, control, notify, seq, forge, c1)
 	for frames, atom in seq:foreach() do
 		forge:time(frames):atom(atom)
@@ -815,7 +815,7 @@ moony:c2a1xc2a1
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """function run(n, control, notify, seq, forge, c1, c2)
 	for frames, atom in seq:foreach() do
 		forge:time(frames):atom(atom)
@@ -951,7 +951,7 @@ moony:c4a1xc4a1
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """function run(n, control, notify, seq, forge, c1, c2, c3, c4)
 	for frames, atom in seq:foreach() do
 		forge:time(frames):atom(atom)

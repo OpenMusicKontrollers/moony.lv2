@@ -87,7 +87,7 @@ moony:bank-through_control-through
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """function run(n, control, notify, ...)
 	return ...
 end"""
@@ -100,7 +100,7 @@ moony:bank-through_atom-through
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """function run(n, control, notify, seq, forge, ...)
 	for frames, atom in seq:foreach() do
 		forge:time(frames):atom(atom)
@@ -117,7 +117,7 @@ moony:bank-through_atom-through2
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """function run(n, control, notify, seq1, forge1, seq2, forge2)
 	for frames, atom in seq1:foreach() do
 		forge1:time(frames):atom(atom)
@@ -136,7 +136,7 @@ moony:bank-through_atom-through4
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """function run(n, control, notify, seq1, forge1, seq2, forge2, seq3, forge3, seq4, forge4)
 	for frames, atom in seq1:foreach() do
 		forge1:time(frames):atom(atom)
@@ -163,7 +163,7 @@ moony:bank-multiplex_atom-multiplex2
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """function run(n, control, notify, seq1, forge1, seq2, forge2)
 	for frames, atom in seq1:foreach(seq2) do
 		forge1:time(frames):atom(atom)
@@ -179,7 +179,7 @@ moony:bank-multiplex_atom-multiplex4
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """function run(n, control, notify, seq1, forge1, seq2, forge2, seq3, forge3, seq4, forge4)
 	for frames, atom in seq1:foreach(seq2, seq3, seq4) do
 		forge1:time(frames):atom(atom)
@@ -197,7 +197,7 @@ moony:bank-midi_midi-responder
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """local midiR = MIDIResponder({
 	[MIDI.NoteOn] = function(self, frames, forge, chan, note, vel)
 		forge:time(frames):midi(MIDI.NoteOn | chan, note, vel)
@@ -221,7 +221,7 @@ moony:bank-time_midi-sequencer
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """local timeR = TimeResponder({
   [Time.speed] = function(self, frames, forge, speed)
     self.rolling = speed > 0.0
@@ -269,7 +269,7 @@ moony:bank-osc_osc-responder
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """local oscR = OSCResponder({
 	['/ping'] = function(self, frames, forge, fmt, ...)
 		forge:time(frames):message('/pong', fmt, ...)
@@ -293,7 +293,7 @@ moony:bank-state_state-responder
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """local urid = HashMap('urn:moony:stateR#')
 
 local pLong
@@ -309,7 +309,7 @@ local pInt = {
     self[RDF.value] = value
     pLong[RDF.value] = value * 2
     if forge then
-      forge:time(frames):set(nil, urid.pLong):long(pLong[RDF.value]):pop()
+      forge:time(frames):set(urid.pLong):long(pLong[RDF.value]):pop()
     end
   end
 }
@@ -337,7 +337,7 @@ local pFloat = {
     self[RDF.value] = value
     pDouble[RDF.value] = value * 2
     if forge then
-      forge:time(frames):set(nil, urid.pDouble):double(pDouble[RDF.value]):pop()
+      forge:time(frames):set(urid.pDouble):double(pDouble[RDF.value]):pop()
     end
   end
 }
@@ -369,7 +369,7 @@ local pURID = {
     self[RDF.value] = value
     pURI[RDF.value] = Unmap[value]
     if forge then
-      forge:time(frames):set(nil, urid.pURI):uri(pURI[RDF.value]):pop()
+      forge:time(frames):set(urid.pURI):uri(pURI[RDF.value]):pop()
     end
   end
 }
@@ -479,7 +479,7 @@ moony:bank-tutorial_part-1
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """-- Tutorial 1: MIDI Channel Blocker
 
 -- define table which holds active MIDI channels
@@ -519,7 +519,7 @@ moony:bank-tutorial_part-2
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """-- Tutorial 2: MIDI Chorder
 
 -- define table that holds number of chord notes and their offsets
@@ -559,7 +559,7 @@ moony:bank-tutorial_part-3
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """-- Tutorial 3: MIDI Sample & Hold
 
 local urn = HashMap('urn:moony:tutorial-3#') -- prefix of this presets URIs
@@ -650,7 +650,7 @@ moony:bank-tutorial_part-4
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """-- Tutorial 4: MIDI Arpeggiator
 
 local schar = string.char -- local variable is more efficient to look up
@@ -736,7 +736,7 @@ moony:bank-tutorial_part-5
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """-- Tutorial 5: MIDI Velocity Curve Interpolator
 
 local X = {0, 15, 112, 127} -- X-coordinates of curve
@@ -793,7 +793,7 @@ moony:bank-tutorial_part-6
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """-- Tutorial 6: MIDI Sequencer
 
 local urn = HashMap('urn:moony:tutorial-6#')
@@ -890,7 +890,7 @@ moony:bank-template_part-1
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """-- Template 1: MIDI Responder
 
 local block = false -- route unmatched messages as-is
@@ -970,7 +970,7 @@ moony:bank-template_part-2
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """-- Template 2: Time Responder
 
 -- define a TimeResponder object
@@ -1031,7 +1031,7 @@ moony:bank-template_part-3
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """-- Template 3: OSC Responder
 
 -- define an OSCResponder object
@@ -1058,7 +1058,7 @@ moony:bank-template_part-4
 		moony:editorHidden false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
-		moony:paramRows 6 ;
+		moony:paramRows 4 ;
 		moony:code """-- Template 4: State Responder
 
 -- define URI prefix for state parameters

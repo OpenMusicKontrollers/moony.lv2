@@ -1017,7 +1017,7 @@ _dial_bool(struct nk_context *ctx, int32_t *val, struct nk_color color, bool edi
 		struct nk_command_buffer *canv= nk_window_get_canvas(ctx);
 		const float w2 = bounds.w/2;
 		const float h2 = bounds.h/2;
-		const float r1 = h2;
+		const float r1 = NK_MIN(w2, h2);
 		const float r2 = r1 / 2;
 		const float cx = bounds.x + w2;
 		const float cy = bounds.y + h2;
@@ -1107,7 +1107,7 @@ _dial_numeric_draw(struct nk_context *ctx, struct nk_rect bounds,
 
 	const float w2 = bounds.w/2;
 	const float h2 = bounds.h/2;
-	const float r1 = h2;
+	const float r1 = NK_MIN(w2, h2);
 	const float r2 = r1 / 2;
 	const float cx = bounds.x + w2;
 	const float cy = bounds.y + h2;
@@ -2032,7 +2032,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 	if(handle->browser_type == BROWSER_NONE)
 		return;
 
-	const struct nk_vec2 browser_padding = nk_vec2(wbounds.w/4, wbounds.h/4);
+	const struct nk_vec2 browser_padding = nk_vec2(wbounds.w/8, wbounds.h/8);
 	if(file_browser_run(&handle->browser, ctx, dy, "File browser",
 		handle->browser_type, nk_pad_rect(wbounds, browser_padding)))
 	{
@@ -2252,8 +2252,8 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	handle->dy = 20.f * scale;
 
 	nk_pugl_config_t *cfg = &handle->win.cfg;
-	cfg->width = 960 * scale;
-	cfg->height = 960 * scale;
+	cfg->width = 1280 * scale;
+	cfg->height = 720 * scale;
 	cfg->resizable = true;
 	cfg->ignore = false;
 	cfg->class = "tracker";
