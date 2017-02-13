@@ -16914,24 +16914,9 @@ nk_panel_end(struct nk_context *ctx)
             layout->bounds.y + layout->bounds.h + layout->footer_height:
             window->bounds.y + window->bounds.h;
 
-        /* draw border top */
-        nk_stroke_line(out,window->bounds.x,window->bounds.y,
-            window->bounds.x + window->bounds.w, window->bounds.y,
-            layout->border, border_color);
-
-        /* draw bottom border */
-        nk_stroke_line(out, window->bounds.x, padding_y,
-            window->bounds.x + window->bounds.w, padding_y, layout->border, border_color);
-
-        /* draw left border */
-        nk_stroke_line(out, window->bounds.x + layout->border*0.5f,
-            window->bounds.y, window->bounds.x + layout->border*0.5f,
-            padding_y, layout->border, border_color);
-
-        /* draw right border */
-        nk_stroke_line(out, window->bounds.x + window->bounds.w - layout->border*0.5f,
-            window->bounds.y, window->bounds.x + window->bounds.w - layout->border*0.5f,
-            padding_y, layout->border, border_color);
+        /* draw border rectangle */
+        nk_stroke_rect(out, nk_rect(window->bounds.x, window->bounds.y,
+          window->bounds.w - 2.f, padding_y - window->bounds.y), 0.f, layout->border, border_color);
     }
 
     /* scaler */
