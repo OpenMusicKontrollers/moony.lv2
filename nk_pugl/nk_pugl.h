@@ -1071,15 +1071,15 @@ nk_pugl_icon_load(nk_pugl_window_t *win, const char *filename)
 		return nk_image_id(tex);
 
 	int w, h, n;
-	uint8_t *data = stbi_load(filename, &w, &h, &n, 0);
+	uint8_t *data = stbi_load(filename, &w, &h, &n, 4);
 	if(data)
 	{
 		puglEnterContext(win->view);
 		{
 			glGenTextures(1, &tex);
 			glBindTexture(GL_TEXTURE_2D, tex);
-			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			if(!win->glGenerateMipmap) // for GL >= 1.4 && < 3.1
