@@ -4,3 +4,8 @@
 * api: xpress
 * gui: clipboard support
 * gui: external editor
+* gui: import/export of string parameter
+* gui: export of chunk parameter
+* gui: alternating line colors in browser
+* gui: cancel button in browser
+* gui: beautify tab

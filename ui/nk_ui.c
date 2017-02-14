@@ -136,6 +136,16 @@ struct _browser_t {
 		struct nk_image computer;
 		struct nk_image directory;
 		struct nk_image default_file;
+		struct nk_image checked;
+		struct nk_image run_all;
+		struct nk_image run_selection;
+		struct nk_image import_from;
+		struct nk_image export_to;
+		struct nk_image refresh;
+		struct nk_image editor;
+		struct nk_image log;
+		struct nk_image parameters;
+		struct nk_image clear;
 	} icons;
 };
 
@@ -148,6 +158,7 @@ struct _plughandle_t {
 	LV2_Log_Logger logger;
 
 	nk_pugl_window_t win;
+	struct nk_style_button bst;
 
 	LV2UI_Controller *controller;
 	LV2UI_Write_Function writer;
@@ -404,10 +415,20 @@ file_browser_init(browser_t *browser, int return_hidden, int return_lua_only,
 
 	if(icon_load)
 	{
-		browser->icons.home = icon_load(data, "home.png");
-		browser->icons.directory = icon_load(data, "directory.png");
-		browser->icons.computer = icon_load(data, "computer.png");
-		browser->icons.default_file = icon_load(data, "default.png");
+		browser->icons.home = icon_load(data, "house.png");
+		browser->icons.directory = icon_load(data, "layers.png");
+		browser->icons.computer = icon_load(data, "user.png");
+		browser->icons.default_file = icon_load(data, "envelope.png");
+		browser->icons.checked = icon_load(data, "checked.png");
+		browser->icons.run_all = icon_load(data, "next.png");
+		browser->icons.run_selection = icon_load(data, "sort.png");
+		browser->icons.import_from = icon_load(data, "upload.png");
+		browser->icons.export_to = icon_load(data, "download.png");
+		browser->icons.refresh = icon_load(data, "reload.png");
+		browser->icons.editor = icon_load(data, "pencil.png");
+		browser->icons.log = icon_load(data, "menu.png");
+		browser->icons.parameters = icon_load(data, "settings.png");
+		browser->icons.clear = icon_load(data, "cancel.png");
 	}
 }
 
@@ -421,6 +442,16 @@ file_browser_free(browser_t *browser,
 		icon_unload(data, browser->icons.directory);
 		icon_unload(data, browser->icons.computer);
 		icon_unload(data, browser->icons.default_file);
+		icon_unload(data, browser->icons.checked);
+		icon_unload(data, browser->icons.run_all);
+		icon_unload(data, browser->icons.run_selection);
+		icon_unload(data, browser->icons.import_from);
+		icon_unload(data, browser->icons.export_to);
+		icon_unload(data, browser->icons.refresh);
+		icon_unload(data, browser->icons.editor);
+		icon_unload(data, browser->icons.log);
+		icon_unload(data, browser->icons.parameters);
+		icon_unload(data, browser->icons.clear);
 	}
 
 	if(browser->files)
@@ -532,7 +563,7 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, float dy,
 		/* special buttons */
 		nk_group_begin(ctx, "Special", NK_WINDOW_NO_SCROLLBAR);
 		{
-			nk_layout_row_dynamic(ctx, 40, 1);
+			nk_layout_row_dynamic(ctx, dy, 1);
 			if(nk_button_image_label(ctx, browser->icons.home, "Home", NK_TEXT_RIGHT))
 				file_browser_reload_directory_content(browser, browser->home);
 			if(nk_button_image_label(ctx, browser->icons.computer, "Computer", NK_TEXT_RIGHT))
@@ -548,7 +579,7 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, float dy,
 			if(nk_checkbox_label(ctx, "Show *.lua only", &browser->return_lua_only))
 				file_browser_reload_directory_content(browser, browser->directory);
 
-			if(nk_button_label(ctx, "Select"))
+			if(nk_button_image_label(ctx, browser->icons.checked, "OK", NK_TEXT_RIGHT))
 			{
 				if( (browser_type == BROWSER_EXPORT) && (strlen(browser->export) > 0) )
 				{
@@ -579,6 +610,10 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, float dy,
 					}
 					file_browser_reload_directory_content(browser, browser->directory);
 				}
+			}
+			if(nk_button_image_label(ctx, browser->icons.clear, "Cancel", NK_TEXT_RIGHT))
+			{
+				//FIXME
 			}
 
 			nk_group_end(ctx);
@@ -1327,8 +1362,9 @@ _select_draw_end(struct nk_command_buffer *canv, nk_handle userdata)
 
 	const float x0 = bounds.x;
 	const float x1 = bounds.x + bounds.w;
-	const float y = bounds.y + bounds.h;
-	nk_stroke_line(canv, x0, y, x1, y, ctx->style.button.border*2, ctx->style.button.border_color);
+	//const float y0 = bounds.y;
+	const float y1 = bounds.y + bounds.h;
+	nk_stroke_line(canv, x0, y1, x1, y1, ctx->style.button.border*2, ctx->style.button.border_color);
 }
 
 const char *lab = "#"; //FIXME
@@ -1606,7 +1642,7 @@ _parameter_widget_urid(plughandle_t *handle, struct nk_context *ctx, prop_t *pro
 	nk_style_push_style_item(ctx, &ctx->style.button.normal, prop_commited
 		? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
 		: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
-	if(nk_button_label(ctx, "Submit") || prop_commited)
+	if(nk_button_image_label(ctx, handle->browser.icons.run_all, "Send", NK_TEXT_RIGHT) || prop_commited)
 	{
 		struct nk_str *str = &prop->value.editor.string;
 
@@ -1647,12 +1683,22 @@ _parameter_widget_string(plughandle_t *handle, struct nk_context *ctx, prop_t *p
 	nk_style_push_style_item(ctx, &ctx->style.button.normal, prop_commited
 		? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
 		: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
-	if(nk_button_label(ctx, "Submit") || prop_commited)
+	if(nk_button_image_label(ctx, handle->browser.icons.run_all, "Send", NK_TEXT_RIGHT) || prop_commited)
 	{
 		struct nk_str *str = &prop->value.editor.string;
 
 		_patch_set(handle, prop->key, nk_str_len_char(str), prop->range, nk_str_get_const(str));
 	}
+	/*
+	if(nk_button_image_label(ctx, handle->browser.icons.import_from, "", NK_TEXT_RIGHT))
+	{
+		//FIXME
+	}
+	if(nk_button_image_label(ctx, handle->browser.icons.export_to, "", NK_TEXT_RIGHT))
+	{
+		//FIXME
+	}
+	*/
 	nk_style_pop_style_item(ctx);
 }
 
@@ -1667,7 +1713,7 @@ _parameter_widget_chunk(plughandle_t *handle, struct nk_context *ctx, prop_t *pr
 		return;
 
 	nk_layout_row_dynamic(ctx, dy, 1);
-	if(nk_button_label(ctx, "Load"))
+	if(nk_button_image_label(ctx, handle->browser.icons.import_from, "Import", NK_TEXT_RIGHT))
 	{
 		handle->browser_type = BROWSER_PROPERTY;
 		handle->browser_target = prop;
@@ -1779,6 +1825,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 
 		nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 3);
 		{
+			//FIXME do this only temporarily
 			ctx->style.selectable.normal = nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]);
 			ctx->style.selectable.hover = nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_HOVER]);
 			ctx->style.selectable.pressed = nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE]);
@@ -1796,7 +1843,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 			if(has_control_e)
 				handle->editor_hidden = !handle->editor_hidden;
 			const bool editor_hidden = handle->editor_hidden;
-			handle->editor_hidden = !nk_select_label(ctx, "- Editor -", NK_TEXT_CENTERED, !handle->editor_hidden);
+			handle->editor_hidden = !nk_select_image_label(ctx, handle->browser.icons.editor, "Editor", NK_TEXT_LEFT, !handle->editor_hidden);
 			if( (editor_hidden != handle->editor_hidden) || has_control_e)
 				_patch_set(handle, handle->moony_editorHidden, sizeof(int32_t), handle->forge.Bool, &handle->editor_hidden);
 
@@ -1806,7 +1853,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 			if(has_control_l)
 				handle->log_hidden = !handle->log_hidden;
 			const bool log_hidden = handle->log_hidden;
-			handle->log_hidden = !nk_select_label(ctx, "- Log -", NK_TEXT_CENTERED, !handle->log_hidden);
+			handle->log_hidden = !nk_select_image_label(ctx, handle->browser.icons.log, "Log", NK_TEXT_LEFT, !handle->log_hidden);
 			if( (log_hidden != handle->log_hidden) || has_control_l)
 				_patch_set(handle, handle->moony_logHidden, sizeof(int32_t), handle->forge.Bool, &handle->log_hidden);
 
@@ -1816,7 +1863,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 			if(has_control_p)
 				handle->param_hidden = !handle->param_hidden;
 			const bool param_hidden = handle->param_hidden;
-			handle->param_hidden = !nk_select_label(ctx, "- Parameters -", NK_TEXT_CENTERED, !handle->param_hidden);
+			handle->param_hidden = !nk_select_image_label(ctx, handle->browser.icons.parameters, "Parameters", NK_TEXT_LEFT, !handle->param_hidden);
 			if( (param_hidden != handle->param_hidden) || has_control_p)
 				_patch_set(handle, handle->moony_paramHidden, sizeof(int32_t), handle->forge.Bool, &handle->param_hidden);
 
@@ -1900,7 +1947,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					nk_style_push_style_item(ctx, &ctx->style.button.normal, has_shift_enter && has_commited
 						? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
 						: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
-					if(nk_button_label(ctx, "Run all"))
+					if(nk_button_image_label(ctx, handle->browser.icons.run_all, "Send all", NK_TEXT_RIGHT))
 						_submit_all(handle);
 					nk_style_pop_style_item(ctx);
 
@@ -1909,7 +1956,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					nk_style_push_style_item(ctx, &ctx->style.button.normal, has_control_enter && has_commited
 						? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
 						: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
-					if(nk_button_label(ctx, "Run line/sel."))
+					if(nk_button_image_label(ctx, handle->browser.icons.run_selection, "Send line/sel.", NK_TEXT_RIGHT))
 						_submit_line_or_sel(handle);
 					nk_style_pop_style_item(ctx);
 
@@ -1918,7 +1965,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					nk_style_push_style_item(ctx, &ctx->style.button.normal, has_control_f
 						? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
 						: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
-					if(nk_button_label(ctx, "Import from") || has_control_f)
+					if(nk_button_image_label(ctx, handle->browser.icons.import_from, "Import from", NK_TEXT_RIGHT) || has_control_f)
 						handle->browser_type = BROWSER_IMPORT;
 					nk_style_pop_style_item(ctx);
 
@@ -1927,7 +1974,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					nk_style_push_style_item(ctx, &ctx->style.button.normal, has_control_t
 						? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
 						: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
-					if(nk_button_label(ctx, "Export to") || has_control_t)
+					if(nk_button_image_label(ctx, handle->browser.icons.export_to, "Export to", NK_TEXT_RIGHT) || has_control_t)
 						handle->browser_type = BROWSER_EXPORT;
 					nk_style_pop_style_item(ctx);
 
@@ -1966,7 +2013,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					nk_style_push_style_item(ctx, &ctx->style.button.normal, has_control_d
 						? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
 						: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
-					if(nk_button_label(ctx, "Clear log") || has_control_d)
+					if(nk_button_image_label(ctx, handle->browser.icons.clear, "Clear log", NK_TEXT_RIGHT) || has_control_d)
 						_clear_log(handle);
 					nk_style_pop_style_item(ctx);
 
@@ -2365,6 +2412,20 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	handle->editor.lexer.data = handle->L;
 
 	file_browser_init(&handle->browser, 0, 1, _icon_load, handle);
+
+	// modify default button style
+	struct nk_style_button *bst = &handle->win.ctx.style.button;
+	bst->rounding = (handle->dy - 2*bst->border) / 2;
+	bst->image_padding.x = -bst->padding.x - bst->border;
+	bst->image_padding.y = -bst->padding.y - bst->border;
+
+	// modify default selectable style
+	struct nk_style_selectable *sst = &handle->win.ctx.style.selectable;
+	sst->rounding = handle->dy / 2;
+	sst->padding.x = sst->rounding;
+	sst->padding.y = sst->rounding;
+	sst->image_padding.x = -sst->padding.x;
+	sst->image_padding.y = -sst->padding.y;
 
 	return handle;
 }
