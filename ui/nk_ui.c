@@ -112,9 +112,10 @@ struct _prop_t {
 
 enum _browser_type_t {
 	BROWSER_NONE = 0,
-	BROWSER_IMPORT,
-	BROWSER_EXPORT,
-	BROWSER_PROPERTY
+	BROWSER_IMPORT_CODE,
+	BROWSER_EXPORT_CODE,
+	BROWSER_IMPORT_PROPERTY,
+	BROWSER_EXPORT_PROPERTY
 };
 
 struct _browser_t {
@@ -508,7 +509,7 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, float dy,
 
 			nk_layout_row_dynamic(ctx, dy, 1);
 			nk_label(ctx, browser->directory, NK_TEXT_LEFT);
-			if(browser_type == BROWSER_EXPORT)
+			if( (browser_type == BROWSER_EXPORT_CODE) || (browser_type == BROWSER_EXPORT_PROPERTY))
 			{
 				nk_flags flags = NK_EDIT_FIELD | NK_EDIT_SIG_ENTER;
 				const nk_flags state = nk_edit_string_zero_terminated(ctx, flags,
@@ -594,15 +595,7 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, float dy,
 			if(nk_button_image_label(ctx, browser->icons.checked, "OK", NK_TEXT_RIGHT)
 				|| nk_input_is_key_pressed(&ctx->input, NK_KEY_ENTER))
 			{
-				if(browser->selected >= (ssize_t)browser->dir_count)
-				{
-					const int k = browser->selected - browser->dir_count;
-					strncpy(browser->file, browser->directory, MAX_PATH_LEN);
-					const size_t n = strlen(browser->file);
-					strncpy(browser->file + n, browser->files[k], MAX_PATH_LEN - n);
-					ret = 1;
-				}
-				else if(browser->selected >= 0)
+				if( (browser->selected >= 0) && (browser->selected < (ssize_t)browser->dir_count) )
 				{
 					const int j = browser->selected;
 					size_t n = strlen(browser->directory);
@@ -615,12 +608,21 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, float dy,
 					}
 					file_browser_reload_directory_content(browser, browser->directory);
 				}
-				else if( (browser_type == BROWSER_EXPORT) && (strlen(browser->export) > 0) )
+				else if( ( (browser_type == BROWSER_EXPORT_CODE) || (browser_type == BROWSER_EXPORT_PROPERTY) )
+					&& (strlen(browser->export) > 0) )
 				{
 					//FIXME remove duplicate code
 					strncpy(browser->file, browser->directory, MAX_PATH_LEN);
 					const size_t n = strlen(browser->file);
 					strncpy(browser->file + n, browser->export, MAX_PATH_LEN - n);
+					ret = 1;
+				}
+				else if(browser->selected >= (ssize_t)browser->dir_count)
+				{
+					const int k = browser->selected - browser->dir_count;
+					strncpy(browser->file, browser->directory, MAX_PATH_LEN);
+					const size_t n = strlen(browser->file);
+					strncpy(browser->file + n, browser->files[k], MAX_PATH_LEN - n);
 					ret = 1;
 				}
 			}
@@ -1675,27 +1677,35 @@ _parameter_widget_string(plughandle_t *handle, struct nk_context *ctx, prop_t *p
 	if(!editable)
 		return;
 
-	nk_layout_row_dynamic(ctx, dy, 1);
+	nk_layout_row_dynamic(ctx, dy, 3);
+
+	//FIXME do this only once
+	struct nk_style *style = &ctx->style;
+	const float w1 = nk_widget_width(ctx) - 5*style->button.rounding;
+	const float w2= style->font->width(style->font->userdata, style->font->height, "    ", 4);
+
 	nk_style_push_style_item(ctx, &ctx->style.button.normal, prop_commited
 		? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
 		: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
-	if(nk_button_image_label(ctx, handle->browser.icons.run_all, "Send", NK_TEXT_RIGHT) || prop_commited)
+	if(nk_button_image_label(ctx, handle->browser.icons.run_all, w1 > w2 ? "Send" : "", NK_TEXT_RIGHT) || prop_commited)
 	{
 		struct nk_str *str = &prop->value.editor.string;
 
 		_patch_set(handle, prop->key, nk_str_len_char(str), prop->range, nk_str_get_const(str));
 	}
-	/*
-	if(nk_button_image_label(ctx, handle->browser.icons.import_from, "", NK_TEXT_RIGHT))
-	{
-		//FIXME
-	}
-	if(nk_button_image_label(ctx, handle->browser.icons.export_to, "", NK_TEXT_RIGHT))
-	{
-		//FIXME
-	}
-	*/
 	nk_style_pop_style_item(ctx);
+
+	if(nk_button_image_label(ctx, handle->browser.icons.import_from, w1 > w2 ? "Load" : "", NK_TEXT_RIGHT))
+	{
+		handle->browser_type = BROWSER_IMPORT_PROPERTY;
+		handle->browser_target = prop;
+	}
+
+	if(nk_button_image_label(ctx, handle->browser.icons.export_to, w1 > w2 ? "Save" : "", NK_TEXT_RIGHT))
+	{
+		handle->browser_type = BROWSER_EXPORT_PROPERTY;
+		handle->browser_target = prop;
+	}
 }
 
 static void
@@ -1711,9 +1721,10 @@ _parameter_widget_chunk(plughandle_t *handle, struct nk_context *ctx, prop_t *pr
 	nk_layout_row_dynamic(ctx, dy, 1);
 	if(nk_button_image_label(ctx, handle->browser.icons.import_from, "Load", NK_TEXT_RIGHT))
 	{
-		handle->browser_type = BROWSER_PROPERTY;
+		handle->browser_type = BROWSER_IMPORT_PROPERTY;
 		handle->browser_target = prop;
 	}
+	//FIXME support EXPORT_PROPERTY
 }
 
 static void
@@ -1775,6 +1786,34 @@ _parameter_widget(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
 
 		nk_group_end(ctx);
 	}
+}
+
+static void
+_set_string(struct nk_str *str, uint32_t size, const char *body)
+{
+	nk_str_clear(str);
+
+	// replace tab with 2 spaces
+	const char *end = body + size - 1;
+	const char *from = body;
+	for(const char *to = strchr(from, '\t');
+		to && (to < end);
+		from = to + 1, to = strchr(from, '\t'))
+	{
+		nk_str_append_text_utf8(str, from, to-from);
+		nk_str_append_text_utf8(str, "  ", 2);
+	}
+	nk_str_append_text_utf8(str, from, end-from);
+}
+
+static void
+_patch_set_string(plughandle_t *handle, prop_t *prop, uint32_t size, const char *body)
+{
+	struct nk_str *str = &prop->value.editor.string;
+
+	_set_string(str, size, body);
+
+	nk_pugl_post_redisplay(&handle->win);
 }
 
 static void
@@ -1990,7 +2029,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
 						: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
 					if(nk_button_image_label(ctx, handle->browser.icons.import_from, "Load from", NK_TEXT_RIGHT) || has_control_f)
-						handle->browser_type = BROWSER_IMPORT;
+						handle->browser_type = BROWSER_IMPORT_CODE;
 					nk_style_pop_style_item(ctx);
 
 					if(_tooltip_visible(ctx))
@@ -1999,7 +2038,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
 						: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
 					if(nk_button_image_label(ctx, handle->browser.icons.export_to, "Save to", NK_TEXT_RIGHT) || has_control_t)
-						handle->browser_type = BROWSER_EXPORT;
+						handle->browser_type = BROWSER_EXPORT_CODE;
 					nk_style_pop_style_item(ctx);
 
 					nk_group_end(ctx);
@@ -2119,7 +2158,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 		{
 			case BROWSER_NONE:
 				break;
-			case BROWSER_IMPORT:
+			case BROWSER_IMPORT_CODE:
 			{
 				size_t sz;
 				uint8_t *chunk = file_load(handle->browser.file, &sz);
@@ -2129,7 +2168,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					free(chunk);
 				}
 			} break;
-			case BROWSER_EXPORT:
+			case BROWSER_EXPORT_CODE:
 			{
 				FILE *f = fopen(handle->browser.file, "wb");
 				if(f)
@@ -2140,17 +2179,41 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					fclose(f);
 				}
 			} break;
-			case BROWSER_PROPERTY:
+			case BROWSER_IMPORT_PROPERTY:
 			{
 				prop_t *prop = handle->browser_target;
-
-				size_t sz;
-				uint8_t *chunk = file_load(handle->browser.file, &sz);
-				if(chunk)
+				if(prop)
 				{
-					prop->value.u = sz;
-					_patch_set(handle, prop->key, sz, prop->range, &chunk);
-					free(chunk);
+					size_t sz;
+					uint8_t *chunk = file_load(handle->browser.file, &sz);
+					if(chunk)
+					{
+						if(prop->range == handle->forge.String)
+						{
+							_patch_set_string(handle, prop, sz, (const char *)chunk);
+						}
+						else if(prop->range == handle->forge.Chunk)
+						{
+							prop->value.u = sz;
+							_patch_set(handle, prop->key, sz, prop->range, chunk);
+						}
+						free(chunk);
+					}
+				}
+			} break;
+			case BROWSER_EXPORT_PROPERTY:
+			{
+				prop_t *prop = handle->browser_target;
+				if(prop)
+				{
+					FILE *f = fopen(handle->browser.file, "wb");
+					if(f)
+					{
+						struct nk_str *str = &prop->value.editor.string;
+						if(fwrite(nk_str_get_const(str), nk_str_len_char(str), 1, f) != 1)
+							; //TODO handle error
+						fclose(f);
+					}
 				}
 			} break;
 		}
@@ -2715,19 +2778,8 @@ _patch_set_code(plughandle_t *handle, uint32_t size, const char *body)
 	if(size <= MOONY_MAX_CHUNK_LEN)
 	{
 		struct nk_str *str = &handle->editor.string;
-		nk_str_clear(str);
 
-		// replace tab with 2 spaces
-		const char *end = body + size - 1;
-		const char *from = body;
-		for(const char *to = strchr(from, '\t');
-			to && (to < end);
-			from = to + 1, to = strchr(from, '\t'))
-		{
-			nk_str_append_text_utf8(str, from, to-from);
-			nk_str_append_text_utf8(str, "  ", 2);
-		}
-		nk_str_append_text_utf8(str, from, end-from);
+		_set_string(str, size, body);
 
 		handle->editor.lexer.needs_refresh = 1;
 

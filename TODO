@@ -4,5 +4,4 @@
 * api: xpress
 * gui: clipboard support
 * gui: external editor
-* gui: import/export of string parameter
 * gui: export of chunk parameter
