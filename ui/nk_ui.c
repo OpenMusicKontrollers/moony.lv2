@@ -2418,6 +2418,8 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	bst->rounding = (handle->dy - 2*bst->border) / 2;
 	bst->image_padding.x = -bst->padding.x - bst->border;
 	bst->image_padding.y = -bst->padding.y - bst->border;
+	bst->text_hover = nk_white;
+	bst->text_active = nk_white;
 
 	// modify default selectable style
 	struct nk_style_selectable *sst = &handle->win.ctx.style.selectable;
