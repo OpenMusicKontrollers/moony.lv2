@@ -82,19 +82,25 @@ _strndup(const char *s, size_t n)
 #	define SLASH_STRING "/"
 #endif
 
+typedef struct _chunk_t chunk_t;
 typedef union _body_t body_t;
 typedef struct _prop_t prop_t;
 typedef enum _browser_type_t browser_type_t;
 typedef struct _browser_t browser_t;
 typedef struct _plughandle_t plughandle_t;
 
+struct _chunk_t {
+	uint32_t size;
+	uint8_t *body;
+};
+
 union _body_t {
 	int32_t i;
 	int64_t h;
-	uint32_t u;
 	float f;
 	double d;
 	struct nk_text_edit editor;
+	chunk_t chunk;
 };
 
 struct _prop_t {
@@ -715,6 +721,11 @@ _prop_free(plughandle_t *handle, prop_t *prop)
 		|| (prop->range == handle->forge.URID) )
 	{
 		nk_textedit_free(&prop->value.editor);
+	}
+	else if(prop->range == handle->forge.Chunk)
+	{
+		if(prop->value.chunk.body)
+			free(prop->value.chunk.body);
 	}
 
 	if(prop->points)
@@ -1713,18 +1724,28 @@ _parameter_widget_chunk(plughandle_t *handle, struct nk_context *ctx, prop_t *pr
 	bool editable, bool has_shift_enter, float dy, int ndy)
 {
 	nk_layout_row_dynamic(ctx, dy*(ndy-1), 1);
-	nk_labelf(ctx, NK_TEXT_CENTERED, "%"PRIu32" bytes", prop->value.u);
+	nk_labelf(ctx, NK_TEXT_CENTERED, "%"PRIu32" bytes", prop->value.chunk.size);
 
 	if(!editable)
 		return;
 
-	nk_layout_row_dynamic(ctx, dy, 1);
-	if(nk_button_image_label(ctx, handle->browser.icons.import_from, "Load", NK_TEXT_RIGHT))
+	nk_layout_row_dynamic(ctx, dy, 2);
+
+	//FIXME do this only once
+	struct nk_style *style = &ctx->style;
+	const float w1 = nk_widget_width(ctx) - 5*style->button.rounding;
+	const float w2= style->font->width(style->font->userdata, style->font->height, "    ", 4);
+
+	if(nk_button_image_label(ctx, handle->browser.icons.import_from, w1 > w2 ? "Load" : "", NK_TEXT_RIGHT))
 	{
 		handle->browser_type = BROWSER_IMPORT_PROPERTY;
 		handle->browser_target = prop;
 	}
-	//FIXME support EXPORT_PROPERTY
+	if(nk_button_image_label(ctx, handle->browser.icons.export_to, w1 > w2 ? "Save" : "", NK_TEXT_RIGHT))
+	{
+		handle->browser_type = BROWSER_EXPORT_PROPERTY;
+		handle->browser_target = prop;
+	}
 }
 
 static void
@@ -2194,7 +2215,12 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						}
 						else if(prop->range == handle->forge.Chunk)
 						{
-							prop->value.u = sz;
+							prop->value.chunk.size = sz;
+							prop->value.chunk.body = realloc(prop->value.chunk.body, sz);
+							if(prop->value.chunk.body)
+								memcpy(prop->value.chunk.body, chunk, sz);
+							else
+								; //TODO handle error
 							_patch_set(handle, prop->key, sz, prop->range, chunk);
 						}
 						free(chunk);
@@ -2209,9 +2235,17 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					FILE *f = fopen(handle->browser.file, "wb");
 					if(f)
 					{
-						struct nk_str *str = &prop->value.editor.string;
-						if(fwrite(nk_str_get_const(str), nk_str_len_char(str), 1, f) != 1)
-							; //TODO handle error
+						if(prop->range == handle->forge.String)
+						{
+							struct nk_str *str = &prop->value.editor.string;
+							if(fwrite(nk_str_get_const(str), nk_str_len_char(str), 1, f) != 1)
+								; //TODO handle error
+						}
+						else if(prop->range == handle->forge.Chunk)
+						{
+							if(fwrite(prop->value.chunk.body, prop->value.chunk.size, 1, f) != 1)
+								; //TODO handle error
+						}
 						fclose(f);
 					}
 				}
@@ -2615,7 +2649,12 @@ _patch_set_parameter_value(plughandle_t *handle, LV2_URID property,
 		}
 		else if(prop->range == handle->forge.Chunk)
 		{
-			prop->value.u = value->size; // store only chunk size
+			prop->value.chunk.size = value->size;
+			prop->value.chunk.body = realloc(prop->value.chunk.body, value->size);
+			if(prop->value.chunk.body)
+				memcpy(prop->value.chunk.body, LV2_ATOM_BODY_CONST(value), value->size);
+			else
+				; //TODO handle error
 		}
 		else
 		{

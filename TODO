@@ -4,4 +4,5 @@
 * api: xpress
 * gui: clipboard support
 * gui: external editor
-* gui: export of chunk parameter
+* gui: control port dials
+* gui: nil parameter as place holder
