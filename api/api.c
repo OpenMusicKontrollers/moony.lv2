@@ -2181,6 +2181,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 							}
 
 							moony->once = true;
+							moony->props_out = 1; // trigger update of UI
 						}
 					}
 					else

@@ -5,3 +5,5 @@
 * gui: clipboard support
 * gui: external editor
 * gui: control port dials
+* gui: alert icon before error message
+* gui: panic button
