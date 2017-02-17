@@ -105,6 +105,7 @@ union _body_t {
 
 struct _prop_t {
 	LV2_URID key;
+	uint32_t index; // for control ports only
 	LV2_URID range;
 	char *unit;
 	char *label;
@@ -174,6 +175,7 @@ struct _plughandle_t {
 	uint32_t control;
 	uint32_t notify;
 	LV2_URID atom_eventTransfer;
+	LV2_URID ui_floatProtocol;
 	LV2_URID patch_self;
 	LV2_URID patch_Get;
 	LV2_URID patch_Set;
@@ -254,6 +256,9 @@ struct _plughandle_t {
 	prop_t *writables;
 	int n_readable;
 	prop_t *readables;
+
+	prop_t controls_in [4];
+	prop_t controls_out [4];
 
 	lua_State *L;
 	
@@ -899,6 +904,13 @@ _patch_set(plughandle_t *handle, LV2_URID property, uint32_t size, LV2_URID type
 
 	const uint32_t sz = lv2_atom_total_size(ser->atom);
 	handle->writer(handle->controller, handle->control, sz, handle->atom_eventTransfer, ser->atom);
+}
+
+static void
+_control_set(plughandle_t *handle, uint32_t index, const float *value)
+{
+	const uint32_t sz = sizeof(float);
+	handle->writer(handle->controller, index, sz, 0, value);
 }
 
 static void
@@ -1569,7 +1581,10 @@ _parameter_widget_float(plughandle_t *handle, struct nk_context *ctx, prop_t *pr
 	if(_dial_float(ctx, prop->minimum.f, &prop->value.f, prop->maximum.f, 1.f,
 		prop->color, editable))
 	{
-		_patch_set(handle, prop->key, sizeof(float), prop->range, &prop->value.f);
+		if(prop->range == handle->ui_floatProtocol)
+			_control_set(handle, prop->index, &prop->value.f);
+		else
+			_patch_set(handle, prop->key, sizeof(float), prop->range, &prop->value.f);
 	}
 
 	nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 2);
@@ -1581,7 +1596,10 @@ _parameter_widget_float(plughandle_t *handle, struct nk_context *ctx, prop_t *pr
 		if(val != prop->value.f)
 		{
 			prop->value.f = val;
-			_patch_set(handle, prop->key, sizeof(float), prop->range, &val);
+			if(prop->range == handle->ui_floatProtocol)
+				_control_set(handle, prop->index, &prop->value.f);
+			else
+				_patch_set(handle, prop->key, sizeof(float), prop->range, &val);
 		}
 	}
 	else // !editable
@@ -1823,6 +1841,10 @@ _parameter_widget(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
 		else if(prop->range == 0)
 		{
 			_parameter_widget_nil(handle, ctx, prop, editable, has_shift_enter, dy, ndy);
+		}
+		else if(prop->range == handle->ui_floatProtocol)
+		{
+			_parameter_widget_float(handle, ctx, prop, editable, has_shift_enter, dy, ndy);
 		}
 		else
 		{
@@ -2154,6 +2176,18 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					if(nk_group_begin(ctx, "Widgets", 0))
 					{
 						nk_layout_row_dynamic(ctx, prop_h_2, handle->param_cols);
+						for(int p = 0; p < 4; p++)
+						{
+							prop_t *prop = &handle->controls_in[p];
+							if(prop->index != LV2UI_INVALID_PORT_INDEX)
+								_parameter_widget(handle, ctx, prop, true, has_shift_enter, dy, ndy);
+						}
+						for(int p = 0; p < 4; p++)
+						{
+							prop_t *prop = &handle->controls_out[p];
+							if(prop->index != LV2UI_INVALID_PORT_INDEX)
+								_parameter_widget(handle, ctx, prop, false, has_shift_enter, dy, ndy);
+						}
 						for(int p = 0; p < handle->n_writable; p++)
 						{
 							prop_t *prop = &handle->writables[p];
@@ -2388,13 +2422,8 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 
 	lv2_atom_forge_init(&handle->forge, handle->map);
 
-	handle->controller = controller;
-	handle->writer = write_function;
-
-	handle->control = port_map->port_index(port_map->handle, "control");
-	handle->notify = port_map->port_index(port_map->handle, "notify");
-
 	handle->atom_eventTransfer = handle->map->map(handle->map->handle, LV2_ATOM__eventTransfer);
+	handle->ui_floatProtocol = handle->map->map(handle->map->handle, LV2_UI__floatProtocol);
 
 	handle->patch_self = handle->map->map(handle->map->handle, plugin_uri);
 	handle->patch_Get = handle->map->map(handle->map->handle, LV2_PATCH__Get);
@@ -2457,6 +2486,54 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	handle->units_semitone12TET = handle->map->map(handle->map->handle, LV2_UNITS__semitone12TET);
 
 	handle->canvas_Style = handle->map->map(handle->map->handle, CANVAS__Style);
+
+	handle->controller = controller;
+	handle->writer = write_function;
+
+	handle->control = port_map->port_index(port_map->handle, "control");
+	handle->notify = port_map->port_index(port_map->handle, "notify");
+
+	for(int i = 0; i < 4; i++)
+	{
+		char symbol [16];
+		char label [16];
+		char uri [64];
+		prop_t *prop;
+
+		snprintf(symbol, 16, "input_%i", i + 1);
+		snprintf(label , 16, "Input %i", i + 1);
+		snprintf(uri, 64, MOONY_URI"#%s", symbol);
+
+		prop = &handle->controls_in[i];
+		prop->index = port_map->port_index(port_map->handle, symbol);
+		if(prop->index != LV2UI_INVALID_PORT_INDEX)
+		{
+			prop->key = handle->map->map(handle->map->handle, uri);
+			prop->label = strdup(label);
+			prop->range = handle->ui_floatProtocol;
+			prop->minimum.f = 0.f;
+			prop->maximum.f = 1.f;
+			prop->value.f = 0.f;
+			prop->color = nk_white;
+		}
+
+		snprintf(symbol, 16, "output_%i", i + 1);
+		snprintf(label , 16, "Output %i", i + 1);
+		snprintf(uri, 64, MOONY_URI"#%s", symbol);
+
+		prop = &handle->controls_out[i];
+		prop->index = port_map->port_index(port_map->handle, symbol);
+		if(prop->index != LV2UI_INVALID_PORT_INDEX)
+		{
+			prop->key = handle->map->map(handle->map->handle, uri);
+			prop->label = strdup(label);
+			prop->range = handle->ui_floatProtocol;
+			prop->minimum.f = 0.f;
+			prop->maximum.f = 1.f;
+			prop->value.f = 0.f;
+			prop->color = nk_white;
+		}
+	}
 
 	const char *NK_SCALE = getenv("NK_SCALE");
 	const float scale = NK_SCALE ? atof(NK_SCALE) : 1.f;
@@ -2626,6 +2703,12 @@ cleanup(LV2UI_Handle instance)
 		_prop_free(handle, &handle->readables[p]);
 	if(handle->readables)
 		free(handle->readables);
+
+	for(int p = 0; p < 4; p++)
+	{
+		_prop_free(handle, &handle->controls_in[p]);
+		_prop_free(handle, &handle->controls_out[p]);
+	}
 
 	if(handle->ser.buf)
 		free(handle->ser.buf);
@@ -3139,6 +3222,35 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 				{
 					_patch_error(handle, sequence_number);
 				}
+			}
+		}
+	}
+	else if( (protocol == 0) || (protocol == handle->ui_floatProtocol) ) // check for control port updates
+	{
+		for(int p = 0; p < 4; p++)
+		{
+			if(index == handle->controls_in[p].index)
+			{
+				prop_t *prop = &handle->controls_in[p];
+				prop->value.f = *(const float *)buf;
+
+				nk_pugl_post_redisplay(&handle->win);
+				break;
+			}
+			else if(index == handle->controls_out[p].index)
+			{
+				prop_t *prop = &handle->controls_out[p];
+				prop->value.f = *(const float *)buf;
+
+				// widen range if necessary
+				// TODO should we set range back after code update?
+				if(prop->value.f < prop->minimum.f)
+					prop->minimum.f = prop->value.f;
+				if(prop->value.f > prop->maximum.f)
+					prop->maximum.f = prop->value.f;
+
+				nk_pugl_post_redisplay(&handle->win);
+				break;
 			}
 		}
 	}
