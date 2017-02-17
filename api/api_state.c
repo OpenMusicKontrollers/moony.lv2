@@ -34,8 +34,8 @@ _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 		// uses 'key' (at index -2) and 'value' (at index -1)
 		const LV2_URID key = luaL_checkinteger(L, -2);
 
-		const char *label = "undefined"; // fallback
-		LV2_URID range = moony->forge.Int; // fallback
+		const char *label = ""; // fallback
+		LV2_URID range = 0; // fallback
 
 		if(lua_geti(L, -1, moony->uris.rdfs_label) == LUA_TSTRING)
 			label = lua_tostring(L, -1);
@@ -422,7 +422,7 @@ _lstateresponder__call(lua_State *L)
 
 				if(found_it)
 				{
-					LV2_URID range = moony->forge.Int; // fallback
+					LV2_URID range = 0; // fallback
 
 					// get atom type
 					if(lua_geti(L, -1, moony->uris.rdfs_range) == LUA_TNUMBER)
@@ -609,7 +609,7 @@ _lstateresponder_stash(lua_State *L)
 	{
 		// uses 'key' (at index -2) and 'value' (at index -1)
 		const LV2_URID key = luaL_checkinteger(L, -2);
-		LV2_URID range = lforge->forge->Int; // fallback
+		LV2_URID range = 0; // fallback
 
 		if(lua_geti(L, -1, moony->uris.rdfs_range) == LUA_TNUMBER) // prop[RDFS.range]
 			range = lua_tointeger(L, -1);

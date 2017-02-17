@@ -730,6 +730,8 @@ _prop_free(plughandle_t *handle, prop_t *prop)
 
 	if(prop->points)
 		free(prop->points);
+
+	prop->key = 0;
 }
 
 LV2_Atom_Forge_Ref
@@ -1749,6 +1751,14 @@ _parameter_widget_chunk(plughandle_t *handle, struct nk_context *ctx, prop_t *pr
 }
 
 static void
+_parameter_widget_nil(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
+	bool editable, bool has_shift_enter, float dy, int ndy)
+{
+	nk_layout_row_dynamic(ctx, dy*(ndy-1), 1);
+	nk_spacing(ctx, 1);
+}
+
+static void
 _parameter_widget_unsupported(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
 	bool editable, bool has_shift_enter, float dy, int ndy)
 {
@@ -1799,6 +1809,10 @@ _parameter_widget(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
 		else if(prop->range == handle->forge.Chunk)
 		{
 			_parameter_widget_chunk(handle, ctx, prop, editable, has_shift_enter, dy, ndy);
+		}
+		else if(prop->range == 0)
+		{
+			_parameter_widget_nil(handle, ctx, prop, editable, has_shift_enter, dy, ndy);
 		}
 		else
 		{
@@ -2122,7 +2136,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						for(int p = 0; p < handle->n_writable; p++)
 						{
 							prop_t *prop = &handle->writables[p];
-							if(!prop->key || !prop->range || !prop->label) // marked for removal
+							if(!prop->key) // marked for removal
 								continue;
 
 							_parameter_widget(handle, ctx, prop, true, has_shift_enter, dy, ndy);
@@ -2130,7 +2144,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						for(int p = 0; p < handle->n_readable; p++)
 						{
 							prop_t *prop = &handle->readables[p];
-							if(!prop->key || !prop->range || !prop->label) // marked for removal
+							if(!prop->key) // marked for removal
 								continue;
 
 							_parameter_widget(handle, ctx, prop, false, has_shift_enter, dy, ndy);
