@@ -155,6 +155,7 @@ struct _browser_t {
 		struct nk_image parameters;
 		struct nk_image plus;
 		struct nk_image clear;
+		struct nk_image bell;
 	} icons;
 };
 
@@ -450,6 +451,7 @@ file_browser_init(browser_t *browser, int return_hidden, int return_lua_only,
 		browser->icons.parameters = icon_load(data, "settings.png");
 		browser->icons.plus = icon_load(data, "plus.png");
 		browser->icons.clear = icon_load(data, "cancel.png");
+		browser->icons.bell = icon_load(data, "bell.png");
 	}
 }
 
@@ -474,6 +476,7 @@ file_browser_free(browser_t *browser,
 		icon_unload(data, browser->icons.parameters);
 		icon_unload(data, browser->icons.plus);
 		icon_unload(data, browser->icons.clear);
+		icon_unload(data, browser->icons.bell);
 	}
 
 	if(browser->files)
@@ -1025,6 +1028,41 @@ _clear_log(plughandle_t *handle)
 	handle->traces = NULL;
 
 	nk_pugl_post_redisplay(&handle->win);
+}
+
+static void
+_text_image_colored(struct nk_context *ctx, struct nk_image *img,
+		const char *str, nk_flags alignment, struct nk_color color)
+{
+    struct nk_window *win;
+    const struct nk_style *style;
+
+    struct nk_vec2 item_padding;
+    struct nk_rect bounds;
+    struct nk_text text;
+
+    NK_ASSERT(ctx);
+    NK_ASSERT(ctx->current);
+    NK_ASSERT(ctx->current->layout);
+    if (!ctx || !ctx->current || !ctx->current->layout) return;
+
+    win = ctx->current;
+    style = &ctx->style;
+    nk_panel_alloc_space(&bounds, ctx);
+    item_padding = style->text.padding;
+
+		struct nk_rect bounds1 = bounds;
+		bounds1.w = bounds1.h;
+    nk_draw_image(&win->buffer, bounds1, img, nk_white);
+
+		struct nk_rect bounds2 = bounds;
+		bounds2.x += bounds1.w + style->window.padding.x;
+		bounds2.w -= bounds1.w;
+    text.padding.x = item_padding.x;
+    text.padding.y = item_padding.y;
+    text.background = style->window.background;
+    text.text = color;
+    nk_widget_text(&win->buffer, bounds2, str, strlen(str), &text, alignment, style->font);
 }
 
 static int
@@ -2226,14 +2264,21 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 		}
 		nk_layout_row_end(ctx);
 
-		nk_layout_row_dynamic(ctx, dy, 2);
+		nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 3);
 		{
+			nk_layout_row_push(ctx, 0.1);
+			nk_spacing(ctx, 1); //FIXME here comes the alert button
+
+			nk_layout_row_push(ctx, 0.8);
 			if(handle->error[0] == 0)
 				nk_spacing(ctx, 1);
 			else
-				nk_labelf_colored(ctx, NK_TEXT_LEFT, nk_yellow, "Stopped: %s", handle->error);
+				_text_image_colored(ctx, &handle->browser.icons.bell, handle->error, NK_TEXT_LEFT, nk_yellow);
+
+			nk_layout_row_push(ctx, 0.1);
 			nk_label(ctx, "Moony.lv2: "MOONY_VERSION, NK_TEXT_RIGHT);
 		}
+		nk_layout_row_end(ctx);
 	}
 	nk_end(ctx);
 

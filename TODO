@@ -4,5 +4,7 @@
 * api: xpress
 * gui: clipboard support
 * gui: external editor
-* gui: alert icon before error message
 * gui: panic button
+* gui: show dirty state for code editor and string parameters
+* dsp: fix c?xc? crashing in carla
+* dsp: update to Lua 5.3.4
