@@ -107,6 +107,7 @@ moony:c1xc1
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
 		rsz:minimumSize 131072 ;
+		lv2:designation lv2:control ;
 	] , [
 	# output notify port
 	  a lv2:OutputPort ,
@@ -118,6 +119,7 @@ moony:c1xc1
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
 		rsz:minimumSize 131072 ;
+		lv2:designation lv2:control ;
 	] ;
 	
 	state:state [
@@ -185,6 +187,7 @@ moony:c2xc2
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
 		rsz:minimumSize 131072 ;
+		lv2:designation lv2:control ;
 	] , [
 	# output notify port
 	  a lv2:OutputPort ,
@@ -196,6 +199,7 @@ moony:c2xc2
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
 		rsz:minimumSize 131072 ;
+		lv2:designation lv2:control ;
 	] ;
 	
 	state:state [
@@ -293,6 +297,7 @@ moony:c4xc4
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
 		rsz:minimumSize 131072 ;
+		lv2:designation lv2:control ;
 	] , [
 	# output notify port
 	  a lv2:OutputPort ,
@@ -304,6 +309,7 @@ moony:c4xc4
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
 		rsz:minimumSize 131072 ;
+		lv2:designation lv2:control ;
 	] ;
 	
 	state:state [
@@ -339,7 +345,6 @@ moony:a1xa1
 		lv2:index 0 ;
 		lv2:symbol "event_in_1" ;
 		lv2:name "Event In 1" ;
-		lv2:designation lv2:control ;
 	] , [
 	# output event port
 	  a lv2:OutputPort ,
@@ -351,7 +356,6 @@ moony:a1xa1
 		lv2:index 1 ;
 		lv2:symbol "event_out_1" ;
 		lv2:name "Event Out 1" ;
-		lv2:designation lv2:control ;
 	] , [
 	# input control port
 	  a lv2:InputPort ,
@@ -363,6 +367,7 @@ moony:a1xa1
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
 		rsz:minimumSize 131072 ;
+		lv2:designation lv2:control ;
 	] , [
 	# output notify port
 	  a lv2:OutputPort ,
@@ -374,6 +379,7 @@ moony:a1xa1
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
 		rsz:minimumSize 131072 ;
+		lv2:designation lv2:control ;
 	] ;
 
 	state:state [
@@ -411,7 +417,6 @@ moony:a2xa2
 		lv2:index 0 ;
 		lv2:symbol "event_in_1" ;
 		lv2:name "Event In 1" ;
-		lv2:designation lv2:control ;
 	] , [
 	  a lv2:InputPort ,
 			atom:AtomPort ;
@@ -433,7 +438,6 @@ moony:a2xa2
 		lv2:index 2 ;
 		lv2:symbol "event_out_1" ;
 		lv2:name "Event Out 1" ;
-		lv2:designation lv2:control ;
 	] , [
 	  a lv2:OutputPort ,
 			atom:AtomPort ;
@@ -455,6 +459,7 @@ moony:a2xa2
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
 		rsz:minimumSize 131072 ;
+		lv2:designation lv2:control ;
 	] , [
 	# output notify port
 	  a lv2:OutputPort ,
@@ -466,6 +471,7 @@ moony:a2xa2
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
 		rsz:minimumSize 131072 ;
+		lv2:designation lv2:control ;
 	] ;
 
 	state:state [
@@ -507,7 +513,6 @@ moony:a4xa4
 		lv2:index 0 ;
 		lv2:symbol "event_in_1" ;
 		lv2:name "Event In 1" ;
-		lv2:designation lv2:control ;
 	] , [
 	  a lv2:InputPort ,
 			atom:AtomPort ;
@@ -549,7 +554,6 @@ moony:a4xa4
 		lv2:index 4 ;
 		lv2:symbol "event_out_1" ;
 		lv2:name "Event Out 1" ;
-		lv2:designation lv2:control ;
 	] , [
 	  a lv2:OutputPort ,
 			atom:AtomPort ;
@@ -591,6 +595,7 @@ moony:a4xa4
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
 		rsz:minimumSize 131072 ;
+		lv2:designation lv2:control ;
 	] , [
 	# output notify port
 	  a lv2:OutputPort ,
@@ -602,6 +607,7 @@ moony:a4xa4
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
 		rsz:minimumSize 131072 ;
+		lv2:designation lv2:control ;
 	] ;
 
 	state:state [
@@ -651,7 +657,6 @@ moony:c1a1xc1a1
 		lv2:index 0 ;
 		lv2:symbol "event_in_1" ;
 		lv2:name "Event In 1" ;
-		lv2:designation lv2:control ;
 	] , [
 	# output event port
 	  a lv2:OutputPort ,
@@ -663,7 +668,6 @@ moony:c1a1xc1a1
 		lv2:index 1 ;
 		lv2:symbol "event_out_1" ;
 		lv2:name "Event Out 1" ;
-		lv2:designation lv2:control ;
 	] , [
 	# input port
 	  a lv2:InputPort ,
@@ -692,6 +696,7 @@ moony:c1a1xc1a1
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
 		rsz:minimumSize 131072 ;
+		lv2:designation lv2:control ;
 	] , [
 	# output notify port
 	  a lv2:OutputPort ,
@@ -703,6 +708,7 @@ moony:c1a1xc1a1
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
 		rsz:minimumSize 131072 ;
+		lv2:designation lv2:control ;
 	] ;
 
 	state:state [
@@ -742,7 +748,6 @@ moony:c2a1xc2a1
 		lv2:index 0 ;
 		lv2:symbol "event_in_1" ;
 		lv2:name "Event In 1" ;
-		lv2:designation lv2:control ;
 	] , [
 	# output event port
 	  a lv2:OutputPort ,
@@ -754,7 +759,6 @@ moony:c2a1xc2a1
 		lv2:index 1 ;
 		lv2:symbol "event_out_1" ;
 		lv2:name "Event Out 1" ;
-		lv2:designation lv2:control ;
 	] , [
 	# input port
 	  a lv2:InputPort ,
@@ -798,6 +802,7 @@ moony:c2a1xc2a1
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
 		rsz:minimumSize 131072 ;
+		lv2:designation lv2:control ;
 	] , [
 	# output notify port
 	  a lv2:OutputPort ,
@@ -809,6 +814,7 @@ moony:c2a1xc2a1
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
 		rsz:minimumSize 131072 ;
+		lv2:designation lv2:control ;
 	] ;
 
 	state:state [
@@ -848,7 +854,6 @@ moony:c4a1xc4a1
 		lv2:index 0 ;
 		lv2:symbol "event_in_1" ;
 		lv2:name "Event In 1" ;
-		lv2:designation lv2:control ;
 	] , [
 	# output event port
 	  a lv2:OutputPort ,
@@ -860,7 +865,6 @@ moony:c4a1xc4a1
 		lv2:index 1 ;
 		lv2:symbol "event_out_1" ;
 		lv2:name "Event Out 1" ;
-		lv2:designation lv2:control ;
 	] , [
 	# input port
 	  a lv2:InputPort ,
@@ -934,6 +938,7 @@ moony:c4a1xc4a1
 		lv2:symbol "control" ;
 		lv2:name "Control" ;
 		rsz:minimumSize 131072 ;
+		lv2:designation lv2:control ;
 	] , [
 	# output notify port
 	  a lv2:OutputPort ,
@@ -945,6 +950,7 @@ moony:c4a1xc4a1
 		lv2:symbol "notify" ;
 		lv2:name "Notify" ;
 		rsz:minimumSize 131072 ;
+		lv2:designation lv2:control ;
 	] ;
 
 	state:state [
