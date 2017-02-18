@@ -1221,6 +1221,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->uris.moony_selection = moony->map->map(moony->map->handle, MOONY_SELECTION_URI);
 	moony->uris.moony_error = moony->map->map(moony->map->handle, MOONY_ERROR_URI);
 	moony->uris.moony_trace = moony->map->map(moony->map->handle, MOONY_TRACE_URI);
+	moony->uris.moony_panic = moony->map->map(moony->map->handle, MOONY_PANIC_URI);
 	moony->uris.moony_state = moony->map->map(moony->map->handle, MOONY_STATE_URI);
 	moony->uris.moony_editorHidden = moony->map->map(moony->map->handle, MOONY_EDITOR_HIDDEN_URI);
 	moony->uris.moony_logHidden = moony->map->map(moony->map->handle, MOONY_LOG_HIDDEN_URI);
@@ -2238,6 +2239,12 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 				else if( (property->body == moony->uris.moony_paramRows) && (value->type == forge->Int) )
 				{
 					atomic_store_explicit(&moony->param_rows, ((const LV2_Atom_Int *)value)->body, memory_order_release);
+				}
+				else if( (property->body == moony->uris.moony_panic) && (value->type == forge->Bool) )
+				{
+					const LV2_Atom_Bool *i32 = (const LV2_Atom_Bool *)value;
+					if(i32->body)
+						moony_err(moony, "user called panic");
 				}
 			}
 		}

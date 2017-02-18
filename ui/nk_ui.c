@@ -156,6 +156,7 @@ struct _browser_t {
 		struct nk_image plus;
 		struct nk_image clear;
 		struct nk_image bell;
+		struct nk_image panic;
 	} icons;
 };
 
@@ -198,6 +199,7 @@ struct _plughandle_t {
 	LV2_URID moony_selection;
 	LV2_URID moony_error;
 	LV2_URID moony_trace;
+	LV2_URID moony_panic;
 	LV2_URID moony_editorHidden;
 	LV2_URID moony_logHidden;
 	LV2_URID moony_paramHidden;
@@ -452,6 +454,7 @@ file_browser_init(browser_t *browser, int return_hidden, int return_lua_only,
 		browser->icons.plus = icon_load(data, "plus.png");
 		browser->icons.clear = icon_load(data, "cancel.png");
 		browser->icons.bell = icon_load(data, "bell.png");
+		browser->icons.panic= icon_load(data, "cancel-1.png");
 	}
 }
 
@@ -477,6 +480,7 @@ file_browser_free(browser_t *browser,
 		icon_unload(data, browser->icons.plus);
 		icon_unload(data, browser->icons.clear);
 		icon_unload(data, browser->icons.bell);
+		icon_unload(data, browser->icons.panic);
 	}
 
 	if(browser->files)
@@ -1962,6 +1966,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 		const bool has_control_f = control_letter == 'f';
 		const bool has_control_n = control_letter == 'n';
 		const bool has_control_t = control_letter == 't';
+		const bool has_control_a = control_letter == 'a';
 		bool has_commited = false;
 
 		nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 3);
@@ -2267,7 +2272,19 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 		nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 3);
 		{
 			nk_layout_row_push(ctx, 0.1);
-			nk_spacing(ctx, 1); //FIXME here comes the alert button
+
+
+			if(_tooltip_visible(ctx))
+				nk_tooltip(ctx, "Ctrl-A");
+			nk_style_push_style_item(ctx, &ctx->style.button.normal, has_control_a
+				? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
+				: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
+			if(nk_button_image_label(ctx, handle->browser.icons.panic, "Panic", NK_TEXT_RIGHT) || has_control_a)
+			{
+				const int32_t i32 = 1;
+				_patch_set(handle, handle->moony_panic, sizeof(int32_t), handle->forge.Bool, &i32);
+			}
+			nk_style_pop_style_item(ctx);
 
 			nk_layout_row_push(ctx, 0.8);
 			if(handle->error[0] == 0)
@@ -2491,6 +2508,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	handle->moony_selection = handle->map->map(handle->map->handle, MOONY_SELECTION_URI);
 	handle->moony_error = handle->map->map(handle->map->handle, MOONY_ERROR_URI);
 	handle->moony_trace = handle->map->map(handle->map->handle, MOONY_TRACE_URI);
+	handle->moony_panic = handle->map->map(handle->map->handle, MOONY_PANIC_URI);
 	handle->moony_editorHidden = handle->map->map(handle->map->handle, MOONY_EDITOR_HIDDEN_URI);
 	handle->moony_logHidden = handle->map->map(handle->map->handle, MOONY_LOG_HIDDEN_URI);
 	handle->moony_paramHidden = handle->map->map(handle->map->handle, MOONY_PARAM_HIDDEN_URI);

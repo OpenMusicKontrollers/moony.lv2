@@ -80,6 +80,7 @@
 #define MOONY_ERROR_URI				MOONY_URI"#error"
 #define MOONY_TRACE_URI				MOONY_URI"#trace"
 #define MOONY_STATE_URI				MOONY_URI"#state"
+#define MOONY_PANIC_URI				MOONY_URI"#panic"
 
 #define MOONY_EDITOR_HIDDEN_URI	MOONY_URI"#editorHidden"
 #define MOONY_LOG_HIDDEN_URI	MOONY_URI"#logHidden"
@@ -232,6 +233,7 @@ struct _moony_t {
 		LV2_URID moony_selection;
 		LV2_URID moony_error;
 		LV2_URID moony_trace;
+		LV2_URID moony_panic;
 		LV2_URID moony_state;
 		LV2_URID moony_editorHidden;
 		LV2_URID moony_logHidden;
