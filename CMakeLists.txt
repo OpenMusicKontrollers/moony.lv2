@@ -10,7 +10,7 @@ include_directories(${PROJECT_SOURCE_DIR}/osc.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/timely.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/xpress.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/lua-5.3.4)
-include_directories(${PROJECT_SOURCE_DIR}/lpeg-1.0.0)
+include_directories(${PROJECT_SOURCE_DIR}/lpeg-1.0.1)
 include_directories(${PROJECT_SOURCE_DIR}/tiny-AES128-C)
 include_directories(${PROJECT_SOURCE_DIR}/api)
 include_directories(${PROJECT_SOURCE_DIR}/ui)
@@ -254,11 +254,11 @@ set_target_properties(lua PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
 set_target_properties(lua PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 
 add_library(lpeg OBJECT
-	lpeg-1.0.0/lpcap.c
-	lpeg-1.0.0/lpcode.c
-	lpeg-1.0.0/lpprint.c
-	lpeg-1.0.0/lptree.c
-	lpeg-1.0.0/lpvm.c)
+	lpeg-1.0.1/lpcap.c
+	lpeg-1.0.1/lpcode.c
+	lpeg-1.0.1/lpprint.c
+	lpeg-1.0.1/lptree.c
+	lpeg-1.0.1/lpvm.c)
 set_target_properties(lpeg PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
 set_target_properties(lpeg PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 
