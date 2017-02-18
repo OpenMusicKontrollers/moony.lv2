@@ -9,7 +9,7 @@ include_directories(${PROJECT_SOURCE_DIR}/ardour.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/osc.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/timely.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/xpress.lv2)
-include_directories(${PROJECT_SOURCE_DIR}/lua-5.3.3)
+include_directories(${PROJECT_SOURCE_DIR}/lua-5.3.4)
 include_directories(${PROJECT_SOURCE_DIR}/lpeg-1.0.0)
 include_directories(${PROJECT_SOURCE_DIR}/tiny-AES128-C)
 include_directories(${PROJECT_SOURCE_DIR}/api)
@@ -216,40 +216,40 @@ else()
 endif()
 
 add_library(lua OBJECT
-	lua-5.3.3/lapi.c
-	lua-5.3.3/lcode.c
-	lua-5.3.3/lctype.c
-	lua-5.3.3/ldebug.c
-	lua-5.3.3/ldo.c
-	lua-5.3.3/ldump.c
-	lua-5.3.3/lfunc.c
-	lua-5.3.3/lgc.c
-	lua-5.3.3/llex.c
-	lua-5.3.3/lmem.c
-	lua-5.3.3/lobject.c
-	lua-5.3.3/lopcodes.c
-	lua-5.3.3/lparser.c
-	lua-5.3.3/lstate.c
-	lua-5.3.3/lstring.c
-	lua-5.3.3/ltable.c
-	lua-5.3.3/ltm.c
-	lua-5.3.3/lundump.c
-	lua-5.3.3/lvm.c
-	lua-5.3.3/lzio.c
+	lua-5.3.4/lapi.c
+	lua-5.3.4/lcode.c
+	lua-5.3.4/lctype.c
+	lua-5.3.4/ldebug.c
+	lua-5.3.4/ldo.c
+	lua-5.3.4/ldump.c
+	lua-5.3.4/lfunc.c
+	lua-5.3.4/lgc.c
+	lua-5.3.4/llex.c
+	lua-5.3.4/lmem.c
+	lua-5.3.4/lobject.c
+	lua-5.3.4/lopcodes.c
+	lua-5.3.4/lparser.c
+	lua-5.3.4/lstate.c
+	lua-5.3.4/lstring.c
+	lua-5.3.4/ltable.c
+	lua-5.3.4/ltm.c
+	lua-5.3.4/lundump.c
+	lua-5.3.4/lvm.c
+	lua-5.3.4/lzio.c
 
-	#lua-5.3.3/lbitlib.c
-	#lua-5.3.3/liolib.c
-	#lua-5.3.3/loslib.c
-	#lua-5.3.3/linit.c
-	lua-5.3.3/loadlib.c
-	lua-5.3.3/ldblib.c
-	lua-5.3.3/lbaselib.c
-	lua-5.3.3/lauxlib.c
-	lua-5.3.3/lcorolib.c
-	lua-5.3.3/lmathlib.c
-	lua-5.3.3/lstrlib.c
-	lua-5.3.3/ltablib.c
-	lua-5.3.3/lutf8lib.c)
+	#lua-5.3.4/lbitlib.c
+	#lua-5.3.4/liolib.c
+	#lua-5.3.4/loslib.c
+	#lua-5.3.4/linit.c
+	lua-5.3.4/loadlib.c
+	lua-5.3.4/ldblib.c
+	lua-5.3.4/lbaselib.c
+	lua-5.3.4/lauxlib.c
+	lua-5.3.4/lcorolib.c
+	lua-5.3.4/lmathlib.c
+	lua-5.3.4/lstrlib.c
+	lua-5.3.4/ltablib.c
+	lua-5.3.4/lutf8lib.c)
 set_target_properties(lua PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
 set_target_properties(lua PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 
