@@ -1876,6 +1876,10 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_WRITE);
 
 	lua_pushlightuserdata(L, moony);
+	lua_pushcclosure(L, _lstash_read, 1);
+	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_READ);
+
+	lua_pushlightuserdata(L, moony);
 	lua_pushcclosure(L, _latom_literal_unpack, 1);
 	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_LIT_UNPACK);
 

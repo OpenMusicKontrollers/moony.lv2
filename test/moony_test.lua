@@ -1575,10 +1575,16 @@ do
 	assert(stash.type == Atom.Int)
 	assert(stash.body == 12)
 
+	-- test superfluous :read()
+	assert(stash:read() == stash:read())
+
 	stash:write()
 	stash:read()
 	assert(#stash == 0)
 	assert(stash.type == 0)
+
+	-- test superfluous :write()
+	assert(stash:write() == stash:write())
 end
 
 -- Equal

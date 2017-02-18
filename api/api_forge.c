@@ -1823,6 +1823,17 @@ _lforge_read(lua_State *L)
 }
 
 static int
+_lforge_write(lua_State *L)
+{
+	lforge_t *lforge = lua_touserdata(L, 1);
+
+	if(lforge->lheader.type != MOONY_UDATA_STASH)
+		luaL_error(L, "not a stash object");
+
+	return _lstash_write(L);
+}
+
+static int
 _lforge__gc(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -1924,6 +1935,7 @@ const luaL_Reg lforge_mt [] = {
 
 	// stash
 	{"read", _lforge_read},
+	{"write", _lforge_write},
 
 	{"__tostring", _lforge__tostring},
 	{"__gc", _lforge__gc},

@@ -1,6 +1,5 @@
 * doc: Parameter
 * doc: Canvas
-* api: atom:read(), forge:write() methods
 * api: xpress
 * gui: clipboard support
 * gui: external editor

@@ -1047,6 +1047,11 @@ _latom__index(lua_State *L)
 				lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_WRITE);
 				return 1;
 			}
+			else if( (latom->lheader.type == MOONY_UDATA_STASH) && !strcmp(key, "read") )
+			{
+				lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_READ);
+				return 1;
+			}
 			else if(driver->__indexk)
 			{
 				return driver->__indexk(L, latom, key);
