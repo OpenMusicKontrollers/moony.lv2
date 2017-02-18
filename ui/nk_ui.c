@@ -115,6 +115,7 @@ struct _prop_t {
 	body_t maximum;
 	LV2_Atom_Tuple *points;
 	struct nk_color color;
+	bool dirty;
 };
 
 enum _browser_type_t {
@@ -248,6 +249,7 @@ struct _plughandle_t {
 	char code [MOONY_MAX_CHUNK_LEN];
 	struct nk_text_edit editor;
 	char *clipboard;
+	bool dirty;
 
 	char error [MOONY_MAX_ERROR_LEN];
 	int error_sz;
@@ -283,7 +285,7 @@ static const char *default_script =
 	"end";
 
 static void
-_patch_set_code(plughandle_t *handle, uint32_t size, const char *body);
+_patch_set_code(plughandle_t *handle, uint32_t size, const char *body, bool user);
 
 static uint8_t *
 file_load(const char *path, size_t *siz)
@@ -943,6 +945,8 @@ _submit_all(plughandle_t *handle)
 	struct nk_str *str = &handle->editor.string;
 	_patch_set(handle, handle->moony_code,
 		nk_str_len_char(str), handle->forge.String, nk_str_get_const(str));
+
+	handle->dirty = false;
 }
 
 static void
@@ -1707,6 +1711,7 @@ _parameter_widget_urid(plughandle_t *handle, struct nk_context *ctx, prop_t *pro
 	bool prop_commited = false;
 
 	nk_layout_row_dynamic(ctx, dy*(ndy-1), 1);
+	const int old_len = nk_str_len_char(&prop->value.editor.string);
 	nk_flags flags = NK_EDIT_BOX;
 	if(has_shift_enter)
 		flags |= NK_EDIT_SIG_ENTER;
@@ -1715,6 +1720,8 @@ _parameter_widget_urid(plughandle_t *handle, struct nk_context *ctx, prop_t *pro
 	const nk_flags state = nk_edit_buffer(ctx, flags, &prop->value.editor, nk_filter_default);
 	if(state & NK_EDIT_COMMITED)
 		prop_commited = true;
+	if( (state & NK_EDIT_ACTIVE) && (old_len != nk_str_len_char(&prop->value.editor.string)) )
+		prop->dirty = true;
 
 	if(!editable)
 		return;
@@ -1723,6 +1730,9 @@ _parameter_widget_urid(plughandle_t *handle, struct nk_context *ctx, prop_t *pro
 	nk_style_push_style_item(ctx, &ctx->style.button.normal, prop_commited
 		? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
 		: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
+	nk_style_push_color(ctx, &ctx->style.button.border_color, prop->dirty
+		? nk_white
+		: nk_default_color_style[NK_COLOR_BORDER]);
 	if(nk_button_image_label(ctx, handle->browser.icons.run_all, "Send", NK_TEXT_RIGHT) || prop_commited)
 	{
 		struct nk_str *str = &prop->value.editor.string;
@@ -1736,7 +1746,9 @@ _parameter_widget_urid(plughandle_t *handle, struct nk_context *ctx, prop_t *pro
 		}
 		if(urid)
 			_patch_set(handle, prop->key, sizeof(uint32_t), prop->range, &urid);
+		prop->dirty = false;
 	}
+	nk_style_pop_color(ctx);
 	nk_style_pop_style_item(ctx);
 }
 
@@ -1747,6 +1759,7 @@ _parameter_widget_string(plughandle_t *handle, struct nk_context *ctx, prop_t *p
 	bool prop_commited = false;
 
 	nk_layout_row_dynamic(ctx, dy*(ndy-1), 1);
+	const int old_len = nk_str_len_char(&prop->value.editor.string);
 	nk_flags flags = NK_EDIT_BOX;
 	if(!editable)
 		flags |= NK_EDIT_READ_ONLY;
@@ -1756,6 +1769,8 @@ _parameter_widget_string(plughandle_t *handle, struct nk_context *ctx, prop_t *p
 		&prop->value.editor, nk_filter_default);
 	if(state & NK_EDIT_COMMITED)
 		prop_commited = true;
+	if( (state & NK_EDIT_ACTIVE) && (old_len != nk_str_len_char(&prop->value.editor.string)) )
+		prop->dirty = true;
 
 	if(!editable)
 		return;
@@ -1770,12 +1785,18 @@ _parameter_widget_string(plughandle_t *handle, struct nk_context *ctx, prop_t *p
 	nk_style_push_style_item(ctx, &ctx->style.button.normal, prop_commited
 		? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
 		: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
+	nk_style_push_color(ctx, &ctx->style.button.border_color, prop->dirty
+		? nk_white
+		: nk_default_color_style[NK_COLOR_BORDER]);
 	if(nk_button_image_label(ctx, handle->browser.icons.run_all, w1 > w2 ? "Send" : "", NK_TEXT_RIGHT) || prop_commited)
 	{
 		struct nk_str *str = &prop->value.editor.string;
 
 		_patch_set(handle, prop->key, nk_str_len_char(str), prop->range, nk_str_get_const(str));
+		prop->dirty = false;
+		//TODO needs refresh?
 	}
+	nk_style_pop_color(ctx);
 	nk_style_pop_style_item(ctx);
 
 	if(nk_button_image_label(ctx, handle->browser.icons.import_from, w1 > w2 ? "Load" : "", NK_TEXT_RIGHT))
@@ -2066,6 +2087,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 							style->edit.border, style->edit.border_color);
 					}
 
+					const int old_len = nk_str_len_char(&handle->editor.string);
 					nk_flags flags = NK_EDIT_BOX;
 					if(has_shift_enter || has_control_enter)
 						flags |= NK_EDIT_SIG_ENTER;
@@ -2080,6 +2102,8 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 
 						has_commited = true;
 					}
+					if( (state & NK_EDIT_ACTIVE) && (old_len != nk_str_len_char(&handle->editor.string)) )
+						handle->dirty = true;
 
 					// actually draw line numbers (after editor window)
 					if(ln_states != NK_WIDGET_INVALID)
@@ -2122,8 +2146,12 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					nk_style_push_style_item(ctx, &ctx->style.button.normal, has_shift_enter && has_commited
 						? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
 						: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
+					nk_style_push_color(ctx, &ctx->style.button.border_color, handle->dirty
+						? nk_white
+						: nk_default_color_style[NK_COLOR_BORDER]);
 					if(nk_button_image_label(ctx, handle->browser.icons.run_all, "Send", NK_TEXT_RIGHT))
 						_submit_all(handle);
+					nk_style_pop_color(ctx);
 					nk_style_pop_style_item(ctx);
 
 					if(_tooltip_visible(ctx))
@@ -2141,7 +2169,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
 						: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
 					if(nk_button_image_label(ctx, handle->browser.icons.plus, "New", NK_TEXT_RIGHT) || has_control_n)
-						_patch_set_code(handle, strlen(default_script) + 1, default_script); //TODO should we send it, too?
+						_patch_set_code(handle, strlen(default_script) + 1, default_script, true); //TODO should we send it, too?
 					nk_style_pop_style_item(ctx);
 
 					if(_tooltip_visible(ctx))
@@ -2316,7 +2344,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 				uint8_t *chunk = file_load(handle->browser.file, &sz);
 				if(chunk)
 				{
-					_patch_set_code(handle, sz, (const char *)chunk);
+					_patch_set_code(handle, sz, (const char *)chunk, true);
 					free(chunk);
 				}
 			} break;
@@ -2343,6 +2371,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						if(prop->range == handle->forge.String)
 						{
 							_patch_set_string(handle, prop, sz, (const char *)chunk);
+							prop->dirty = true; // user needs to resend
 						}
 						else if(prop->range == handle->forge.Chunk)
 						{
@@ -2712,8 +2741,8 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	// modify default button style
 	struct nk_style_button *bst = &handle->win.ctx.style.button;
 	bst->rounding = (handle->dy - 2*bst->border) / 2;
-	bst->image_padding.x = -bst->padding.x - bst->border;
-	bst->image_padding.y = -bst->padding.y - bst->border;
+	bst->image_padding.x = -bst->padding.x - bst->border - 1;
+	bst->image_padding.y = -bst->padding.y - bst->border - 1;
 	bst->text_hover = nk_white;
 	bst->text_active = nk_white;
 
@@ -2993,7 +3022,7 @@ _patch_set_parameter_property(plughandle_t *handle, LV2_URID subject, LV2_URID p
 }
 
 static void
-_patch_set_code(plughandle_t *handle, uint32_t size, const char *body)
+_patch_set_code(plughandle_t *handle, uint32_t size, const char *body, bool user)
 {
 	if(size <= MOONY_MAX_CHUNK_LEN)
 	{
@@ -3002,6 +3031,9 @@ _patch_set_code(plughandle_t *handle, uint32_t size, const char *body)
 		_set_string(str, size, body);
 
 		handle->editor.lexer.needs_refresh = 1;
+
+		if(user)
+			handle->dirty = true; // user needs to resend
 
 		nk_pugl_post_redisplay(&handle->win);
 	}
@@ -3014,7 +3046,7 @@ _patch_set_self(plughandle_t *handle, LV2_URID property, const LV2_Atom *value)
 
 	if(property == handle->moony_code)
 	{
-		_patch_set_code(handle, value->size, body);
+		_patch_set_code(handle, value->size, body, false);
 	}
 	else if(property == handle->moony_trace)
 	{
@@ -3048,6 +3080,9 @@ _patch_set_self(plughandle_t *handle, LV2_URID property, const LV2_Atom *value)
 			{
 				strncpy(handle->error, body, value->size);
 				handle->error_sz = value->size - 1;
+
+				if(handle->error_sz)
+					handle->dirty = true; // user needs to resend
 
 				nk_pugl_post_redisplay(&handle->win);
 			}

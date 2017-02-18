@@ -3,5 +3,4 @@
 * api: xpress
 * gui: clipboard support
 * gui: external editor
-* gui: show dirty state for code editor and string parameters
 * dsp: fix c?xc? crashing in carla
