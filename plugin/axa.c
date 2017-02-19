@@ -127,7 +127,7 @@ _run_period(lua_State *L, const char *cmd, Handle *handle, uint32_t nsamples,
 			lforge->last.frames = 0;
 			lforge->forge = &handle->forge[i];
 		}
-			
+
 		lua_call(L, 1 + 2*handle->max_val + 2, 0);
 	}
 }

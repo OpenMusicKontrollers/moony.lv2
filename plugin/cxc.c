@@ -190,7 +190,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 			if(lua_pcall(L, 0, 0, 0))
 				moony_error(&handle->moony);
 
-			//moony_freeuserdata(&handle->moony);
+			moony_freeuserdata(&handle->moony);
 #ifdef USE_MANUAL_GC
 			lua_gc(L, LUA_GCSTEP, 0);
 #endif
@@ -209,7 +209,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 	else
 	{
 		// stash incoming events to later apply
-		
+
 		lock_stash_t *stash = &handle->stash;
 		LV2_ATOM_SEQUENCE_FOREACH(handle->control, ev)
 		{
@@ -220,7 +220,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 		}
 
 		handle->stash_nsamples += nsamples;
-		handle->stashed= true;
+		handle->stashed = true;
 	}
 
 	// clear output ports upon error

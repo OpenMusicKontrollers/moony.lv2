@@ -69,7 +69,7 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 		handle->max_val = 4;
 	else
 		handle->max_val = 1;
-	
+
 	lv2_atom_forge_init(&handle->forge, handle->moony.map);
 	
 	for(unsigned i=0; i<2; i++)
@@ -126,7 +126,7 @@ _run_period(lua_State *L, const char *cmd, Handle *handle, uint32_t nsamples,
 			latom_t *latom = moony_newuserdata(L, &handle->moony, MOONY_UDATA_ATOM, true);
 			latom->atom = (const LV2_Atom *)event_in;
 			latom->body.raw = LV2_ATOM_BODY_CONST(latom->atom);
-			
+
 			lforge_t *lforge = moony_newuserdata(L, &handle->moony, MOONY_UDATA_FORGE, true);
 			lforge->depth = 0;
 			lforge->last.frames = 0;
@@ -275,6 +275,11 @@ run(LV2_Handle instance, uint32_t nsamples)
 		lv2_atom_sequence_clear(handle->event_out);
 	else
 		lv2_atom_forge_pop(&handle->forge, &frame);
+
+	// clear output ports upon error
+	if(moony_bypass(&handle->moony))
+		for(unsigned i=0; i<handle->max_val; i++)
+			*handle->val_out[i] = 0.f;
 
 	// handle UI comm
 	moony_out(&handle->moony, handle->notify, nsamples - 1);
