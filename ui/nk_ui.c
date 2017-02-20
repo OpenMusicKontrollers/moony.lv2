@@ -256,6 +256,7 @@ struct _plughandle_t {
 
 	int n_trace;
 	char **traces;
+	int follow;
 
 	int n_writable;
 	prop_t *writables;
@@ -278,11 +279,8 @@ struct _plughandle_t {
 };
 
 static const char *default_script =
-	"function run(n, control, notify, seq, forge)\n"
-	"  for frames, atom in seq:foreach() do\n"
-	"    forge:time(frames):atom(atom)\n"
-	"  end\n"
-	"end";
+	"-- Don't know how to code? Load a tutorial and visit the reference manual at:\n"
+	"-- https://openmusickontrollers.gitlab.io/moony.lv2/";
 
 static void
 _patch_set_code(plughandle_t *handle, uint32_t size, const char *body, bool user);
@@ -2202,8 +2200,16 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					nk_layout_row_dynamic(ctx, box_h, 1);
 					struct nk_list_view lview;
 					const float dh = style->font->height + style->edit.row_padding;
-					if(nk_list_view_begin(ctx, &lview, "Traces", NK_WINDOW_BORDER, dh, handle->n_trace))
+					nk_flags flags = NK_WINDOW_BORDER;
+					if(handle->follow)
+						flags |= NK_WINDOW_NO_SCROLLBAR;
+					if(nk_list_view_begin(ctx, &lview, "Traces", flags, dh, handle->n_trace))
 					{
+						if(handle->follow)
+						{
+							lview.end = NK_MAX(handle->n_trace, 0);
+							lview.begin = NK_MAX(lview.end - lview.count, 0);
+						}
 						nk_layout_row_dynamic(ctx, dh, 1);
 						for(int l = lview.begin; (l < lview.end) && (l < handle->n_trace); l++)
 						{
@@ -2219,7 +2225,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						nk_list_view_end(&lview);
 					}
 
-					nk_layout_row_dynamic(ctx, dy, 1);
+					nk_layout_row_dynamic(ctx, dy, 2);
 					if(_tooltip_visible(ctx))
 						nk_tooltip(ctx, "Ctrl-D");
 					nk_style_push_style_item(ctx, &ctx->style.button.normal, has_control_d
@@ -2228,6 +2234,8 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					if(nk_button_image_label(ctx, handle->browser.icons.clear, "Clear", NK_TEXT_RIGHT) || has_control_d)
 						_clear_log(handle);
 					nk_style_pop_style_item(ctx);
+
+					nk_checkbox_label(ctx, "Follow", &handle->follow);
 
 					nk_group_end(ctx);
 				}
@@ -2636,8 +2644,8 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	cfg->height = 720 * scale;
 	cfg->resizable = true;
 	cfg->ignore = false;
-	cfg->class = "tracker";
-	cfg->title = "Tracker";
+	cfg->class = "moony";
+	cfg->title = "Moony";
 	cfg->parent = (intptr_t)parent;
 	cfg->data = handle;
 	cfg->expose = _expose;
