@@ -158,6 +158,9 @@ struct _browser_t {
 		struct nk_image clear;
 		struct nk_image bell;
 		struct nk_image panic;
+		struct nk_image about;
+		struct nk_image omk;
+		struct nk_image howl;
 	} icons;
 };
 
@@ -270,6 +273,8 @@ struct _plughandle_t {
 	
 	browser_t browser;
 	const char *bundle_path;
+
+	bool show_about;
 
 	int32_t editor_hidden;
 	int32_t log_hidden;
@@ -455,6 +460,9 @@ file_browser_init(browser_t *browser, int return_hidden, int return_lua_only,
 		browser->icons.clear = icon_load(data, "cancel.png");
 		browser->icons.bell = icon_load(data, "bell.png");
 		browser->icons.panic= icon_load(data, "cancel-1.png");
+		browser->icons.about= icon_load(data, "question.png");
+		browser->icons.omk = icon_load(data, "omk_logo_256x256.png");
+		browser->icons.howl = icon_load(data, "moony_logo.png");
 	}
 }
 
@@ -481,6 +489,9 @@ file_browser_free(browser_t *browser,
 		icon_unload(data, browser->icons.clear);
 		icon_unload(data, browser->icons.bell);
 		icon_unload(data, browser->icons.panic);
+		icon_unload(data, browser->icons.about);
+		icon_unload(data, browser->icons.omk);
+		icon_unload(data, browser->icons.howl);
 	}
 
 	if(browser->files)
@@ -2307,9 +2318,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 
 		nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 3);
 		{
-			nk_layout_row_push(ctx, 0.1);
-
-
+			nk_layout_row_push(ctx, 0.15);
 			if(_tooltip_visible(ctx))
 				nk_tooltip(ctx, "Ctrl-A");
 			nk_style_push_style_item(ctx, &ctx->style.button.normal, has_control_a
@@ -2322,118 +2331,173 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 			}
 			nk_style_pop_style_item(ctx);
 
-			nk_layout_row_push(ctx, 0.8);
+			nk_layout_row_push(ctx, 0.7);
 			if(handle->error[0] == 0)
 				nk_spacing(ctx, 1);
 			else
 				_text_image_colored(ctx, &handle->browser.icons.bell, handle->error, NK_TEXT_LEFT, nk_yellow);
 
-			nk_layout_row_push(ctx, 0.1);
-			nk_label(ctx, "Moony.lv2: "MOONY_VERSION, NK_TEXT_RIGHT);
+			nk_layout_row_push(ctx, 0.15);
+			if(nk_button_image_label(ctx, handle->browser.icons.about, "About", NK_TEXT_RIGHT))
+				handle->show_about = true;
 		}
 		nk_layout_row_end(ctx);
 	}
 	nk_end(ctx);
 
-	if(handle->browser_type == BROWSER_NONE)
-		return;
-
-	const struct nk_vec2 browser_padding = nk_vec2(wbounds.w/8, wbounds.h/8);
-	if(file_browser_run(&handle->browser, ctx, dy, "File browser",
-		handle->browser_type, nk_pad_rect(wbounds, browser_padding)))
+	if(handle->browser_type != BROWSER_NONE)
 	{
-		switch(handle->browser_type)
+		const struct nk_vec2 browser_padding = nk_vec2(wbounds.w/8, wbounds.h/8);
+		if(file_browser_run(&handle->browser, ctx, dy, "File browser",
+			handle->browser_type, nk_pad_rect(wbounds, browser_padding)))
 		{
-			case BROWSER_NONE:
-				break;
-			case BROWSER_IMPORT_CODE:
+			switch(handle->browser_type)
 			{
-				size_t sz;
-				uint8_t *chunk = file_load(handle->browser.file, &sz);
-				if(chunk)
-				{
-					_patch_set_code(handle, sz, (const char *)chunk, true);
-					free(chunk);
-				}
-			} break;
-			case BROWSER_EXPORT_CODE:
-			{
-				FILE *f = fopen(handle->browser.file, "wb");
-				if(f)
-				{
-					struct nk_str *str = &handle->editor.string;
-					if(fwrite(nk_str_get_const(str), nk_str_len_char(str), 1, f) != 1)
-						; //TODO handle error
-					fclose(f);
-				}
-			} break;
-			case BROWSER_IMPORT_PROPERTY:
-			{
-				prop_t *prop = handle->browser_target;
-				if(prop)
+				case BROWSER_NONE:
+					break;
+				case BROWSER_IMPORT_CODE:
 				{
 					size_t sz;
 					uint8_t *chunk = file_load(handle->browser.file, &sz);
 					if(chunk)
 					{
-						if(prop->range == handle->forge.String)
-						{
-							_patch_set_string(handle, prop, sz, (const char *)chunk);
-							prop->dirty = true; // user needs to resend
-						}
-						else if(prop->range == handle->forge.Chunk)
-						{
-							prop->value.chunk.size = sz;
-							prop->value.chunk.body = realloc(prop->value.chunk.body, sz);
-							if(prop->value.chunk.body)
-								memcpy(prop->value.chunk.body, chunk, sz);
-							else
-								; //TODO handle error
-							_patch_set(handle, prop->key, sz, prop->range, chunk);
-						}
+						_patch_set_code(handle, sz, (const char *)chunk, true);
 						free(chunk);
 					}
-				}
-			} break;
-			case BROWSER_EXPORT_PROPERTY:
-			{
-				prop_t *prop = handle->browser_target;
-				if(prop)
+				} break;
+				case BROWSER_EXPORT_CODE:
 				{
 					FILE *f = fopen(handle->browser.file, "wb");
 					if(f)
 					{
-						if(prop->range == handle->forge.String)
-						{
-							struct nk_str *str = &prop->value.editor.string;
-							if(fwrite(nk_str_get_const(str), nk_str_len_char(str), 1, f) != 1)
-								; //TODO handle error
-						}
-						else if(prop->range == handle->forge.Chunk)
-						{
-							if(fwrite(prop->value.chunk.body, prop->value.chunk.size, 1, f) != 1)
-								; //TODO handle error
-						}
+						struct nk_str *str = &handle->editor.string;
+						if(fwrite(nk_str_get_const(str), nk_str_len_char(str), 1, f) != 1)
+							; //TODO handle error
 						fclose(f);
 					}
-				}
-			} break;
+				} break;
+				case BROWSER_IMPORT_PROPERTY:
+				{
+					prop_t *prop = handle->browser_target;
+					if(prop)
+					{
+						size_t sz;
+						uint8_t *chunk = file_load(handle->browser.file, &sz);
+						if(chunk)
+						{
+							if(prop->range == handle->forge.String)
+							{
+								_patch_set_string(handle, prop, sz, (const char *)chunk);
+								prop->dirty = true; // user needs to resend
+							}
+							else if(prop->range == handle->forge.Chunk)
+							{
+								prop->value.chunk.size = sz;
+								prop->value.chunk.body = realloc(prop->value.chunk.body, sz);
+								if(prop->value.chunk.body)
+									memcpy(prop->value.chunk.body, chunk, sz);
+								else
+									; //TODO handle error
+								_patch_set(handle, prop->key, sz, prop->range, chunk);
+							}
+							free(chunk);
+						}
+					}
+				} break;
+				case BROWSER_EXPORT_PROPERTY:
+				{
+					prop_t *prop = handle->browser_target;
+					if(prop)
+					{
+						FILE *f = fopen(handle->browser.file, "wb");
+						if(f)
+						{
+							if(prop->range == handle->forge.String)
+							{
+								struct nk_str *str = &prop->value.editor.string;
+								if(fwrite(nk_str_get_const(str), nk_str_len_char(str), 1, f) != 1)
+									; //TODO handle error
+							}
+							else if(prop->range == handle->forge.Chunk)
+							{
+								if(fwrite(prop->value.chunk.body, prop->value.chunk.size, 1, f) != 1)
+									; //TODO handle error
+							}
+							fclose(f);
+						}
+					}
+				} break;
+			}
+
+			nk_window_close(ctx, "File browser");
 		}
 
-		nk_window_close(ctx, "File browser");
+		if(  !nk_window_is_active(ctx, "File browser")
+			|| nk_input_is_key_pressed(in, NK_KEY_TEXT_RESET_MODE)) // or escape
+		{
+			nk_window_close(ctx, "File browser");
+		}
+
+		if(nk_window_is_closed(ctx, "File browser"))
+		{
+			// reset browser type and target
+			handle->browser_type = BROWSER_NONE;
+			handle->browser_target = NULL;
+		}
 	}
 
-	if(  !nk_window_is_active(ctx, "File browser")
-		|| nk_input_is_key_pressed(in, NK_KEY_TEXT_RESET_MODE)) // or escape
+	if(handle->show_about)
 	{
-		nk_window_close(ctx, "File browser");
-	}
+		const struct nk_vec2 about_padding = nk_vec2(wbounds.w/3, wbounds.h/8);
+		if(nk_begin(ctx, "About", nk_pad_rect(wbounds, about_padding),
+			NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_CLOSABLE))
+		{
+			nk_layout_row_dynamic(ctx, dy, 1);
+			const float w = nk_widget_width(ctx);
 
-	if(nk_window_is_closed(ctx, "File browser"))
-	{
-		// reset browser type and target
-		handle->browser_type = BROWSER_NONE;
-		handle->browser_target = NULL;
+			nk_spacing(ctx, 1);
+			nk_label_colored(ctx, "Moony.lv2", NK_TEXT_CENTERED, nk_white);
+			nk_label(ctx, MOONY_VERSION, NK_TEXT_CENTERED);
+
+			nk_spacing(ctx, 1);
+			const float ratio_howl [3] = {0.25, 0.5, 0.25};
+			nk_layout_row(ctx, NK_DYNAMIC, w/2, 3, ratio_howl);
+			nk_spacing(ctx, 1);
+			nk_image(ctx, handle->browser.icons.howl);
+
+			nk_layout_row_dynamic(ctx, dy, 1);
+			nk_spacing(ctx, 1);
+			nk_label(ctx, "Copyright © 2015-2017 Hanspeter Portner", NK_TEXT_CENTERED);
+
+			//nk_spacing(ctx, 1);
+			nk_label(ctx, "This is free, libre and open source software", NK_TEXT_CENTERED);
+			nk_label(ctx, "Released under Artistic License 2.0", NK_TEXT_CENTERED);
+			nk_label(ctx, "By Open Music Kontrollers", NK_TEXT_CENTERED);
+
+			nk_spacing(ctx, 1);
+			const float ratio_omk [3] = {0.375, 0.25, 0.375};
+			nk_layout_row(ctx, NK_DYNAMIC, w/4, 3, ratio_omk);
+			nk_spacing(ctx, 1);
+			nk_image(ctx, handle->browser.icons.omk);
+
+			nk_layout_row_dynamic(ctx, dy, 1);
+			nk_spacing(ctx, 1);
+			nk_label(ctx, "https://open-music-kontrollers.ch/lv2/moony", NK_TEXT_CENTERED);
+			nk_label(ctx, "dev@open-music-kontrollers.ch", NK_TEXT_CENTERED);
+			nk_spacing(ctx, 1);
+		}
+		nk_end(ctx);
+
+		if(  !nk_window_is_active(ctx, "About")
+			|| nk_input_is_key_pressed(in, NK_KEY_TEXT_RESET_MODE)) // or escape
+		{
+			nk_window_close(ctx, "About");
+		}
+
+		if(nk_window_is_closed(ctx, "About"))
+		{
+			handle->show_about = false;
+		}
 	}
 }
 
