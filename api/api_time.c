@@ -21,7 +21,7 @@
 
 #include <timely.h>
 
-static void
+__realtime static void
 _ltimeresponder_cb(timely_t *timely, int64_t frames, LV2_URID type,
 	void *data)
 {
@@ -76,7 +76,7 @@ _ltimeresponder_cb(timely_t *timely, int64_t frames, LV2_URID type,
 		lua_pop(L, 1); // nil
 }
 
-static int
+__realtime static int
 _ltimeresponder__call(lua_State *L)
 {
 	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -105,7 +105,7 @@ _ltimeresponder__call(lua_State *L)
 	return 1;
 }
 
-int
+__realtime int
 _ltimeresponder_apply(lua_State *L)
 {
 	// 1: self
@@ -123,7 +123,7 @@ _ltimeresponder_apply(lua_State *L)
 	return _ltimeresponder__call(L);
 }
 
-int
+__realtime int
 _ltimeresponder_stash(lua_State *L)
 {
 	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -168,7 +168,7 @@ _ltimeresponder_stash(lua_State *L)
 	return 1; // forge
 }
 
-static int
+__realtime static int
 _ltimeresponder__index(lua_State *L)
 {
 	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -240,7 +240,7 @@ _ltimeresponder__index(lua_State *L)
 	return 1;
 }
 
-int
+__realtime int
 _ltimeresponder(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));

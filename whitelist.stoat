@@ -1,0 +1,11 @@
+strcoll
+frexp
+strtod
+strpbrk
+longjmp
+strspn
+_setjmp
+strtok
+sscanf
+strrchr
+__exp2_finite

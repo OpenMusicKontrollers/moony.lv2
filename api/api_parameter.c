@@ -17,7 +17,7 @@
 
 #include <api_parameter.h>
 
-static int
+__realtime static int
 _lparameter__call(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -41,7 +41,7 @@ _lparameter__call(lua_State *L)
 	return 1;
 }
 
-int
+__realtime int
 _lparameter(lua_State *L)
 {
 	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));

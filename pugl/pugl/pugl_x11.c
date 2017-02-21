@@ -283,6 +283,7 @@ puglCreateWindow(PuglView* view, const char* title)
 		CWColormap | CWEventMask, &attr);
 
 	if (!createContext(view, vi)) {
+		XFree(vi);
 		return 2;
 	}
 

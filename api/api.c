@@ -65,7 +65,7 @@ static const size_t moony_sz [MOONY_UDATA_COUNT] = {
 
 static _Atomic xpress_uuid_t voice_uuid = ATOMIC_VAR_INIT(INT64_MAX / UINT16_MAX * 2LL);
 
-static int64_t
+__realtime static int64_t
 _voice_map_new_uuid(void *handle)
 {
 	_Atomic xpress_uuid_t *uuid = handle;
@@ -77,7 +77,7 @@ static xpress_map_t voice_map_fallback = {
 	.new_uuid = _voice_map_new_uuid
 };
 
-static int
+__non_realtime static int
 _hash_sort(const void *itm1, const void *itm2)
 {
 	const latom_driver_hash_t *hash1 = itm1;
@@ -90,7 +90,7 @@ _hash_sort(const void *itm1, const void *itm2)
 	return 0;
 }
 
-static int
+__realtime static int // map is not really realtime in most hosts
 _lmap__index(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -118,7 +118,7 @@ static const luaL_Reg lmap_mt [] = {
 	{NULL, NULL}
 };
 
-static int
+__realtime static int // unmap is not really realtime in most hosts
 _lunmap__index(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -146,7 +146,7 @@ static const luaL_Reg lunmap_mt [] = {
 	{NULL, NULL}
 };
 
-static int
+__realtime static int // map is not really realtime in most hosts
 _lhash_map__index(lua_State *L)
 {
 	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -180,7 +180,7 @@ static const luaL_Reg lhash_map_mt [] = {
 	{NULL, NULL}
 };
 
-static int
+__realtime static int // map is not really realtime in most hosts
 _lhash_map(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -201,7 +201,7 @@ _lhash_map(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lvoice_map(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -210,7 +210,7 @@ _lvoice_map(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lmidi2cps(lua_State *L)
 {
 	const lua_Number note = luaL_checknumber(L, 1);
@@ -224,7 +224,7 @@ _lmidi2cps(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lcps2midi(lua_State *L)
 {
 	const lua_Number cps = luaL_checknumber(L, 1);
@@ -248,7 +248,7 @@ static const char *note_keys [12] = {
 	"B"
 };
 
-static int
+__realtime static int
 _lnote__index(lua_State *L)
 {
 	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -298,7 +298,7 @@ _lnote__index(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lnote__call(lua_State *L)
 {
 	lua_settop(L, 2);
@@ -313,7 +313,7 @@ static const luaL_Reg lnote_mt [] = {
 	{NULL, NULL}
 };
 
-static int
+__realtime static int
 _log(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -362,7 +362,7 @@ _log(lua_State *L)
 	return 0;
 }
 
-static bool
+__realtime static bool
 _parse_key(lua_State *L, int idx, uint8_t key [16])
 {
 	size_t key_len;
@@ -387,7 +387,7 @@ _parse_key(lua_State *L, int idx, uint8_t key [16])
 	return true; // success
 }
 
-static int
+__realtime static int
 _lencrypt(lua_State *L)
 {
 	size_t input_len;
@@ -427,7 +427,7 @@ _lencrypt(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _ldecrypt(lua_State *L)
 {
 	size_t input_len;
@@ -478,8 +478,8 @@ _ldecrypt(lua_State *L)
 	return 1;
 }
 
-LV2_Atom_Forge_Ref
-_sink(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
+__realtime LV2_Atom_Forge_Ref
+_sink_rt(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
 {
 	atom_ser_t *ser = handle;
 
@@ -492,16 +492,9 @@ _sink(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
 		while(new_offset > new_size)
 			new_size <<= 1;
 
-		if(ser->moony)
-		{
-			if(!(ser->buf = moony_realloc(ser->moony, ser->buf, ser->size, new_size)))
-				return 0; // realloc failed
-		}
-		else
-		{
-			if(!(ser->buf = realloc(ser->buf, new_size)))
-				return 0; // realloc failed
-		}
+		assert(ser->moony);
+		if(!(ser->buf = moony_realloc(ser->moony, ser->buf, ser->size, new_size)))
+			return 0; // realloc failed
 
 		ser->size = new_size;
 	}
@@ -512,7 +505,33 @@ _sink(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
 	return ref;
 }
 
-LV2_Atom *
+__non_realtime LV2_Atom_Forge_Ref
+_sink_non_rt(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
+{
+	atom_ser_t *ser = handle;
+
+	const LV2_Atom_Forge_Ref ref = ser->offset + 1;
+
+	const uint32_t new_offset = ser->offset + size;
+	if(new_offset > ser->size)
+	{
+		uint32_t new_size = ser->size << 1;
+		while(new_offset > new_size)
+			new_size <<= 1;
+
+		if(!(ser->buf = realloc(ser->buf, new_size)))
+			return 0; // realloc failed
+
+		ser->size = new_size;
+	}
+
+	memcpy(ser->buf + ser->offset, buf, size);
+	ser->offset = new_offset;
+
+	return ref;
+}
+
+__realtime LV2_Atom *
 _deref(LV2_Atom_Forge_Sink_Handle handle, LV2_Atom_Forge_Ref ref)
 {
 	atom_ser_t *ser = handle;
@@ -522,7 +541,7 @@ _deref(LV2_Atom_Forge_Sink_Handle handle, LV2_Atom_Forge_Ref ref)
 	return (LV2_Atom *)(ser->buf + offset);
 }
 
-static int
+__realtime static int
 _stash(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -546,7 +565,7 @@ _stash(lua_State *L)
 		{
 			memset(ser.buf, 0x0, sizeof(LV2_Atom));
 
-			lv2_atom_forge_set_sink(lframe->forge, _sink, _deref, &ser);
+			lv2_atom_forge_set_sink(lframe->forge, _sink_rt, _deref, &ser);
 			lua_call(L, 1, 0);
 
 			if(moony->stash_atom)
@@ -562,7 +581,7 @@ _stash(lua_State *L)
 	return 0;
 }
 
-static int
+__realtime static int
 _apply(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -579,7 +598,7 @@ _apply(lua_State *L)
 	return 0;
 }
 
-static int
+__non_realtime static int
 _save(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -597,7 +616,7 @@ _save(lua_State *L)
 	return 0;
 }
 
-static LV2_State_Status
+__non_realtime static LV2_State_Status
 _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 	LV2_State_Handle state, uint32_t flags, const LV2_Feature *const *features)
 {
@@ -705,7 +724,7 @@ _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 	{
 		memset(ser.buf, 0x0, sizeof(LV2_Atom));
 
-		lv2_atom_forge_set_sink(&moony->state_forge, _sink, _deref, &ser);
+		lv2_atom_forge_set_sink(&moony->state_forge, _sink_non_rt, _deref, &ser);
 
 		// lock Lua state, so it cannot be accessed by realtime thread
 		_spin_lock(&moony->lock.state);
@@ -745,7 +764,7 @@ _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 	return status;
 }
 
-static int
+__non_realtime static int
 _restore(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -759,7 +778,7 @@ _restore(lua_State *L)
 	return 0;
 }
 
-static void
+__realtime static void
 _clear_global_callbacks(lua_State *L)
 {
 	lua_pushnil(L);
@@ -781,7 +800,7 @@ _clear_global_callbacks(lua_State *L)
 	lua_setglobal(L, "run");
 }
 
-static LV2_State_Status
+__non_realtime static LV2_State_Status
 _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_State_Handle state, uint32_t flags, const LV2_Feature *const *features)
 {
 	moony_t *moony = (moony_t *)instance;
@@ -962,8 +981,7 @@ static const LV2_State_Interface state_iface = {
 	.restore = _state_restore
 };
 
-// non-rt thread
-static LV2_Worker_Status
+__non_realtime static LV2_Worker_Status
 _work(LV2_Handle instance,
 	LV2_Worker_Respond_Function respond,
 	LV2_Worker_Respond_Handle target,
@@ -990,8 +1008,7 @@ _work(LV2_Handle instance,
 	return LV2_WORKER_SUCCESS;
 }
 
-// rt-thread
-static LV2_Worker_Status
+__realtime static LV2_Worker_Status
 _work_response(LV2_Handle instance, uint32_t size, const void *body)
 {
 	moony_t *moony = instance;
@@ -1005,7 +1022,7 @@ _work_response(LV2_Handle instance, uint32_t size, const void *body)
 
 	// tlsf add pool
 	moony->vm.pool[i] = tlsf_add_pool(moony->vm.tlsf,
-		moony->vm.area[i], moony->vm.size[i]);
+		moony->vm.area[i], moony->vm.size[i]); //FIXME stoat complains about printf
 
 	if(!moony->vm.pool[i]) // pool addition failed
 	{
@@ -1030,8 +1047,7 @@ _work_response(LV2_Handle instance, uint32_t size, const void *body)
 	return LV2_WORKER_SUCCESS;
 }
 
-// rt-thread
-static LV2_Worker_Status
+__realtime static LV2_Worker_Status
 _end_run(LV2_Handle instance)
 {
 	moony_t *moony = instance;
@@ -1049,7 +1065,7 @@ static const LV2_Worker_Interface work_iface = {
 };
 
 #ifdef BUILD_INLINE_DISPLAY
-static inline LV2_Inline_Display_Image_Surface *
+__non_realtime static inline LV2_Inline_Display_Image_Surface *
 _cairo_init(moony_t *moony, int w, int h)
 {
 	LV2_Inline_Display_Image_Surface *surf = &moony->image_surface;
@@ -1078,7 +1094,7 @@ _cairo_init(moony_t *moony, int w, int h)
 	return surf;
 }
 
-static inline void
+__non_realtime static inline void
 _cairo_deinit(moony_t *moony)
 {
 	LV2_Inline_Display_Image_Surface *surf = &moony->image_surface;
@@ -1104,8 +1120,7 @@ _cairo_deinit(moony_t *moony)
 }
 #endif
 
-// non-rt
-static LV2_Inline_Display_Image_Surface *
+__non_realtime static LV2_Inline_Display_Image_Surface *
 _render(LV2_Handle instance, uint32_t w, uint32_t h)
 {
 	moony_t *moony = instance;
@@ -1144,7 +1159,7 @@ static const LV2_Inline_Display_Interface inlinedisplay_iface = {
 	.render = _render
 };
 
-const void*
+__non_realtime const void*
 extension_data(const char* uri)
 {
 	if(!strcmp(uri, LV2_WORKER__interface))
@@ -1157,7 +1172,7 @@ extension_data(const char* uri)
 		return NULL;
 }
 
-int
+__non_realtime int
 moony_init(moony_t *moony, const char *subject, double sample_rate,
 	const LV2_Feature *const *features)
 {
@@ -1373,7 +1388,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	return 0;
 }
 
-void
+__non_realtime void
 moony_deinit(moony_t *moony)
 {
 	if(moony->state_atom)
@@ -1409,7 +1424,7 @@ moony_deinit(moony_t *moony)
 	lua_pushvalue(L, idx); \
 	lua_setfield(L, idx - 1, "__index");
 
-void
+__non_realtime void
 moony_open(moony_t *moony, lua_State *L, bool use_assert)
 {
 	luaL_newmetatable(L, "latom");
@@ -1938,7 +1953,7 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 #undef SET_MAP
 }
 
-void *
+__realtime void *
 moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type, bool cache)
 {
 	assert( (type >= MOONY_UDATA_ATOM) && (type < MOONY_UDATA_COUNT) );
@@ -1987,7 +2002,7 @@ moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type, bool cache)
 	return data;
 }
 
-void
+__realtime void
 moony_pre(moony_t *moony, LV2_Atom_Sequence *notify)
 {
 	// initialize notify forge
@@ -1996,7 +2011,7 @@ moony_pre(moony_t *moony, LV2_Atom_Sequence *notify)
 	moony->notify_ref = lv2_atom_forge_sequence_head(&moony->notify_forge, &moony->notify_frame, 0);
 }
 
-static LV2_Atom_Forge_Ref
+__realtime static LV2_Atom_Forge_Ref
 _patch_set(patch_t *patch, LV2_Atom_Forge *forge, LV2_URID property, uint32_t size, LV2_URID type, const void *body)
 {
 	LV2_Atom_Forge_Frame frame;
@@ -2020,7 +2035,7 @@ _patch_set(patch_t *patch, LV2_Atom_Forge *forge, LV2_URID property, uint32_t si
 	return ref;
 }
 
-bool
+__realtime bool
 moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *notify)
 {
 	lua_State *L = moony->vm.L;
@@ -2324,7 +2339,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 	return moony->once;
 }
 
-void
+__realtime void
 moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 {
 	LV2_Atom_Forge *forge = &moony->notify_forge;

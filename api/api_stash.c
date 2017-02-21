@@ -17,7 +17,7 @@
 
 #include <api_stash.h>
 
-int
+__realtime int
 _lstash__gc(lua_State *L)
 {
 	lstash_t *lstash = lua_touserdata(L, 1);
@@ -29,7 +29,7 @@ _lstash__gc(lua_State *L)
 	return 0;
 }
 
-int
+__realtime int
 _lstash_write(lua_State *L)
 {
 	lstash_t *lstash = lua_touserdata(L, 1);
@@ -41,7 +41,7 @@ _lstash_write(lua_State *L)
 	lforge->forge = &lstash->forge;
 	
 	ser->offset = 0; // reset stash pointer
-	lv2_atom_forge_set_sink(&lstash->forge, _sink, _deref, ser);
+	lv2_atom_forge_set_sink(&lstash->forge, _sink_rt, _deref, ser);
 
 	LV2_Atom *atom = (LV2_Atom *)ser->buf;
 	atom->type = 0;
@@ -53,7 +53,7 @@ _lstash_write(lua_State *L)
 	return 1;
 }
 
-int
+__realtime int
 _lstash_read(lua_State *L)
 {
 	lstash_t *lstash = lua_touserdata(L, 1);
@@ -69,7 +69,7 @@ _lstash_read(lua_State *L)
 	return 1;
 }
 
-int
+__realtime int
 _lstash(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));

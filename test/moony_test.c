@@ -46,7 +46,7 @@ struct _handle_t {
 	LV2_URID urid;
 };
 
-static int
+__non_realtime static int
 _test(lua_State *L)
 {
 	handle_t *handle = lua_touserdata(L, lua_upvalueindex(1));
@@ -103,7 +103,7 @@ _test(lua_State *L)
 	return 0;
 }
 
-static LV2_URID
+__non_realtime static LV2_URID
 _map(LV2_URID_Map_Handle instance, const char *uri)
 {
 	handle_t *handle = instance;
@@ -124,7 +124,7 @@ _map(LV2_URID_Map_Handle instance, const char *uri)
 	return itm->urid;
 }
 
-static const char *
+__non_realtime static const char *
 _unmap(LV2_URID_Unmap_Handle instance, LV2_URID urid)
 {
 	handle_t *handle = instance;
@@ -140,7 +140,7 @@ _unmap(LV2_URID_Unmap_Handle instance, LV2_URID urid)
 	return NULL;
 }
 
-static LV2_Worker_Status
+__non_realtime static LV2_Worker_Status
 _respond(LV2_Worker_Respond_Handle instance, uint32_t size, const void *data)
 {
 	handle_t *handle = instance;
@@ -148,7 +148,7 @@ _respond(LV2_Worker_Respond_Handle instance, uint32_t size, const void *data)
 	return handle->iface->work_response(&handle->moony, size, data);
 }
 
-static LV2_Worker_Status
+__non_realtime static LV2_Worker_Status
 _sched(LV2_Worker_Schedule_Handle instance, uint32_t size, const void *data)
 {
 	handle_t *handle = instance;
@@ -160,7 +160,7 @@ _sched(LV2_Worker_Schedule_Handle instance, uint32_t size, const void *data)
 	return status;
 }
 
-static int
+__non_realtime static int
 _vprintf(void *data, LV2_URID type, const char *fmt, va_list args)
 {
 	vfprintf(stderr, fmt, args);
@@ -169,7 +169,7 @@ _vprintf(void *data, LV2_URID type, const char *fmt, va_list args)
 	return 0;
 }
 
-static int
+__non_realtime static int
 _printf(void *data, LV2_URID type, const char *fmt, ...)
 {
   va_list args;
@@ -182,7 +182,7 @@ _printf(void *data, LV2_URID type, const char *fmt, ...)
 	return ret;
 }
 
-int
+__non_realtime int
 main(int argc, char **argv)
 {
 	static handle_t handle;

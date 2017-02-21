@@ -19,7 +19,7 @@
 #include <api_atom.h>
 #include <api_forge.h>
 
-static int
+__realtime static int
 _lmidiresponder__call(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -82,7 +82,7 @@ _lmidiresponder__call(lua_State *L)
 	return 1;
 }
 
-int
+__realtime int
 _lmidiresponder(lua_State *L)
 {
 	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));

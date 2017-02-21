@@ -34,7 +34,7 @@ extern int luaopen_lpeg(lua_State *L);
 
 //#define MOONY_LOG_MEM
 #ifdef MOONY_LOG_MEM
-static inline void
+__realtime static inline void
 _log_mem(moony_t *moony, void *ptr, size_t osize, size_t nsize)
 {
 	moony_vm_t *vm = &moony->vm;
@@ -72,7 +72,7 @@ _log_mem(moony_t *moony, void *ptr, size_t osize, size_t nsize)
 }
 #endif
 
-inline void *
+__realtime inline void *
 moony_alloc(moony_t *moony, size_t nsize)
 {
 	moony_vm_t *vm = &moony->vm;
@@ -87,7 +87,7 @@ moony_alloc(moony_t *moony, size_t nsize)
 	return tlsf_malloc(vm->tlsf, nsize);
 }
 
-inline void *
+__realtime inline void *
 moony_realloc(moony_t *moony, void *buf, size_t osize, size_t nsize)
 {
 	moony_vm_t *vm = &moony->vm;
@@ -103,7 +103,7 @@ moony_realloc(moony_t *moony, void *buf, size_t osize, size_t nsize)
 	return tlsf_realloc(vm->tlsf, buf, nsize);
 }
 
-inline void
+__realtime inline void
 moony_free(moony_t *moony, void *buf, size_t osize)
 {
 	moony_vm_t *vm = &moony->vm;
@@ -118,8 +118,7 @@ moony_free(moony_t *moony, void *buf, size_t osize)
 	tlsf_free(vm->tlsf, buf);
 }
 
-// rt
-static void *
+__realtime static void *
 lua_alloc(void *ud, void *ptr, size_t osize, size_t nsize)
 {
 	moony_t *moony = ud;
@@ -139,8 +138,7 @@ lua_alloc(void *ud, void *ptr, size_t osize, size_t nsize)
 	}
 }
 
-// non-rt
-int
+__non_realtime int
 moony_vm_init(moony_vm_t *vm)
 {
 	moony_t *moony = (void *)vm - offsetof(moony_t, vm);
@@ -197,8 +195,7 @@ moony_vm_init(moony_vm_t *vm)
 	return 0;
 }
 
-// non-rt
-int
+__non_realtime int
 moony_vm_deinit(moony_vm_t *vm)
 {
 	if(vm->L)
@@ -226,8 +223,7 @@ moony_vm_deinit(moony_vm_t *vm)
 	return 0;
 }
 
-// non-rt
-void *
+__non_realtime void *
 moony_vm_mem_alloc(size_t size)
 {
 	void *area = NULL;
@@ -246,8 +242,7 @@ moony_vm_mem_alloc(size_t size)
 	return area;
 }
 
-// non-rt
-void
+__non_realtime void
 moony_vm_mem_free(void *area, size_t size)
 {
 	if(!area)
@@ -259,8 +254,7 @@ moony_vm_mem_free(void *area, size_t size)
 	free(area);
 }
 
-// rt
-int
+__realtime int
 moony_vm_mem_extend(moony_vm_t *vm)
 {
 	moony_t *moony = (void *)vm - offsetof(moony_t, vm);

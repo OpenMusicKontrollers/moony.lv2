@@ -137,7 +137,7 @@ _latom_vec_foreach_itr(lua_State *L);
 int
 _latom_seq_multiplex_itr(lua_State *L);
 
-static inline latom_t *
+__realtime static inline latom_t *
 _latom_new(lua_State *L, const LV2_Atom *atom, bool cache)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -152,7 +152,7 @@ _latom_new(lua_State *L, const LV2_Atom *atom, bool cache)
 	return latom;
 }
 
-static inline const latom_driver_t *
+__realtime static inline const latom_driver_t *
 _latom_driver(moony_t *moony, LV2_URID type)
 {
 	const latom_driver_hash_t *base = moony->atom_driver_hash;
@@ -167,7 +167,7 @@ _latom_driver(moony_t *moony, LV2_URID type)
 	return (base->type == type) ? base->driver : &latom_chunk_driver;
 }
 
-static void
+__realtime static void
 _latom_value(lua_State *L, const LV2_Atom *atom)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));

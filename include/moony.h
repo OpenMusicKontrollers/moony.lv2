@@ -61,6 +61,9 @@
 #	include <canvas.lv2/render.h>
 #endif
 
+#define __realtime __attribute__((annotate("realtime")))
+#define __non_realtime __attribute__((annotate("non-realtime")))
+
 #ifdef LV2_ATOM_TUPLE_FOREACH
 #	undef LV2_ATOM_TUPLE_FOREACH
 #	define LV2_ATOM_TUPLE_FOREACH(tuple, iter) \
@@ -349,7 +352,7 @@ void moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames);
 const void* extension_data(const char* uri);
 void *moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type, bool cache);
 
-static inline void
+__realtime static inline void
 moony_freeuserdata(moony_t *moony)
 {
 	for(unsigned i=0; i<MOONY_UDATA_COUNT; i++)
@@ -358,13 +361,13 @@ moony_freeuserdata(moony_t *moony)
 		moony->upc[i] = 1; // reset iterator
 }
 
-static inline int
+__realtime static inline int
 moony_bypass(moony_t *moony)
 {
 	return moony->error[0] != '\0';
 }
 
-static inline void
+__realtime static inline void
 moony_err(moony_t *moony, const char *msg)
 {
 	const char *error = msg;
@@ -381,7 +384,7 @@ moony_err(moony_t *moony, const char *msg)
 	moony->error_out = 1;
 }
 
-static inline void
+__realtime static inline void
 moony_error(moony_t *moony)
 {
 	lua_State *L = moony->vm.L;
@@ -396,7 +399,7 @@ moony_error(moony_t *moony)
 #define _try_lock(FLAG) !atomic_flag_test_and_set_explicit((FLAG), memory_order_acquire)
 #define _unlock(FLAG) atomic_flag_clear_explicit((FLAG), memory_order_release)
 
-static inline LV2_Atom_Forge_Ref
+__realtime static inline LV2_Atom_Forge_Ref
 _moony_patch(patch_t *patch, LV2_Atom_Forge *forge, LV2_URID key,
 	const char *str, uint32_t size)
 {
@@ -433,7 +436,9 @@ void
 moony_free(moony_t *moony, void *buf, size_t osize);
 
 LV2_Atom_Forge_Ref
-_sink(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size);
+_sink_rt(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size);
+LV2_Atom_Forge_Ref
+_sink_non_rt(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size);
 
 LV2_Atom *
 _deref(LV2_Atom_Forge_Sink_Handle handle, LV2_Atom_Forge_Ref ref);

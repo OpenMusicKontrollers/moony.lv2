@@ -44,7 +44,7 @@ struct _Handle {
 	uint32_t stash_nsamples;
 };
 
-static LV2_Handle
+__non_realtime static LV2_Handle
 instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_path, const LV2_Feature *const *features)
 {
 	Handle *handle = (Handle *)calloc(1, sizeof(Handle));
@@ -80,7 +80,7 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 	return handle;
 }
 
-static void
+__realtime static void
 connect_port(LV2_Handle instance, uint32_t port, void *data)
 {
 	Handle *handle = (Handle *)instance;
@@ -95,7 +95,7 @@ connect_port(LV2_Handle instance, uint32_t port, void *data)
 		handle->notify = (LV2_Atom_Sequence *)data;
 }
 
-static inline void
+__realtime static inline void
 _run_period(lua_State *L, const char *cmd, Handle *handle, uint32_t nsamples,
 	const LV2_Atom_Sequence **event_in, const LV2_Atom_Sequence *control)
 {
@@ -132,7 +132,7 @@ _run_period(lua_State *L, const char *cmd, Handle *handle, uint32_t nsamples,
 	}
 }
 
-static int
+__realtime static int
 _run(lua_State *L)
 {
 	Handle *handle = lua_touserdata(L, lua_upvalueindex(1));
@@ -170,7 +170,7 @@ _run(lua_State *L)
 	return 0;
 }
 
-static void
+__realtime static void
 run(LV2_Handle instance, uint32_t nsamples)
 {
 	Handle *handle = (Handle *)instance;
@@ -288,7 +288,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 	moony_out(&handle->moony, handle->notify, nsamples - 1);
 }
 
-static void
+__non_realtime static void
 cleanup(LV2_Handle instance)
 {
 	Handle *handle = (Handle *)instance;

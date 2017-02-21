@@ -19,7 +19,7 @@
 #include <api_atom.h>
 #include <api_forge.h>
 
-static inline void
+__realtime static inline void
 _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 	lforge_t *lforge, const LV2_Atom_URID *subject, LV2_URID access, int32_t sequence_num)
 {
@@ -241,7 +241,7 @@ _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 	}
 }
 
-static inline void
+__realtime static inline void
 _lstateresponder_register(lua_State *L, moony_t *moony, int64_t frames,
 	lforge_t *lforge, const LV2_Atom_URID *subject, int32_t sequence_num)
 {
@@ -301,7 +301,7 @@ _lstateresponder_register(lua_State *L, moony_t *moony, int64_t frames,
 	lua_pop(L, 1); // nil || table
 }
 
-static void
+__realtime static void
 _lstateresponder_error(lua_State *L, lforge_t *lforge, moony_t *moony,
 	int64_t frames, int32_t sequence_num)
 {
@@ -320,7 +320,7 @@ _lstateresponder_error(lua_State *L, lforge_t *lforge, moony_t *moony,
 	lv2_atom_forge_pop(lforge->forge, &obj_frame);
 }
 
-static void
+__realtime static void
 _lstateresponder_ack(lua_State *L, lforge_t *lforge, moony_t *moony,
 	int64_t frames, int32_t sequence_num)
 {
@@ -339,7 +339,7 @@ _lstateresponder_ack(lua_State *L, lforge_t *lforge, moony_t *moony,
 	lv2_atom_forge_pop(lforge->forge, &obj_frame);
 }
 
-static int
+__realtime static int
 _lstateresponder__call(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -545,7 +545,7 @@ _lstateresponder__call(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lstateresponder_reg(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -577,7 +577,7 @@ _lstateresponder_reg(lua_State *L)
 	return 1; // forge
 }
 
-static int
+__realtime static int
 _lstateresponder_stash(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -634,7 +634,7 @@ _lstateresponder_stash(lua_State *L)
 	return 1; // forge
 }
 
-static int
+__realtime static int
 _lstateresponder_apply(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -676,7 +676,7 @@ _lstateresponder_apply(lua_State *L)
 	return 1;
 }
 
-int
+__realtime int
 _lstateresponder(lua_State *L)
 {
 	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));

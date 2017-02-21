@@ -22,7 +22,7 @@
 
 #include <osc.lv2/util.h>
 
-static inline bool
+__realtime static inline bool
 _osc_path_has_wildcards(const char *path)
 {
 	for(const char *ptr=path+1; *ptr; ptr++)
@@ -65,7 +65,7 @@ const char *loscresponder_match =
 	"	return handled\n"
 	"end";
 
-static inline void
+__realtime static inline void
 _loscresponder_method(const char *path, const LV2_Atom_Tuple *arguments, void *data)
 {
 	moony_t *moony = data;
@@ -222,7 +222,7 @@ _loscresponder_method(const char *path, const LV2_Atom_Tuple *arguments, void *d
 	lua_call(L, 4 + matching + lua_gettop(L) - oldtop, 0);
 }
 
-static int
+__realtime static int
 _loscresponder__call(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -258,7 +258,7 @@ _loscresponder__call(lua_State *L)
 	return 1;
 }
 
-int
+__realtime int
 _loscresponder(lua_State *L)
 {
 	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));

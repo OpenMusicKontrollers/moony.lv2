@@ -768,7 +768,7 @@ _prop_free(plughandle_t *handle, prop_t *prop)
 }
 
 LV2_Atom_Forge_Ref
-_sink(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
+_sink_non_rt(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
 {
 	atom_ser_t *ser = handle;
 
@@ -813,7 +813,7 @@ _patch_ack(plughandle_t *handle, int32_t sequence_number)
 	atom_ser_t *ser = &handle->ser;
 
 	ser->offset = 0;
-	lv2_atom_forge_set_sink(forge, _sink, _deref, ser);
+	lv2_atom_forge_set_sink(forge, _sink_non_rt, _deref, ser);
 
 	LV2_Atom_Forge_Frame frame;
 	lv2_atom_forge_object(forge, &frame, 0, handle->patch_Ack);
@@ -840,7 +840,7 @@ _patch_error(plughandle_t *handle, int32_t sequence_number)
 	atom_ser_t *ser = &handle->ser;
 
 	ser->offset = 0;
-	lv2_atom_forge_set_sink(forge, _sink, _deref, ser);
+	lv2_atom_forge_set_sink(forge, _sink_non_rt, _deref, ser);
 
 	LV2_Atom_Forge_Frame frame;
 	lv2_atom_forge_object(forge, &frame, 0, handle->patch_Error);
@@ -864,7 +864,7 @@ _patch_get(plughandle_t *handle, LV2_URID property)
 	atom_ser_t *ser = &handle->ser;
 
 	ser->offset = 0;
-	lv2_atom_forge_set_sink(forge, _sink, _deref, ser);
+	lv2_atom_forge_set_sink(forge, _sink_non_rt, _deref, ser);
 
 	LV2_Atom_Forge_Frame frame;
 	lv2_atom_forge_object(forge, &frame, 0, handle->patch_Get);
@@ -893,7 +893,7 @@ _patch_set(plughandle_t *handle, LV2_URID property, uint32_t size, LV2_URID type
 	atom_ser_t *ser = &handle->ser;
 
 	ser->offset = 0;
-	lv2_atom_forge_set_sink(forge, _sink, _deref, ser);
+	lv2_atom_forge_set_sink(forge, _sink_non_rt, _deref, ser);
 
 	LV2_Atom_Forge_Frame frame;
 	lv2_atom_forge_object(forge, &frame, 0, handle->patch_Set);
@@ -2514,7 +2514,7 @@ _icon_load(void *data, const char *file)
 		free(path);
 	}
 	else
-		nk_image_id(0);
+		img = nk_image_id(0);
 
 	return img;
 }

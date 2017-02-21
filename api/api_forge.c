@@ -29,7 +29,7 @@ static const lua_CFunction upclosures [MOONY_UPCLOSURE_COUNT] = {
 	[MOONY_UPCLOSURE_SEQUENCE_PACK] = _lforge_sequence_itr
 };
 
-static inline void
+__realtime static inline void
 _pushupclosure(lua_State *L, moony_t *moony, moony_upclosure_t type, bool cache)
 {
 	assert( (type >= MOONY_UPCLOSURE_TUPLE_FOREACH) && (type < MOONY_UPCLOSURE_COUNT) );
@@ -56,7 +56,7 @@ _pushupclosure(lua_State *L, moony_t *moony, moony_upclosure_t type, bool cache)
 	*upc += 1;
 }
 
-static void
+__realtime static void
 _lforge_pop_inlined(lua_State *L, lforge_t *lforge)
 {
 	for(int i=lforge->depth; i>0; i--)
@@ -69,7 +69,7 @@ _lforge_pop_inlined(lua_State *L, lforge_t *lforge)
 	lforge->depth = 0; // reset depth
 }
 
-static inline int
+__realtime static inline int
 _lforge_frame_time_inlined(lua_State *L, lforge_t *lforge, int64_t frames)
 {
 	if(frames >= lforge->last.frames)
@@ -85,7 +85,7 @@ _lforge_frame_time_inlined(lua_State *L, lforge_t *lforge, int64_t frames)
 	return luaL_error(L, "invalid frame time, must not decrease");
 }
 
-static int
+__realtime static int
 _lforge_frame_time(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -94,7 +94,7 @@ _lforge_frame_time(lua_State *L)
 	return _lforge_frame_time_inlined(L, lforge, frames);
 }
 
-static inline int
+__realtime static inline int
 _lforge_beat_time_inlined(lua_State *L, lforge_t *lforge, double beats)
 {
 	if(beats >= lforge->last.beats)
@@ -110,7 +110,7 @@ _lforge_beat_time_inlined(lua_State *L, lforge_t *lforge, double beats)
 	return luaL_error(L, "invalid beat time, must not decrease");
 }
 
-static int
+__realtime static int
 _lforge_beat_time(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -119,7 +119,7 @@ _lforge_beat_time(lua_State *L)
 	return _lforge_beat_time_inlined(L, lforge, beats);
 }
 
-static int
+__realtime static int
 _lforge_time(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -140,7 +140,7 @@ _lforge_time(lua_State *L)
 	return luaL_error(L, "integer or number expected");
 }
 
-static int
+__realtime static int
 _lforge_atom(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -157,49 +157,49 @@ _lforge_atom(lua_State *L)
 	return 1;
 }
 
-static inline LV2_Atom_Forge_Ref
+__realtime static inline LV2_Atom_Forge_Ref
 _lforge_basic_int(lua_State *L, int pos, LV2_Atom_Forge *forge)
 {
 	int32_t val = luaL_checkinteger(L, pos);
 	return lv2_atom_forge_int(forge, val);
 }
 
-static inline LV2_Atom_Forge_Ref
+__realtime static inline LV2_Atom_Forge_Ref
 _lforge_basic_long(lua_State *L, int pos, LV2_Atom_Forge *forge)
 {
 	int64_t val = luaL_checkinteger(L, pos);
 	return lv2_atom_forge_long(forge, val);
 }
 
-static inline LV2_Atom_Forge_Ref
+__realtime static inline LV2_Atom_Forge_Ref
 _lforge_basic_float(lua_State *L, int pos, LV2_Atom_Forge *forge)
 {
 	float val = luaL_checknumber(L, pos);
 	return lv2_atom_forge_float(forge, val);
 }
 
-static inline LV2_Atom_Forge_Ref
+__realtime static inline LV2_Atom_Forge_Ref
 _lforge_basic_double(lua_State *L, int pos, LV2_Atom_Forge *forge)
 {
 	double val = luaL_checknumber(L, pos);
 	return lv2_atom_forge_double(forge, val);
 }
 
-static inline LV2_Atom_Forge_Ref
+__realtime static inline LV2_Atom_Forge_Ref
 _lforge_basic_bool(lua_State *L, int pos, LV2_Atom_Forge *forge)
 {
 	int32_t val = lua_toboolean(L, pos);
 	return lv2_atom_forge_bool(forge, val);
 }
 
-static inline LV2_Atom_Forge_Ref
+__realtime static inline LV2_Atom_Forge_Ref
 _lforge_basic_urid(lua_State *L, int pos, LV2_Atom_Forge *forge)
 {
 	LV2_URID val = luaL_checkinteger(L, pos);
 	return lv2_atom_forge_urid(forge, val);
 }
 
-static inline LV2_Atom_Forge_Ref
+__realtime static inline LV2_Atom_Forge_Ref
 _lforge_basic_string(lua_State *L, int pos, LV2_Atom_Forge *forge)
 {
 	size_t len;
@@ -207,7 +207,7 @@ _lforge_basic_string(lua_State *L, int pos, LV2_Atom_Forge *forge)
 	return lv2_atom_forge_string(forge, val, len);
 }
 
-static inline LV2_Atom_Forge_Ref
+__realtime static inline LV2_Atom_Forge_Ref
 _lforge_basic_uri(lua_State *L, int pos, LV2_Atom_Forge *forge)
 {
 	size_t len;
@@ -215,7 +215,7 @@ _lforge_basic_uri(lua_State *L, int pos, LV2_Atom_Forge *forge)
 	return lv2_atom_forge_uri(forge, val, len);
 }
 
-static inline LV2_Atom_Forge_Ref
+__realtime static inline LV2_Atom_Forge_Ref
 _lforge_basic_path(lua_State *L, int pos, LV2_Atom_Forge *forge)
 {
 	size_t len;
@@ -223,7 +223,7 @@ _lforge_basic_path(lua_State *L, int pos, LV2_Atom_Forge *forge)
 	return lv2_atom_forge_path(forge, val, len);
 }
 
-static inline LV2_Atom_Forge_Ref
+__realtime static inline LV2_Atom_Forge_Ref
 _lforge_basic_literal(lua_State *L, int pos, LV2_Atom_Forge *forge)
 {
 	size_t len;
@@ -231,7 +231,7 @@ _lforge_basic_literal(lua_State *L, int pos, LV2_Atom_Forge *forge)
 	return lv2_atom_forge_literal(forge, val, len, 0, 0); //TODO context, lang
 }
 
-static int
+__realtime static int
 _lforge_basic_bytes(lua_State *L, int pos, LV2_Atom_Forge *forge, LV2_URID type)
 {
 	int ltype = lua_type(L, pos);
@@ -288,7 +288,7 @@ _lforge_basic_bytes(lua_State *L, int pos, LV2_Atom_Forge *forge, LV2_URID type)
 	return 1;
 }
 
-static inline LV2_Atom_Forge_Ref
+__realtime static inline LV2_Atom_Forge_Ref
 _lforge_basic_chunk(lua_State *L, int pos, LV2_Atom_Forge *forge)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -296,7 +296,7 @@ _lforge_basic_chunk(lua_State *L, int pos, LV2_Atom_Forge *forge)
 	return _lforge_basic_bytes(L, pos, forge, moony->forge.Chunk);
 }
 
-static inline LV2_Atom_Forge_Ref
+__realtime static inline LV2_Atom_Forge_Ref
 _lforge_basic_midi(lua_State *L, int pos, LV2_Atom_Forge *forge)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -304,7 +304,7 @@ _lforge_basic_midi(lua_State *L, int pos, LV2_Atom_Forge *forge)
 	return _lforge_basic_bytes(L, pos, forge, moony->uris.midi_event);
 }
 
-LV2_Atom_Forge_Ref
+__realtime LV2_Atom_Forge_Ref
 _lforge_basic(lua_State *L, int pos, LV2_Atom_Forge *forge, LV2_URID range)
 {
 	//FIXME binary lookup?
@@ -334,7 +334,7 @@ _lforge_basic(lua_State *L, int pos, LV2_Atom_Forge *forge, LV2_URID range)
 	return luaL_error(L, "not a basic type");
 }
 
-static int
+__realtime static int
 _lforge_int(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -346,7 +346,7 @@ _lforge_int(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_long(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -358,7 +358,7 @@ _lforge_long(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_float(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -370,7 +370,7 @@ _lforge_float(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_double(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -382,7 +382,7 @@ _lforge_double(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_bool(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -394,7 +394,7 @@ _lforge_bool(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_urid(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -406,7 +406,7 @@ _lforge_urid(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_string(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -418,7 +418,7 @@ _lforge_string(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_uri(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -430,7 +430,7 @@ _lforge_uri(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_path(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -442,7 +442,7 @@ _lforge_path(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_literal(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -458,7 +458,7 @@ _lforge_literal(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_chunk(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -470,7 +470,7 @@ _lforge_chunk(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_midi(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -482,7 +482,7 @@ _lforge_midi(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_raw(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -495,7 +495,7 @@ _lforge_raw(lua_State *L)
 	return 1;
 }
 
-static inline uint64_t
+__realtime static uint64_t
 _lforge_to_timetag(lua_State *L, moony_t *moony, lforge_t *lforge, int pos)
 {
 	uint64_t timetag= 1ULL; // immediate timetag
@@ -539,7 +539,7 @@ _lforge_to_timetag(lua_State *L, moony_t *moony, lforge_t *lforge, int pos)
 	return timetag ;
 }
 
-static int
+__realtime static int
 _lforge_osc_bundle(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -564,7 +564,7 @@ _lforge_osc_bundle(lua_State *L)
 	return 1; // derived forge
 }
 
-static int
+__realtime static int
 _lforge_osc_message(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -713,7 +713,7 @@ _lforge_osc_message(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_osc_impulse(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -727,7 +727,7 @@ _lforge_osc_impulse(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_osc_char(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -743,7 +743,7 @@ _lforge_osc_char(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_osc_rgba(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -763,7 +763,7 @@ _lforge_osc_rgba(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_osc_timetag(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -779,7 +779,7 @@ _lforge_osc_timetag(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_tuple(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -798,7 +798,7 @@ _lforge_tuple(lua_State *L)
 	return 1; // derived forge
 }
 
-int
+__realtime int
 _lforge_tuple_itr(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -826,7 +826,7 @@ _lforge_tuple_itr(lua_State *L)
 	return 1; // derived forge || nil
 }
 
-static int
+__realtime static int
 _lforge_tuple_pack(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -838,7 +838,7 @@ _lforge_tuple_pack(lua_State *L)
 	return 2;
 }
 
-static int
+__realtime static int
 _lforge_object(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -859,7 +859,7 @@ _lforge_object(lua_State *L)
 	return 1; // derived forge
 }
 
-int
+__realtime int
 _lforge_object_itr(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -887,7 +887,7 @@ _lforge_object_itr(lua_State *L)
 	return 1; // derived forge || nil
 }
 
-static int
+__realtime static int
 _lforge_object_pack(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -901,7 +901,7 @@ _lforge_object_pack(lua_State *L)
 	return 2;
 }
 
-static int
+__realtime static int
 _lforge_key(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -915,7 +915,7 @@ _lforge_key(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_vector(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -1030,7 +1030,7 @@ _lforge_vector(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_sequence(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1050,7 +1050,7 @@ _lforge_sequence(lua_State *L)
 	return 1; // derived forge
 }
 
-int
+__realtime int
 _lforge_sequence_itr(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1078,7 +1078,7 @@ _lforge_sequence_itr(lua_State *L)
 	return 1; // derived forge || nil
 }
 
-static int
+__realtime static int
 _lforge_sequence_pack(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1091,7 +1091,7 @@ _lforge_sequence_pack(lua_State *L)
 	return 2;
 }
 
-static int
+__realtime static int
 _lforge_typed(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1149,7 +1149,7 @@ _lforge_typed(lua_State *L)
 	return hook(L);
 }
 
-static int
+__realtime static int
 _lforge_get(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1187,7 +1187,7 @@ _lforge_get(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_set(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1230,7 +1230,7 @@ _lforge_set(lua_State *L)
 	return 1; // derived forge
 }
 
-static int
+__realtime static int
 _lforge_put(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1269,7 +1269,7 @@ _lforge_put(lua_State *L)
 	return 1; // derived forge
 }
 
-static int
+__realtime static int
 _lforge_patch(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1303,7 +1303,7 @@ _lforge_patch(lua_State *L)
 	return 1; // derived forge
 }
 
-static int
+__realtime static int
 _lforge_remove(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1324,7 +1324,7 @@ _lforge_remove(lua_State *L)
 	return 1; // derived forge
 }
 
-static int
+__realtime static int
 _lforge_add(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1345,7 +1345,7 @@ _lforge_add(lua_State *L)
 	return 1; // derived forge
 }
 
-static int
+__realtime static int
 _lforge_ack(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1377,7 +1377,7 @@ _lforge_ack(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_error(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1409,7 +1409,7 @@ _lforge_error(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_graph(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1454,7 +1454,7 @@ _lforge_canvas_graph(lua_State *L)
 	return 1; // derived forge
 }
 
-static int
+__realtime static int
 _lforge_canvas_begin_path(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1467,7 +1467,7 @@ _lforge_canvas_begin_path(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_close_path(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1480,7 +1480,7 @@ _lforge_canvas_close_path(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_arc(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1498,7 +1498,7 @@ _lforge_canvas_arc(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_curve_to(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1517,7 +1517,7 @@ _lforge_canvas_curve_to(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_line_to(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1532,7 +1532,7 @@ _lforge_canvas_line_to(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_move_to(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1547,7 +1547,7 @@ _lforge_canvas_move_to(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_rectangle(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1564,7 +1564,7 @@ _lforge_canvas_rectangle(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_style(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1578,7 +1578,7 @@ _lforge_canvas_style(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_line_width(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1592,7 +1592,7 @@ _lforge_canvas_line_width(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_line_dash(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1607,7 +1607,7 @@ _lforge_canvas_line_dash(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_line_cap(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1621,7 +1621,7 @@ _lforge_canvas_line_cap(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_line_join(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1635,7 +1635,7 @@ _lforge_canvas_line_join(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_miter_limit(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1649,7 +1649,7 @@ _lforge_canvas_miter_limit(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_stroke(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1662,7 +1662,7 @@ _lforge_canvas_stroke(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_fill(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1675,7 +1675,7 @@ _lforge_canvas_fill(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_clip(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1688,7 +1688,7 @@ _lforge_canvas_clip(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_save(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1701,7 +1701,7 @@ _lforge_canvas_save(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_restore(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1714,7 +1714,7 @@ _lforge_canvas_restore(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_translate(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1729,7 +1729,7 @@ _lforge_canvas_translate(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_scale(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1744,7 +1744,7 @@ _lforge_canvas_scale(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_rotate(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1758,7 +1758,7 @@ _lforge_canvas_rotate(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_reset(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1771,7 +1771,7 @@ _lforge_canvas_reset(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_font_size(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1785,7 +1785,7 @@ _lforge_canvas_font_size(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_canvas_fill_text(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1799,7 +1799,7 @@ _lforge_canvas_fill_text(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_pop(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -1811,7 +1811,7 @@ _lforge_pop(lua_State *L)
 	return 1;
 }
 
-static int
+__realtime static int
 _lforge_read(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -1822,7 +1822,7 @@ _lforge_read(lua_State *L)
 	return _lstash_read(L);
 }
 
-static int
+__realtime static int
 _lforge_write(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -1833,7 +1833,7 @@ _lforge_write(lua_State *L)
 	return _lstash_write(L);
 }
 
-static int
+__realtime static int
 _lforge__gc(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -1844,7 +1844,7 @@ _lforge__gc(lua_State *L)
 	return 0;
 }
 
-static int
+__realtime static int
 _lforge__tostring(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
