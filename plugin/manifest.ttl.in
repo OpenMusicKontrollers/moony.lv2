@@ -122,16 +122,6 @@ moony:c4a1xc4a1
 	@NK_WRAP@ui:ui moony:ui_3_nk ;
 	rdfs:seeAlso <moony.ttl> .
 
-# Web UI
-moony:ui_1_web_1_ui
-	a ui:UI ;
-	ui:binary <moony_web@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	rdfs:seeAlso <moony_ui.ttl> .
-moony:ui_1_web_2_kx
-	a kx:Widget ;
-	ui:binary <moony_web@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	rdfs:seeAlso <moony_ui.ttl> .
-
 # Simple UI
 moony:ui_2_simple_1_ui
 	a ui:UI ;

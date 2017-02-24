@@ -325,7 +325,7 @@ _log(lua_State *L)
 	luaL_Buffer buf;
 	luaL_buffinit(L, &buf);
 
-  lua_getglobal(L, "tostring");
+  lua_getglobal(L, "tostring"); //TODO cache this
   for(int i=1; i<=n; i++)
 	{
     lua_pushvalue(L, -1);  // function to be called
@@ -341,22 +341,32 @@ _log(lua_State *L)
 
 	luaL_pushresult(&buf);
 
-	const char *res = lua_tostring(L, -1);
+	size_t len;
+	const char *res = lua_tolstring(L, -1, &len);
 	if(moony->log)
-		lv2_log_trace(&moony->logger, "%s", res);
+		lv2_log_trace(&moony->logger, "%s\n", res);
 
 	// feedback to UI
-	char *end = strrchr(moony->trace, '\0'); // search end of string
-	if(end)
+	if(!moony->trace_overflow)
 	{
-		if(end != moony->trace)
+		char *end = strrchr(moony->trace, '\0'); // search end of string
+		if(end)
 		{
-			*end++ = '\n'; // append to
-			*end = '\0';
+			const size_t sz = end - moony->trace + 1;
+			if(MOONY_MAX_TRACE_LEN - sz > len)
+			{
+				if(end != moony->trace)
+				{
+					*end++ = '\n'; // append to
+					*end = '\0';
+				}
+
+				snprintf(end, len + 1, "%s", res);
+				moony->trace_out = 1; // set flag
+			}
+			else
+				moony->trace_overflow = 1;
 		}
-		const size_t remaining = MOONY_MAX_TRACE_LEN - (end - moony->trace);
-		snprintf(end, remaining, "%s", res);
-		moony->trace_out = 1; // set flag
 	}
 
 	return 0;
@@ -735,7 +745,7 @@ _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 		if(lua_pcall(L, 0, 0, 0))
 		{
 			if(moony->log) //TODO send to UI, too
-				lv2_log_error(&moony->logger, "%s", lua_tostring(L, -1));
+				lv2_log_error(&moony->logger, "%s\n", lua_tostring(L, -1));
 			lua_pop(L, 1);
 		}
 #ifdef USE_MANUAL_GC
@@ -962,7 +972,7 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 			if(lua_pcall(L, 0, 0, 0))
 			{
 				if(moony->log) //TODO send to UI, too
-					lv2_log_error(&moony->logger, "%s", lua_tostring(L, -1));
+					lv2_log_error(&moony->logger, "%s\n", lua_tostring(L, -1));
 				lua_pop(L, 1);
 			}
 #ifdef USE_MANUAL_GC
@@ -1036,7 +1046,7 @@ _work_response(LV2_Handle instance, uint32_t size, const void *body)
 		LV2_Worker_Status status = moony->sched->schedule_work(
 			moony->sched->handle, sizeof(moony_mem_t), &req);
 		if( (status != LV2_WORKER_SUCCESS) && moony->log)
-			lv2_log_warning(&moony->logger, "moony: schedule_work failed");
+			lv2_log_warning(&moony->logger, "moony: schedule_work failed\n");
 
 		return LV2_WORKER_ERR_UNKNOWN;
 	}
@@ -2320,6 +2330,8 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 		if(ref)
 			ref = _moony_patch(&moony->uris.patch, forge, moony->uris.moony_code, moony->chunk, len);
 
+		//FIXME also send moony:editorHidden et al.
+
 		moony->dirty_out = 0; // reset flag
 	}
 
@@ -2404,6 +2416,13 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 
 		moony->trace[0] = '\0';
 		moony->trace_out = 0; // reset flag
+	}
+
+	if(moony->trace_overflow)
+	{
+		if(moony->log)
+			lv2_log_trace(&moony->logger, "trace buffer overflow\n");
+		moony->trace_overflow = 0; // reset flag
 	}
 
 	if(moony->graph_out)

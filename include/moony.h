@@ -309,6 +309,7 @@ struct _moony_t {
 	volatile int dirty_out;
 	volatile int error_out;
 	volatile int trace_out;
+	volatile int trace_overflow;
 	volatile int graph_out;
 
 	// udata cache
@@ -377,7 +378,7 @@ moony_err(moony_t *moony, const char *msg)
 		: error; // use whole error string alternatively
 
 	if(moony->log)
-		lv2_log_trace(&moony->logger, "%s", err);
+		lv2_log_trace(&moony->logger, "%s\n", err);
 
 	snprintf(moony->error, MOONY_MAX_ERROR_LEN, "%s", err);
 

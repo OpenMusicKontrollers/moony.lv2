@@ -30,7 +30,7 @@
 
 extern int luaopen_lpeg(lua_State *L);
 
-#define MEM_SIZE 0x40000UL // 256KB
+#define MEM_SIZE 0x80000UL // 512KB
 
 //#define MOONY_LOG_MEM
 #ifdef MOONY_LOG_MEM
@@ -66,8 +66,9 @@ _log_mem(moony_t *moony, void *ptr, size_t osize, size_t nsize)
 			used >>= 10;
 		}
 
-		lv2_log_trace(&moony->logger, "space: %4zu%c, used: %4zu%c, old: %4zu, new: %4zu, data: %p",
-			space, suffix0, used, suffix1, osize, nsize, ptr);
+		if(moony->log)
+			lv2_log_trace(&moony->logger, "space: %4zu%c, used: %4zu%c, old: %4zu, new: %4zu, data: %p\n",
+				space, suffix0, used, suffix1, osize, nsize, ptr);
 	}
 }
 #endif

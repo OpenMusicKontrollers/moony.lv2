@@ -70,7 +70,7 @@ static inline void
 _err2(ui_t *ui, const char *from)
 {
 	if(ui->log)
-		lv2_log_error(&ui->logger, "%s", from);
+		lv2_log_error(&ui->logger, "%s\n", from);
 	else
 		fprintf(stderr, "%s\n", from);
 }
@@ -88,10 +88,10 @@ _moony_message_send(ui_t *ui, LV2_URID key, const char *str, uint32_t size)
 		ui->write_function(ui->controller, ui->control_port, lv2_atom_total_size(&obj->atom),
 			ui->uris.event_transfer, ui->buf);
 		if(ui->log)
-			lv2_log_note(&ui->logger, str && size ? "send code chunk" : "query code chunk");
+			lv2_log_note(&ui->logger, str && size ? "send code chunk\n" : "query code chunk\n");
 	}
 	else if(ui->log)
-		lv2_log_error(&ui->logger, "code chunk too long");
+		lv2_log_error(&ui->logger, "code chunk too long\n");
 }
 
 static void
@@ -374,7 +374,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	sprintf(ui->path, "%s", tmp_template);
 
 	if(ui->log)
-		lv2_log_note(&ui->logger, "moony simple_ui path: %s", ui->path);
+		lv2_log_note(&ui->logger, "moony simple_ui path: %s\n", ui->path);
 
 	free(tmp_template);
 

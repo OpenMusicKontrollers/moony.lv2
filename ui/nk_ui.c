@@ -22,6 +22,7 @@
 #include <limits.h>
 #include <inttypes.h>
 #include <dirent.h>
+#include <unistd.h>
 
 #include <moony.h>
 
@@ -1981,22 +1982,16 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 		const bool has_control_down = nk_input_is_key_down(in, NK_KEY_CTRL);
 		const bool has_shift_down = nk_input_is_key_down(in, NK_KEY_SHIFT);
 		const bool has_enter_pressed = nk_input_is_key_pressed(in, NK_KEY_ENTER);
-		char control_letter = 0;
-		if(has_control_down && (in->keyboard.text_len == 1) )
-		{
-			control_letter = in->keyboard.text[0];
-			in->keyboard.text_len = 0;
-		}
 		const bool has_shift_enter = has_shift_down && has_enter_pressed;
 		const bool has_control_enter = has_control_down && has_enter_pressed;
-		const bool has_control_l = control_letter == 'l';
-		const bool has_control_d = control_letter == 'd';
-		const bool has_control_e = control_letter == 'e';
-		const bool has_control_p = control_letter == 'p';
-		const bool has_control_f = control_letter == 'f';
-		const bool has_control_n = control_letter == 'n';
-		const bool has_control_t = control_letter == 't';
-		const bool has_control_a = control_letter == 'a';
+		const bool has_control_l = nk_pugl_is_shortcut_pressed(in, 'l', true);
+		const bool has_control_d = nk_pugl_is_shortcut_pressed(in, 'd', true);
+		const bool has_control_e = nk_pugl_is_shortcut_pressed(in, 'e', true);
+		const bool has_control_p = nk_pugl_is_shortcut_pressed(in, 'p', true);
+		const bool has_control_f = nk_pugl_is_shortcut_pressed(in, 'f', true);
+		const bool has_control_n = nk_pugl_is_shortcut_pressed(in, 'n', true);
+		const bool has_control_t = nk_pugl_is_shortcut_pressed(in, 't', true);
+		const bool has_control_a = nk_pugl_is_shortcut_pressed(in, 'a', true);
 		bool has_commited = false;
 
 		nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 3);
