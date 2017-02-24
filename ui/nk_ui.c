@@ -1094,10 +1094,11 @@ _dial_bool(struct nk_context *ctx, int32_t *val, struct nk_color color, bool edi
 	if(layout_states != NK_WIDGET_INVALID)
 	{
 		enum nk_widget_states states = NK_WIDGET_STATE_INACTIVE;
+		struct nk_input *in = ( (layout_states == NK_WIDGET_ROM)
+			|| (ctx->current->layout->flags & NK_WINDOW_ROM) ) ? 0 : &ctx->input;
 
-		if(editable && (layout_states == NK_WIDGET_VALID) )
+		if(in && editable && (layout_states == NK_WIDGET_VALID) )
 		{
-			struct nk_input *in = &ctx->input;
 			bool mouse_has_scrolled = false;
 
 			if(left_mouse_click_in_cursor)
@@ -1170,10 +1171,8 @@ _dial_bool(struct nk_context *ctx, int32_t *val, struct nk_color color, bool edi
 
 static float
 _dial_numeric_behavior(struct nk_context *ctx, struct nk_rect bounds,
-	enum nk_widget_states *states, int *divider)
+	enum nk_widget_states *states, int *divider, struct nk_input *in)
 {
-	struct nk_input *in = &ctx->input;
-
 	const struct nk_mouse_button *btn = &in->mouse.buttons[NK_BUTTON_LEFT];;
 	const bool left_mouse_down = btn->down;
 	const bool left_mouse_click_in_cursor = nk_input_has_mouse_click_down_in_rect(in,
@@ -1270,11 +1269,13 @@ _dial_double(struct nk_context *ctx, double min, double *val, double max, float 
 	{
 		enum nk_widget_states states = NK_WIDGET_STATE_INACTIVE;
 		const double range = max - min;
+		struct nk_input *in = ( (layout_states == NK_WIDGET_ROM)
+			|| (ctx->current->layout->flags & NK_WINDOW_ROM) ) ? 0 : &ctx->input;
 
-		if(editable && (layout_states == NK_WIDGET_VALID) )
+		if(in && editable && (layout_states == NK_WIDGET_VALID) )
 		{
 			int divider = 1;
-			const float dd = _dial_numeric_behavior(ctx, bounds, &states, &divider);
+			const float dd = _dial_numeric_behavior(ctx, bounds, &states, &divider, in);
 
 			if(dd != 0.f) // update value
 			{
@@ -1304,11 +1305,13 @@ _dial_long(struct nk_context *ctx, int64_t min, int64_t *val, int64_t max, float
 	{
 		enum nk_widget_states states = NK_WIDGET_STATE_INACTIVE;
 		const int64_t range = max - min;
+		struct nk_input *in = ( (layout_states == NK_WIDGET_ROM)
+			|| (ctx->current->layout->flags & NK_WINDOW_ROM) ) ? 0 : &ctx->input;
 
-		if(editable && (layout_states == NK_WIDGET_VALID) )
+		if(in && editable && (layout_states == NK_WIDGET_VALID) )
 		{
 			int divider = 1;
-			const float dd = _dial_numeric_behavior(ctx, bounds, &states, &divider);
+			const float dd = _dial_numeric_behavior(ctx, bounds, &states, &divider, in);
 
 			if(dd != 0.f) // update value
 			{

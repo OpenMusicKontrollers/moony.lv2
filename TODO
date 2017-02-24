@@ -4,4 +4,3 @@
 * dsp: send updates of moony:editorHidden et al. together with moony:code
 * gui: clipboard support
 * gui: external editor
-* gui: fix dial/boolean widget input focus
