@@ -2330,8 +2330,6 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 		if(ref)
 			ref = _moony_patch(&moony->uris.patch, forge, moony->uris.moony_code, moony->chunk, len);
 
-		//FIXME also send moony:editorHidden et al.
-
 		moony->dirty_out = 0; // reset flag
 	}
 

@@ -124,6 +124,7 @@ moony:c1xc1
 	
 	state:state [
 		moony:editorHidden false ;
+		moony:logHidden true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -204,6 +205,7 @@ moony:c2xc2
 	
 	state:state [
 		moony:editorHidden false ;
+		moony:logHidden true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -314,6 +316,7 @@ moony:c4xc4
 	
 	state:state [
 		moony:editorHidden false ;
+		moony:logHidden true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -384,6 +387,7 @@ moony:a1xa1
 
 	state:state [
 		moony:editorHidden false ;
+		moony:logHidden true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -476,6 +480,7 @@ moony:a2xa2
 
 	state:state [
 		moony:editorHidden false ;
+		moony:logHidden true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -612,6 +617,7 @@ moony:a4xa4
 
 	state:state [
 		moony:editorHidden false ;
+		moony:logHidden true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -713,6 +719,7 @@ moony:c1a1xc1a1
 
 	state:state [
 		moony:editorHidden false ;
+		moony:logHidden true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -819,6 +826,7 @@ moony:c2a1xc2a1
 
 	state:state [
 		moony:editorHidden false ;
+		moony:logHidden true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -955,6 +963,7 @@ moony:c4a1xc4a1
 
 	state:state [
 		moony:editorHidden false ;
+		moony:logHidden true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;

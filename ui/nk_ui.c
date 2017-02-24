@@ -3117,6 +3117,13 @@ _patch_set_self(plughandle_t *handle, LV2_URID property, const LV2_Atom *value)
 	if(property == handle->moony_code)
 	{
 		_patch_set_code(handle, value->size, body, false);
+
+		// new state may have these differently, so request them
+		_patch_get(handle, handle->moony_editorHidden);
+		_patch_get(handle, handle->moony_logHidden);
+		_patch_get(handle, handle->moony_paramHidden);
+		_patch_get(handle, handle->moony_paramCols);
+		_patch_get(handle, handle->moony_paramRows);
 	}
 	else if(property == handle->moony_trace)
 	{

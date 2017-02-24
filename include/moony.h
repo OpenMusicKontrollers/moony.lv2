@@ -87,10 +87,10 @@
 
 #define MOONY_EDITOR_HIDDEN_URI	MOONY_URI"#editorHidden"
 #define MOONY_LOG_HIDDEN_URI	MOONY_URI"#logHidden"
-#define MOONY_PARAM_HIDDEN_URI	MOONY_URI"#parameterHidden"
+#define MOONY_PARAM_HIDDEN_URI	MOONY_URI"#paramHidden"
 
-#define MOONY_PARAM_COLS_URI	MOONY_URI"#parameterCols"
-#define MOONY_PARAM_ROWS_URI	MOONY_URI"#parameterRows"
+#define MOONY_PARAM_COLS_URI	MOONY_URI"#paramCols"
+#define MOONY_PARAM_ROWS_URI	MOONY_URI"#paramRows"
 
 #define MOONY_SIMPLE_UI_URI		MOONY_URI"#ui_2_simple_1_ui"
 #define MOONY_SIMPLE_KX_URI		MOONY_URI"#ui_2_simple_2_kx"

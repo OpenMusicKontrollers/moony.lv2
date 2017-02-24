@@ -1,6 +1,9 @@
-* doc: Parameter
+=== Low priority
 * doc: Canvas
 * api: xpress
-* dsp: send updates of moony:editorHidden et al. together with moony:code
+* api: Canvas input
 * gui: clipboard support
 * gui: external editor
+
+=== High priority
+* doc: Parameter
