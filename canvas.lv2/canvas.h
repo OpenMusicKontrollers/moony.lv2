@@ -26,44 +26,56 @@ extern "C" {
 #include <lv2/lv2plug.in/ns/ext/atom/atom.h>
 #include <lv2/lv2plug.in/ns/ext/atom/forge.h>
 
-#define CANVAS_URI               "http://open-music-kontrollers.ch/lv2/canvas"
-#define CANVAS_PREFIX            CANVAS_URI"#"
+#define CANVAS_URI                "http://open-music-kontrollers.ch/lv2/canvas"
+#define CANVAS_PREFIX             CANVAS_URI"#"
 
-#define CANVAS__graph            CANVAS_PREFIX"graph"
-#define CANVAS__body             CANVAS_PREFIX"body"
+#define CANVAS__graph             CANVAS_PREFIX"graph"
+#define CANVAS__body              CANVAS_PREFIX"body"
 
-#define CANVAS__BeginPath        CANVAS_PREFIX"BeginPath"
-#define CANVAS__ClosePath        CANVAS_PREFIX"ClosePath"
-#define CANVAS__Arc              CANVAS_PREFIX"Arc"
-#define CANVAS__CurveTo          CANVAS_PREFIX"CurveTo"
-#define CANVAS__LineTo           CANVAS_PREFIX"LineTo"
-#define CANVAS__MoveTo           CANVAS_PREFIX"MoveTo"
-#define CANVAS__Rectangle        CANVAS_PREFIX"Rectangle"
-#define CANVAS__Style            CANVAS_PREFIX"Style"
-#define CANVAS__LineWidth        CANVAS_PREFIX"LineWidth"
-#define CANVAS__LineDash         CANVAS_PREFIX"LineDash"
-#define CANVAS__LineCap          CANVAS_PREFIX"LineCap"
-#define CANVAS__LineJoin         CANVAS_PREFIX"LineJoin"
-#define CANVAS__MiterLimit       CANVAS_PREFIX"MiterLimig"
-#define CANVAS__Stroke           CANVAS_PREFIX"Stroke"
-#define CANVAS__Fill             CANVAS_PREFIX"Fill"
-#define CANVAS__Clip             CANVAS_PREFIX"Clip"
-#define CANVAS__Save             CANVAS_PREFIX"Save"
-#define CANVAS__Restore          CANVAS_PREFIX"Restore"
-#define CANVAS__Translate        CANVAS_PREFIX"Translate"
-#define CANVAS__Scale            CANVAS_PREFIX"Scale"
-#define CANVAS__Rotate           CANVAS_PREFIX"Rotate"
-#define CANVAS__Reset            CANVAS_PREFIX"Reset"
-#define CANVAS__FontSize         CANVAS_PREFIX"FontSize"
-#define CANVAS__FillText         CANVAS_PREFIX"FillText"
+// Graph properties and attributes
+#define CANVAS__BeginPath         CANVAS_PREFIX"BeginPath"
+#define CANVAS__ClosePath         CANVAS_PREFIX"ClosePath"
+#define CANVAS__Arc               CANVAS_PREFIX"Arc"
+#define CANVAS__CurveTo           CANVAS_PREFIX"CurveTo"
+#define CANVAS__LineTo            CANVAS_PREFIX"LineTo"
+#define CANVAS__MoveTo            CANVAS_PREFIX"MoveTo"
+#define CANVAS__Rectangle         CANVAS_PREFIX"Rectangle"
+#define CANVAS__Style             CANVAS_PREFIX"Style"
+#define CANVAS__LineWidth         CANVAS_PREFIX"LineWidth"
+#define CANVAS__LineDash          CANVAS_PREFIX"LineDash"
+#define CANVAS__LineCap           CANVAS_PREFIX"LineCap"
+#define CANVAS__LineJoin          CANVAS_PREFIX"LineJoin"
+#define CANVAS__MiterLimit        CANVAS_PREFIX"MiterLimig"
+#define CANVAS__Stroke            CANVAS_PREFIX"Stroke"
+#define CANVAS__Fill              CANVAS_PREFIX"Fill"
+#define CANVAS__Clip              CANVAS_PREFIX"Clip"
+#define CANVAS__Save              CANVAS_PREFIX"Save"
+#define CANVAS__Restore           CANVAS_PREFIX"Restore"
+#define CANVAS__Translate         CANVAS_PREFIX"Translate"
+#define CANVAS__Scale             CANVAS_PREFIX"Scale"
+#define CANVAS__Rotate            CANVAS_PREFIX"Rotate"
+#define CANVAS__Reset             CANVAS_PREFIX"Reset"
+#define CANVAS__FontSize          CANVAS_PREFIX"FontSize"
+#define CANVAS__FillText          CANVAS_PREFIX"FillText"
 
-#define CANVAS__lineCapButt      CANVAS_PREFIX"lineCapButt"
-#define CANVAS__lineCapRound     CANVAS_PREFIX"lineCapRound"
-#define CANVAS__lineCapSquare    CANVAS_PREFIX"lineCapSquare"
+#define CANVAS__lineCapButt       CANVAS_PREFIX"lineCapButt"
+#define CANVAS__lineCapRound      CANVAS_PREFIX"lineCapRound"
+#define CANVAS__lineCapSquare     CANVAS_PREFIX"lineCapSquare"
 
-#define CANVAS__lineJoinMiter    CANVAS_PREFIX"lineJoinMiter"
-#define CANVAS__lineJoinRound    CANVAS_PREFIX"lineJoinRound"
-#define CANVAS__lineJoinBevel    CANVAS_PREFIX"lineJoinBevel"
+#define CANVAS__lineJoinMiter     CANVAS_PREFIX"lineJoinMiter"
+#define CANVAS__lineJoinRound     CANVAS_PREFIX"lineJoinRound"
+#define CANVAS__lineJoinBevel     CANVAS_PREFIX"lineJoinBevel"
+
+// Input properties and attributes
+
+#define CANVAS__mouseButtonLeft   CANVAS_PREFIX"mouseButtonLeft"
+#define CANVAS__mouseButtonMiddle CANVAS_PREFIX"mouseButtonMiddle"
+#define CANVAS__mouseButtonRight  CANVAS_PREFIX"mouseButtonRight"
+#define CANVAS__mouseWheelX       CANVAS_PREFIX"mouseWheelX"
+#define CANVAS__mouseWheelY       CANVAS_PREFIX"mouseWheelY"
+#define CANVAS__mousePositionX    CANVAS_PREFIX"mousePositionX"
+#define CANVAS__mousePositionY    CANVAS_PREFIX"mousePositionY"
+#define CANVAS__mouseFocus        CANVAS_PREFIX"mouseFocus"
 
 typedef struct _LV2_Canvas_URID LV2_Canvas_URID;
 
@@ -103,6 +115,15 @@ struct _LV2_Canvas_URID  {
 	LV2_URID Canvas_lineJoinMiter;
 	LV2_URID Canvas_lineJoinRound;
 	LV2_URID Canvas_lineJoinBevel;
+
+	LV2_URID Canvas_mouseButtonLeft;
+	LV2_URID Canvas_mouseButtonMiddle;
+	LV2_URID Canvas_mouseButtonRight;
+	LV2_URID Canvas_mouseWheelX;
+	LV2_URID Canvas_mouseWheelY;
+	LV2_URID Canvas_mousePositionX;
+	LV2_URID Canvas_mousePositionY;
+	LV2_URID Canvas_mouseFocus;
 
 	LV2_Atom_Forge forge;
 };
@@ -145,6 +166,15 @@ lv2_canvas_urid_init(LV2_Canvas_URID *urid, LV2_URID_Map *map)
 	urid->Canvas_lineJoinMiter = map->map(map->handle, CANVAS__lineJoinMiter);
 	urid->Canvas_lineJoinRound = map->map(map->handle, CANVAS__lineJoinRound);
 	urid->Canvas_lineJoinBevel = map->map(map->handle, CANVAS__lineJoinBevel);
+
+	urid->Canvas_mouseButtonLeft = map->map(map->handle, CANVAS__mouseButtonLeft);
+	urid->Canvas_mouseButtonMiddle = map->map(map->handle, CANVAS__mouseButtonMiddle);
+	urid->Canvas_mouseButtonRight = map->map(map->handle, CANVAS__mouseButtonRight);
+	urid->Canvas_mouseWheelX = map->map(map->handle, CANVAS__mouseWheelX);
+	urid->Canvas_mouseWheelY = map->map(map->handle, CANVAS__mouseWheelY);
+	urid->Canvas_mousePositionX = map->map(map->handle, CANVAS__mousePositionX);
+	urid->Canvas_mousePositionY = map->map(map->handle, CANVAS__mousePositionY);
+	urid->Canvas_mouseFocus = map->map(map->handle, CANVAS__mouseFocus);
 
 	lv2_atom_forge_init(&urid->forge, map);
 }

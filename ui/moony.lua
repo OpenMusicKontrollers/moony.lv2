@@ -116,6 +116,7 @@ local field_constant = token(l.OPERATOR, P('.')) * token(l.CONSTANT, word_match{
 	'graph', 'body', 'BeginPath', 'ClosePath', 'Arc', 'CurveTo', 'LineTo', 'MoveTo', 'Rectangle', 'Style', 'LineWidth', 'LineDash', 'LineCap', 'LineJoin',
 	'MiterLimit', 'Stroke', 'Fill', 'Clip', 'Save', 'Restore', 'Translate', 'Scale', 'Rotate', 'Reset', 'FontSize', 'FillText',
 	'lineCapButt', 'lineCapRound', 'lineCapSquare', 'lineJoinMiter', 'lineJoinRound', 'lineJoinBevel',
+	'mouseButtonLeft', 'mouseButtonMiddle', 'mouseButtonRight', 'mouseWheelX', 'mouseWheelY', 'mousePositionX', 'mousePositionY', 'mouseFocus',
 
 	-- moony common
 	'type', 'body',

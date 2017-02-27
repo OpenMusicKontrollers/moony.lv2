@@ -1,7 +1,7 @@
 === Low priority
 * doc: Canvas
 * api: xpress
-* api: Canvas input
+* api: CanvasResponder
 * gui: clipboard support
 * gui: external editor
 

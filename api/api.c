@@ -1731,6 +1731,14 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 		SET_MAP(L, CANVAS__, lineJoinMiter);
 		SET_MAP(L, CANVAS__, lineJoinRound);
 		SET_MAP(L, CANVAS__, lineJoinBevel);
+		SET_MAP(L, CANVAS__, mouseButtonLeft);
+		SET_MAP(L, CANVAS__, mouseButtonMiddle);
+		SET_MAP(L, CANVAS__, mouseButtonRight);
+		SET_MAP(L, CANVAS__, mouseWheelX);
+		SET_MAP(L, CANVAS__, mouseWheelY);
+		SET_MAP(L, CANVAS__, mousePositionX);
+		SET_MAP(L, CANVAS__, mousePositionY);
+		SET_MAP(L, CANVAS__, mouseFocus);
 	}
 	lua_setglobal(L, "Canvas");
 
