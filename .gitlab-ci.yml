@@ -28,9 +28,6 @@ stages:
 
 .test_template: &test_definition
   <<: *common_definition
-  before_script:
-    - apt-get update
-    - apt-get install -y -q xsltproc
   script:
     - mkdir build
     - pushd build
@@ -86,18 +83,12 @@ pack:
       - "${BASE_NAME}-$(cat VERSION)/"
 
 pages:
+  <<: *variables_definition
   stage: deploy
   script:
     - mkdir -p public
-    - sed -e "s/@MOONY_VERSION@/$(cat VERSION)/g" manual/manual.html.in > public/index.html
-    - cp manual/style.css public/.
-    - cp manual/jquery*.js public/.
-    - cp manual/libreJS.html public/.
-    - cp manual/ace.js public/.
-    - cp manual/mode-lua.js public/.
-    - cp manual/theme-chaos.js public/.
-    - cp manual/Chango-Regular.ttf public/.
-    - cp manual/favicon.png public/.
+    - cp "${BASE_NAME}-$(cat VERSION)/x86_64-linux-gnu/${BASE_NAME}/manual.html" public/index.html
+    - cp logo/moony_logo.png public/.
   artifacts:
     paths:
       - public/

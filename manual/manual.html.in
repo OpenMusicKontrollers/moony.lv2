@@ -1,21 +1,165 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
 	<title>Moony Manual</title>
 	<meta name="author" content="Hanspeter Portner" />
 	<meta charset="UTF-8" />
-	<link rel="icon" type="image/png" href="favicon.png" />
-	<link rel="stylesheet" type="text/css" href="style.css" />
-	<script type="text/javascript" src="jquery-3.1.0.min.js" charset="utf-8"></script>
-	<script type="text/javascript" src="ace.js" charset="utf-8"></script>
+	<link rel="icon" type="image/png" href="moony_logo.png" />
+	<style type="text/css">
+html, body {
+	font-family:sans-serif;
+	font-size:14px;
+	color:#dddddd;
+  background-color:#343434;
+	padding:0;
+	margin:0;
+}
+
+.api-menu {
+	position:fixed;
+	top:0;
+	height:100%;
+	left:0;
+	width:20%;
+	overflow-x:auto;
+	overflow-y:auto;
+}
+
+.api-body {
+	margin-left:20%;
+	width:80%;
+}
+
+.api-section {
+	background-color: #2d2d2d;
+	margin:1em;
+	padding:1em;
+}
+
+a {
+	color:#dddddd;
+}
+
+a:visited {
+	color:#dddddd;
+}
+
+a:hover {
+	color:#343434;
+	background-color:#dddddd;
+}
+
+dl {
+	border:1px solid #414141;
+}
+
+dt {
+	font-family:monospace;
+	padding-left:1em;
+	padding-right:1em;
+	padding-top:0.5em;
+	padding-bottom:0.5em;
+	font-weight:bold;
+}
+
+dt.func {
+	border-bottom:1px solid #414141;
+	color:#00aeef;
+	font-weight:bold;
+	background-color:#262626;
+}
+
+dt.attr {
+	border-bottom:1px solid #414141;
+	color:#ff6600;
+	font-weight:bold;
+	background-color:#262626;
+}
+
+dt.ret {
+	border-top:1px dashed #414141;
+	font-weight:bold;
+}
+
+dd {
+	padding-left:1em;
+	padding-right:1em;
+	padding-top:0.5em;
+	padding-bottom:0.5em;
+	font-style:italic;
+}
+
+pre {
+	background-color:#262626;
+	padding:1em;
+	border:1px solid #414141;
+}
+
+span.whitespace {
+	color:#dddddd;
+}
+
+span.keyword {
+	color:#00698f;
+}
+
+span.function {
+	color:#00aeef;
+}
+
+span.constant {
+	color:#ff6600;
+}
+
+span.library {
+	color:#8dff0a;
+}
+
+span.table {
+	color:#8dff0a;
+}
+
+span.identifier {
+	color:#dddddd;
+}
+
+span.string {
+	color:#58c554;
+}
+
+span.comment {
+	color:#555555;
+}
+
+span.number {
+	color:#fbfb00;
+}
+
+span.label {
+	color:#fdc251;
+}
+
+span.binop {
+	color:#cc0000;
+}
+
+span.operator {
+	color:#cc0000;
+}
+
+span.brace {
+	color:#ffffff
+}
+</style>
 </head>
 
 <body>
 
 <div class="api-menu">
-	<h1>moony - manual</h1>
-	<h4>v@MOONY_VERSION@</h4>
+	<h1>Moony.lv2</h1>
+	<h4>@MOONY_VERSION@</h4>
+	<h2>Reference manual</h2>
 
 	<ul>
 		<li><a href="#introduction">Introduction</a>
@@ -101,22 +245,24 @@
 				<li><a href="#forge-osc">OSC</a>
 					<ul>
 						<li><a href="#forge-bundle">Bundle</a></li>
-						<li><a href="#forge-message">Message</a></li>
-						<ul>
-							<li><a href="#forge-impulse">Impulse</a></li>
-							<li><a href="#forge-char">Char</a></li>
-							<li><a href="#forge-rgba">RGBA</a></li>
-							<li><a href="#forge-timetag">Timetag</a></li>
-						</ul>
+						<li><a href="#forge-message">Message</a>
+							<ul>
+								<li><a href="#forge-impulse">Impulse</a></li>
+								<li><a href="#forge-char">Char</a></li>
+								<li><a href="#forge-rgba">RGBA</a></li>
+								<li><a href="#forge-timetag">Timetag</a></li>
+							</ul>
+						</li>
 					</ul>
 				</li>
 				<li><a href="#forge-patch-patch">Patch</a>
 					<ul>
-						<li><a href="#forge-patch">Patch</a></li>
-						<ul>
-							<li><a href="#forge-add">Add</a></li>
-							<li><a href="#forge-remove">Remove</a></li>
-						</ul>
+						<li><a href="#forge-patch">Patch</a>
+							<ul>
+								<li><a href="#forge-add">Add</a></li>
+								<li><a href="#forge-remove">Remove</a></li>
+							</ul>
+						</li>
 						<li><a href="#forge-get">Get</a></li>
 						<li><a href="#forge-set">Set</a></li>
 						<li><a href="#forge-put">Put</a></li>
@@ -189,7 +335,11 @@
 
 <div class="api-body">
 
-	<div class="api-section"><div class="api-content">
+	<div>
+		<img src="moony_logo.png" alt="Moony logo" style="display:block; margin:0 auto;" />
+	</div>
+
+	<div class="api-section">
 	<h1 id="introduction">Introduction</h1>
 		<p>The design goal of the plugin bundle was to create a tool to easily add realtime programmable logic glue in LV2 plugin graphs.</p>
 
@@ -202,145 +352,135 @@
 		<p>One such scripting language is Lua. It is small, fast, easily embeddable and realtime-safe if coupled to a realtime-safe memory allocator like TLSF.</p>
 
 		<p>The Moony plugins can handle LV2 control and atom event ports, only. They do not handle LV2 audio ports. They may eventually handle LV2 control-voltage ports in the future, though. Control port values are internally handled as simple floating point numbers, whereas the atom event ports build on top of the LV2 atom and atom forge C headers.</p>
-	</div></div>
+	</div>
 
-	<div class="api-section"><div class="api-content">
+	<div class="api-section">
 	<h1 id="variants">Plugin Variants</h1>
 		<p>The Moony plugin bundle ships with multiple plugin variants, whereas all of them share the same
 			API but with different configurations of input and output ports. Depending on the users's usage
 			scenario, one or the other variant may be preferable.</p>
 		<p>Plugin variants only differ in number of control and atom event input and output ports. Apart
 			from this difference, they can often be used interchangeably.</p>
-	</div></div>
+	</div>
 
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="variants-c1xc1">C1 x C1</h2>
 		<p>This plugin variant features a single control port input and a single control port output.</p>
 
-		<a class="api-snippet" href="#snippet-run-c1xc1" data-snippet="snippet-run-c1xc1">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-run-c1xc1">-- C1 x C1 prototype 'run' function
+		<pre><code>-- C1 x C1 prototype 'run' function
 
 function run(n, control, notify, c)
 	return c
 end</code></pre>
-		</div></div>
+		</div>
 
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="variants-c2xc2">C2 x C2</h2>
 		<p>This plugin variant features two control port inputs and two control port outputs.</p>
 
-		<a class="api-snippet" href="#snippet-run-c2xc2" data-snippet="snippet-run-c2xc2">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-run-c2xc2">-- C2 x C2 prototype 'run' function
+		<pre><code>-- C2 x C2 prototype 'run' function
 
 function run(n, control, notify, c1, c2)
 	return c1, c2
 end</code></pre>
-		</div></div>
+		</div>
 
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="variants-c4xc4">C4 x C4</h2>
 		<p>This plugin variant features four control port inputs and four control port outputs.</p>
 
-		<a class="api-snippet" href="#snippet-run-c4xc4" data-snippet="snippet-run-c4xc4">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-run-c4xc4">-- C4 x C4 prototype 'run' function
+		<pre><code>-- C4 x C4 prototype 'run' function
 
 function run(n, control, notify, c1, c2, c3, c4)
 	return c1, c2, c3, c4
 end</code></pre>
-		</div></div>
+		</div>
 
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="variants-a1xa1">A1 x A1</h2>
 		<p>This plugin variant features a single atom port input and a single atom port output.</p>
 
-		<a class="api-snippet" href="#snippet-run-a1xa1" data-snippet="snippet-run-a1xa1">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-run-a1xa1">-- A1 x A1 prototype 'run' function
+		<pre><code>-- A1 x A1 prototype 'run' function
 
 function run(n, control, notify, seq, forge)
 end</code></pre>
-		</div></div>
+		</div>
 
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="variants-a2xa2">A2 x A2</h2>
 		<p>This plugin variant features two atom port inputs and two atom port outputs.</p>
 
-		<a class="api-snippet" href="#snippet-run-a2xa2" data-snippet="snippet-run-a2xa2">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-run-a2xa2">-- A2 x A2 prototype 'run' function
+		<pre><code>-- A2 x A2 prototype 'run' function
 
 function run(n, control, notify, seq1, forge1, seq2, forge2)
 end</code></pre>
-		</div></div>
+		</div>
 
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="variants-a4xa4">A4 x A4</h2>
 		<p>This plugin variant features four atom port inputs and four atom port outputs.</p>
 
-		<a class="api-snippet" href="#snippet-run-a4xa4" data-snippet="snippet-run-a4xa4">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-run-a4xa4">-- A4 x A4 prototype 'run' function
+		<pre><code>-- A4 x A4 prototype 'run' function
 
 function run(n, control, notify, seq1, forge1, seq2, forge2, seq3, forge3, seq4, forge4)
 end</code></pre>
-		</div></div>
+		</div>
 
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="variants-c1a1xc1a1">C1+A1 x C1+A1</h2>
 		<p>This plugin variant features a single control port input and a single control port output
 			with a single atom port input and a single atom port output.</p>
 
-		<a class="api-snippet" href="#snippet-run-c1a1xc1a1" data-snippet="snippet-run-c1a1xc1a1">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-run-c1a1xc1a1">-- C1+A1 x C1+A1 prototype 'run' function
+		<pre><code>-- C1+A1 x C1+A1 prototype 'run' function
 
 function run(n, control, notify, seq, forge, c)
 	return c
 end</code></pre>
-		</div></div>
+		</div>
 
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="variants-c2a1xc2a1">C2+A1 x C2+A1</h2>
 		<p>This plugin variant features two control port inputs and two control port outputs
 			with a single atom port input and a single atom port output.</p>
 
-		<a class="api-snippet" href="#snippet-run-c2a1xc2a1" data-snippet="snippet-run-c2a1xc2a1">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-run-c2a1xc2a1">-- C2+A1 x C2+A1 prototype 'run' function
+		<pre><code>-- C2+A1 x C2+A1 prototype 'run' function
 
 function run(n, control, notify, seq, forge, c1, c2)
 	return c1, c2
 end</code></pre>
-		</div></div>
+		</div>
 
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="variants-c4a1xc4a1">C4+A1 x C4+A1</h2>
 		<p>This plugin variant features four control port inputs and four control port outputs
 			with a single atom port input and a single atom port output.</p>
 
-		<a class="api-snippet" href="#snippet-run-c4a1xc4a1" data-snippet="snippet-run-c4a1xc4a1">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-run-c4a1xc4a1">-- C4+A1 x C4+A1 prototype 'run' function
+		<pre><code>-- C4+A1 x C4+A1 prototype 'run' function
 
 function run(n, control, notify, seq, forge, c1, c2, c3, c4)
 	return c1, c2, c3, c4
 end</code></pre>
-		</div></div>
+		</div>
 
-	<div class="api-section"><div class="api-content">
+	<div class="api-section">
 	<h1 id="log-and-debug">Log &amp; Debug</h1>
 		<p>Whenever you want to log or debug something while developing your scripts, you can easily dump any value via Lua's <b>print</b> function. The print's output will be shown on the UI and also be sent to the host's log backend, e.g. to a log window or console.</p>
 
-	<a class="api-snippet" href="#snippet-print" data-snippet="snippet-print">&rArr; show snippet</a>
-	<pre class="api-hidden"><code id="snippet-print">-- sends 'hello world' to the UI and the host's log backend
+	<pre><code>-- sends 'hello world' to the UI and the host's log backend
 
 print('hello world')</code></pre>
-	</div></div>
+	</div>
 
-	<div class="api-section"><div class="api-content">
+	<div class="api-section">
 	<h1 id="callbacks">Callbacks</h1>
 	<p>Moony can run user defined callbacks at different positions in its
 	processing graph. If the user provides an implementation for a specific
 	callback, Moony will run the latter. If the plugin does not need a specific
 	callback, the latter can simply be omitted. The implementations of all
 	callbacks are thus optional.</p>
-	</div></div>
+	</div>
 
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="callbacks-run">run</h2>
 		<p>The <b>run</b> callback function is the main callback function and thus the most
 		important one. It is called once per period by the plugin host. The period size,
@@ -377,15 +517,14 @@ print('hello world')</code></pre>
 				<dd>control port outputs, with x=[0, 1, 2, 4]</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-callback-run" data-snippet="snippet-callback-run">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-callback-run">-- 'run' callback prototype for moony#a1xa1
+		<pre><code>-- 'run' callback prototype for moony#a1xa1
 
 function run(n, control, notify, seq, forge)
 	-- here we will process events
 end</code></pre>
-		</div></div>
+		</div>
 
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="callbacks-once">once</h2>
 		<p>The <b>once</b> function exists for pure convenience only. It has exactly the
 		same form as the <b>run</b> function, but is called only once after the whole
@@ -410,8 +549,7 @@ end</code></pre>
 				<dd>control port inputs, with x=[0, 1, 2, 4]</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-callback-once" data-snippet="snippet-callback-once">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-callback-once">-- 'once' callback prototype for moony#a1xa1
+		<pre><code>-- 'once' callback prototype for moony#a1xa1
 
 function once(n, control, notify, seq, forge)
 	-- here we will run logic once right after a code update
@@ -421,9 +559,9 @@ function once(n, control, notify, seq, forge)
 		forge:time(0):midi(MIDI.Controller | channel, MIDI.AllNotesOff)
 	end
 end</code></pre>
-		</div></div>
+		</div>
 
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="callbacks-stash">stash</h2>
 		<p>When script code is reloaded, plugin state inside Lua virtual machine
 		potentially is lost. In order to preserve state across a script code reload,
@@ -440,8 +578,7 @@ end</code></pre>
 				<dd>atom forge object to serialize to</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-callback-stash" data-snippet="snippet-callback-stash">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-callback-stash">-- 'stash' callback prototype
+		<pre><code>-- 'stash' callback prototype
 
 -- a simple flag
 local myflag = true
@@ -458,9 +595,9 @@ function apply(atom)
 	myflag = atom.body
 	assert(myflag == true)
 end</code></pre>
-		</div></div>
+		</div>
 
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="callbacks-apply">apply</h2>
 		<p>When script code is reloaded, plugin state inside Lua virtual machine
 		potentially is lost. In order to preserve state across a script code reload,
@@ -476,8 +613,7 @@ end</code></pre>
 				<dd>atom object to deserialize from</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-callback-apply" data-snippet="snippet-callback-apply">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-callback-apply">-- 'apply' callback prototype
+		<pre><code>-- 'apply' callback prototype
 
 -- table that holds active notes
 local active_notes = {
@@ -510,9 +646,9 @@ function apply(atom)
 
 	assert(#active_notes == 4)
 end</code></pre>
-		</div></div>
+		</div>
 
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="callbacks-save">save</h2>
 		<p>The <b>save</b> function works analogously to <a href="#callbacks-stash">stash</a>,
 		but instead of serializing to temporary memory before a script code reload,
@@ -527,8 +663,7 @@ end</code></pre>
 				<dd>atom forge object to serialize to</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-callback-save" data-snippet="snippet-callback-save">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-callback-save">-- 'save' callback prototype
+		<pre><code>-- 'save' callback prototype
 
 local urn = HashMap('urn:moony:xzy')
 
@@ -570,9 +705,9 @@ function restore(atom)
 		end
 	end
 end</code></pre>
-		</div></div>
+		</div>
 
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="callbacks-restore">restore</h2>
 		<p>The <b>restore</b> function works analogously to <a href="#callbacks-apply">apply</a>,
 		but instead of deserializing from temporary memory after a script code reload,
@@ -584,8 +719,7 @@ end</code></pre>
 				<dd>atom object to deserialize from</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-callback-restore" data-snippet="snippet-callback-restore">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-callback-restore">-- 'restore' callback prototype
+		<pre><code>-- 'restore' callback prototype
 
 local urn = HashMap('urn:moony:xyz')
 
@@ -622,9 +756,9 @@ function restore(atom)
 		end
 	end
 end</code></pre>
-		</div></div>
+		</div>
 
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h1 id="urid">Map &amp; Unmap</h1>
 		<p>LV2 references objects and their properties by URIs, usually rather long,
 		unique string identifiers. When comparing URIs, whole strings need to be
@@ -636,9 +770,9 @@ end</code></pre>
 		implementation, but additionally caches every newly queried URI or URID
 		for faster lookup inside script code. Cached URIs and URIDs are preserved
 		across script code updates.</p>
-		</div></div>
+		</div>
 
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="urid-map">Map</h2>
 		<p>Map an URI to its corresponding URID. <b>Map</b> is a first-class Lua
 		table acting as a cache for all queried URIDs and can also be called as
@@ -652,16 +786,15 @@ end</code></pre>
 				<dd>mapped URID</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-map" data-snippet="snippet-map">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-map">-- Map can be indexed or called as function
+		<pre><code>-- Map can be indexed or called as function
 
 local prefix = 'http://example.com#'
 
 local foo_urid = Map(prefix .. 'foo')
 local bar_urid = Map[prefix .. 'bar']</code></pre>
-		</div></div>
+		</div>
 
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="urid-unmap">Unmap</h2>
 		<p>Unmap an URID to its original URI. <b>Unmap</b> is a first-class Lua
 		table acting as a cache for all queried URIs and can also be called as
@@ -675,8 +808,7 @@ local bar_urid = Map[prefix .. 'bar']</code></pre>
 				<dd>unmapped URi</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-unmap" data-snippet="snippet-unmap">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-unmap">-- Unmap can be indexed or called as function
+		<pre><code>-- Unmap can be indexed or called as function
 
 local prefix = 'http://example.com#'
 
@@ -688,9 +820,9 @@ local bar_uri = Unmap[bar_urid]
 
 assert(prefix .. 'foo' == foo_uri)
 assert(prefix .. 'bar' == bar_uri)</code></pre>
-		</div></div>
+		</div>
 
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="urid-hashmap">HashMap</h2>
 		<p>A convenience wrapper and syntactic sugar around <a href="#urid-map">Map</a>.
 		Simplifies creating multiple mappings which share a common URI prefix.</p>
@@ -709,8 +841,7 @@ assert(prefix .. 'bar' == bar_uri)</code></pre>
 				<dd>HashMap table</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-hashmap" data-snippet="snippet-hashmap">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-hashmap">-- HashMap is a convenience wrapper over Map
+		<pre><code>-- HashMap is a convenience wrapper over Map
 
 local prefix = 'http://example.com#'
 local hashmap = HashMap(prefix)
@@ -718,9 +849,9 @@ local hashmap = HashMap(prefix)
 local bar_urid = Map[prefix .. 'bar']
 
 assert(hashmap.bar == bar_urid)</code></pre>
-		</div></div>
+		</div>
 
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="urid-voicemap">VoiceMap</h2>
 		<p>Returns a unique, non-colliding integer ID to be used in event messaging.
 		Especially useful for <a href="#forge-patch">Patch</a> messages or custom
@@ -733,8 +864,7 @@ assert(hashmap.bar == bar_urid)</code></pre>
 				<dd>unique integer ID</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-voicemap" data-snippet="snippet-voicemap">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-voicemap">-- VoiceMap returns unique integer IDs
+		<pre><code>-- VoiceMap returns unique integer IDs
 
 local cache = {}
 
@@ -744,24 +874,24 @@ for i = 1, 100 do
 	assert(not cache[id])
 	cache[id] = true
 end</code></pre>
-		</div></div>
+		</div>
 
 	<!-- Forge -->
-	<div class="api-section"><div class="api-content">
+	<div class="api-section">
 	<h1 id="forge">Forge</h1>
 	<p>A forge object is used to serialize arbitrary complex atoms, both simple
 	primitives and nested containers.</p>
-	</div></div>
+	</div>
 
 		<!-- Forge Primitive -->
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="forge-primitive">Primitive</h2>
 		<p>Atom types that contain single data as part of their body are referred to
 		as primitives.</p>
-		</div></div>
+		</div>
 
 			<!-- Forge Bool -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-bool">Bool</h3>
 			<p>Forge a boolean atom, e.g. of type Atom.Bool.</p>
 
@@ -773,17 +903,16 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-bool" data-snippet="snippet-forge-bool">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-bool">-- Forge Bool
+			<pre><code>-- Forge Bool
 
 local function produce_tup(forge)
 	forge:bool(true)
 	forge:bool(false)
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Forge Int -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-int">Int</h3>
 			<p>Forge an integer atom, e.g. of type Atom.Int.</p>
 
@@ -795,16 +924,15 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-int" data-snippet="snippet-forge-int">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-int">-- Forge Int
+			<pre><code>-- Forge Int
 
 local function produce_atom(forge)
 	forge:int(12)
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Forge Long -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-long">Long</h3>
 			<p>Forge long integer atom, e.g. of type Atom.Long.</p>
 
@@ -816,16 +944,15 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-long" data-snippet="snippet-forge-long">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-long">-- Forge Long
+			<pre><code>-- Forge Long
 
 local function produce_atom(forge)
 	forge:long(12)
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Forge Float -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-float">Float</h3>
 			<p>Forge single-precision float atom, e.g. of type Atom.Float.</p>
 
@@ -837,16 +964,15 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-float" data-snippet="snippet-forge-float">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-float">-- Forge Float
+			<pre><code>-- Forge Float
 
 local function produce_atom(forge)
 	forge:float(12.5)
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Forge Double -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-double">Double</h3>
 			<p>Forge double-precision float atom, e.g. of type Atom.Double.</p>
 
@@ -858,16 +984,15 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-double" data-snippet="snippet-forge-double">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-double">-- Forge Double
+			<pre><code>-- Forge Double
 
 local function produce_atom(forge)
 	forge:double(12.5)
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Forge URID -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-urid">URID</h3>
 			<p>Forge URID atom, e.g. of type Atom.URID.</p>
 
@@ -879,8 +1004,7 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-urid" data-snippet="snippet-forge-urid">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-urid">-- Forge URID
+			<pre><code>-- Forge URID
 
 local uri = 'urn:moony:xzy'
 local urn = Map[uri]
@@ -888,10 +1012,10 @@ local urn = Map[uri]
 local function produce_atom(forge)
 	forge:urid(urn)
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Forge URI -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-uri">URI</h3>
 			<p>Forge URI atom, e.g. of type Atom.URI.</p>
 
@@ -903,18 +1027,17 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-uri" data-snippet="snippet-forge-uri">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-uri">-- Forge URI
+			<pre><code>-- Forge URI
 
 local uri = 'urn:moony:xzy'
 
 local function produce_atom(forge)
 	forge:uri(uri)
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Forge String -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-string">String</h3>
 			<p>Forge string atom, e.g. of type Atom.String.</p>
 
@@ -926,16 +1049,15 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-string" data-snippet="snippet-forge-string">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-string">-- Forge String
+			<pre><code>-- Forge String
 
 local function produce_atom(forge)
 	forge:string('hello world')
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Forge Path -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-path">Path</h3>
 			<p>Forge path atom, e.g. of type Atom.Path.</p>
 
@@ -947,16 +1069,15 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-path" data-snippet="snippet-forge-path">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-path">-- Forge Path
+			<pre><code>-- Forge Path
 
 local function produce_atom(forge)
 	forge:path('/tmp/xyz')
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Forge Literal -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-literal">Literal</h3>
 			<p>Forge literal atom, e.g. of type Atom.Literal.</p>
 
@@ -972,19 +1093,18 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-literal" data-snippet="snippet-forge-literal">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-literal">-- Forge Literal
+			<pre><code>-- Forge Literal
 
-local tlh = Map['http://lexvo.org/id/iso639-3/tlh'] -- Klingon language
+local rus = Map['http://lexvo.org/id/iso639-3/rus'] -- Russian language
 
 local function produce_tup(forge)
 	forge:literal('902A7F', MIDI.MidiEvent) -- MIDI encoded as hexidecimal text
-	forge:literal('', nil, tlh) -- 'hello' aka 'what do you want?'
+	forge:literal('Приве́т!', nil, rus) -- 'hello!'
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Forge Chunk -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-chunk">Chunk</h3>
 			<p>Forge chunk atom, e.g. of type Atom.Chunk.</p>
 
@@ -1012,18 +1132,17 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-chunk" data-snippet="snippet-forge-chunk">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-chunk">-- Forge Chunk
+			<pre><code>-- Forge Chunk
 
 local function produce_tup(forge)
 	forge:chunk(string.char(0x1, 0x2, 0x3))
 	forge:chunk({0x1, 0x2, 0x3})
 	forge:chunk(0x1, 0x2, 0x3)
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Forge MIDI -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-midi">MIDI</h3>
 			<p>Forge MIDI atom, e.g. of type MIDI.MidiEvent.</p>
 
@@ -1051,18 +1170,17 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-midi" data-snippet="snippet-forge-midi">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-midi">-- Forge MIDI
+			<pre><code>-- Forge MIDI
 
 local function produce_tup(forge)
 	forge:midi(string.char(MIDI.NoteOn, 69, 0x7f))
 	forge:midi({MIDI.NoteOn, 69, 0x7f})
 	forge:midi(MIDI.NoteOn, 69, 0x7f)
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Forge Raw -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-raw">Raw</h3>
 			<p>Forge a custom atom of arbitrary type.</p>
 
@@ -1096,8 +1214,7 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-raw" data-snippet="snippet-forge-raw">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-raw">-- Forge Raw
+			<pre><code>-- Forge Raw
 
 local byt = { -- stores individual bytes of zero-terminated string 'LV2'
 	string.byte('L'),
@@ -1111,10 +1228,10 @@ local function produce_tup(forge)
 	forge:raw(Atom.String, byt)
 	forge:raw(Atom.String, table.unpack(byt))
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Forge Typed -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-typed">Typed</h3>
 			<p>Forge an atom of arbitrary type.</p>
 
@@ -1128,18 +1245,17 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-typed" data-snippet="snippet-forge-typed">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-typed">-- Forge Typed
+			<pre><code>-- Forge Typed
 
 local function produce_tup(forge)
 	forge:typed(Atom.Int, 12) -- equivalent to forge:int(...)
 	forge:typed(Atom.Float, 12.5) -- equivalent to forge:float(...)
 	forge:typed(Atom.String, 'LV2 rocks!') -- equivalent to forge:string(...)
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Forge Atom -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-atom">Atom</h3>
 			<p>Forge an unchanged atom. Useful for cloning whole atoms.</p>
 
@@ -1151,8 +1267,7 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-atom" data-snippet="snippet-forge-atom">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-atom">-- Forge Atom
+			<pre><code>-- Forge Atom
 
 -- create integer atom
 local function produce_atom(forge)
@@ -1165,17 +1280,17 @@ local function consume_atom(atom, forge)
 
 	forge:atom(atom)
 end</code></pre>
-			</div></div>
+			</div>
 
 		<!-- Forge Container -->
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="forge-container">Container</h2>
 		<p>Atom types that contain nested atoms as part of their body are referred to
 		as containers.</p>
-		</div></div>
+		</div>
 
 			<!-- Forge Sequence -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-sequence">Sequence</h3>
 			<p>Forge a sequence atom, e.g. an atom of type Atom.Sequence.</p>
 
@@ -1195,8 +1310,7 @@ end</code></pre>
 					<dd>iterator for derived container forge object which is automatically finalized</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-sequence" data-snippet="snippet-forge-sequence">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-sequence">-- Forge Sequence
+			<pre><code>-- Forge Sequence
 
 local function produce_tup(forge)
 	local seq = forge:sequence() -- create derived container forge object
@@ -1214,10 +1328,10 @@ local function produce_tup(forge)
 		seq:beatTime(1.0):int(13)
 	end -- finalize container
 end</code></pre>
-			</div></div>
+			</div>
 
 				<!-- Forge Frame Time-->
-				<div class="api-section"><div class="api-content">
+				<div class="api-section">
 				<h4 id="forge-frame-time">Frame Time</h4>
 				<p>Forge frame time of event. Use this on sequences with unit 0 or Atom.frameTime.</p>
 
@@ -1228,10 +1342,10 @@ end</code></pre>
 					<dt class="ret">(userdata)</dt>
 						<dd>self forge object</dd>
 				</dl>
-				</div></div>
+				</div>
 
 				<!-- Forge Beat Time-->
-				<div class="api-section"><div class="api-content">
+				<div class="api-section">
 				<h4 id="forge-beat-time">Beat Time</h4>
 				<p>Forge beat time of event. Use this on sequences with unit Atom.beatTime.</p>
 
@@ -1242,10 +1356,10 @@ end</code></pre>
 					<dt class="ret">(userdata)</dt>
 						<dd>self forge object</dd>
 				</dl>
-				</div></div>
+				</div>
 
 				<!-- Forge Time-->
-				<div class="api-section"><div class="api-content">
+				<div class="api-section">
 				<h4 id="forge-time">Time</h4>
 				<p>Forge frame or beat time of event. Can be used as syntactic sugar instead of
 				<a href="#forge-frame-time">Frame Time</a> or <a href="#forge-beat-time">Beat Time</a>.</p>
@@ -1257,10 +1371,10 @@ end</code></pre>
 					<dt class="ret">(userdata)</dt>
 						<dd>self forge object</dd>
 				</dl>
-				</div></div>
+				</div>
 
 			<!-- Forge Object -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-object">Object</h3>
 			<p>Forge an object atom, e.g. an atom of type Atom.Object.</p>
 
@@ -1284,8 +1398,7 @@ end</code></pre>
 					<dd>iterator for derived container forge object which is automatically finalized</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-object" data-snippet="snippet-forge-object">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-object">-- Forge Object
+			<pre><code>-- Forge Object
 local urn = HashMap('urn:moony:xyz')
 
 local function produce_tup(forge)
@@ -1299,10 +1412,10 @@ local function produce_tup(forge)
 		obj:key(urn.bar, urn.ctx):long(13) -- with context
 	end -- finalize container
 end</code></pre>
-			</div></div>
+			</div>
 
 				<!-- Forge Key -->
-				<div class="api-section"><div class="api-content">
+				<div class="api-section">
 				<h4 id="forge-key">Key</h4>
 				<p>Forge key of object property.</p>
 
@@ -1315,10 +1428,10 @@ end</code></pre>
 					<dt class="ret">(userdata)</dt>
 						<dd>self forge object</dd>
 				</dl>
-				</div></div>
+				</div>
 
 			<!-- Forge Tuple -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-tuple">Tuple</h3>
 			<p>Forge a tuple atom, e.g. an atom of type Atom.Tuple.</p>
 
@@ -1334,8 +1447,7 @@ end</code></pre>
 					<dd>iterator for derived container forge object which is automatically finalized</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-tuple" data-snippet="snippet-forge-tuple">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-tuple">-- Forge Tuple
+			<pre><code>-- Forge Tuple
 
 local function produce_tup(forge)
 	local tup = forge:tuple() -- create derived container forge object
@@ -1356,10 +1468,10 @@ local function produce_tup(forge)
 		tup:bool(true)
 	end -- finalize container
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Forge Vector -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-vector">Vector</h3>
 			<p>Forge a vector atom, e.g. an atom of type Atom.Vector.</p>
 
@@ -1383,17 +1495,16 @@ end</code></pre>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-vector" data-snippet="snippet-forge-vector">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-vector">-- Forge Vector
+			<pre><code>-- Forge Vector
 
 local function produce_tup(forge)
 	forge:vector(Atom.Int, 1, 2, 3, 4, 5) -- vector items as individual arguments
 	forge:vector(Atom.Bool, {true, false, true}) --vector items as table
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Forge Pop -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-pop">Pop</h3>
 			<p>Finalize any derived container forge object.</p>
 
@@ -1402,16 +1513,16 @@ end</code></pre>
 				<dt class="ret">(userdata)</dt>
 					<dd>parent container forge object</dd>
 			</dl>
-			</div></div>
+			</div>
 
 		<!-- Forge OSC -->
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="forge-osc">OSC</h2>
 		<p>Atom types that contain Open Sound Control bundles or messages as part of their body.</p>
-		</div></div>
+		</div>
 
 			<!-- Forge Bundle -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-bundle">Bundle</h3>
 			<p>Forge a OSC bundle atom, e.g. an atom object of type OSC.Bundle.</p>
 
@@ -1423,8 +1534,7 @@ end</code></pre>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-bundle" data-snippet="snippet-forge-bundle">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-bundle">-- Forge Bundle
+			<pre><code>-- Forge Bundle
 
 local function produce_tup(forge)
 	-- schedule bundle for immediate dispatch
@@ -1442,10 +1552,10 @@ local function produce_tup(forge)
 		bndl:message('/hello', 's', 'world')
 	bndl:pop()
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Forge Message -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-message">Message</h3>
 			<p>Forge a OSC message atom, e.g. an atom object of type OSC.Message.
 			Supported OSC argument types are: 'i', 'f', 's', 'b', 'h', 'd', 't',
@@ -1463,8 +1573,7 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-message" data-snippet="snippet-forge-message">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-message">-- Forge Message
+			<pre><code>-- Forge Message
 
 local function produce_atom(forge)
 	-- schedule bundle for immediate dispatch
@@ -1478,10 +1587,10 @@ local function produce_atom(forge)
 		bndl:message('/hello', 'cr', string.byte('s'), 0xff00ff00)
 	bndl:pop() -- finalize container)
 end</code></pre>
-			</div></div>
+			</div>
 
 				<!-- Forge Impulse -->
-				<div class="api-section"><div class="api-content">
+				<div class="api-section">
 				<h4 id="forge-impulse">Impulse</h4>
 				<p>Forge Impulse argument of OSC message.</p>
 
@@ -1490,10 +1599,10 @@ end</code></pre>
 					<dt class="ret">(userdata)</dt>
 						<dd>self forge object</dd>
 				</dl>
-				</div></div>
+				</div>
 
 				<!-- Forge Char -->
-				<div class="api-section"><div class="api-content">
+				<div class="api-section">
 				<h4 id="forge-char">Char</h4>
 				<p>Forge Char argument of OSC message.</p>
 
@@ -1504,10 +1613,10 @@ end</code></pre>
 					<dt class="ret">(userdata)</dt>
 						<dd>self forge object</dd>
 				</dl>
-				</div></div>
+				</div>
 
 				<!-- Forge RGBA -->
-				<div class="api-section"><div class="api-content">
+				<div class="api-section">
 				<h4 id="forge-rgba">RGBA</h4>
 				<p>Forge RGBA color argument of OSC message.</p>
 
@@ -1518,10 +1627,10 @@ end</code></pre>
 					<dt class="ret">(userdata)</dt>
 						<dd>self forge object</dd>
 				</dl>
-				</div></div>
+				</div>
 
 				<!-- Forge Timetag -->
-				<div class="api-section"><div class="api-content">
+				<div class="api-section">
 				<h4 id="forge-timetag">Timetag</h4>
 				<p>Forge Timetag argument of OSC message.</p>
 
@@ -1533,8 +1642,7 @@ end</code></pre>
 						<dd>self forge object</dd>
 				</dl>
 
-				<a class="api-snippet" href="#snippet-forge-custom" data-snippet="snippet-forge-custom">&rArr; show snippet</a>
-				<pre class="api-hidden"><code id="snippet-forge-custom">-- Forge custom OSC arguments
+				<pre><code>-- Forge custom OSC arguments
 
 local function produce_atom(forge)
 	for obj in forge:objectPack(OSC.Message) do
@@ -1565,16 +1673,16 @@ local function produce_atom(forge)
 		end
 	end
 end</code></pre>
-				</div></div>
+				</div>
 
 		<!-- Forge Patch -->
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="forge-patch-patch">Patch</h2>
 		<p>Atom types that contain Patch messages as part of their body.</p>
-		</div></div>
+		</div>
 
 			<!-- Forge Patch-->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-patch">Patch</h3>
 			<p>Forge a patch patch atom, e.g. an atom object of type Patch.Patch.</p>
 
@@ -1588,8 +1696,7 @@ end</code></pre>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-patch" data-snippet="snippet-forge-patch">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-patch">-- Forge Patch
+			<pre><code>-- Forge Patch
 
 local urn = HashMap('urn:moony:xzy')
 
@@ -1608,10 +1715,10 @@ local function produce_atom(forge)
 
 	patch:pop()
 end</code></pre>
-			</div></div>
+			</div>
 
 				<!-- Forge Add -->
-				<div class="api-section"><div class="api-content">
+				<div class="api-section">
 				<h4 id="forge-add">Add</h4>
 				<p>Forge add property of patch property.</p>
 
@@ -1620,10 +1727,10 @@ end</code></pre>
 					<dt class="ret">(userdata)</dt>
 						<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 				</dl>
-				</div></div>
+				</div>
 
 				<!-- Forge Add -->
-				<div class="api-section"><div class="api-content">
+				<div class="api-section">
 				<h4 id="forge-remove">Remove</h4>
 				<p>Forge remove property of patch property.</p>
 
@@ -1632,10 +1739,10 @@ end</code></pre>
 					<dt class="ret">(userdata)</dt>
 						<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 				</dl>
-				</div></div>
+				</div>
 
 			<!-- Forge Get -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-get">Get</h3>
 			<p>Forge a patch get atom, e.g. an atom object of type Patch.Get.</p>
 
@@ -1651,8 +1758,7 @@ end</code></pre>
 					<dd>self container object</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-get" data-snippet="snippet-forge-get">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-get">-- Forge Get
+			<pre><code>-- Forge Get
 
 local urn = HashMap('urn:moony:xzy')
 
@@ -1661,10 +1767,10 @@ local function produce_tup(forge)
 	forge:get(urn.prop, nil, 1001) -- without subject
 	forge:get(urn.prop, urn.subj, 1002) -- with subject and sequence number
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Forge Set -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-set">Set</h3>
 			<p>Forge a patch set atom, e.g. an atom object of type Patch.Set.</p>
 
@@ -1680,8 +1786,7 @@ end</code></pre>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-set" data-snippet="snippet-forge-set">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-set">-- Forge Set
+			<pre><code>-- Forge Set
 
 local urn = HashMap('urn:moony:xzy')
 
@@ -1694,10 +1799,10 @@ local function produce_tup(forge)
 		set:float(12)
 	set:pop()
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Forge Put -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-put">Put</h3>
 			<p>Forge a patch put atom, e.g. an atom object of type Patch.Put.</p>
 
@@ -1711,8 +1816,7 @@ end</code></pre>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-put" data-snippet="snippet-forge-put">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-put">-- Forge Put
+			<pre><code>-- Forge Put
 
 local urn = HashMap('urn:moony:xzy')
 
@@ -1727,10 +1831,10 @@ local function produce_tup(forge)
 		put:key(urn.bar):float(12.5)
 	put:pop()
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Forge Ack -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-ack">Ack</h3>
 			<p>Forge an ack patch atom, e.g. an atom object of type Patch.Ack.</p>
 
@@ -1744,18 +1848,17 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-ack" data-snippet="snippet-forge-ack">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-ack">-- Forge Ack
+			<pre><code>-- Forge Ack
 
 local urn = HashMap('urn:moony:xzy')
 
 local function produce_atom(forge)
 	forge:ack(urn.subj, 1002) -- with subject and sequence number
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Forge Error -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="forge-error">Error</h3>
 			<p>Forge an error patch atom, e.g. an atom object of type Patch.Error.</p>
 
@@ -1769,17 +1872,16 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-forge-error" data-snippet="snippet-forge-error">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-forge-error">-- Forge Error
+			<pre><code>-- Forge Error
 
 local urn = HashMap('urn:moony:xzy')
 
 local function produce_atom(forge)
 	forge:error(urn.subj, 1002) -- with subject and sequence number
 end</code></pre>
-			</div></div>
+			</div>
 
-	<div class="api-section"><div class="api-content">
+	<div class="api-section">
 	<h1 id="atom">Atom</h1>
 	<p>Instead of deserializing all LV2 event data to corresponding Lua types,
 	Moony instead presents a proxy object to the user in form of a Lua userdata.
@@ -1806,17 +1908,17 @@ end</code></pre>
 		<dt class="ret">(integer)</dt>
 			<dd>URID of atom type</dd>
 	</dl>
-	</div></div>
+	</div>
 
 		<!-- Atom Primitive -->
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="atom-primitive">Primitive</h2>
 		<p>Atom types that contain single data as part of their body are referred to
 		as primitives.</p>
-		</div></div>
+		</div>
 
 			<!-- Atom Nil -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="atom-nil">Nil</h3>
 			<p>An empty atom, e.g. of type and size 0.</p>
 
@@ -1844,8 +1946,7 @@ end</code></pre>
 					<dd>atom body as Lua nil</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-atom-nil" data-snippet="snippet-atom-nil">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-atom-nil">-- Atom Nil
+			<pre><code>-- Atom Nil
 
 -- serialize
 local function produce_atom(forge)
@@ -1858,10 +1959,10 @@ local function consume_atom(atom)
 	assert(atom.type == 0) -- query type of atom
 	assert(atom.body == nil) -- get atom body
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Atom Bool -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="atom-bool">Bool</h3>
 			<p>A boolean atom, e.g. of type Atom.Bool and size 4.</p>
 
@@ -1889,8 +1990,7 @@ end</code></pre>
 					<dd>atom body as Lua boolean</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-atom-bool" data-snippet="snippet-atom-bool">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-atom-bool">-- Atom Bool
+			<pre><code>-- Atom Bool
 
 -- serialize
 local function produce_atom(forge)
@@ -1904,10 +2004,10 @@ local function consume_atom(atom)
 	assert(atom.type == Atom.Bool) -- query type of atom
 	assert(atom.body == true) -- get atom body
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Atom Int -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="atom-int">Int</h3>
 			<p>An integer atom, e.g. of type Atom.Int and size 4.</p>
 
@@ -1935,8 +2035,7 @@ end</code></pre>
 					<dd>atom body as Lua integer</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-atom-int" data-snippet="snippet-atom-int">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-atom-int">-- Atom Int
+			<pre><code>-- Atom Int
 
 -- serialize
 local function produce_atom(forge)
@@ -1950,10 +2049,10 @@ local function consume_atom(atom)
 	assert(atom.type == Atom.Int) -- query type of atom
 	assert(atom.body == 12) -- get atom body
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Atom Long -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="atom-long">Long</h3>
 			<p>A long integer atom, e.g. of type Atom.Long and size 8.</p>
 
@@ -1981,8 +2080,7 @@ end</code></pre>
 					<dd>atom body as Lua integer</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-atom-long" data-snippet="snippet-atom-long">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-atom-long">-- Atom Long
+			<pre><code>-- Atom Long
 
 -- serialize
 local function produce_atom(forge)
@@ -1996,10 +2094,10 @@ local function consume_atom(atom)
 	assert(atom.type == Atom.Long) -- query type of atom
 	assert(atom.body == 13) -- get atom body
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Atom Float -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="atom-float">Float</h3>
 			<p>A single-precision float atom, e.g. of type Atom.Float and size 4.</p>
 
@@ -2027,8 +2125,7 @@ end</code></pre>
 					<dd>atom body as Lua number</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-atom-float" data-snippet="snippet-atom-float">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-atom-float">-- Atom Float
+			<pre><code>-- Atom Float
 
 -- serialize
 local function produce_atom(forge)
@@ -2042,10 +2139,10 @@ local function consume_atom(atom)
 	assert(atom.type == Atom.Float) -- query type of atom
 	assert(atom.body == 1.5) -- get atom body
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Atom Double -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="atom-double">Double</h3>
 			<p>A double-precision float atom, e.g. of type Atom.Double and size 8.</p>
 
@@ -2073,8 +2170,7 @@ end</code></pre>
 					<dd>atom body as Lua number</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-atom-double" data-snippet="snippet-atom-double">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-atom-double">-- Atom Double
+			<pre><code>-- Atom Double
 
 -- serialize
 local function produce_atom(forge)
@@ -2088,10 +2184,10 @@ local function consume_atom(atom)
 	assert(atom.type == Atom.Double) -- query type of atom
 	assert(atom.body == 1.6) -- get atom body
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Atom URID -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="atom-urid">URID</h3>
 			<p>An URID atom, e.g. of type Atom.URID and size 4.</p>
 
@@ -2119,8 +2215,7 @@ end</code></pre>
 					<dd>atom body as Lua integer</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-atom-urid" data-snippet="snippet-atom-urid">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-atom-urid">-- Atom URID
+			<pre><code>-- Atom URID
 
 local urn = Map['urn:moony:xyz']
 
@@ -2136,10 +2231,10 @@ local function consume_atom(atom)
 	assert(atom.type == Atom.URID) -- query type of atom
 	assert(atom.body == urn) -- get atom body
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Atom URI -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="atom-uri">URI</h3>
 			<p>An URI atom, e.g. of type Atom.URI and variable size. Atom size
 			denotes to string size plus zero byte terminator.</p>
@@ -2168,8 +2263,7 @@ end</code></pre>
 					<dd>atom body as Lua string</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-atom-uri" data-snippet="snippet-atom-uri">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-atom-uri">-- Atom URI
+			<pre><code>-- Atom URI
 
 local urn = 'urn:moony:xyz'
 
@@ -2185,10 +2279,10 @@ local function consume_atom(atom)
 	assert(atom.type == Atom.URI) -- query type of atom
 	assert(atom.body == urn) -- get atom body
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Atom String -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="atom-string">String</h3>
 			<p>A string atom, e.g. of type Atom.String and variable size. Atom size
 			denotes to string size plus zero byte terminator.</p>
@@ -2217,8 +2311,7 @@ end</code></pre>
 					<dd>atom body as Lua string</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-atom-string" data-snippet="snippet-atom-string">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-atom-string">-- Atom String
+			<pre><code>-- Atom String
 
 local str = 'hello world'
 
@@ -2234,10 +2327,10 @@ local function consume_atom(atom)
 	assert(atom.type == Atom.String) -- query type of atom
 	assert(atom.body == str) -- get atom body
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Atom Path -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="atom-path">Path</h3>
 			<p>A path atom, e.g. of type Atom.Path and variable size. Atom size
 			denotes to string size plus zero byte terminator.</p>
@@ -2266,8 +2359,7 @@ end</code></pre>
 					<dd>atom body as Lua string</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-atom-path" data-snippet="snippet-atom-path">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-atom-path">-- Atom Path
+			<pre><code>-- Atom Path
 
 local tmp = '/tmp/xyz'
 
@@ -2283,10 +2375,10 @@ local function consume_atom(atom)
 	assert(atom.type == Atom.Path) -- query type of atom
 	assert(atom.body == tmp) -- get atom body
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Atom Literal -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="atom-literal">Literal</h3>
 			<p>A literal atom, e.g. of type Atom.Literal and variable size. Atom size
 			denotes to string size plus zero byte terminator. Atom literals may have
@@ -2334,8 +2426,7 @@ end</code></pre>
 					<dd>atom body as Lua string, URID of data type, URID of language</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-atom-literal" data-snippet="snippet-atom-literal">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-atom-literal">-- Atom  Literal
+			<pre><code>-- Atom  Literal
 
 local lit = 'Hallo Welt'
 local datatype = Map['urn:moony:xyz']
@@ -2361,10 +2452,10 @@ local function consume_atom(atom)
 	assert(datatype2 == datatype)
 	assert(lang2 == lang)
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Atom Chunk-->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="atom-chunk">Chunk</h3>
 			<p>A chunk atom, e.g. of type Atom.Chunk and variable size. Atom size
 			denotes to byte size of atom body.</p>
@@ -2411,8 +2502,7 @@ end</code></pre>
 					<dd>byte at position idx of atom body as Lua integer</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-atom-chunk" data-snippet="snippet-atom-chunk">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-atom-chunk">-- Atom Chunk
+			<pre><code>-- Atom Chunk
 
 local byt = string.char(0x1, 0x2, 0x3)
 
@@ -2439,10 +2529,10 @@ local function consume_atom(atom)
 	assert(atom[2] == 0x2)
 	assert(atom[3] == 0x3)
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Atom MIDI -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="atom-midi">MIDI</h3>
 			<p>A MIDI atom, e.g. of type MIDI.MidiEvent and variable size. Atom size
 			denotes to byte size of atom body. A MIDI atom is an equivalent to a
@@ -2490,8 +2580,7 @@ end</code></pre>
 					<dd>byte at position idx of atom body as Lua integer</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-atom-midi" data-snippet="snippet-atom-midi">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-atom-midi">-- Atom MIDI
+			<pre><code>-- Atom MIDI
 
 local byt = string.char(MIDI.NoteOn, 69, 64)
 
@@ -2518,16 +2607,16 @@ local function consume_atom(atom)
 	assert(atom[2] == 69)
 	assert(atom[3] == 64)
 end</code></pre>
-			</div></div>
+			</div>
 
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="atom-container">Container</h2>
 		<p>Atom types that contain nested atoms as part of their body are referred to
 		as containers.</p>
-		</div></div>
+		</div>
 
 			<!-- Atom Sequence -->
-			<div class="api-section"><div class="api-content">
+			<div class="api-section">
 			<h3 id="atom-sequence">Sequence</h3>
 			<p>A Sequence atom, e.g. of type Atom.Sequence and variable size. Atom size
 			denotes to number of events contained in atom body. An atom sequence
@@ -2580,8 +2669,7 @@ end</code></pre>
 					<dd>event atom at position idx</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-atom-seq" data-snippet="snippet-atom-seq">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-atom-seq">-- Atom Sequence
+			<pre><code>-- Atom Sequence
 
 -- serialize
 local function produce_atom(forge)
@@ -2607,10 +2695,10 @@ local function consume_atom(seq)
 	local atom = seq[1]
 	assert(atom.body == 12)
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Atom Tuple -->
-			<div class="api-tuple"><div class="api-content">
+			<div class="api-section">
 			<h3 id="atom-tuple">Tuple</h3>
 			<p>A Tuple atom, e.g. of type Atom.Tuple and variable size. Atom size
 			denotes to number of items contained in atom body. An atom tuple
@@ -2658,8 +2746,7 @@ end</code></pre>
 					<dd>atom item at position idx</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-atom-tuple" data-snippet="snippet-atom-tuple">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-atom-tuple">-- Atom Tuple
+			<pre><code>-- Atom Tuple
 
 -- serialize
 local function produce_atom(forge)
@@ -2688,10 +2775,10 @@ local function consume_atom(tup)
 	a1 = tup[1]
 	assert(a1.body == 12)
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Atom Object -->
-			<div class="api-object"><div class="api-content">
+			<div class="api-section">
 			<h3 id="atom-object">Object</h3>
 			<p>An Object atom, e.g. of type Atom.Object and variable size. Atom size
 			denotes to number of properties contained in atom body. An atom object
@@ -2741,8 +2828,7 @@ end</code></pre>
 					<dd>property atom for key</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-atom-object" data-snippet="snippet-atom-object">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-atom-object">-- Atom Object
+			<pre><code>-- Atom Object
 
 local urn = HashMap('urn:moony:xyz#')
 
@@ -2772,10 +2858,10 @@ local function consume_atom(obj)
 	local atom = obj[urn.key]
 	assert(atom.body == 12)
 end</code></pre>
-			</div></div>
+			</div>
 
 			<!-- Atom Vector -->
-			<div class="api-vector"><div class="api-content">
+			<div class="api-section">
 			<h3 id="atom-vector">Vector</h3>
 			<p>A Vector atom, e.g. of type Atom.Vector and variable size. Atom size
 			denotes to number of items contained in atom body. An atom vector
@@ -2835,8 +2921,7 @@ end</code></pre>
 					<dd>atom of item at position idx</dd>
 			</dl>
 
-			<a class="api-snippet" href="#snippet-atom-vector" data-snippet="snippet-atom-vector">&rArr; show snippet</a>
-			<pre class="api-hidden"><code id="snippet-atom-vector">-- Atom Vector
+			<pre><code>-- Atom Vector
 
 -- serialize
 local function produce_atom(forge)
@@ -2874,10 +2959,10 @@ local function consume_atom(vec)
 	assert(v2.body == 13)
 	assert(v3.body == 14)
 end</code></pre>
-			</div></div>
+			</div>
 
 	<!-- Stash -->
-	<div class="api-section"><div class="api-content">
+	<div class="api-section">
 	<h1 id="stash">Stash</h1>
 	<p>Sometimes it may be useful to not only be able to serialize atoms to forge
 	objects provided to the user via one of the callback functions, but to be able
@@ -2906,8 +2991,7 @@ end</code></pre>
 				<dd>reference to self as forge object to write to</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-stash" data-snippet="snippet-stash">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-stash">-- Stash
+		<pre><code>-- Stash
 
 -- a new stash defaults to writing mode - equivalent to forge object
 local io = Stash()
@@ -2924,10 +3008,10 @@ io:int(13)
 -- switch to reading mode
 io:read()
 assert(io.body == 13)</code></pre>
-		</div></div>
+		</div>
 
 	<!-- Options -->
-	<div class="api-section"><div class="api-content">
+	<div class="api-section">
 	<h1 id="options">Options</h1>
 	<p>Sometimes it is useful to know the sample rate (e.g. for timing) and size of
 	sequence buffers and minimal and maximal to expect audio block frames.
@@ -2942,8 +3026,7 @@ assert(io.body == 13)</code></pre>
 				<dd>value of index key</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-options" data-snippet="snippet-options">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-options">-- Options
+		<pre><code>-- Options
 
 -- sample rate is always available
 local sampleRate = Options[Core.sampleRate]
@@ -2953,10 +3036,10 @@ assert(sampleRate == 48000)
 local sequenceSize = Options[Buf_Size.sequenceSize]
 local minBlockLength = Options[Buf_Size.minBlockLength]
 local maxBlockLength = Options[Buf_Size.maxBlockLength]</code></pre>
-	</div></div>
+	</div>
 
 	<!-- Responder -->
-	<div class="api-section"><div class="api-content">
+	<div class="api-section">
 	<h1 id="responder">Responder</h1>
 	<p>Responders are convenience wrappers to ease development of frequently used
 	logic event handling schemes via callbacks.</p>
@@ -2970,10 +3053,10 @@ local maxBlockLength = Options[Buf_Size.maxBlockLength]</code></pre>
 	<p>The StateResponder can be used to build simple user interfaces to make
 	any moony script available to non-coders around the world.</p>
 
-	</div></div>
+	</div>
 
 		<!-- MIDIResponder -->
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="responder-midi">MIDIResponder</h2>
 		<p>Runs callbacks for received MIDI messages.</p>
 
@@ -2999,8 +3082,7 @@ local maxBlockLength = Options[Buf_Size.maxBlockLength]</code></pre>
 				<dd>flag whether the event was handled, e.g. whether is was any MIDI at all</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-responder-midi" data-snippet="snippet-responder-midi">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-responder-midi">-- MIDIResponder
+		<pre><code>-- MIDIResponder
 
 -- define MIDI responder object with callbacks
 local midiR = MIDIResponder({
@@ -3045,10 +3127,10 @@ end
 local function check(seq)
 	assert(#seq == 2) -- only NoteOn and NoteOff have gone through
 end</code></pre>
-		</div></div>
+		</div>
 
 		<!-- OSCResponder -->
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="responder-osc">OSCResponder</h2>
 		<p>Runs callbacks for received OSC messages.</p>
 
@@ -3072,8 +3154,7 @@ end</code></pre>
 				<dd>flag whether the event was handled, e.g. whether is was any OSC at all</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-responder-osc" data-snippet="snippet-responder-osc">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-responder-osc">-- OSCResponder
+		<pre><code>-- OSCResponder
 
 -- define OSC responder object with callbacks
 local oscR = OSCResponder({
@@ -3114,10 +3195,10 @@ local function check(seq)
 		assert(atom[OSC.messagePath].body == '/pong')
 	end
 end</code></pre>
-		</div></div>
+		</div>
 
 		<!-- TimeResponder -->
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="responder-time">TimeResponder</h2>
 		<p>Runs callbacks for received Time messages.</p>
 
@@ -3167,8 +3248,7 @@ end</code></pre>
 				<dd>flag whether state has been applied successfully</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-responder-time" data-snippet="snippet-responder-time">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-responder-time">-- TimeResponder
+		<pre><code>-- TimeResponder
 
 -- define time responder object with callbacks
 local timeR = TimeResponder({
@@ -3264,10 +3344,10 @@ local function check(seq)
 		assert(atom.body == string.char(MIDI.NoteOn, 69, 0x7f))
 	end
 end</code></pre>
-		</div></div>
+		</div>
 
 		<!-- StateResponder -->
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="responder-state">StateResponder</h2>
 		<p>Runs callbacks for state handling via patch messages.</p>
 
@@ -3317,8 +3397,7 @@ end</code></pre>
 				<dd>flag whether state has been applied successfully</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-responder-state" data-snippet="snippet-responder-state">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-responder-state">-- StateResponder
+		<pre><code>-- StateResponder
 
 local urn = HashMap('urn:moony:xzy')
 
@@ -3406,16 +3485,16 @@ local function check(seq)
 		assert(atom[Patch.value].body == 5.0)
 	end
 end</code></pre>
-		</div></div>
+		</div>
 
 	<!-- Utilities -->
-	<div class="api-section"><div class="api-content">
+	<div class="api-section">
 	<h1 id="util">Utilities</h1>
 	<p>Various hopefully useful utility functions.</p>
-	</div></div>
+	</div>
 
 		<!-- midi2cps -->
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="util-midi2cps">midi2cps</h2>
 		<p>Conversion from MIDI note to Hertz.</p>
 
@@ -3433,15 +3512,14 @@ end</code></pre>
 				<dd>corresponding frequency in Hz</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-util-midi2cps" data-snippet="snippet-util-midi2cps">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-util-midi2cps">-- midi2cps
+		<pre><code>-- midi2cps
 
 assert(midi2cps(69.0) == 440.0) -- relative to 'A-5'==440 Hz
 assert(midi2cps(60.0, 60, 12, 400) == 400.0) -- relative to 'C-5'==400 Hz</code></pre>
-		</div></div>
+		</div>
 
 		<!-- cps2midi -->
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="util-cps2midi">cps2midi</h2>
 		<p>Conversion from Hertz to MIDI note.</p>
 
@@ -3459,15 +3537,14 @@ assert(midi2cps(60.0, 60, 12, 400) == 400.0) -- relative to 'C-5'==400 Hz</code>
 				<dd>corresponding MIDI note</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-util-cps2midi" data-snippet="snippet-util-cps2midi">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-util-cps2midi">-- cps2midi
+		<pre><code>-- cps2midi
 
 assert(cps2midi(440.0) == 69.0) -- relative to 'A-5'==400 Hz
 assert(cps2midi(400.0, 60, 12, 400) == 60.0) -- relative to 'C-5'==400 Hz</code></pre>
-		</div></div>
+		</div>
 
 		<!-- Note -->
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="util-note">Note</h2>
 		<p>Conversion from MIDI note number to note name and vice-versa.</p>
 
@@ -3487,15 +3564,14 @@ assert(cps2midi(400.0, 60, 12, 400) == 60.0) -- relative to 'C-5'==400 Hz</code>
 				<dd>MIDI note number</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-util-note" data-snippet="snippet-util-note">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-util-note">-- Note
+		<pre><code>-- Note
 
 assert(Note[60] == 'C+4')
 assert(Note['A+4'] == 69)</code></pre>
-		</div></div>
+		</div>
 
 		<!-- encrypt -->
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="util-encrypt">Encrypt</h2>
 		<p>AES-128 encryption of byte strings.</p>
 
@@ -3509,18 +3585,17 @@ assert(Note['A+4'] == 69)</code></pre>
 				<dd>corresponding secret byte string</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-util-encrypt" data-snippet="snippet-util-encrypt">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-util-encrypt">-- encrypt
+		<pre><code>-- encrypt
 
 local pass = '2b7e151628aed2a6abf7158809cf4f3c'
 local value = 'hello world'
 
 local secret = encrypt(value, pass)
 assert(decrypt(secret, pass) == value)</code></pre>
-		</div></div>
+		</div>
 
 		<!-- decrypt -->
-		<div class="api-section"><div class="api-content">
+		<div class="api-section">
 		<h2 id="util-decrypt">Decrypt</h2>
 		<p>AES-128 decryption of byte strings.</p>
 
@@ -3534,8 +3609,7 @@ assert(decrypt(secret, pass) == value)</code></pre>
 				<dd>corresponding clear text byte string</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-util-decrypt" data-snippet="snippet-util-decrypt">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-util-decrypt">-- decrypt
+		<pre><code>-- decrypt
 
 local pass = string.char(
 	0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
@@ -3544,10 +3618,10 @@ local value = 'hello world'
 
 local secret = encrypt(value, pass)
 assert(decrypt(secret, pass) == value)</code></pre>
-	</div></div>
+	</div>
 
 	<!-- Constants -->
-	<div class="api-section"><div class="api-content">
+	<div class="api-section">
 	<h1 id="constants">Constants</h1>
 	<p>Frequently used URID values and all MIDI message and controller constants
 	are premapped and conveniently accessible in their own tables.</p>
@@ -3560,8 +3634,7 @@ assert(decrypt(secret, pass) == value)</code></pre>
 				<dd>corresponding URID or integer for given key</dd>
 		</dl>
 
-		<a class="api-snippet" href="#snippet-constants" data-snippet="snippet-constants">&rArr; show snippet</a>
-		<pre class="api-hidden"><code id="snippet-constants">-- Constants
+		<pre><code>-- Constants
 
 local ctx = {
 	core =  HashMap('http://lv2plug.in/ns/lv2core#'),
@@ -3716,9 +3789,9 @@ assert(Units.s == ctx.units.s)
 assert(Units.semitone12TET == ctx.units.semitone12TET)
 assert(Units.symbol == ctx.units.symbol)
 assert(Units.unit == ctx.units.unit)</code></pre>
-	</div></div>
+	</div>
 
-	<div class="api-section"><div class="api-content">
+	<div class="api-section">
 	<h1 id="license">License</h1>
 		<p>Copyright &copy; 2015-2016 Hanspeter Portner
 		(<a href="mailto:dev@open-music-kontrollers.ch">dev@open-music-kontrollers.ch</a>)</p>
@@ -3735,87 +3808,8 @@ assert(Units.unit == ctx.units.unit)</code></pre>
 		<p>You should have received a copy of the Artistic License 2.0
 		along the source as a COPYING file. If not, obtain it from
 		<a href="http://www.perlfoundation.org/artistic_license_2_0"> http://www.perlfoundation.org/artistic_license_2_0</a>.</p>
+	</div>
 
-		<p>
-			This site uses <a href="http://www.gnu.org/software/librejs">libre</a> <a href="libreJS.html" data-jslicense="1">javascript</a>
-		</p>
-	</div></div>
-
-<div class="api-editor">
-	<div id="editor" style="height:100%;">-- moony manual
-
--- load a code snippet from the left!</div>
 </div>
-
-<script type="text/javascript">
-	// @license magnet:?xt=urn:btih:54fd2283f9dbdf29466d2df1a98bf8f65cafe314&dn=artistic-2.0.txt Artistic-2.0
-	var old_body = undefined;
-	function set_snippet(snippet_id) {
-		if(snippet_id) {
-			var snippet_body = $('#'+snippet_id).html();
-			if(snippet_body && (snippet_body != old_body)) {
-				editor.setValue(snippet_body);
-				editor.clearSelection();
-				old_body = snippet_body;
-			}
-		}
-	}
-
-	$(document).ready(function() {
-		// configure editor
-		var session = null;
-		editor = ace.edit("editor");
-		session = editor.getSession();
-
-		editor.setTheme("ace/theme/chaos");
-		editor.setReadOnly(true);
-		session.setUseWorker(false);
-		session.setMode("ace/mode/lua");
-
-		editor.$blockScrolling = Infinity
-		editor.setOptions({
-			minLines: 1,
-			//maxLines: Infinity,
-			showPrintMargin: false,
-			fontSize: 14,
-			tabSize: 2,
-			displayIndentGuides: false
-		});
-
-		// show editor container
-		$('.api-editor').show();
-
-		// show snippet links
-		$('.api-snippet').show();
-
-		// hide code snippets
-		$('.api-hidden').hide();
-
-		// wire snippet links with code editor
-		$('.api-snippet').on('click', function(e) {
-			var snippet_id = $(this).data('snippet');
-			set_snippet(snippet_id);
-			e.preventDefault();
-		});
-
-		// show matching code snippet
-		$(window).on('scroll', function() {
-			var snippet_id = undefined;
-			var stop = $(window).scrollTop();
-			var ytop = -1;
-
-			$('.api-snippet').each(function() {
-				var dtop = $(this).offset().top;
-
-				if( (stop <= dtop) && ( (dtop <= ytop) || (ytop < 0) ) ) {
-					snippet_id = $(this).data('snippet');
-					ytop = dtop;
-				}
-			});
-			set_snippet(snippet_id);
-		});
-	});
-	// @license-end
-</script>
 
 </html>

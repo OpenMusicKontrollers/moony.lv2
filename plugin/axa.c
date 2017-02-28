@@ -52,7 +52,7 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 		return NULL;
 	mlock(handle, sizeof(Handle));
 
-	if(moony_init(&handle->moony, descriptor->URI, rate, features))
+	if(moony_init(&handle->moony, descriptor->URI, rate, features, 0x80000, false)) // 512 KB initial memory
 	{
 		free(handle);
 		return NULL;

@@ -1184,9 +1184,9 @@ extension_data(const char* uri)
 
 __non_realtime int
 moony_init(moony_t *moony, const char *subject, double sample_rate,
-	const LV2_Feature *const *features)
+	const LV2_Feature *const *features, size_t mem_size, bool testing)
 {
-	if(moony_vm_init(&moony->vm))
+	if(moony_vm_init(&moony->vm, mem_size, testing))
 	{
 		fprintf(stderr, "Lua VM cannot be initialized\n");
 		return -1;
@@ -1793,14 +1793,6 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 		lua_pushnil(L);
 		lua_setglobal(L, "assert");
 	}
-
-	// clear dofile
-	lua_pushnil(L);
-	lua_setglobal(L, "dofile");
-
-	// clear loadfile
-	lua_pushnil(L);
-	lua_setglobal(L, "loadfile");
 
 	// MIDIResponder metatable
 	luaL_newmetatable(L, "lmidiresponder");

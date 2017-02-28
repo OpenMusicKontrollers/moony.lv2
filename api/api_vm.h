@@ -45,7 +45,7 @@ struct _moony_mem_t {
 	void *mem;
 };
 
-int moony_vm_init(moony_vm_t *vm);
+int moony_vm_init(moony_vm_t *vm, size_t mem_size, bool testing);
 int moony_vm_deinit(moony_vm_t *vm);
 void *moony_vm_mem_alloc(size_t size);
 void moony_vm_mem_free(void *area, size_t size);

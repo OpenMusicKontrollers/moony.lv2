@@ -1,8 +1,4 @@
-<?xml version="1.0" encoding="ISO-8859-1"?>
-<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
-	<xsl:output method="text" omit-xml-declaration="yes"/>
-	<xsl:template match="/">
-local function _test(produce, consume, check)
+function _test(produce, consume, check)
 	local _from = Stash()
 	local _to = Stash()
 
@@ -115,31 +111,54 @@ local function _test(produce, consume, check)
 	end
 end
 
-	<xsl:for-each select="html/body/div/div/div/pre/code">
-do
-	run = nil
-	once = nil
-	stash = nil
-	apply = nil
-	save = nil
-	restore = nil
+local function parse(pin)
+	if not pin then return end
 
-	print('[test] <xsl:value-of select="current()/@id"/>')
-	<xsl:value-of select="current()"/>
+	local fin = io.input(pin)
+	if not fin then return end
 
-	local _produce = {
-		seq = produce_seq,
-		atom = produce_atom,
-		tup = produce_tup
-	}
-	local _consume = {
-		seq = consume_seq,
-		atom = consume_atom,
-		tup = consume_tup
-	}
-	_test(_produce, _consume, check)
-	collectgarbage()
+	local txt = fin:read('*all')
+	fin:close()
+
+	count = 1
+	for o in string.gmatch(txt, '<pre><code>(.-)</code></pre>') do
+		o = string.gsub(o, '&amp;', '&')
+		o = string.gsub(o, '&lt;', '<')
+		o = string.gsub(o, '&gt;', '>')
+
+		local code = [[
+			print('[test] #' .. count)
+
+			run = nil
+			once = nil
+			stash = nil
+			apply = nil
+			save = nil
+			restore = nil
+
+		]] .. o .. [[
+
+			local _produce = {
+				seq = produce_seq,
+				atom = produce_atom,
+				tup = produce_tup
+			}
+			local _consume = {
+				seq = consume_seq,
+				atom = consume_atom,
+				tup = consume_tup
+			}
+
+			_test(_produce, _consume, check)
+
+			collectgarbage()
+		]]
+		local chunk = load(code)
+		assert(chunk)
+		chunk()
+
+		count = count + 1
+	end
 end
-</xsl:for-each> 
-	</xsl:template>
-</xsl:stylesheet>
+
+parse('../manual/manual.html.in')

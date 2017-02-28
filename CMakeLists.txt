@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 
 project(moony.lv2)
 
@@ -30,7 +30,7 @@ endif()
 
 set(CMAKE_C_FLAGS "-fdata-sections -ffunction-sections ${CMAKE_C_FLAGS}")
 set(CMAKE_C_FLAGS "-std=gnu11 -Wextra -Wno-unused-parameter -ffast-math -fvisibility=hidden ${CMAKE_C_FLAGS}")
-set(CMAKE_C_FLAGS "-Wshadow -Wimplicit-function-declaration -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes ${CMAKE_C_FLAGS}")
+set(CMAKE_C_FLAGS "-Wshadow -Wimplicit-function-declaration -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes -Wno-attributes ${CMAKE_C_FLAGS}")
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-z,defs ${CMAKE_MODULE_LINKER_FLAGS}")
@@ -112,9 +112,6 @@ if(BUILD_SIMPLE_UI)
 else()
 	set(SIMPLE_WRAP "#")
 endif()
-
-# manual
-configure_file(${PROJECT_SOURCE_DIR}/manual/manual.html.in ${PROJECT_BINARY_DIR}/manual.html)
 
 if(BUILD_NK_UI)
 	set(LIBS_NK ${LIBS_NK} m)
@@ -242,10 +239,11 @@ add_library(lua OBJECT
 	lua-5.3.4/lzio.c
 
 	#lua-5.3.4/lbitlib.c
-	#lua-5.3.4/liolib.c
+	lua-5.3.4/liolib.c
 	#lua-5.3.4/loslib.c
 	#lua-5.3.4/linit.c
 	lua-5.3.4/loadlib.c
+
 	lua-5.3.4/ldblib.c
 	lua-5.3.4/lbaselib.c
 	lua-5.3.4/lauxlib.c
@@ -314,39 +312,7 @@ install(FILES ${PROJECT_SOURCE_DIR}/plugin/presets.ttl DESTINATION ${PLUGIN_DEST
 
 include(CTest)
 
-if(${BUILD_TESTING})
-	find_program(XSLTPROC NAMES xsltproc)
-	if(XSLTPROC_NOTFOUND)
-		message(SEND_ERROR "xsltproc not found")
-	else(XSLTPROC_NOTFOUND)
-		message(STATUS "xsltproc found: " ${XSLTPROC})
-	endif(XSLTPROC_NOTFOUND)
-
-	add_custom_command(
-		OUTPUT ${PROJECT_BINARY_DIR}/moony_manual.lua
-		COMMAND ${XSLTPROC} ARGS
-			"--html"
-			"--output" ${PROJECT_BINARY_DIR}/moony_manual.lua
-			${PROJECT_SOURCE_DIR}/manual/manual.xslt
-			${PROJECT_BINARY_DIR}/manual.html
-		DEPENDS
-			${PROJECT_SOURCE_DIR}/manual/manual.xslt
-			${PROJECT_BINARY_DIR}/manual.html)
-	add_custom_target(MOONY_MANUAL_TEST ALL DEPENDS ${PROJECT_BINARY_DIR}/moony_manual.lua)
-
-	pkg_search_module(SORD REQUIRED sord-0>=0.12.0)
-	include_directories(${SORD_INCLUDE_DIRS})
-	if(DEFINED STATIC_SORD)
-		set(DETURTLE_LIBS m ${STATIC_SORD} ${STATIC_SERD})
-	else()
-		set(DETURTLE_LIBS ${SORD_LDFLAGS})
-	endif()
-
-	add_executable(moony_deturtle
-		test/moony_deturtle.c)
-	set_target_properties(moony_deturtle PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
-	target_link_libraries(moony_deturtle ${DETURTLE_LIBS})
-
+if(BUILD_TESTING)
 	add_executable(moony_test
 		test/moony_test.c
 		$<TARGET_OBJECTS:api>
@@ -362,23 +328,37 @@ if(${BUILD_TESTING})
 	set_target_properties(moony_test PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 	target_link_libraries(moony_test ${LIBS})
 
-	if(DEFINED WINE)
-		add_test(NAME API-Test COMMAND ${WINE} moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
-		add_test(NAME Manual-Test COMMAND ${WINE} moony_test ${PROJECT_BINARY_DIR}/moony_manual.lua)
-		add_test(NAME Deturtle-Test COMMAND ${WINE} moony_deturtle ${PROJECT_SOURCE_DIR}/plugin/presets.ttl
-			${PROJECT_BINARY_DIR}/moony_presets.lua)
-		add_test(NAME Presets-Test COMMAND ${WINE} moony_test ${PROJECT_BINARY_DIR}/moony_presets.lua)
-	elseif(DEFINED QEMU)
-		add_test(NAME API-Test COMMAND ${QEMU} moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
-		add_test(NAME Manual-Test COMMAND ${QEMU} moony_test ${PROJECT_BINARY_DIR}/moony_manual.lua)
-		add_test(NAME Deturtle-Test COMMAND ${QEMU} moony_deturtle ${PROJECT_SOURCE_DIR}/plugin/presets.ttl
-			${PROJECT_BINARY_DIR}/moony_presets.lua)
-		add_test(NAME Presets-Test COMMAND ${QEMU} moony_test ${PROJECT_BINARY_DIR}/moony_presets.lua)
+	add_custom_command(
+		OUTPUT ${PROJECT_BINARY_DIR}/manual.html
+		COMMAND ${WINE} ${QEMU} ${PROJECT_BINARY_DIR}/moony_test
+			${PROJECT_SOURCE_DIR}/manual/hilight.lua
+			">"
+			${PROJECT_BINARY_DIR}/manual.html
+		DEPENDS
+			moony_test
+			${PROJECT_SOURCE_DIR}/ui/lexer.lua
+			${PROJECT_SOURCE_DIR}/ui/moony.lua
+			${PROJECT_SOURCE_DIR}/manual/hilight.lua
+			${PROJECT_SOURCE_DIR}/manual/manual.html.in)
+	add_custom_target(moony_manual ALL DEPENDS ${PROJECT_BINARY_DIR}/manual.html)
+	install(FILES ${PROJECT_BINARY_DIR}/manual.html DESTINATION ${PLUGIN_DEST})
+
+	pkg_search_module(SORD REQUIRED sord-0>=0.12.0)
+	include_directories(${SORD_INCLUDE_DIRS})
+	if(DEFINED STATIC_SORD)
+		set(DETURTLE_LIBS m ${STATIC_SORD} ${STATIC_SERD})
 	else()
-		add_test(NAME API-Test COMMAND moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
-		add_test(NAME Manual-Test COMMAND moony_test ${PROJECT_BINARY_DIR}/moony_manual.lua)
-		add_test(NAME Deturtle-Test COMMAND moony_deturtle ${PROJECT_SOURCE_DIR}/plugin/presets.ttl
-			${PROJECT_BINARY_DIR}/moony_presets.lua)
-		add_test(NAME Presets-Test COMMAND moony_test ${PROJECT_BINARY_DIR}/moony_presets.lua)
+		set(DETURTLE_LIBS ${SORD_LDFLAGS})
 	endif()
+
+	add_executable(moony_deturtle
+		test/moony_deturtle.c)
+	set_target_properties(moony_deturtle PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
+	target_link_libraries(moony_deturtle ${DETURTLE_LIBS})
+
+	add_test(NAME API-Test COMMAND ${WINE} ${QEMU} moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
+	add_test(NAME Manual-Test COMMAND ${WINE} ${QEMU} moony_test ${PROJECT_SOURCE_DIR}/manual/extract.lua)
+	add_test(NAME Deturtle-Test COMMAND ${WINE} ${QEMU} moony_deturtle ${PROJECT_SOURCE_DIR}/plugin/presets.ttl
+		${PROJECT_BINARY_DIR}/moony_presets.lua)
+	add_test(NAME Presets-Test COMMAND ${WINE} ${QEMU} moony_test ${PROJECT_BINARY_DIR}/moony_presets.lua)
 endif()

@@ -9,8 +9,6 @@ BASE_NAME="moony.lv2"
 PKG_CONFIG_PATH="/opt/lv2/lib/pkgconfig:/opt/${CI_BUILD_NAME}/lib/pkgconfig"
 TOOLCHAIN_FILE="${CI_PROJECT_DIR}/cmake/${CI_BUILD_NAME}.cmake"
 
-apt-get install -y -q xsltproc
-
 rm -rf ${TARGET}
 mkdir -p ${TARGET}
 pushd ${TARGET}

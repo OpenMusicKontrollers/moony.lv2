@@ -230,8 +230,11 @@ main(int argc, char **argv)
 		NULL
 	};
 	
-	if(moony_init(&handle.moony, "http://open-music-kontrollers.ch/lv2/moony#test", 48000, features))
+	if(moony_init(&handle.moony, "http://open-music-kontrollers.ch/lv2/moony#test",
+		48000, features, 0x800000, true)) // 8MB initial memory
+	{
 		return -1;
+	}
 
 	handle.iface = extension_data(LV2_WORKER__interface);
 

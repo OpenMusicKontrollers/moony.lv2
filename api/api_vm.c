@@ -30,8 +30,6 @@
 
 extern int luaopen_lpeg(lua_State *L);
 
-#define MEM_SIZE 0x80000UL // 512KB
-
 //#define MOONY_LOG_MEM
 #ifdef MOONY_LOG_MEM
 __realtime static inline void
@@ -140,14 +138,14 @@ lua_alloc(void *ud, void *ptr, size_t osize, size_t nsize)
 }
 
 __non_realtime int
-moony_vm_init(moony_vm_t *vm)
+moony_vm_init(moony_vm_t *vm, size_t mem_size, bool testing)
 {
 	moony_t *moony = (void *)vm - offsetof(moony_t, vm);
 	memset(vm, 0x0, sizeof(moony_vm_t));
 
 	// initialize array of increasing pool sizes
-	vm->size[0] = MEM_SIZE;
-	for(int i=1, sum=MEM_SIZE; i<MOONY_POOL_NUM; i++, sum*=2)
+	vm->size[0] = mem_size;
+	for(int i=1, sum=mem_size; i<MOONY_POOL_NUM; i++, sum*=2)
 		vm->size[i] = sum;
 
 	// allocate first pool
@@ -173,10 +171,24 @@ moony_vm_init(moony_vm_t *vm)
 	luaL_requiref(vm->L, "utf8", luaopen_utf8, 1);
 	luaL_requiref(vm->L, "debug", luaopen_debug, 1);
 
-	//luaL_requiref(vm->L, "io", luaopen_io, 1);
-	//luaL_requiref(vm->L, "os", luaopen_os, 1);
-	//luaL_requiref(vm->L, "bit32", luaopen_bit32, 1);
-	//luaL_requiref(vm->L, "package", luaopen_package, 1);
+	if(testing)
+	{
+		luaL_requiref(vm->L, "io", luaopen_io, 1);
+		//luaL_requiref(vm->L, "os", luaopen_os, 1);
+		//luaL_requiref(vm->L, "bit32", luaopen_bit32, 1);
+		luaL_requiref(vm->L, "package", luaopen_package, 1);
+	}
+
+	if(!testing)
+	{
+		// clear dofile
+		lua_pushnil(vm->L);
+		lua_setglobal(vm->L, "dofile");
+
+		// clear loadfile
+		lua_pushnil(vm->L);
+		lua_setglobal(vm->L, "loadfile");
+	}
 
 	luaL_requiref(vm->L, "lpeg", luaopen_lpeg, 1);
 	lua_pop(vm->L, 8);
