@@ -28,7 +28,12 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
+#include <laes128.h>
+
+//FIXME put those into a header
 extern int luaopen_lpeg(lua_State *L);
+extern int luaopen_base64(lua_State *L);
+extern int luaopen_ascii85(lua_State *L);
 
 //#define MOONY_LOG_MEM
 #ifdef MOONY_LOG_MEM
@@ -163,7 +168,10 @@ moony_vm_init(moony_vm_t *vm, size_t mem_size, bool testing)
 	if(!vm->L)
 		return -1;
 
+	const int n = lua_gettop(vm->L);
+
 	luaL_requiref(vm->L, "base", luaopen_base, 0);
+
 	luaL_requiref(vm->L, "coroutine", luaopen_coroutine, 1);
 	luaL_requiref(vm->L, "table", luaopen_table, 1);
 	luaL_requiref(vm->L, "string", luaopen_string, 1);
@@ -171,13 +179,20 @@ moony_vm_init(moony_vm_t *vm, size_t mem_size, bool testing)
 	luaL_requiref(vm->L, "utf8", luaopen_utf8, 1);
 	luaL_requiref(vm->L, "debug", luaopen_debug, 1);
 
+	luaL_requiref(vm->L, "lpeg", luaopen_lpeg, 1);
+	luaL_requiref(vm->L, "base64", luaopen_base64, 1);
+	luaL_requiref(vm->L, "ascii85", luaopen_ascii85, 1);
+	luaL_requiref(vm->L, "aes128", luaopen_aes128, 1);
+
 	if(testing)
 	{
 		luaL_requiref(vm->L, "io", luaopen_io, 1);
+		luaL_requiref(vm->L, "package", luaopen_package, 1);
 		//luaL_requiref(vm->L, "os", luaopen_os, 1);
 		//luaL_requiref(vm->L, "bit32", luaopen_bit32, 1);
-		luaL_requiref(vm->L, "package", luaopen_package, 1);
 	}
+
+	lua_settop(vm->L, n);
 
 	if(!testing)
 	{
@@ -189,9 +204,6 @@ moony_vm_init(moony_vm_t *vm, size_t mem_size, bool testing)
 		lua_pushnil(vm->L);
 		lua_setglobal(vm->L, "loadfile");
 	}
-
-	luaL_requiref(vm->L, "lpeg", luaopen_lpeg, 1);
-	lua_pop(vm->L, 8);
 
 #ifdef USE_MANUAL_GC
 	// manual garbage collector

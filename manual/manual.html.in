@@ -321,8 +321,24 @@ span.brace {
 				<li><a href="#util-midi2cps">midi2cps</a></li>
 				<li><a href="#util-cps2midi">cps2midi</a></li>
 				<li><a href="#util-note">Note</a></li>
-				<li><a href="#util-encrypt">Encrypt</a></li>
-				<li><a href="#util-decrypt">Decrypt</a></li>
+				<li><a href="#util-aes128">AES-128</a>
+					<ul>
+						<li><a href="#util-aes128-encode">Encode</a></li>
+						<li><a href="#util-aes128-decode">Decode</a></li>
+					</ul>
+				</li>
+				<li><a href="#util-base64">Base64</a>
+					<ul>
+						<li><a href="#util-base64-encode">Encode</a></li>
+						<li><a href="#util-base64-decode">Decode</a></li>
+					</ul>
+				</li>
+				<li><a href="#util-ascii85">Ascii85</a>
+					<ul>
+						<li><a href="#util-ascii85-encode">Encode</a></li>
+						<li><a href="#util-ascii85-decode">Decode</a></li>
+					</ul>
+				</li>
 			</ul>
 		</li>
 
@@ -3575,54 +3591,153 @@ assert(Note[60] == 'C+4')
 assert(Note['A+4'] == 69)</code></pre>
 		</div>
 
-		<!-- encrypt -->
+		<!-- aes128 -->
 		<div class="api-section">
-		<h2 id="util-encrypt">Encrypt</h2>
+		<h2 id="util-aes128">AES-128</h2>
+		</div>
+
+		<!-- aes128.encode -->
+		<div class="api-section">
+		<h3 id="util-aes128-encode">Encode</h3>
 		<p>AES-128 encryption of byte strings.</p>
 
 		<dl>
-			<dt class="func">encrypt(value, pass)</dt>
+			<dt class="func">aes128.encode(value, pass)</dt>
 			<dt>value (string)</dt>
 				<dd>clear text byte string to encode</dd>
 			<dt>pass (string)</dt>
 				<dd>128-bit passphrase, either as raw byte string or as hex-encoded string</dd>
-			<dt class="ret">(string)</dt>
-				<dd>corresponding secret byte string</dd>
+			<dt class="ret">(string, integer)</dt>
+				<dd>corresponding secret byte string, length of encoded clear text</dd>
 		</dl>
 
-		<pre><code data-ref="util-encrypt">-- encrypt
+		<pre><code data-ref="util-aes128.encode">-- encrypt
 
 local pass = '2b7e151628aed2a6abf7158809cf4f3c'
 local value = 'hello world'
 
-local secret = encrypt(value, pass)
-assert(decrypt(secret, pass) == value)</code></pre>
+local secret, len = aes128.encode(value, pass)
+assert(aes128.decode(secret, pass, len) == value)</code></pre>
 		</div>
 
-		<!-- decrypt -->
+		<!-- aes128.decode -->
 		<div class="api-section">
-		<h2 id="util-decrypt">Decrypt</h2>
+		<h3 id="util-aes128-decode">Decode</h3>
 		<p>AES-128 decryption of byte strings.</p>
 
 		<dl>
-			<dt class="func">decrypt(value, pass)</dt>
+			<dt class="func">aes128.decode(value, pass)</dt>
 			<dt>value (string)</dt>
 				<dd>secret byte string to decode </dd>
 			<dt>pass (string)</dt>
 				<dd>128-bit passphrase, either as raw byte string or as hex-encoded string</dd>
+			<dt>len (integer)</dt>
+				<dd>length of encoded clear text</dd>
 			<dt class="ret">(string)</dt>
 				<dd>corresponding clear text byte string</dd>
 		</dl>
 
-		<pre><code data-ref="util-decrypt">-- decrypt
+		<pre><code data-ref="util-aes128-decode">-- decrypt
 
 local pass = string.char(
 	0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
 	0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c)
 local value = 'hello world'
 
-local secret = encrypt(value, pass)
-assert(decrypt(secret, pass) == value)</code></pre>
+local secret, len = aes128.encode(value, pass)
+assert(aes128.decode(secret, pass, len) == value)</code></pre>
+	</div>
+
+		<!-- base64 -->
+		<div class="api-section">
+		<h2 id="util-base64">Base64</h2>
+		</div>
+
+		<!-- base64.encode -->
+		<div class="api-section">
+		<h3 id="util-base64-encode">Encode</h3>
+		<p>Base64 encoding of byte strings.</p>
+
+		<dl>
+			<dt class="func">base64.encode(value)</dt>
+			<dt>value (string)</dt>
+				<dd>clear text byte string to encode</dd>
+			<dt class="ret">(string)</dt>
+				<dd>corresponding encoded string</dd>
+		</dl>
+
+		<pre><code data-ref="util-base64.encode">-- encode
+
+local value = 'hello world'
+
+local encoded = base64.encode(value)</code></pre>
+		</div>
+
+		<!-- base64.decode -->
+		<div class="api-section">
+		<h3 id="util-base64-decode">Decode</h3>
+		<p>Base64 decoding of byte strings.</p>
+
+		<dl>
+			<dt class="func">base64.decode(value)</dt>
+			<dt>value (string)</dt>
+				<dd>encoded string to decode </dd>
+			<dt class="ret">(string)</dt>
+				<dd>corresponding clear text byte string</dd>
+		</dl>
+
+		<pre><code data-ref="util-base64-decode">-- decode
+
+local value = 'hello world'
+
+local encoded = base64.encode(value)
+assert(base64.decode(encoded) == value)</code></pre>
+	</div>
+
+		<!-- ascii85 -->
+		<div class="api-section">
+		<h2 id="util-ascii85">Ascii85</h2>
+		</div>
+
+		<!-- ascii85.encode -->
+		<div class="api-section">
+		<h3 id="util-ascii85-encode">Encode</h3>
+		<p>Ascii85 encoding of byte strings.</p>
+
+		<dl>
+			<dt class="func">ascii85.encode(value)</dt>
+			<dt>value (string)</dt>
+				<dd>clear text byte string to encode</dd>
+			<dt class="ret">(string)</dt>
+				<dd>corresponding encoded string</dd>
+		</dl>
+
+		<pre><code data-ref="util-ascii85.encode">-- encode
+
+local value = 'hello world'
+
+local encoded = ascii85.encode(value)</code></pre>
+		</div>
+
+		<!-- ascii85.decode -->
+		<div class="api-section">
+		<h3 id="util-ascii85-decode">Decode</h3>
+		<p>Ascii85 decoding of byte strings.</p>
+
+		<dl>
+			<dt class="func">ascii85.decode(value)</dt>
+			<dt>value (string)</dt>
+				<dd>encoded string to decode </dd>
+			<dt class="ret">(string)</dt>
+				<dd>corresponding clear text byte string</dd>
+		</dl>
+
+		<pre><code data-ref="util-ascii85-decode">-- decode
+
+local value = 'hello world'
+
+local encoded = ascii85.encode(value)
+assert(ascii85.decode(encoded) == value)</code></pre>
 	</div>
 
 	<!-- Constants -->

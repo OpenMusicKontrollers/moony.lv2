@@ -45,11 +45,11 @@ local func = token(l.FUNCTION, word_match{
 	-- Lua metamethods
 	'__add', '__sub', '__mul', '__div', '__mod', '__pow', '__unm', '__idiv', '__band', '__bor', '__bxor', '__bnot', '__shl', '__shr', '__concat', '__len', '__eq', '__lt', '__le', '__index', '__newindex', '__call', '__gc', '__mode', '__name', '__tostring', '__metatable', '__pairs',
 	-- moony basic
-	'run', 'once', 'save', 'restore', 'stash', 'apply', 'register', 'midi2cps', 'cps2midi', 'encrypt', 'decrypt',
+	'run', 'once', 'save', 'restore', 'stash', 'apply', 'register', 'midi2cps', 'cps2midi',
 	'MIDIResponder', 'OSCResponder', 'TimeResponder', 'StateResponder', 'Map', 'Unmap', 'VoiceMap', 'Stash', 'Note', 'HashMap', 'Parameter',
 })
 
--- Field funcions
+-- Field functions
 local field_func = token(l.OPERATOR, S('.:')) * token(l.FUNCTION, word_match{
 	-- Lua coroutine
 	'create', 'isyieldable', 'resume', 'running', 'status', 'wrap', 'yield',
@@ -68,6 +68,8 @@ local field_func = token(l.OPERATOR, S('.:')) * token(l.FUNCTION, word_match{
 	'setmetatable', 'setupvalue', 'traceback',
 	-- Lua lpeg
 	'setmaxstack', 'Ct', 'Cp', 'pcode', 'S', 'Cc', 'Cb', 'version', 'match', 'locale', 'Cf', 'Cg', 'B', 'C', 'V', 'Cs', 'R', 'P', 'Carg', 'ptree', 'type', 'Cmt',
+	-- Lua base64/ascii85/aes128
+	'encode', 'decode',
 	-- moony forge
 	'frameTime', 'beatTime', 'time', 'atom', 'int', 'long', 'float', 'double', 'bool', 'urid', 'string', 'literal', 'uri', 'path',
 	'chunk', 'midi', 'raw', 'bundle', 'message', 'impulse', 'char', 'rgba', 'timetag', 'tuple', 'tuplePack',
@@ -91,6 +93,8 @@ local field_constant = token(l.OPERATOR, P('.')) * token(l.CONSTANT, word_match{
 	'huge', 'maxinteger', 'mininteger', 'pi',
 	-- moony Atom
 	'Bool', 'Chunk', 'Double', 'Float', 'Int', 'Long', 'Literal', 'Object', 'Path', 'Property', 'Sequence', 'String', 'Tuple', 'URI', 'URID', 'Vector', 'frameTime', 'beatTime',
+	-- Lua base64/ascii85
+	'version',
 	-- moony MIDI
 	'MidiEvent',
 	'NoteOff', 'NoteOn', 'NotePressure', 'Controller', 'ProgramChange', 'ChannelPressure', 'Bender', 'SystemExclusive', 'QuarterFrame', 'SongPosition', 'SongSelect', 'TuneRequest', 'Clock', 'Start', 'Continue', 'Stop', 'ActiveSense', 'Reset', 'EndOfExclusive',
@@ -111,7 +115,7 @@ local field_constant = token(l.OPERATOR, P('.')) * token(l.CONSTANT, word_match{
 	-- moony RDFS
 	'label', 'range', 'comment',
 	-- moony Units
-	'Conversion', 'Unit', 'bar', 'beat', 'bpm', 'cent', 'cm', 'coef', 'conversion', 'db', 'degree', 'frame', 'hz', 'inch', 'khz', 'km', 'm', 'mhz', 'midiNote', 'mile', 'min', 'mm', 'ms', 'name', 'oct', 'pc', 'prefixConversion', 'render', 's', 'semitone12TET', 'symbol', 'unit',
+	'Conversion', 'Unit', 'bar', 'beat', 'bpm', 'cent', 'cm', 'coef', 'conversion', 'db', 'degree', 'frame', 'hz', 'inch', 'khz', 'km', 'm', 'mhz', 'midiNote', 'midiController', 'mile', 'min', 'mm', 'ms', 'name', 'oct', 'pc', 'prefixConversion', 'render', 's', 'semitone12TET', 'symbol', 'unit',
 	-- moony Canvas
 	'graph', 'body', 'BeginPath', 'ClosePath', 'Arc', 'CurveTo', 'LineTo', 'MoveTo', 'Rectangle', 'Style', 'LineWidth', 'LineDash', 'LineCap', 'LineJoin',
 	'MiterLimit', 'Stroke', 'Fill', 'Clip', 'Save', 'Restore', 'Translate', 'Scale', 'Rotate', 'Reset', 'FontSize', 'FillText',
@@ -133,7 +137,7 @@ local field_constant = token(l.OPERATOR, P('.')) * token(l.CONSTANT, word_match{
 -- Libraries.
 local library = token('library', word_match{
 	-- Lua
-	'coroutine', 'string', 'utf8', 'table', 'math', 'debug', 'lpeg',
+	'coroutine', 'string', 'utf8', 'table', 'math', 'debug', 'lpeg', 'base64', 'ascii85', 'aes128',
 	-- Moony
 	'Atom', 'MIDI', 'Time', 'OSC', 'Core', 'Buf_Size', 'Patch', 'RDF', 'RDFS', 'Units', 'Options', 'Canvas'
 })

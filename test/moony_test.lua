@@ -1729,56 +1729,58 @@ do
 	end
 end
 
-print('[test] encrypt')
+print('[test] aes128')
 do
-	local key = string.char(
+	local key1 = '2b7e151628aed2a6abf7158809cf4f3c'
+	local key2 = string.char(
 		0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
 		0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c)
-  local inp = string.char(
-		0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96,
-		0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a)
-	local out = string.char(
-		0x00, 0x00, 0x00, 0x10, -- size = 16
-		0x3a, 0xd7, 0x7b, 0xb4, 0x0d, 0x7a, 0x36, 0x60,
-		0xa8, 0x9e, 0xca, 0xf3, 0x24, 0x66, 0xef, 0x97)
 
-	local sec = encrypt(inp, key)
-	assert(#sec - 4 == #inp)
-	assert(#sec == #out)
-	assert(sec == out)
+  local inp = 'function run(n, control, notify) end'
+
+	local sec1, len1 = aes128.encode(inp, key1)
+	local sec2, len2 = aes128.encode(inp, key2)
+
+	assert(sec1 == sec2)
+	assert(#sec1 == 48)
+	assert(#sec2 == 48)
+	assert(len1 == len2)
+	assert(len1 == #inp)
+
+	local out1 = aes128.decode(sec1, key1, len1)
+	local out2 = aes128.decode(sec2, key2, len2)
+
+	assert(out1 == inp)
+	assert(out2 == inp)
+
+	assert(#out1 == len1)
+	assert(#out2 == len2)
 end
 
-print('[test] decrypt')
+print('[test] base64')
 do
-	local key = '2b7e151628aed2a6abf7158809cf4f3c'
-  local inp = string.char(
-		0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96,
-		0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a)
-	local out = string.char(
-		0x00, 0x00, 0x00, 0x10, -- size = 16
-		0x3a, 0xd7, 0x7b, 0xb4, 0x0d, 0x7a, 0x36, 0x60,
-		0xa8, 0x9e, 0xca, 0xf3, 0x24, 0x66, 0xef, 0x97)
+  local inp = ''
+	for i = 1, 64 do
+		inp = inp .. string.char(math.random(127))
+	end
 
-	local dec = decrypt(out, key)
-	assert(dec == inp)
+	local enc = base64.encode(inp)
+	local out = base64.decode(enc)
+
+	assert(#inp == #out)
+	assert(inp == out)
 end
 
-print('[test] obfuscate')
+print('[test] ascii85')
 do
-	local key = string.char(
-		0x43, 0x4e, 0x5e, 0x42, 0x1a, 0x9e, 0x4f, 0xda,
-		0xb0, 0x83, 0xa2, 0xeb, 0xf2, 0xd9, 0x78, 0x07)
-  local chunk_1 = 'return "hello world"'
-	local chunk_2 = 'hello world'
+  local inp = ''
+	for i = 1, 64 do
+		inp = inp .. string.char(math.random(127))
+	end
 
-	local sec = encrypt(chunk_1, key)
-	local dec = decrypt(sec, key)
-	assert(type(dec) == 'function')
-	assert(dec() == 'hello world')
+	local enc = ascii85.encode(inp)
+	local out = ascii85.decode(enc)
 
-	sec = encrypt(chunk_2, key)
-	dec = decrypt(sec, key)
-	assert(type(dec) == 'string')
-	assert(#dec == #chunk_2)
-	assert(dec == chunk_2)
+	assert(#inp == #out)
+	assert(inp == out)
 end

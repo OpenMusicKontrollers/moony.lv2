@@ -10,8 +10,8 @@ include_directories(${PROJECT_SOURCE_DIR}/osc.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/timely.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/xpress.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/lua-5.3.4)
-include_directories(${PROJECT_SOURCE_DIR}/lpeg-1.0.1)
 include_directories(${PROJECT_SOURCE_DIR}/tiny-AES128-C)
+include_directories(${PROJECT_SOURCE_DIR}/laes128)
 include_directories(${PROJECT_SOURCE_DIR}/api)
 include_directories(${PROJECT_SOURCE_DIR}/ui)
 include_directories(${PROJECT_SOURCE_DIR}/include)
@@ -238,11 +238,11 @@ add_library(lua OBJECT
 	lua-5.3.4/lvm.c
 	lua-5.3.4/lzio.c
 
-	#lua-5.3.4/lbitlib.c
 	lua-5.3.4/liolib.c
+	lua-5.3.4/loadlib.c
+	#lua-5.3.4/lbitlib.c
 	#lua-5.3.4/loslib.c
 	#lua-5.3.4/linit.c
-	lua-5.3.4/loadlib.c
 
 	lua-5.3.4/ldblib.c
 	lua-5.3.4/lbaselib.c
@@ -264,6 +264,22 @@ add_library(lpeg OBJECT
 set_target_properties(lpeg PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
 set_target_properties(lpeg PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 
+add_library(lbase64 OBJECT
+	lbase64/lbase64.c)
+set_target_properties(lbase64 PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
+set_target_properties(lbase64 PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
+
+add_library(lascii85 OBJECT
+	lascii85/lascii85.c)
+set_target_properties(lascii85 PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
+set_target_properties(lascii85 PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
+
+add_library(laes128 OBJECT
+	laes128/laes128.c
+	tiny-AES128-C/aes.c)
+set_target_properties(laes128 PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
+set_target_properties(laes128 PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
+
 add_library(api OBJECT
 	api/api.c
 	api/api_atom.c
@@ -275,8 +291,7 @@ add_library(api OBJECT
 	api/api_state.c
 	api/api_parameter.c
 	api/api_vm.c
-	tlsf-3.0/tlsf.c
-	tiny-AES128-C/aes.c)
+	tlsf-3.0/tlsf.c)
 set_target_properties(api PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
 set_target_properties(api PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 
@@ -287,7 +302,10 @@ add_library(moony MODULE
 	plugin/caxca.c
 	$<TARGET_OBJECTS:api>
 	$<TARGET_OBJECTS:lua>
-	$<TARGET_OBJECTS:lpeg>)
+	$<TARGET_OBJECTS:lpeg>
+	$<TARGET_OBJECTS:lbase64>
+	$<TARGET_OBJECTS:lascii85>
+	$<TARGET_OBJECTS:laes128>)
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	target_compile_definitions(moony PUBLIC -DLUA_USE_LINUX)
 elseif(WIN32)
@@ -317,7 +335,10 @@ if(BUILD_TESTING)
 		test/moony_test.c
 		$<TARGET_OBJECTS:api>
 		$<TARGET_OBJECTS:lua>
-		$<TARGET_OBJECTS:lpeg>)
+		$<TARGET_OBJECTS:lpeg>
+		$<TARGET_OBJECTS:lbase64>
+		$<TARGET_OBJECTS:lascii85>
+		$<TARGET_OBJECTS:laes128>)
 	if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 		target_compile_definitions(moony_test PUBLIC -DLUA_USE_LINUX)
 	elseif(WIN32)
