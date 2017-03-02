@@ -120,15 +120,15 @@ local function parse(pin)
 	local txt = fin:read('*all')
 	fin:close()
 
-	count = 1
-	for o in string.gmatch(txt, '<pre><code>(.-)</code></pre>') do
+	for id, o in string.gmatch(txt, '<pre><code%s*data%-ref%s*=%s*"(.-)"%s*>(.-)</code></pre>') do
 		o = string.gsub(o, '&amp;', '&')
 		o = string.gsub(o, '&lt;', '<')
 		o = string.gsub(o, '&gt;', '>')
 
-		local code = [[
-			print('[test] #' .. count)
+		assert(id)
+		assert(o)
 
+		local code =  [[
 			run = nil
 			once = nil
 			stash = nil
@@ -153,11 +153,11 @@ local function parse(pin)
 
 			collectgarbage()
 		]]
+
+		print('[test] ' .. id)
 		local chunk = load(code)
 		assert(chunk)
 		chunk()
-
-		count = count + 1
 	end
 end
 

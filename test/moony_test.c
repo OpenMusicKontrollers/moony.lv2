@@ -164,7 +164,6 @@ __non_realtime static int
 _vprintf(void *data, LV2_URID type, const char *fmt, va_list args)
 {
 	vfprintf(stderr, fmt, args);
-	fputc('\n', stderr);
 
 	return 0;
 }

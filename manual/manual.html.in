@@ -367,7 +367,7 @@ span.brace {
 		<h2 id="variants-c1xc1">C1 x C1</h2>
 		<p>This plugin variant features a single control port input and a single control port output.</p>
 
-		<pre><code>-- C1 x C1 prototype 'run' function
+		<pre><code data-ref="variants-c1xc1">-- C1 x C1 prototype 'run' function
 
 function run(n, control, notify, c)
 	return c
@@ -378,7 +378,7 @@ end</code></pre>
 		<h2 id="variants-c2xc2">C2 x C2</h2>
 		<p>This plugin variant features two control port inputs and two control port outputs.</p>
 
-		<pre><code>-- C2 x C2 prototype 'run' function
+		<pre><code data-ref="variants-c2xc2">-- C2 x C2 prototype 'run' function
 
 function run(n, control, notify, c1, c2)
 	return c1, c2
@@ -389,7 +389,7 @@ end</code></pre>
 		<h2 id="variants-c4xc4">C4 x C4</h2>
 		<p>This plugin variant features four control port inputs and four control port outputs.</p>
 
-		<pre><code>-- C4 x C4 prototype 'run' function
+		<pre><code data-ref="variants-c4xc4">-- C4 x C4 prototype 'run' function
 
 function run(n, control, notify, c1, c2, c3, c4)
 	return c1, c2, c3, c4
@@ -400,7 +400,7 @@ end</code></pre>
 		<h2 id="variants-a1xa1">A1 x A1</h2>
 		<p>This plugin variant features a single atom port input and a single atom port output.</p>
 
-		<pre><code>-- A1 x A1 prototype 'run' function
+		<pre><code data-ref="variants-a1xa1">-- A1 x A1 prototype 'run' function
 
 function run(n, control, notify, seq, forge)
 end</code></pre>
@@ -410,7 +410,7 @@ end</code></pre>
 		<h2 id="variants-a2xa2">A2 x A2</h2>
 		<p>This plugin variant features two atom port inputs and two atom port outputs.</p>
 
-		<pre><code>-- A2 x A2 prototype 'run' function
+		<pre><code data-ref="variants-a2xa2">-- A2 x A2 prototype 'run' function
 
 function run(n, control, notify, seq1, forge1, seq2, forge2)
 end</code></pre>
@@ -420,7 +420,7 @@ end</code></pre>
 		<h2 id="variants-a4xa4">A4 x A4</h2>
 		<p>This plugin variant features four atom port inputs and four atom port outputs.</p>
 
-		<pre><code>-- A4 x A4 prototype 'run' function
+		<pre><code data-ref="variants-a4xa4">-- A4 x A4 prototype 'run' function
 
 function run(n, control, notify, seq1, forge1, seq2, forge2, seq3, forge3, seq4, forge4)
 end</code></pre>
@@ -431,7 +431,7 @@ end</code></pre>
 		<p>This plugin variant features a single control port input and a single control port output
 			with a single atom port input and a single atom port output.</p>
 
-		<pre><code>-- C1+A1 x C1+A1 prototype 'run' function
+		<pre><code data-ref="variants-c1a1xc1a1">-- C1+A1 x C1+A1 prototype 'run' function
 
 function run(n, control, notify, seq, forge, c)
 	return c
@@ -443,7 +443,7 @@ end</code></pre>
 		<p>This plugin variant features two control port inputs and two control port outputs
 			with a single atom port input and a single atom port output.</p>
 
-		<pre><code>-- C2+A1 x C2+A1 prototype 'run' function
+		<pre><code data-ref="variants-c2a1xc2a1">-- C2+A1 x C2+A1 prototype 'run' function
 
 function run(n, control, notify, seq, forge, c1, c2)
 	return c1, c2
@@ -455,7 +455,7 @@ end</code></pre>
 		<p>This plugin variant features four control port inputs and four control port outputs
 			with a single atom port input and a single atom port output.</p>
 
-		<pre><code>-- C4+A1 x C4+A1 prototype 'run' function
+		<pre><code data-ref="variants-c4a1xc4a1">-- C4+A1 x C4+A1 prototype 'run' function
 
 function run(n, control, notify, seq, forge, c1, c2, c3, c4)
 	return c1, c2, c3, c4
@@ -466,7 +466,7 @@ end</code></pre>
 	<h1 id="log-and-debug">Log &amp; Debug</h1>
 		<p>Whenever you want to log or debug something while developing your scripts, you can easily dump any value via Lua's <b>print</b> function. The print's output will be shown on the UI and also be sent to the host's log backend, e.g. to a log window or console.</p>
 
-	<pre><code>-- sends 'hello world' to the UI and the host's log backend
+	<pre><code data-ref="log-and-debug">-- sends 'hello world' to the UI and the host's log backend
 
 print('hello world')</code></pre>
 	</div>
@@ -517,7 +517,7 @@ print('hello world')</code></pre>
 				<dd>control port outputs, with x=[0, 1, 2, 4]</dd>
 		</dl>
 
-		<pre><code>-- 'run' callback prototype for moony#a1xa1
+		<pre><code data-ref="callbacks-run">-- 'run' callback prototype for moony#a1xa1
 
 function run(n, control, notify, seq, forge)
 	-- here we will process events
@@ -549,7 +549,7 @@ end</code></pre>
 				<dd>control port inputs, with x=[0, 1, 2, 4]</dd>
 		</dl>
 
-		<pre><code>-- 'once' callback prototype for moony#a1xa1
+		<pre><code data-ref="callbacks-once">-- 'once' callback prototype for moony#a1xa1
 
 function once(n, control, notify, seq, forge)
 	-- here we will run logic once right after a code update
@@ -578,7 +578,7 @@ end</code></pre>
 				<dd>atom forge object to serialize to</dd>
 		</dl>
 
-		<pre><code>-- 'stash' callback prototype
+		<pre><code data-ref="callbacks-stash">-- 'stash' callback prototype
 
 -- a simple flag
 local myflag = true
@@ -613,7 +613,7 @@ end</code></pre>
 				<dd>atom object to deserialize from</dd>
 		</dl>
 
-		<pre><code>-- 'apply' callback prototype
+		<pre><code data-ref="callbacks-apply">-- 'apply' callback prototype
 
 -- table that holds active notes
 local active_notes = {
@@ -663,7 +663,7 @@ end</code></pre>
 				<dd>atom forge object to serialize to</dd>
 		</dl>
 
-		<pre><code>-- 'save' callback prototype
+		<pre><code data-ref="callbacks-save">-- 'save' callback prototype
 
 local urn = HashMap('urn:moony:xzy')
 
@@ -719,7 +719,7 @@ end</code></pre>
 				<dd>atom object to deserialize from</dd>
 		</dl>
 
-		<pre><code>-- 'restore' callback prototype
+		<pre><code data-ref="callbacks-restore">-- 'restore' callback prototype
 
 local urn = HashMap('urn:moony:xyz')
 
@@ -786,7 +786,7 @@ end</code></pre>
 				<dd>mapped URID</dd>
 		</dl>
 
-		<pre><code>-- Map can be indexed or called as function
+		<pre><code data-ref="urid-map">-- Map can be indexed or called as function
 
 local prefix = 'http://example.com#'
 
@@ -808,7 +808,7 @@ local bar_urid = Map[prefix .. 'bar']</code></pre>
 				<dd>unmapped URi</dd>
 		</dl>
 
-		<pre><code>-- Unmap can be indexed or called as function
+		<pre><code data-ref="urid-unmap">-- Unmap can be indexed or called as function
 
 local prefix = 'http://example.com#'
 
@@ -841,7 +841,7 @@ assert(prefix .. 'bar' == bar_uri)</code></pre>
 				<dd>HashMap table</dd>
 		</dl>
 
-		<pre><code>-- HashMap is a convenience wrapper over Map
+		<pre><code data-ref="urid-hashmap">-- HashMap is a convenience wrapper over Map
 
 local prefix = 'http://example.com#'
 local hashmap = HashMap(prefix)
@@ -864,7 +864,7 @@ assert(hashmap.bar == bar_urid)</code></pre>
 				<dd>unique integer ID</dd>
 		</dl>
 
-		<pre><code>-- VoiceMap returns unique integer IDs
+		<pre><code data-ref="urid-voicemap">-- VoiceMap returns unique integer IDs
 
 local cache = {}
 
@@ -903,7 +903,7 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<pre><code>-- Forge Bool
+			<pre><code data-ref="forge-bool">-- Forge Bool
 
 local function produce_tup(forge)
 	forge:bool(true)
@@ -924,7 +924,7 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<pre><code>-- Forge Int
+			<pre><code data-ref="forge-int">-- Forge Int
 
 local function produce_atom(forge)
 	forge:int(12)
@@ -944,7 +944,7 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<pre><code>-- Forge Long
+			<pre><code data-ref="forge-long">-- Forge Long
 
 local function produce_atom(forge)
 	forge:long(12)
@@ -964,7 +964,7 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<pre><code>-- Forge Float
+			<pre><code data-ref="forge-float">-- Forge Float
 
 local function produce_atom(forge)
 	forge:float(12.5)
@@ -984,7 +984,7 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<pre><code>-- Forge Double
+			<pre><code data-ref="forge-double">-- Forge Double
 
 local function produce_atom(forge)
 	forge:double(12.5)
@@ -1004,7 +1004,7 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<pre><code>-- Forge URID
+			<pre><code data-ref="forge-urid">-- Forge URID
 
 local uri = 'urn:moony:xzy'
 local urn = Map[uri]
@@ -1027,7 +1027,7 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<pre><code>-- Forge URI
+			<pre><code data-ref="forge-uri">-- Forge URI
 
 local uri = 'urn:moony:xzy'
 
@@ -1049,7 +1049,7 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<pre><code>-- Forge String
+			<pre><code data-ref="forge-string">-- Forge String
 
 local function produce_atom(forge)
 	forge:string('hello world')
@@ -1069,7 +1069,7 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<pre><code>-- Forge Path
+			<pre><code data-ref="forge-path">-- Forge Path
 
 local function produce_atom(forge)
 	forge:path('/tmp/xyz')
@@ -1093,7 +1093,7 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<pre><code>-- Forge Literal
+			<pre><code data-ref="forge-literal">-- Forge Literal
 
 local rus = Map['http://lexvo.org/id/iso639-3/rus'] -- Russian language
 
@@ -1132,7 +1132,7 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<pre><code>-- Forge Chunk
+			<pre><code data-ref="forge-chunk">-- Forge Chunk
 
 local function produce_tup(forge)
 	forge:chunk(string.char(0x1, 0x2, 0x3))
@@ -1170,7 +1170,7 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<pre><code>-- Forge MIDI
+			<pre><code data-ref="forge-midi">-- Forge MIDI
 
 local function produce_tup(forge)
 	forge:midi(string.char(MIDI.NoteOn, 69, 0x7f))
@@ -1214,7 +1214,7 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<pre><code>-- Forge Raw
+			<pre><code data-ref="forge-raw">-- Forge Raw
 
 local byt = { -- stores individual bytes of zero-terminated string 'LV2'
 	string.byte('L'),
@@ -1245,7 +1245,7 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<pre><code>-- Forge Typed
+			<pre><code data-ref="forge-typed">-- Forge Typed
 
 local function produce_tup(forge)
 	forge:typed(Atom.Int, 12) -- equivalent to forge:int(...)
@@ -1267,7 +1267,7 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<pre><code>-- Forge Atom
+			<pre><code data-ref="forge-atom">-- Forge Atom
 
 -- create integer atom
 local function produce_atom(forge)
@@ -1310,7 +1310,7 @@ end</code></pre>
 					<dd>iterator for derived container forge object which is automatically finalized</dd>
 			</dl>
 
-			<pre><code>-- Forge Sequence
+			<pre><code data-ref="forge-sequence">-- Forge Sequence
 
 local function produce_tup(forge)
 	local seq = forge:sequence() -- create derived container forge object
@@ -1398,7 +1398,7 @@ end</code></pre>
 					<dd>iterator for derived container forge object which is automatically finalized</dd>
 			</dl>
 
-			<pre><code>-- Forge Object
+			<pre><code data-ref="forge-object">-- Forge Object
 local urn = HashMap('urn:moony:xyz')
 
 local function produce_tup(forge)
@@ -1447,7 +1447,7 @@ end</code></pre>
 					<dd>iterator for derived container forge object which is automatically finalized</dd>
 			</dl>
 
-			<pre><code>-- Forge Tuple
+			<pre><code data-ref="forge-key">-- Forge Tuple
 
 local function produce_tup(forge)
 	local tup = forge:tuple() -- create derived container forge object
@@ -1495,7 +1495,7 @@ end</code></pre>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
-			<pre><code>-- Forge Vector
+			<pre><code data-ref="forge-vector">-- Forge Vector
 
 local function produce_tup(forge)
 	forge:vector(Atom.Int, 1, 2, 3, 4, 5) -- vector items as individual arguments
@@ -1534,7 +1534,7 @@ end</code></pre>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
-			<pre><code>-- Forge Bundle
+			<pre><code data-ref="forge-bundle">-- Forge Bundle
 
 local function produce_tup(forge)
 	-- schedule bundle for immediate dispatch
@@ -1573,7 +1573,7 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<pre><code>-- Forge Message
+			<pre><code data-ref="forge-message">-- Forge Message
 
 local function produce_atom(forge)
 	-- schedule bundle for immediate dispatch
@@ -1642,7 +1642,7 @@ end</code></pre>
 						<dd>self forge object</dd>
 				</dl>
 
-				<pre><code>-- Forge custom OSC arguments
+				<pre><code data-ref="forge-timetag">-- Forge custom OSC arguments
 
 local function produce_atom(forge)
 	for obj in forge:objectPack(OSC.Message) do
@@ -1696,7 +1696,7 @@ end</code></pre>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
-			<pre><code>-- Forge Patch
+			<pre><code data-ref="forge-patch">-- Forge Patch
 
 local urn = HashMap('urn:moony:xzy')
 
@@ -1758,7 +1758,7 @@ end</code></pre>
 					<dd>self container object</dd>
 			</dl>
 
-			<pre><code>-- Forge Get
+			<pre><code data-ref="forge-get">-- Forge Get
 
 local urn = HashMap('urn:moony:xzy')
 
@@ -1786,7 +1786,7 @@ end</code></pre>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
-			<pre><code>-- Forge Set
+			<pre><code data-ref="forge-set">-- Forge Set
 
 local urn = HashMap('urn:moony:xzy')
 
@@ -1816,7 +1816,7 @@ end</code></pre>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
-			<pre><code>-- Forge Put
+			<pre><code data-ref="forge-put">-- Forge Put
 
 local urn = HashMap('urn:moony:xzy')
 
@@ -1848,7 +1848,7 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<pre><code>-- Forge Ack
+			<pre><code data-ref="forge-ack">-- Forge Ack
 
 local urn = HashMap('urn:moony:xzy')
 
@@ -1872,7 +1872,7 @@ end</code></pre>
 					<dd>self forge object</dd>
 			</dl>
 
-			<pre><code>-- Forge Error
+			<pre><code data-ref="forge-error">-- Forge Error
 
 local urn = HashMap('urn:moony:xzy')
 
@@ -1946,7 +1946,7 @@ end</code></pre>
 					<dd>atom body as Lua nil</dd>
 			</dl>
 
-			<pre><code>-- Atom Nil
+			<pre><code data-ref="atom-nil">-- Atom Nil
 
 -- serialize
 local function produce_atom(forge)
@@ -1990,7 +1990,7 @@ end</code></pre>
 					<dd>atom body as Lua boolean</dd>
 			</dl>
 
-			<pre><code>-- Atom Bool
+			<pre><code data-ref="atom-bool">-- Atom Bool
 
 -- serialize
 local function produce_atom(forge)
@@ -2035,7 +2035,7 @@ end</code></pre>
 					<dd>atom body as Lua integer</dd>
 			</dl>
 
-			<pre><code>-- Atom Int
+			<pre><code data-ref="atom-int">-- Atom Int
 
 -- serialize
 local function produce_atom(forge)
@@ -2080,7 +2080,7 @@ end</code></pre>
 					<dd>atom body as Lua integer</dd>
 			</dl>
 
-			<pre><code>-- Atom Long
+			<pre><code data-ref="atom-long">-- Atom Long
 
 -- serialize
 local function produce_atom(forge)
@@ -2125,7 +2125,7 @@ end</code></pre>
 					<dd>atom body as Lua number</dd>
 			</dl>
 
-			<pre><code>-- Atom Float
+			<pre><code data-ref="atom-float">-- Atom Float
 
 -- serialize
 local function produce_atom(forge)
@@ -2170,7 +2170,7 @@ end</code></pre>
 					<dd>atom body as Lua number</dd>
 			</dl>
 
-			<pre><code>-- Atom Double
+			<pre><code data-ref="atom-double">-- Atom Double
 
 -- serialize
 local function produce_atom(forge)
@@ -2215,7 +2215,7 @@ end</code></pre>
 					<dd>atom body as Lua integer</dd>
 			</dl>
 
-			<pre><code>-- Atom URID
+			<pre><code data-ref="atom-urid">-- Atom URID
 
 local urn = Map['urn:moony:xyz']
 
@@ -2263,7 +2263,7 @@ end</code></pre>
 					<dd>atom body as Lua string</dd>
 			</dl>
 
-			<pre><code>-- Atom URI
+			<pre><code data-ref="atom-uri">-- Atom URI
 
 local urn = 'urn:moony:xyz'
 
@@ -2311,7 +2311,7 @@ end</code></pre>
 					<dd>atom body as Lua string</dd>
 			</dl>
 
-			<pre><code>-- Atom String
+			<pre><code data-ref="atom-string">-- Atom String
 
 local str = 'hello world'
 
@@ -2359,7 +2359,7 @@ end</code></pre>
 					<dd>atom body as Lua string</dd>
 			</dl>
 
-			<pre><code>-- Atom Path
+			<pre><code data-ref="atom-path">-- Atom Path
 
 local tmp = '/tmp/xyz'
 
@@ -2426,7 +2426,7 @@ end</code></pre>
 					<dd>atom body as Lua string, URID of data type, URID of language</dd>
 			</dl>
 
-			<pre><code>-- Atom  Literal
+			<pre><code data-ref="atom-literal">-- Atom  Literal
 
 local lit = 'Hallo Welt'
 local datatype = Map['urn:moony:xyz']
@@ -2502,7 +2502,7 @@ end</code></pre>
 					<dd>byte at position idx of atom body as Lua integer</dd>
 			</dl>
 
-			<pre><code>-- Atom Chunk
+			<pre><code data-ref="atom-chunk">-- Atom Chunk
 
 local byt = string.char(0x1, 0x2, 0x3)
 
@@ -2580,7 +2580,7 @@ end</code></pre>
 					<dd>byte at position idx of atom body as Lua integer</dd>
 			</dl>
 
-			<pre><code>-- Atom MIDI
+			<pre><code data-ref="atom-midi">-- Atom MIDI
 
 local byt = string.char(MIDI.NoteOn, 69, 64)
 
@@ -2669,7 +2669,7 @@ end</code></pre>
 					<dd>event atom at position idx</dd>
 			</dl>
 
-			<pre><code>-- Atom Sequence
+			<pre><code data-ref="atom-sequence">-- Atom Sequence
 
 -- serialize
 local function produce_atom(forge)
@@ -2746,7 +2746,7 @@ end</code></pre>
 					<dd>atom item at position idx</dd>
 			</dl>
 
-			<pre><code>-- Atom Tuple
+			<pre><code data-ref="atom-tuple">-- Atom Tuple
 
 -- serialize
 local function produce_atom(forge)
@@ -2828,7 +2828,7 @@ end</code></pre>
 					<dd>property atom for key</dd>
 			</dl>
 
-			<pre><code>-- Atom Object
+			<pre><code data-ref="atom-object">-- Atom Object
 
 local urn = HashMap('urn:moony:xyz#')
 
@@ -2921,7 +2921,7 @@ end</code></pre>
 					<dd>atom of item at position idx</dd>
 			</dl>
 
-			<pre><code>-- Atom Vector
+			<pre><code data-ref="atom-vector">-- Atom Vector
 
 -- serialize
 local function produce_atom(forge)
@@ -2991,7 +2991,7 @@ end</code></pre>
 				<dd>reference to self as forge object to write to</dd>
 		</dl>
 
-		<pre><code>-- Stash
+		<pre><code data-ref="stash">-- Stash
 
 -- a new stash defaults to writing mode - equivalent to forge object
 local io = Stash()
@@ -3026,7 +3026,7 @@ assert(io.body == 13)</code></pre>
 				<dd>value of index key</dd>
 		</dl>
 
-		<pre><code>-- Options
+		<pre><code data-ref="options">-- Options
 
 -- sample rate is always available
 local sampleRate = Options[Core.sampleRate]
@@ -3082,7 +3082,7 @@ local maxBlockLength = Options[Buf_Size.maxBlockLength]</code></pre>
 				<dd>flag whether the event was handled, e.g. whether is was any MIDI at all</dd>
 		</dl>
 
-		<pre><code>-- MIDIResponder
+		<pre><code data-ref="responder-midi">-- MIDIResponder
 
 -- define MIDI responder object with callbacks
 local midiR = MIDIResponder({
@@ -3154,7 +3154,7 @@ end</code></pre>
 				<dd>flag whether the event was handled, e.g. whether is was any OSC at all</dd>
 		</dl>
 
-		<pre><code>-- OSCResponder
+		<pre><code data-ref="responder-osc">-- OSCResponder
 
 -- define OSC responder object with callbacks
 local oscR = OSCResponder({
@@ -3248,7 +3248,7 @@ end</code></pre>
 				<dd>flag whether state has been applied successfully</dd>
 		</dl>
 
-		<pre><code>-- TimeResponder
+		<pre><code data-ref="responder-time">-- TimeResponder
 
 -- define time responder object with callbacks
 local timeR = TimeResponder({
@@ -3397,7 +3397,7 @@ end</code></pre>
 				<dd>flag whether state has been applied successfully</dd>
 		</dl>
 
-		<pre><code>-- StateResponder
+		<pre><code data-ref="responder-state">-- StateResponder
 
 local urn = HashMap('urn:moony:xzy')
 
@@ -3512,7 +3512,7 @@ end</code></pre>
 				<dd>corresponding frequency in Hz</dd>
 		</dl>
 
-		<pre><code>-- midi2cps
+		<pre><code data-ref="util-midi2cps">-- midi2cps
 
 assert(midi2cps(69.0) == 440.0) -- relative to 'A-5'==440 Hz
 assert(midi2cps(60.0, 60, 12, 400) == 400.0) -- relative to 'C-5'==400 Hz</code></pre>
@@ -3537,7 +3537,7 @@ assert(midi2cps(60.0, 60, 12, 400) == 400.0) -- relative to 'C-5'==400 Hz</code>
 				<dd>corresponding MIDI note</dd>
 		</dl>
 
-		<pre><code>-- cps2midi
+		<pre><code data-ref="util-cps2midi">-- cps2midi
 
 assert(cps2midi(440.0) == 69.0) -- relative to 'A-5'==400 Hz
 assert(cps2midi(400.0, 60, 12, 400) == 60.0) -- relative to 'C-5'==400 Hz</code></pre>
@@ -3564,7 +3564,7 @@ assert(cps2midi(400.0, 60, 12, 400) == 60.0) -- relative to 'C-5'==400 Hz</code>
 				<dd>MIDI note number</dd>
 		</dl>
 
-		<pre><code>-- Note
+		<pre><code data-ref="util-note">-- Note
 
 assert(Note[60] == 'C+4')
 assert(Note['A+4'] == 69)</code></pre>
@@ -3585,7 +3585,7 @@ assert(Note['A+4'] == 69)</code></pre>
 				<dd>corresponding secret byte string</dd>
 		</dl>
 
-		<pre><code>-- encrypt
+		<pre><code data-ref="util-encrypt">-- encrypt
 
 local pass = '2b7e151628aed2a6abf7158809cf4f3c'
 local value = 'hello world'
@@ -3609,7 +3609,7 @@ assert(decrypt(secret, pass) == value)</code></pre>
 				<dd>corresponding clear text byte string</dd>
 		</dl>
 
-		<pre><code>-- decrypt
+		<pre><code data-ref="util-decrypt">-- decrypt
 
 local pass = string.char(
 	0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
@@ -3634,7 +3634,7 @@ assert(decrypt(secret, pass) == value)</code></pre>
 				<dd>corresponding URID or integer for given key</dd>
 		</dl>
 
-		<pre><code>-- Constants
+		<pre><code data-ref="constants">-- Constants
 
 local ctx = {
 	core =  HashMap('http://lv2plug.in/ns/lv2core#'),
