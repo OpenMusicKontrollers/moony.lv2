@@ -128,15 +128,14 @@ local function parse(pin)
 		assert(id)
 		assert(o)
 
-		local code =  [[
-			run = nil
-			once = nil
-			stash = nil
-			apply = nil
-			save = nil
-			restore = nil
+		run = nil
+		once = nil
+		stash = nil
+		apply = nil
+		save = nil
+		restore = nil
 
-		]] .. o .. [[
+		local code =  o .. [[
 
 			local _produce = {
 				seq = produce_seq,
@@ -150,14 +149,16 @@ local function parse(pin)
 			}
 
 			_test(_produce, _consume, check)
-
-			collectgarbage()
 		]]
 
 		print('[test] ' .. id)
+
 		local chunk = load(code)
 		assert(chunk)
+
 		chunk()
+
+		collectgarbage()
 	end
 end
 

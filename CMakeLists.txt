@@ -343,22 +343,7 @@ if(BUILD_TESTING)
 	add_custom_target(moony_manual ALL DEPENDS ${PROJECT_BINARY_DIR}/manual.html)
 	install(FILES ${PROJECT_BINARY_DIR}/manual.html DESTINATION ${PLUGIN_DEST})
 
-	pkg_search_module(SORD REQUIRED sord-0>=0.12.0)
-	include_directories(${SORD_INCLUDE_DIRS})
-	if(DEFINED STATIC_SORD)
-		set(DETURTLE_LIBS m ${STATIC_SORD} ${STATIC_SERD})
-	else()
-		set(DETURTLE_LIBS ${SORD_LDFLAGS})
-	endif()
-
-	add_executable(moony_deturtle
-		test/moony_deturtle.c)
-	set_target_properties(moony_deturtle PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
-	target_link_libraries(moony_deturtle ${DETURTLE_LIBS})
-
 	add_test(NAME API-Test COMMAND ${WINE} ${QEMU} moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
-	add_test(NAME Manual-Test COMMAND ${WINE} ${QEMU} moony_test ${PROJECT_SOURCE_DIR}/manual/extract.lua)
-	add_test(NAME Deturtle-Test COMMAND ${WINE} ${QEMU} moony_deturtle ${PROJECT_SOURCE_DIR}/plugin/presets.ttl
-		${PROJECT_BINARY_DIR}/moony_presets.lua)
-	add_test(NAME Presets-Test COMMAND ${WINE} ${QEMU} moony_test ${PROJECT_BINARY_DIR}/moony_presets.lua)
+	add_test(NAME Manual-Test COMMAND ${WINE} ${QEMU} moony_test ${PROJECT_SOURCE_DIR}/test/moony_manual.lua)
+	add_test(NAME Presets-Test COMMAND ${WINE} ${QEMU} moony_test ${PROJECT_SOURCE_DIR}/test/moony_presets.lua)
 endif()
