@@ -239,7 +239,7 @@ main(int argc, char **argv)
 	handle.iface = extension_data(LV2_WORKER__interface);
 
 	lua_State *L = handle.moony.vm.L;
-	moony_open(&handle.moony, L, true);
+	moony_open(&handle.moony, L);
 
 	lua_pushstring(L, "map");
 	lua_newtable(L);

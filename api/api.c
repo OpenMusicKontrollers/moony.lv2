@@ -1435,7 +1435,7 @@ moony_deinit(moony_t *moony)
 	lua_setfield(L, idx - 1, "__index");
 
 __non_realtime void
-moony_open(moony_t *moony, lua_State *L, bool use_assert)
+moony_open(moony_t *moony, lua_State *L)
 {
 	luaL_newmetatable(L, "latom");
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
@@ -1786,13 +1786,6 @@ moony_open(moony_t *moony, lua_State *L, bool use_assert)
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	lua_pushcclosure(L, _log, 1);
 	lua_setglobal(L, "print");
-
-	if(!use_assert)
-	{
-		// clear assert
-		lua_pushnil(L);
-		lua_setglobal(L, "assert");
-	}
 
 	// MIDIResponder metatable
 	luaL_newmetatable(L, "lmidiresponder");

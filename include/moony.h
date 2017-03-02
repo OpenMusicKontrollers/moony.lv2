@@ -346,7 +346,7 @@ struct _moony_t {
 int moony_init(moony_t *moony, const char *subject, double sample_rate,
 	const LV2_Feature *const *features, size_t mem_size, bool testing);
 void moony_deinit(moony_t *moony);
-void moony_open(moony_t *moony, lua_State *L, bool use_assert);
+void moony_open(moony_t *moony, lua_State *L);
 void moony_pre(moony_t *moony, LV2_Atom_Sequence *notify);
 bool moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *notify);
 void moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames);
