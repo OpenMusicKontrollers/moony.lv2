@@ -10,8 +10,6 @@ function _test(produce, consume, check)
 		local _tup = _from:tuple()
 		produce.tup(_tup)
 		_tup:pop()
-	elseif produce.atom then
-		produce.atom(_from)
 	end
 
 	_from:read()
@@ -24,8 +22,6 @@ function _test(produce, consume, check)
 		local _tup = _to:tuple()
 		consume.tup(_from, _tup)
 		_tup:pop()
-	elseif consume.atom then
-		consume.atom(_from, _to)
 	end
 
 	_to:read()
@@ -135,28 +131,32 @@ local function parse(pin)
 		save = nil
 		restore = nil
 
-		local code =  o .. [[
+		stash_sequence = nil
+		stash_tuple = nil
 
-			local _produce = {
-				seq = produce_seq,
-				atom = produce_atom,
-				tup = produce_tup
-			}
-			local _consume = {
-				seq = consume_seq,
-				atom = consume_atom,
-				tup = consume_tup
-			}
+		apply_sequence = nil
+		apply_tuple = nil
 
-			_test(_produce, _consume, check)
-		]]
+		check = nil
 
 		print('[test] ' .. id)
 
-		local chunk = load(code)
+		local chunk = load(o)
 		assert(chunk)
 
 		chunk()
+
+		local _produce = {
+			seq = stash_sequence,
+			tup = stash_tuple
+		}
+
+		local _consume = {
+			seq = apply_sequence,
+			tup = apply_tuple
+		}
+
+		_test(_produce, _consume, check)
 
 		collectgarbage()
 	end

@@ -905,7 +905,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-bool">-- Forge Bool
 
-local function produce_tup(forge)
+function stash_tuple(forge)
 	forge:bool(true)
 	forge:bool(false)
 end</code></pre>
@@ -926,7 +926,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-int">-- Forge Int
 
-local function produce_atom(forge)
+function stash(forge)
 	forge:int(12)
 end</code></pre>
 			</div>
@@ -946,7 +946,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-long">-- Forge Long
 
-local function produce_atom(forge)
+function stash(forge)
 	forge:long(12)
 end</code></pre>
 			</div>
@@ -966,7 +966,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-float">-- Forge Float
 
-local function produce_atom(forge)
+function stash(forge)
 	forge:float(12.5)
 end</code></pre>
 			</div>
@@ -986,7 +986,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-double">-- Forge Double
 
-local function produce_atom(forge)
+function stash(forge)
 	forge:double(12.5)
 end</code></pre>
 			</div>
@@ -1009,7 +1009,7 @@ end</code></pre>
 local uri = 'urn:moony:xzy'
 local urn = Map[uri]
 
-local function produce_atom(forge)
+function stash(forge)
 	forge:urid(urn)
 end</code></pre>
 			</div>
@@ -1031,7 +1031,7 @@ end</code></pre>
 
 local uri = 'urn:moony:xzy'
 
-local function produce_atom(forge)
+function stash(forge)
 	forge:uri(uri)
 end</code></pre>
 			</div>
@@ -1051,7 +1051,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-string">-- Forge String
 
-local function produce_atom(forge)
+function stash(forge)
 	forge:string('hello world')
 end</code></pre>
 			</div>
@@ -1071,7 +1071,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-path">-- Forge Path
 
-local function produce_atom(forge)
+function stash(forge)
 	forge:path('/tmp/xyz')
 end</code></pre>
 			</div>
@@ -1097,7 +1097,7 @@ end</code></pre>
 
 local rus = Map['http://lexvo.org/id/iso639-3/rus'] -- Russian language
 
-local function produce_tup(forge)
+function stash_tuple(forge)
 	forge:literal('902A7F', MIDI.MidiEvent) -- MIDI encoded as hexidecimal text
 	forge:literal('Приве́т!', nil, rus) -- 'hello!'
 end</code></pre>
@@ -1134,7 +1134,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-chunk">-- Forge Chunk
 
-local function produce_tup(forge)
+function stash_tuple(forge)
 	forge:chunk(string.char(0x1, 0x2, 0x3))
 	forge:chunk({0x1, 0x2, 0x3})
 	forge:chunk(0x1, 0x2, 0x3)
@@ -1172,7 +1172,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-midi">-- Forge MIDI
 
-local function produce_tup(forge)
+function stash_tuple(forge)
 	forge:midi(string.char(MIDI.NoteOn, 69, 0x7f))
 	forge:midi({MIDI.NoteOn, 69, 0x7f})
 	forge:midi(MIDI.NoteOn, 69, 0x7f)
@@ -1223,7 +1223,7 @@ local byt = { -- stores individual bytes of zero-terminated string 'LV2'
 	string.byte('\0')
 }
 
-local function produce_tup(forge)
+function stash_tuple(forge)
 	forge:raw(Atom.String, string.char(table.unpack(byt)))
 	forge:raw(Atom.String, byt)
 	forge:raw(Atom.String, table.unpack(byt))
@@ -1247,7 +1247,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-typed">-- Forge Typed
 
-local function produce_tup(forge)
+function stash_tuple(forge)
 	forge:typed(Atom.Int, 12) -- equivalent to forge:int(...)
 	forge:typed(Atom.Float, 12.5) -- equivalent to forge:float(...)
 	forge:typed(Atom.String, 'LV2 rocks!') -- equivalent to forge:string(...)
@@ -1269,16 +1269,21 @@ end</code></pre>
 
 			<pre><code data-ref="forge-atom">-- Forge Atom
 
--- create integer atom
-local function produce_atom(forge)
+-- forge integer atom
+function stash_tuple(forge)
 	forge:int(12)
 end
 
 -- forge prepared integer atom in whole
-local function consume_atom(atom, forge)
-	assert(atom.body == 12)
+function apply_tuple(tup, forge)
+	assert(tup[1].body == 12)
 
-	forge:atom(atom)
+	forge:atom(tup[1])
+end
+
+-- check if integer atom has been forged in whole
+function check(tup)
+	assert(tup[1].body == 12)
 end</code></pre>
 			</div>
 
@@ -1312,7 +1317,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-sequence">-- Forge Sequence
 
-local function produce_tup(forge)
+function stash_tuple(forge)
 	local seq = forge:sequence() -- create derived container forge object
 		seq:time(0):int(12)
 		seq:frameTime(1):int(13)
@@ -1401,7 +1406,7 @@ end</code></pre>
 			<pre><code data-ref="forge-object">-- Forge Object
 local urn = HashMap('urn:moony:xyz')
 
-local function produce_tup(forge)
+function stash_tuple(forge)
 	local obj = forge:object(urn.FooBar) -- create derived container forge object
 		obj:key(urn.foo):int(12) -- without context
 		obj:key(urn.bar, urn.ctx):long(13) -- with context
@@ -1449,7 +1454,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-key">-- Forge Tuple
 
-local function produce_tup(forge)
+function stash_tuple(forge)
 	local tup = forge:tuple() -- create derived container forge object
 		tup:int(12)
 		tup:long(13)
@@ -1497,7 +1502,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-vector">-- Forge Vector
 
-local function produce_tup(forge)
+function stash_tuple(forge)
 	forge:vector(Atom.Int, 1, 2, 3, 4, 5) -- vector items as individual arguments
 	forge:vector(Atom.Bool, {true, false, true}) --vector items as table
 end</code></pre>
@@ -1536,7 +1541,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-bundle">-- Forge Bundle
 
-local function produce_tup(forge)
+function stash_tuple(forge)
 	-- schedule bundle for immediate dispatch
 	local bndl = forge:bundle() -- create derived container forge object
 		bndl:message('/hello', 's', 'world')
@@ -1575,7 +1580,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-message">-- Forge Message
 
-local function produce_atom(forge)
+function stash(forge)
 	-- schedule bundle for immediate dispatch
 	local bndl = forge:bundle() -- create derived container forge object
 		bndl:message('/hello', 'ifs', 2016, 12.5, 'hello')
@@ -1644,7 +1649,7 @@ end</code></pre>
 
 				<pre><code data-ref="forge-timetag">-- Forge custom OSC arguments
 
-local function produce_atom(forge)
+function stash(forge)
 	for obj in forge:objectPack(OSC.Message) do
 		obj:key(OSC.messagePath):string('/custom')
 		for tup in obj:key(OSC.messageArguments):tuplePack() do
@@ -1700,7 +1705,7 @@ end</code></pre>
 
 local urn = HashMap('urn:moony:xzy')
 
-local function produce_atom(forge)
+function stash(forge)
 	local patch= forge:patch(urn.subj, 1002) -- with subject and sequence number
 
 		local rem = patch:remove() -- equivalent to patch:object(Patch.remove)
@@ -1762,7 +1767,7 @@ end</code></pre>
 
 local urn = HashMap('urn:moony:xzy')
 
-local function produce_tup(forge)
+function stash_tuple(forge)
 	forge:get(urn.prop) -- without subject and sequence number
 	forge:get(urn.prop, nil, 1001) -- without subject
 	forge:get(urn.prop, urn.subj, 1002) -- with subject and sequence number
@@ -1790,7 +1795,7 @@ end</code></pre>
 
 local urn = HashMap('urn:moony:xzy')
 
-local function produce_tup(forge)
+function stash_tuple(forge)
 	local set = forge:set(urn.prop) -- without subject and sequence number
 		set:int(12)
 	set:pop()
@@ -1820,7 +1825,7 @@ end</code></pre>
 
 local urn = HashMap('urn:moony:xzy')
 
-local function produce_tup(forge)
+function stash_tuple(forge)
 	local put = forge:put() -- without subject and sequence number
 		put:key(urn.foo):int(12)
 		put:key(urn.bar):float(12.5)
@@ -1852,7 +1857,7 @@ end</code></pre>
 
 local urn = HashMap('urn:moony:xzy')
 
-local function produce_atom(forge)
+function stash(forge)
 	forge:ack(urn.subj, 1002) -- with subject and sequence number
 end</code></pre>
 			</div>
@@ -1876,7 +1881,7 @@ end</code></pre>
 
 local urn = HashMap('urn:moony:xzy')
 
-local function produce_atom(forge)
+function stash(forge)
 	forge:error(urn.subj, 1002) -- with subject and sequence number
 end</code></pre>
 			</div>
@@ -1949,10 +1954,10 @@ end</code></pre>
 			<pre><code data-ref="atom-nil">-- Atom Nil
 
 -- serialize
-local function produce_atom(forge)
+function stash(forge)
 end
 
-local function consume_atom(atom)
+function apply(atom)
 	-- attributes
 	assert(#atom == 0) -- query size of atom body
 	print(tostring(atom)) -- convert to string
@@ -1993,11 +1998,11 @@ end</code></pre>
 			<pre><code data-ref="atom-bool">-- Atom Bool
 
 -- serialize
-local function produce_atom(forge)
+function stash(forge)
 	forge:bool(true)
 end
 
-local function consume_atom(atom)
+function apply(atom)
 	-- attributes
 	assert(#atom == 4) -- query size of atom body
 	print(tostring(atom)) -- convert to string
@@ -2038,11 +2043,11 @@ end</code></pre>
 			<pre><code data-ref="atom-int">-- Atom Int
 
 -- serialize
-local function produce_atom(forge)
+function stash(forge)
 	forge:int(12)
 end
 
-local function consume_atom(atom)
+function apply(atom)
 	-- attributes
 	assert(#atom == 4) -- query size of atom body
 	print(tostring(atom)) -- convert to string
@@ -2083,11 +2088,11 @@ end</code></pre>
 			<pre><code data-ref="atom-long">-- Atom Long
 
 -- serialize
-local function produce_atom(forge)
+function stash(forge)
 	forge:long(13)
 end
 
-local function consume_atom(atom)
+function apply(atom)
 	-- attributes
 	assert(#atom == 8) -- query size of atom body
 	print(tostring(atom)) -- convert to string
@@ -2128,11 +2133,11 @@ end</code></pre>
 			<pre><code data-ref="atom-float">-- Atom Float
 
 -- serialize
-local function produce_atom(forge)
+function stash(forge)
 	forge:float(1.5)
 end
 
-local function consume_atom(atom)
+function apply(atom)
 	-- attributes
 	assert(#atom == 4) -- query size of atom body
 	print(tostring(atom)) -- convert to string
@@ -2173,11 +2178,11 @@ end</code></pre>
 			<pre><code data-ref="atom-double">-- Atom Double
 
 -- serialize
-local function produce_atom(forge)
+function stash(forge)
 	forge:double(1.6)
 end
 
-local function consume_atom(atom)
+function apply(atom)
 	-- attributes
 	assert(#atom == 8) -- query size of atom body
 	print(tostring(atom)) -- convert to string
@@ -2220,11 +2225,11 @@ end</code></pre>
 local urn = Map['urn:moony:xyz']
 
 -- serialize
-local function produce_atom(forge)
+function stash(forge)
 	forge:urid(urn)
 end
 
-local function consume_atom(atom)
+function apply(atom)
 	-- attributes
 	assert(#atom == 4) -- query size of atom body
 	print(tostring(atom)) -- convert to string
@@ -2268,11 +2273,11 @@ end</code></pre>
 local urn = 'urn:moony:xyz'
 
 -- serialize
-local function produce_atom(forge)
+function stash(forge)
 	forge:uri(urn)
 end
 
-local function consume_atom(atom)
+function apply(atom)
 	-- attributes
 	assert(#atom == #urn + 1) -- query size of atom body
 	print(tostring(atom)) -- convert to string
@@ -2316,11 +2321,11 @@ end</code></pre>
 local str = 'hello world'
 
 -- serialize
-local function produce_atom(forge)
+function stash(forge)
 	forge:string(str)
 end
 
-local function consume_atom(atom)
+function apply(atom)
 	-- attributes
 	assert(#atom == #str + 1) -- query size of atom body
 	print(tostring(atom)) -- convert to string
@@ -2364,11 +2369,11 @@ end</code></pre>
 local tmp = '/tmp/xyz'
 
 -- serialize
-local function produce_atom(forge)
+function stash(forge)
 	forge:path(tmp)
 end
 
-local function consume_atom(atom)
+function apply(atom)
 	-- attributes
 	assert(#atom == #tmp + 1) -- query size of atom body
 	print(tostring(atom)) -- convert to string
@@ -2433,11 +2438,11 @@ local datatype = Map['urn:moony:xyz']
 local lang = Map['urn:moony:de']
 
 -- serialize
-local function produce_atom(forge)
+function stash(forge)
 	forge:literal(lit, datatype, lang)
 end
 
-local function consume_atom(atom)
+function apply(atom)
 	-- attributes
 	assert(#atom == 4 + 4 + #lit + 1) -- query size of atom body
 	print(tostring(atom)) -- convert to string
@@ -2507,11 +2512,11 @@ end</code></pre>
 local byt = string.char(0x1, 0x2, 0x3)
 
 -- serialize
-local function produce_atom(forge)
+function stash(forge)
 	forge:chunk(byt)
 end
 
-local function consume_atom(atom)
+function apply(atom)
 	-- attributes
 	assert(#atom == #byt) -- query size of atom body
 	print(tostring(atom)) -- convert to string
@@ -2585,11 +2590,11 @@ end</code></pre>
 local byt = string.char(MIDI.NoteOn, 69, 64)
 
 -- serialize
-local function produce_atom(forge)
+function stash(forge)
 	forge:midi(byt)
 end
 
-local function consume_atom(atom)
+function apply(atom)
 	-- attributes
 	assert(#atom == #byt) -- query size of atom body
 	print(tostring(atom)) -- convert to string
@@ -2672,13 +2677,13 @@ end</code></pre>
 			<pre><code data-ref="atom-sequence">-- Atom Sequence
 
 -- serialize
-local function produce_atom(forge)
+function stash(forge)
 	local seq = forge:sequence(Atom.frameTime)
 		seq:time(0):int(12)
 	seq:pop()
 end
 
-local function consume_atom(seq)
+function apply(seq)
 	-- attributes
 	assert(#seq == 1) -- query number of events
 	print(tostring(seq)) -- convert to string
@@ -2749,13 +2754,13 @@ end</code></pre>
 			<pre><code data-ref="atom-tuple">-- Atom Tuple
 
 -- serialize
-local function produce_atom(forge)
+function stash(forge)
 	local tup = forge:tuple()
 		tup:int(12)
 	tup:pop()
 end
 
-local function consume_atom(tup)
+function apply(tup)
 	-- attributes
 	assert(#tup == 1) -- query number of items
 	print(tostring(tup)) -- convert to string
@@ -2833,13 +2838,13 @@ end</code></pre>
 local urn = HashMap('urn:moony:xyz#')
 
 -- serialize
-local function produce_atom(forge)
+function stash(forge)
 	local obj = forge:object(urn.otype, urn.id)
 		obj:key(urn.key):int(12)
 	obj:pop()
 end
 
-local function consume_atom(obj)
+function apply(obj)
 	-- attributes
 	assert(#obj == 1) -- query number of properties
 	print(tostring(obj)) -- convert to string
@@ -2924,11 +2929,11 @@ end</code></pre>
 			<pre><code data-ref="atom-vector">-- Atom Vector
 
 -- serialize
-local function produce_atom(forge)
+function stash(forge)
 	forge:vector(Atom.Int, 12, 13, 14)
 end
 
-local function consume_atom(vec)
+function apply(vec)
 	-- attributes
 	assert(#vec == 3) -- query number of items
 	print(tostring(vec)) -- convert to string
@@ -3109,14 +3114,14 @@ local midiR = MIDIResponder({
 }, false) -- block all MIDI messages not explicitly handled by responder
 
 -- forge test messages
-local function produce_seq(forge)
+function stash_sequence(forge)
 	forge:time(0):midi(MIDI.NoteOn | 0x1, 69, 0x7f)
 	forge:time(1):midi(MIDI.NoteOff | 0x1, 69, 0x0)
 	forge:time(2):midi(MIDI.Bender | 0x1, 0x0, 0x7f)
 end
 
 -- process test messages with responder
-local function consume_seq(n, seq, forge)
+function apply_sequence(n, seq, forge)
 	for frames, atom in seq:foreach() do
 		local handled = midiR(frames, forge, atom)
 		assert(handled == true)
@@ -3124,7 +3129,7 @@ local function consume_seq(n, seq, forge)
 end
 
 -- check responder output
-local function check(seq)
+function check(seq)
 	assert(#seq == 2) -- only NoteOn and NoteOff have gone through
 end</code></pre>
 		</div>
@@ -3171,12 +3176,12 @@ local oscR = OSCResponder({
 })
 
 -- forge test messages
-local function produce_seq(forge)
+function stash_sequence(forge)
 	forge:time(0):message('/ping', 'if', 12, 12.5)
 end
 
 -- process test messages with responder
-local function consume_seq(n, seq, forge)
+function apply_sequence(n, seq, forge)
 	for frames, atom in seq:foreach() do
 		assert(frames == 0)
 		assert(atom.otype == OSC.Message)
@@ -3188,7 +3193,7 @@ local function consume_seq(n, seq, forge)
 end
 
 -- check responder output
-local function check(seq)
+function check(seq)
 	for frames, atom in seq:foreach() do
 		assert(frames == 0)
 		assert(atom.otype == OSC.Message)
@@ -3316,14 +3321,14 @@ function apply(atom)
 end
 
 -- forge test messages
-local function produce_seq(forge)
+function stash_sequence(forge)
 	local obj = forge:time(0):object(Time.Position)
 		obj:key(Time.speed):float(1.0) -- start transport
 	obj:pop()
 end
 
 -- process test messages with responder
-local function consume_seq(n, seq, forge)
+function apply_sequence(n, seq, forge)
 	local from = 0 -- frame time of 'last event' aka 'period beginning'
 
 	for to, atom in seq:foreach() do
@@ -3337,7 +3342,7 @@ local function consume_seq(n, seq, forge)
 end
 
 -- check responder output
-local function check(seq)
+function check(seq)
 	for frames, atom in seq:foreach() do
 		assert(frames == 0)
 		assert(atom.type == MIDI.MidiEvent)
@@ -3461,12 +3466,12 @@ function once(n, control, notify, seq, forge)
 end
 
 -- forge test messages
-local function produce_seq(forge)
+function stash_sequence(forge)
 	forge:time(0):get(urn.period)
 end
 
 -- process test messages with responder
-local function consume_seq(n, seq, forge)
+function apply_sequence(n, seq, forge)
 	for frames, atom in seq:foreach() do
 		assert(frames == 0)
 		assert(atom.otype == Patch.Get)
@@ -3477,7 +3482,7 @@ local function consume_seq(n, seq, forge)
 end
 
 -- check responder output
-local function check(seq)
+function check(seq)
 	for frames, atom in seq:foreach() do
 		assert(frames == 0)
 		assert(atom.otype == Patch.Set)

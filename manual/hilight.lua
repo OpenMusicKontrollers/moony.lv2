@@ -18,7 +18,7 @@ local function parse(pin)
 	local txt = fin:read('*all')
 	fin:close()
 
-	txt = string.gsub(txt, '<pre><code>(.-)</code></pre>', function(o)
+	txt = string.gsub(txt, '<pre><code%s*data%-ref%s*=%s*".-"%s*>(.-)</code></pre>', function(o)
 		o = string.gsub(o, '&amp;', '&')
 		o = string.gsub(o, '&lt;', '<')
 		o = string.gsub(o, '&gt;', '>')
