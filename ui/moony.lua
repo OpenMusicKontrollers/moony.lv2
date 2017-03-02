@@ -123,7 +123,7 @@ local field_constant = token(l.OPERATOR, P('.')) * token(l.CONSTANT, word_match{
 	'mouseButtonLeft', 'mouseButtonMiddle', 'mouseButtonRight', 'mouseWheelX', 'mouseWheelY', 'mousePositionX', 'mousePositionY', 'mouseFocus',
 
 	-- moony common
-	'type', 'body',
+	'type', 'body', 'raw',
 	-- moony sequence
 	'unit', 'pad',
 	-- moony object

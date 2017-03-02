@@ -1929,6 +1929,12 @@ end</code></pre>
 		<dt class="ret">(integer)</dt>
 			<dd>URID of atom type</dd>
 	</dl>
+
+	<dl>
+		<dt class="attr">atom.raw</dt>
+		<dt class="ret">(string)</dt>
+			<dd>raw byte string of atom body</dd>
+	</dl>
 	</div>
 
 		<!-- Atom Primitive -->

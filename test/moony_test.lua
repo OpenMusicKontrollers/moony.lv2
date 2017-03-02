@@ -417,6 +417,7 @@ local function consumer_chunk(seq, c, atype)
 
 	local atom = seq[1]
 	assert(atom.type == atype)
+	assert(atom.raw == string.char(table.unpack(c)))
 	assert(type(atom.body) == 'string')
 	assert(#atom == #c)
 	assert(#atom.body == #c)
@@ -426,6 +427,7 @@ local function consumer_chunk(seq, c, atype)
 
 	atom = seq[2]
 	assert(atom.type == atype)
+	assert(atom.raw == string.char(table.unpack(c)))
 	assert(#atom == #c)
 	assert(atom[0] == nil)
 	assert(atom[1] == 0x01)
@@ -461,6 +463,7 @@ local function consumer_chunk(seq, c, atype)
 
 	atom = seq[3]
 	assert(atom.type == atype)
+	assert(atom.raw == string.char(table.unpack(c)))
 	assert(atom.body == string.char(table.unpack(c)))
 end
 

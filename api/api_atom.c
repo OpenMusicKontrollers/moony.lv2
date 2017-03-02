@@ -1042,6 +1042,11 @@ _latom__index(lua_State *L)
 				lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_CLONE);
 				return 1;
 			}
+			else if(!strcmp(key, "raw"))
+			{
+				lua_pushlstring(L, latom->body.raw, latom->atom->size);
+				return 1;
+			}
 			else if( (latom->lheader.type == MOONY_UDATA_STASH) && !strcmp(key, "write") )
 			{
 				lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_WRITE);
