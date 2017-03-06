@@ -2370,7 +2370,9 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					{
 						struct nk_str *str = &handle->editor.string;
 						if(fwrite(nk_str_get_const(str), nk_str_len_char(str), 1, f) != 1)
-							; //TODO handle error
+						{
+							//TODO handle error
+						}
 						fclose(f);
 					}
 				} break;
@@ -2393,9 +2395,13 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 								prop->value.chunk.size = sz;
 								prop->value.chunk.body = realloc(prop->value.chunk.body, sz);
 								if(prop->value.chunk.body)
+								{
 									memcpy(prop->value.chunk.body, chunk, sz);
+								}
 								else
-									; //TODO handle error
+								{
+									//TODO handle error
+								}
 								_patch_set(handle, prop->key, sz, prop->range, chunk);
 							}
 							free(chunk);
@@ -2414,12 +2420,16 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 							{
 								struct nk_str *str = &prop->value.editor.string;
 								if(fwrite(nk_str_get_const(str), nk_str_len_char(str), 1, f) != 1)
-									; //TODO handle error
+								{
+									//TODO handle error
+								}
 							}
 							else if(prop->range == handle->forge.Chunk)
 							{
 								if(fwrite(prop->value.chunk.body, prop->value.chunk.size, 1, f) != 1)
-									; //TODO handle error
+								{
+									//TODO handle error
+								}
 							}
 							fclose(f);
 						}
@@ -2932,9 +2942,13 @@ _patch_set_parameter_value(plughandle_t *handle, LV2_URID property,
 			prop->value.chunk.size = value->size;
 			prop->value.chunk.body = realloc(prop->value.chunk.body, value->size);
 			if(prop->value.chunk.body)
+			{
 				memcpy(prop->value.chunk.body, LV2_ATOM_BODY_CONST(value), value->size);
+			}
 			else
-				; //TODO handle error
+			{
+				//TODO handle error
+			}
 		}
 		else
 		{
