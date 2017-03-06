@@ -1156,24 +1156,32 @@ end
 print('[test] Vector')
 do
 
+	local function vectorize(forge, t, o)
+		local vec = forge:vector(t)
+		for i, v in ipairs(o) do
+			vec:typed(t, v)
+		end
+		vec:pop()
+	end
+
 	local function producer(forge)
 		forge:time(0)
-		forge:vector(Atom.Int, {1, 2, 3, 4})
+		vectorize(forge, Atom.Int, {1, 2, 3, 4})
 
 		forge:time(1)
-		forge:vector(Atom.Long, 5, 6, 7, 8)
+		vectorize(forge, Atom.Long, {5, 6, 7, 8})
 
 		forge:time(2)
-		forge:vector(Atom.Bool, {true, false})
+		vectorize(forge, Atom.Bool, {true, false})
 
 		forge:time(3)
-		forge:vector(Atom.Float, 1.0, 2.0)
+		vectorize(forge, Atom.Float, {1.0, 2.0})
 
 		forge:time(4)
-		forge:vector(Atom.Double, {3.3, 4.4})
+		vectorize(forge, Atom.Double, {3.3, 4.4})
 
 		forge:time(5)
-		forge:vector(Atom.URID, Atom.Int, Atom.Long)
+		vectorize(forge, Atom.URID, {Atom.Int, Atom.Long})
 	end
 
 	local function consumer(seq)

@@ -751,7 +751,11 @@ function save(forge)
 
 	-- serialize state to atom object
 	for k, v in pairs(state) do
-		obj:key(k):vector(Atom.Float, v)
+		for vec in obj:key(k):vector(Atom.Float):autopop() do
+			for i, w in ipairs(v) do
+				vec:float(w)
+			end
+		end
 	end
 
 	obj:pop()
@@ -1474,30 +1478,27 @@ end</code></pre>
 			<p>Forge a vector atom, e.g. an atom of type Atom.Vector.</p>
 
 			<dl>
-				<dt class="func">forge:vector(type, value)</dt>
+				<dt class="func">forge:vector(type)</dt>
 					<dt>type (integer)</dt>
-						<dd>child type as integer URID, valid are: Atom.Bool, Atom.Int, Atom.Float, Atom.Double, Atom.URID</dd>
-					<dt>value (table)</dt>
-						<dd>table with vector elements</dd>
-				<dt class="ret">(userdata)</dt>
-					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
-			</dl>
-
-			<dl>
-				<dt class="func">forge:vector(type, ...)</dt>
-					<dt>type (integer)</dt>
-						<dd>child type as integer URID, valid are: Atom.Bool, Atom.Int, Atom.Float, Atom.Double, Atom.URID</dd>
-					<dt>... (bool | integer | number)</dt>
-						<dd>vector elements</dd>
+						<dd>child type as integer URID, valid are: Atom.Bool, Atom.Int, Atom.Float, Atom.Long, Atom.Double, Atom.URID</dd>
 				<dt class="ret">(userdata)</dt>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
 			<pre><code data-ref="forge-vector">-- Forge Vector
 
+local vBool = {
+	true, false, true
+}
+
 function stash_tuple(forge)
-	forge:vector(Atom.Int, 1, 2, 3, 4, 5) -- vector items as individual arguments
-	forge:vector(Atom.Bool, {true, false, true}) --vector items as table
+	forge:vector(Atom.Int):int(1):int(2):int(3):int(4):int(5):pop()
+
+	for vec in forge:vector(Atom.Bool):autopop() do
+		for i, v in ipairs(vBool) do
+			vec:bool(v)
+		end
+	end
 end</code></pre>
 			</div>
 
@@ -2967,7 +2968,7 @@ end</code></pre>
 
 -- serialize
 function stash(forge)
-	forge:vector(Atom.Int, 12, 13, 14)
+	forge:vector(Atom.Int):int(12):int(13):int(14):pop()
 end
 
 function apply(vec)
