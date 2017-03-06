@@ -523,8 +523,8 @@ do
 		assert(tup ~= forge)
 		tup:int(1):float(2.0):long(3):double(4.0):pop()
 
-		-- produce tuplePack
-		for tup in forge:frameTime(1):tuplePack() do
+		-- test autopop
+		for tup in forge:frameTime(1):tuple():autopop() do
 			tup:bool(true)
 		end
 	end
@@ -573,7 +573,7 @@ do
 		assert(#{atom:unpack()} == #{atom:unpack(-100, 100)})
 		assert(#{atom:unpack(1, 2)} == #{atom:unpack(3, 4)})
 
-		-- consume tuplePack
+		-- consume autopop
 		atom = seq[2]
 		assert(atom.type == Atom.Tuple)
 		assert(#atom == 1)
@@ -609,8 +609,8 @@ do
 
 		assert(obj:pop() == forge)
 
-		-- produce objectPack
-		for obj in forge:frameTime(0):objectPack(otype, id) do
+		-- test autopop
+		for obj in forge:frameTime(0):object(otype, id):autopop() do
 			obj:key(key1):int(14)
 		end
 	end
@@ -637,7 +637,7 @@ do
 			end
 		end
 
-		-- consume objectPack
+		-- consume autopop
 		atom = seq[2]
 		assert(atom.type == Atom.Object)
 		assert(atom.id == id)
@@ -708,9 +708,9 @@ do
 		forge:message('/color', 'r', 0xff00007f)
 
 		-- create OSC message from scratch
-		for obj in forge:frameTime(6):objectPack(OSC.Message) do
+		for obj in forge:frameTime(6):object(OSC.Message):autopop() do
 			obj:key(OSC.messagePath):string('/custom')
-			for tup in obj:key(OSC.messageArguments):tuplePack() do
+			for tup in obj:key(OSC.messageArguments):tuple():autopop() do
 				tup:raw(0) -- nil
 				tup:impulse()
 				tup:char(string.byte('c'))
@@ -1114,8 +1114,8 @@ do
 
 		assert(subseq:pop() == forge)
 
-		-- produce sequencePack
-		for seq in forge:frameTime(1):sequencePack() do
+		-- test autopop
+		for seq in forge:frameTime(1):sequence():autopop() do
 			seq:time(10):bool(true)
 		end
 	end
@@ -1133,7 +1133,7 @@ do
 			assert(atom.body == 1)
 		end
 
-		-- consume sequencePack
+		-- consume autopop
 		subseq = seq[2]
 		assert(subseq.type == Atom.Sequence)
 		assert(subseq.unit == 0)

@@ -45,11 +45,7 @@ LV2_Atom_Forge_Ref
 _lforge_basic(lua_State *L, int pos, LV2_Atom_Forge *forge, LV2_URID range);
 
 int
-_lforge_tuple_itr(lua_State *L);
-int
-_lforge_object_itr(lua_State *L);
-int
-_lforge_sequence_itr(lua_State *L);
+_lforge_autopop_itr(lua_State *L);
 
 extern const char *forge_buffer_overflow;
 

@@ -23,39 +23,6 @@
 
 #include <osc.lv2/forge.h>
 
-static const lua_CFunction upclosures [MOONY_UPCLOSURE_COUNT] = {
-	[MOONY_UPCLOSURE_TUPLE_PACK] = _lforge_tuple_itr,
-	[MOONY_UPCLOSURE_OBJECT_PACK] = _lforge_object_itr,
-	[MOONY_UPCLOSURE_SEQUENCE_PACK] = _lforge_sequence_itr
-};
-
-__realtime static inline void
-_pushupclosure(lua_State *L, moony_t *moony, moony_upclosure_t type, bool cache)
-{
-	assert( (type >= MOONY_UPCLOSURE_TUPLE_FOREACH) && (type < MOONY_UPCLOSURE_COUNT) );
-
-	int *upc = &moony->upc[type];
-
-	lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_COUNT + type); // ref
-	if(lua_rawgeti(L, -1, *upc) == LUA_TNIL) // no cached udata, create one!
-	{
-#if 0
-		if(moony->log)
-			lv2_log_trace(&moony->logger, "_pushupclosure:\n");
-#endif
-		lua_pop(L, 1); // nil
-
-		lua_pushlightuserdata(L, moony);
-		moony_newuserdata(L, moony, MOONY_UDATA_FORGE, cache);
-		lua_pushcclosure(L, upclosures[type], 2);
-
-		lua_pushvalue(L, -1);
-		lua_rawseti(L, -3, *upc); // store in cache
-	}
-	lua_remove(L, -2); // ref
-	*upc += 1;
-}
-
 __realtime static void
 _lforge_pop_inlined(lua_State *L, lforge_t *lforge)
 {
@@ -798,46 +765,6 @@ _lforge_tuple(lua_State *L)
 	return 1; // derived forge
 }
 
-__realtime int
-_lforge_tuple_itr(lua_State *L)
-{
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lforge_t *lframe = lua_touserdata(L, lua_upvalueindex(2));
-	lforge_t *lforge = lua_touserdata(L, 1);
-
-	if(lua_isnil(L, 2)) // 1st invocation
-	{
-		lframe->depth = 1;
-		lframe->last.frames = lforge->last.frames;
-		lframe->forge = lforge->forge;
-
-		if(!lv2_atom_forge_tuple(lforge->forge, &lframe->frame[0]))
-			luaL_error(L, forge_buffer_overflow);
-
-		lua_pushvalue(L, lua_upvalueindex(2)); // push cached lforge
-	}
-	else // 2nd invocation
-	{
-		_lforge_pop_inlined(L, lframe);
-
-		lua_pushnil(L); // terminate iterator
-	}
-
-	return 1; // derived forge || nil
-}
-
-__realtime static int
-_lforge_tuple_pack(lua_State *L)
-{
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lforge_t *lforge = lua_touserdata(L, 1);
-
-	_pushupclosure(L, moony, MOONY_UPCLOSURE_TUPLE_PACK, lforge->lheader.cache);
-	lua_pushvalue(L, 1);
-
-	return 2;
-}
-
 __realtime static int
 _lforge_object(lua_State *L)
 {
@@ -858,49 +785,6 @@ _lforge_object(lua_State *L)
 
 	return 1; // derived forge
 }
-
-__realtime int
-_lforge_object_itr(lua_State *L)
-{
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lforge_t *lframe = lua_touserdata(L, lua_upvalueindex(2));
-	lforge_t *lforge = lua_touserdata(L, 1);
-
-	if(lua_isnil(L, 2)) // 1st invocation
-	{
-		lframe->depth = 1;
-		lframe->last.frames = lforge->last.frames;
-		lframe->forge = lforge->forge;
-
-		if(!lv2_atom_forge_object(lforge->forge, &lframe->frame[0], lforge->pack.id, lforge->pack.otype))
-			luaL_error(L, forge_buffer_overflow);
-
-		lua_pushvalue(L, lua_upvalueindex(2)); // push cached lforge
-	}
-	else // 2nd invocation
-	{
-		_lforge_pop_inlined(L, lframe);
-
-		lua_pushnil(L); // terminate iterator
-	}
-
-	return 1; // derived forge || nil
-}
-
-__realtime static int
-_lforge_object_pack(lua_State *L)
-{
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lforge_t *lforge = lua_touserdata(L, 1);
-	lforge->pack.otype = luaL_optinteger(L, 2, 0);
-	lforge->pack.id = luaL_optinteger(L, 3, 0);
-
-	_pushupclosure(L, moony, MOONY_UPCLOSURE_OBJECT_PACK, lforge->lheader.cache);
-	lua_pushvalue(L, 1);
-
-	return 2;
-}
-
 __realtime static int
 _lforge_key(lua_State *L)
 {
@@ -1048,47 +932,6 @@ _lforge_sequence(lua_State *L)
 		luaL_error(L, forge_buffer_overflow);
 
 	return 1; // derived forge
-}
-
-__realtime int
-_lforge_sequence_itr(lua_State *L)
-{
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lforge_t *lframe = lua_touserdata(L, lua_upvalueindex(2));
-	lforge_t *lforge = lua_touserdata(L, 1);
-
-	if(lua_isnil(L, 2)) // 1st invocation
-	{
-		lframe->depth = 1;
-		lframe->last.frames = lforge->last.frames;
-		lframe->forge = lforge->forge;
-
-		if(!lv2_atom_forge_sequence_head(lforge->forge, &lframe->frame[0], lforge->pack.unit))
-			luaL_error(L, forge_buffer_overflow);
-
-		lua_pushvalue(L, lua_upvalueindex(2)); // push cached lforge
-	}
-	else // 2nd invocation
-	{
-		_lforge_pop_inlined(L, lframe);
-
-		lua_pushnil(L); // terminate iterator
-	}
-
-	return 1; // derived forge || nil
-}
-
-__realtime static int
-_lforge_sequence_pack(lua_State *L)
-{
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lforge_t *lforge = lua_touserdata(L, 1);
-	lforge->pack.unit = luaL_optinteger(L, 2, 0);;
-
-	_pushupclosure(L, moony, MOONY_UPCLOSURE_SEQUENCE_PACK, lforge->lheader.cache);
-	lua_pushvalue(L, 1);
-
-	return 2;
 }
 
 __realtime static int
@@ -1811,6 +1654,33 @@ _lforge_pop(lua_State *L)
 	return 1;
 }
 
+__realtime int
+_lforge_autopop_itr(lua_State *L)
+{
+	if(lua_isnil(L, 2)) // 1st invocation
+	{
+		lua_settop(L, 1); // return lforge
+	}
+	else // 2nd invocation
+	{
+		lforge_t *lforge = lua_touserdata(L, 1);
+		_lforge_pop_inlined(L, lforge);
+
+		lua_pushnil(L); // terminate iterator
+	}
+
+	return 1; // derived forge || nil
+}
+
+__realtime static int
+_lforge_autopop(lua_State *L)
+{
+	lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_FORGE_AUTOPOP_ITR); // _lforge_autopop_itr
+	lua_pushvalue(L, 1); // lforge
+
+	return 2;
+}
+
 __realtime static int
 _lforge_read(lua_State *L)
 {
@@ -1872,16 +1742,13 @@ const luaL_Reg lforge_mt [] = {
 	{"atom", _lforge_atom},
 
 	{"tuple", _lforge_tuple},
-	{"tuplePack", _lforge_tuple_pack},
 
 	{"object", _lforge_object},
-	{"objectPack", _lforge_object_pack},
 	{"key", _lforge_key},
 
 	{"vector", _lforge_vector},
 
 	{"sequence", _lforge_sequence},
-	{"sequencePack", _lforge_sequence_pack},
 	{"frameTime", _lforge_frame_time},
 	{"beatTime", _lforge_beat_time},
 	{"time", _lforge_time},
@@ -1932,6 +1799,7 @@ const luaL_Reg lforge_mt [] = {
 	{"fillText", _lforge_canvas_fill_text},
 
 	{"pop", _lforge_pop},
+	{"autopop", _lforge_autopop},
 
 	// stash
 	{"read", _lforge_read},

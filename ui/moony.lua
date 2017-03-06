@@ -74,7 +74,7 @@ local field_func = token(l.OPERATOR, S('.:')) * token(l.FUNCTION, word_match{
 	'frameTime', 'beatTime', 'time', 'atom', 'int', 'long', 'float', 'double', 'bool', 'urid', 'string', 'literal', 'uri', 'path',
 	'chunk', 'midi', 'raw', 'bundle', 'message', 'impulse', 'char', 'rgba', 'timetag', 'tuple', 'tuplePack',
 	'object', 'objectPack', 'key', 'property', 'vector', 'sequence', 'sequencePack',
-	'typed', 'get', 'set', 'put', 'patch', 'remove', 'add', 'ack', 'error', 'pop',
+	'typed', 'get', 'set', 'put', 'patch', 'remove', 'add', 'ack', 'error', 'pop', 'autopop',
 	'graph', 'beginPath', 'closePath', 'arc', 'curveTo', 'lineTo', 'moveTo', 'rectangle', 'style', 'lineWidth', 'lineDash', 'lineCap', 'lineJoin', 'miterLimig', 'stroke', 'fill', 'clip', 'save', 'restore', 'translate', 'scale', 'rotate', 'reset', 'fontSize', 'fillText',
 	-- moony common
 	'foreach', 'unpack', 'clone', 'stash', 'apply', 'register',

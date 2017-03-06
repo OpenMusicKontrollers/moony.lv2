@@ -240,6 +240,7 @@ span.brace {
 						<li><a href="#forge-tuple">Tuple</a></li>
 						<li><a href="#forge-vector">Vector</a></li>
 						<li><a href="#forge-pop">Pop</a></li>
+						<li><a href="#forge-autopop">Autopop</a></li>
 					</ul>
 				</li>
 				<li><a href="#forge-osc">OSC</a>
@@ -1323,14 +1324,6 @@ end</code></pre>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
-			<dl>
-				<dt class="func">forge:sequencePack(unit=0)</dt>
-				<dt>unit (integer)</dt>
-					<dd>event time unit as integer URID, defaults to 0, can either be Atom.frameTime or Atom.beatTime</dd>
-				<dt class="ret">(function)</dt>
-					<dd>iterator for derived container forge object which is automatically finalized</dd>
-			</dl>
-
 			<pre><code data-ref="forge-sequence">-- Forge Sequence
 
 function stash_tuple(forge)
@@ -1344,7 +1337,7 @@ function stash_tuple(forge)
 		seq:frameTime(1):int(13)
 	seq:pop() -- finalize container
 
-	for seq in forge:sequencePack(Atom.beatTime) do -- create iterator for derived container forge object
+	for seq in forge:sequence(Atom.beatTime):autopop() do -- create iterator for derived container forge object
 		seq:time(0.0):int(12)
 		seq:beatTime(1.0):int(13)
 	end -- finalize container
@@ -1409,16 +1402,6 @@ end</code></pre>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
-			<dl>
-				<dt class="func">forge:objectPack(otype=0, id=0)</dt>
-				<dt>otype (integer)</dt>
-					<dd>object type as integer URID, defaults to 0</dd>
-				<dt>id (integer)</dt>
-					<dd>object ID as integer URID, defaults to 0</dd>
-				<dt class="ret">(function)</dt>
-					<dd>iterator for derived container forge object which is automatically finalized</dd>
-			</dl>
-
 			<pre><code data-ref="forge-object">-- Forge Object
 local urn = HashMap('urn:moony:xyz')
 
@@ -1428,7 +1411,7 @@ function stash_tuple(forge)
 		obj:key(urn.bar, urn.ctx):long(13) -- with context
 	obj:pop() -- finalize container
 
-	for obj in forge:objectPack(urn.FooBar) do -- create iterator for derived container forge object
+	for obj in forge:object(urn.FooBar):autopop() do -- create iterator for derived container forge object
 		obj:key(urn.foo):int(12) -- without context
 		obj:key(urn.bar, urn.ctx):long(13) -- with context
 	end -- finalize container
@@ -1462,12 +1445,6 @@ end</code></pre>
 					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
 			</dl>
 
-			<dl>
-				<dt class="func">forge:tuplePack()</dt>
-				<dt class="ret">(function)</dt>
-					<dd>iterator for derived container forge object which is automatically finalized</dd>
-			</dl>
-
 			<pre><code data-ref="forge-key">-- Forge Tuple
 
 function stash_tuple(forge)
@@ -1480,7 +1457,7 @@ function stash_tuple(forge)
 		tup:bool(true)
 	tup:pop() -- finalize container
 
-	for tup in forge:tuplePack() do -- create iterator for derived container forge object
+	for tup in forge:tuple():autopop() do -- create iterator for derived container forge object
 		tup:int(12)
 		tup:long(13)
 		tup:float(13.5)
@@ -1534,6 +1511,44 @@ end</code></pre>
 				<dt class="ret">(userdata)</dt>
 					<dd>parent container forge object</dd>
 			</dl>
+
+			<pre><code data-ref="forge-pop">-- Pop
+
+function stash(forge)
+	local tup = forge:tuple()
+	tup:int(1)
+	tup:int(2)
+	tup:pop()
+end
+
+function apply(atom)
+	assert(#atom == 2)
+end</code></pre>
+			</div>
+
+			<!-- Forge AutoPop -->
+			<div class="api-section">
+			<h3 id="forge-autopop">Autopop</h3>
+			<p>Finalize any derived container forge object automatically via a for-iterator-construction.</p>
+
+			<dl>
+				<dt class="func">forge:autopop()</dt>
+				<dt class="ret">(function, userdata)</dt>
+					<dd>iterator function, parent container forge object</dd>
+			</dl>
+
+			<pre><code data-ref="forge-autopop">-- Autopop
+
+function stash(forge)
+	for tup in forge:tuple():autopop() do
+		tup:int(1)
+		tup:int(2)
+	end
+end
+
+function apply(atom)
+	assert(#atom == 2)
+end</code></pre>
 			</div>
 
 		<!-- Forge OSC -->
@@ -1666,9 +1681,9 @@ end</code></pre>
 				<pre><code data-ref="forge-timetag">-- Forge custom OSC arguments
 
 function stash(forge)
-	for obj in forge:objectPack(OSC.Message) do
+	for obj in forge:object(OSC.Message):autopop() do
 		obj:key(OSC.messagePath):string('/custom')
-		for tup in obj:key(OSC.messageArguments):tuplePack() do
+		for tup in obj:key(OSC.messageArguments):tuple():autopop() do
 			-- forge 'i', 'f', 's', 'b' OSC arguments
 			tup:int(12) -- 'i'nteger
 			tup:float(1.5) -- 'f'loat

@@ -4,6 +4,8 @@
 * api: CanvasResponder
 * gui: clipboard support
 * gui: external editor
+* api: remove inline-display/cairo once ardour supports routing atoms
 
 === High priority
 * doc: Parameter
+* api: make vector a real container forge object
