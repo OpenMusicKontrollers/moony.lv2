@@ -149,6 +149,12 @@ nk_pugl_icon_unload(nk_pugl_window_t *win, struct nk_image img);
 static bool
 nk_pugl_is_shortcut_pressed(struct nk_input *in, char letter, bool clear);
 
+static void
+nk_pugl_copy_to_clipboard(nk_pugl_window_t *win, const char *selection, size_t len);
+
+static const char *
+nk_pugl_paste_from_clipboard(nk_pugl_window_t *win, size_t *len);
+
 #ifdef __cplusplus
 }
 #endif
@@ -566,7 +572,12 @@ static bool
 _nk_pugl_other_key_down(nk_pugl_window_t *win, const PuglEventKey *ev)
 {
 	struct nk_context *ctx = &win->ctx;
-	const bool control = ev->state & PUGL_MOD_CTRL;
+#if defined(__APPLE__)
+	const bool modifier = ev->state & PUGL_MOD_SUPER;
+#else
+	const bool modifier = ev->state & PUGL_MOD_CTRL;
+#endif
+	const bool shift = ev->state & PUGL_MOD_SHIFT;
 
 	// automatically enter insert mode upon non-special key press
 	_nk_pugl_key_press(ctx, NK_KEY_TEXT_INSERT_MODE);
@@ -605,7 +616,7 @@ _nk_pugl_other_key_down(nk_pugl_window_t *win, const PuglEventKey *ev)
 
 		default:
 		{
-			if(control)
+			if(modifier)
 			{
 				// unescape ASCII control chars + Control
 				const uint32_t character = ev->character | 0x60;
@@ -626,11 +637,10 @@ _nk_pugl_other_key_down(nk_pugl_window_t *win, const PuglEventKey *ev)
 					}	break;
 					case 'z':
 					{
-						_nk_pugl_key_press(ctx, NK_KEY_TEXT_UNDO);
-					}	break;
-					case 'r':
-					{
-						_nk_pugl_key_press(ctx, NK_KEY_TEXT_REDO);
+						if(shift)
+							_nk_pugl_key_press(ctx, NK_KEY_TEXT_REDO);
+						else
+							_nk_pugl_key_press(ctx, NK_KEY_TEXT_UNDO);
 					}	break;
 
 					default:
@@ -1140,6 +1150,18 @@ nk_pugl_is_shortcut_pressed(struct nk_input *in, char letter, bool clear)
 	}
 
 	return false;
+}
+
+static void
+nk_pugl_copy_to_clipboard(nk_pugl_window_t *win, const char *selection, size_t len)
+{
+	puglCopyToClipboard(win->view, selection, len);
+}
+
+static const char *
+nk_pugl_paste_from_clipboard(nk_pugl_window_t *win, size_t *len)
+{
+	return puglPasteFromClipboard(win->view, len);
 }
 
 #ifdef __cplusplus
