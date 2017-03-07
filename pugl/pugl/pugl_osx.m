@@ -642,9 +642,46 @@ puglDestroy(PuglView* view)
 	if (view->impl->window) {
 		[view->impl->window release];
 	}
+	puglClearSelection(view);
 	free(view->windowClass);
 	free(view->impl);
 	free(view);
+}
+
+void
+puglCopyToClipboard(PuglView* view, const char* selection, size_t len)
+{
+	PuglInternals* const impl = view->impl;
+
+	puglSetSelection(view, selection, len);
+
+	NSPasteboard* pasteboard = [NSPasteboard generalPasteboard];
+	if(pasteboard) {
+		[pasteboard
+			declareTypes:[NSArray arrayWithObjects:NSStringPboardType, nil]
+			owner:nil];
+		[pasteboard
+			setString:[NSString stringWithUTF8String:puglGetSelection(view, NULL)]
+			forType:NSStringPboardType];
+	}
+}
+
+const char*
+puglPasteFromClipboard(PuglView* view, size_t* len)
+{
+	PuglInternals* const impl = view->impl;
+
+	NSPasteboard* pasteboard = [NSPasteboard generalPasteboard];
+	if(pasteboard && [ [pasteboard types] containsObject:NSStringPboardType] ) {
+		const NSString* mem = [pasteboard stringForType:NSStringPboardType];
+		if(mem) {
+			const char *utf8 = [mem UTF8String];
+			if(utf8)
+				puglSetSelection(view, utf8, strlen(utf8));
+		}
+	}
+
+	return puglGetSelection(view, len);
 }
 
 void

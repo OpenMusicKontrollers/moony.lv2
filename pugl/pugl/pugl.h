@@ -569,6 +569,18 @@ PUGL_API void
 puglIgnoreKeyRepeat(PuglView* view, bool ignore);
 
 /**
+   Copy selection to clipboard.
+*/
+PUGL_API void
+puglCopyToClipboard(PuglView* view, const char* selection, size_t len);
+
+/**
+   Paste selection from clipboard.
+*/
+PUGL_API const char*
+puglPasteFromClipboard(PuglView* view, size_t* len);
+
+/**
    Grab the input focus.
 */
 PUGL_API void

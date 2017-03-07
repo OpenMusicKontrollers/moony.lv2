@@ -83,6 +83,8 @@ public:
 	virtual void*      getContext()                 { return puglGetContext(_view); }
 	virtual void       ignoreKeyRepeat(bool ignore) { puglIgnoreKeyRepeat(_view, ignore); }
 	virtual void       grabFocus()                  { puglGrabFocus(_view); }
+	virtual void       copyToClipboard(char* selection) { puglCopyToClipboard(_view, selection); }
+	virtual const char* pasteFromClipboard()        { return puglPasteFromClipboard(_view); }
 	virtual PuglStatus waitForEvent()               { return puglWaitForEvent(_view); }
 	virtual PuglStatus processEvents()              { return puglProcessEvents(_view); }
 	virtual void       postRedisplay()              { puglPostRedisplay(_view); }

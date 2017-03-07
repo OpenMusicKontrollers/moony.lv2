@@ -229,6 +229,7 @@ puglDestroy(PuglView* view)
 	ReleaseDC(view->impl->hwnd, view->impl->hdc);
 	DestroyWindow(view->impl->hwnd);
 	UnregisterClass(view->impl->wc.lpszClassName, NULL);
+	puglClearSelection(view);
 	free(view->windowClass);
 	free(view->impl);
 	free(view);
@@ -572,6 +573,65 @@ handleMessage(PuglView* view, UINT message, WPARAM wParam, LPARAM lParam)
 	puglDispatchEvent(view, &event);
 
 	return 0;
+}
+
+void
+puglCopyToClipboard(PuglView* view, const char* selection, size_t len)
+{
+	PuglInternals* const impl = view->impl;
+
+	puglSetSelection(view, selection, len);
+
+	if(OpenClipboard(impl->hwnd)) {
+		const int wsize = MultiByteToWideChar(CP_UTF8, 0, selection, len, NULL, 0);
+		if(wsize) {
+			HGLOBAL mem = GlobalAlloc(GMEM_MOVEABLE, (wsize + 1) * sizeof(wchar_t));
+			if(mem) {
+				wchar_t* wstr = (wchar_t*)GlobalLock(mem);
+				if(wstr) {
+					MultiByteToWideChar(CP_UTF8, 0, selection, len, wstr, wsize);
+					wstr[wsize] = 0;
+					GlobalUnlock(mem);
+					SetClipboardData(CF_UNICODETEXT, mem);
+				}
+				else {
+					GlobalFree(mem);
+				}
+			}
+		}
+		CloseClipboard();
+	}
+}
+
+const char*
+puglPasteFromClipboard(PuglView* view, size_t* len)
+{
+	PuglInternals* const impl = view->impl;
+
+	if(IsClipboardFormatAvailable(CF_UNICODETEXT) && OpenClipboard(impl->hwnd)) {
+		HGLOBAL mem = GetClipboardData(CF_UNICODETEXT);
+		if(mem) {
+			const int wsize = GlobalSize(mem) / sizeof(wchar_t) - 1;
+			if(wsize) {
+				wchar_t* wstr = (wchar_t*)GlobalLock(mem);
+				if(wstr) {
+					const int utf8size = WideCharToMultiByte(CP_UTF8, 0, wstr, wsize, NULL, 0, NULL, NULL);
+					if(utf8size) {
+						char* utf8 = (char*)malloc(utf8size);
+						if(utf8) {
+							WideCharToMultiByte(CP_UTF8, 0, wstr, wsize, utf8, utf8size, NULL, NULL);
+							puglSetSelection(view, utf8, utf8size);
+							free(utf8);
+						}
+					}
+					GlobalUnlock(mem);
+				}
+			}
+		}
+		CloseClipboard();
+	}
+
+	return puglGetSelection(view, len);
 }
 
 void
