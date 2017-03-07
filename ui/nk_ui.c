@@ -252,7 +252,6 @@ struct _plughandle_t {
 
 	char code [MOONY_MAX_CHUNK_LEN];
 	struct nk_text_edit editor;
-	char *clipboard;
 	bool dirty;
 
 	char error [MOONY_MAX_ERROR_LEN];
@@ -1437,8 +1436,10 @@ _paste(nk_handle userdata, struct nk_text_edit* editor)
 {
 	plughandle_t *handle = userdata.ptr;
 
-	if(handle->clipboard)
-		nk_textedit_paste(editor, handle->clipboard, strlen(handle->clipboard));
+	size_t len;
+	const char *selection = nk_pugl_paste_from_clipboard(&handle->win, &len);
+	if(selection)
+		nk_textedit_paste(editor, selection, len);
 }
 
 static void
@@ -1446,10 +1447,7 @@ _copy(nk_handle userdata, const char *buf, int len)
 {
 	plughandle_t *handle = userdata.ptr;
 
-	if(handle->clipboard)
-		free(handle->clipboard);
-
-	handle->clipboard = _strndup(buf, len);
+	nk_pugl_copy_to_clipboard(&handle->win, buf, len);
 }
 
 static bool
@@ -2852,9 +2850,6 @@ cleanup(LV2UI_Handle instance)
 	plughandle_t *handle = instance;
 
 	file_browser_free(&handle->browser, _icon_unload, handle);
-
-	if(handle->clipboard)
-		free(handle->clipboard);
 
 	if(handle->L)
 		lua_close(handle->L);
