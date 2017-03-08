@@ -19,8 +19,16 @@
 
 #include <api_osc.h>
 #include <api_atom.h>
+#include <api_forge.h>
 
 #include <osc.lv2/util.h>
+
+typedef struct _osc_responder_data_t osc_responder_data_t;
+
+struct _osc_responder_data_t {
+	moony_t *moony;
+	bool handled;
+};
 
 __realtime static inline bool
 _osc_path_has_wildcards(const char *path)
@@ -58,7 +66,8 @@ const char *loscresponder_match =
 	"	for w in __expand(v) do\n"
 	"		for k, x in pairs(o) do\n"
 	"			if string.match(k, w) then\n"
-	"				handled = x(o, ...) or handled\n"
+	"				x(o, ...)\n"
+	"				handled = handled or true\n"
 	"			end\n"
 	"		end\n"
 	"	end\n"
@@ -68,7 +77,8 @@ const char *loscresponder_match =
 __realtime static inline void
 _loscresponder_method(const char *path, const LV2_Atom_Tuple *arguments, void *data)
 {
-	moony_t *moony = data;
+	osc_responder_data_t *ord = data;
+	moony_t *moony = ord->moony;
 	lua_State *L = moony->vm.L;
 	//LV2_Atom_Forge *forge = &moony->forge;
 	LV2_OSC_URID *osc_urid = &moony->osc_urid;
@@ -88,6 +98,7 @@ _loscresponder_method(const char *path, const LV2_Atom_Tuple *arguments, void *d
 	else if(lua_getfield(L, 1, path) == LUA_TNIL) // raw string match
 	{
 		lua_pop(L, 1); // nil
+		ord->handled = ord->handled || false;
 		return;
 	}
 
@@ -219,13 +230,24 @@ _loscresponder_method(const char *path, const LV2_Atom_Tuple *arguments, void *d
 		}
 	}
 
-	lua_call(L, 4 + matching + lua_gettop(L) - oldtop, 0);
+	lua_call(L, 4 + matching + lua_gettop(L) - oldtop, matching);
+
+	if(matching)
+	{
+		ord->handled = ord->handled || lua_toboolean(L, -1);
+		lua_pop(L, 1);
+	}
+	else
+	{
+		ord->handled = ord->handled || true;
+	}
 }
 
 __realtime static int
 _loscresponder__call(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	const bool *through = lua_touserdata(L, 1);
 
 	lua_settop(L, 4); // discard superfluous arguments
 	// 1: self
@@ -253,8 +275,30 @@ _loscresponder__call(lua_State *L)
 	lua_getuservalue(L, 1);
 	lua_replace(L, 1);
 
-	lua_pushboolean(L, lv2_osc_body_unroll(&moony->osc_urid,
-		latom->atom->size, latom->body.obj, _loscresponder_method, moony));
+	osc_responder_data_t ord = {
+		.moony = moony,
+		.handled = false
+	};
+
+	lv2_osc_body_unroll(&moony->osc_urid, latom->atom->size, latom->body.obj,
+		_loscresponder_method, &ord);
+
+	if(!ord.handled && *through) // not handled and through mode
+	{
+		const int64_t frames = luaL_checkinteger(L, 2);
+		lforge_t *lforge = luaL_checkudata(L, 3, "lforge");
+
+		if(frames < lforge->last.frames)
+			luaL_error(L, "invalid frame time, must not decrease");
+		lforge->last.frames = frames;
+
+		if(  !lv2_atom_forge_frame_time(lforge->forge, frames)
+			|| !lv2_atom_forge_atom(lforge->forge, latom->atom->size, latom->atom->type)
+			|| !lv2_atom_forge_write(lforge->forge, latom->body.raw, latom->atom->size) )
+			luaL_error(L, forge_buffer_overflow);
+	}
+
+	lua_pushboolean(L, 1); // handled
 	return 1;
 }
 
@@ -263,11 +307,14 @@ _loscresponder(lua_State *L)
 {
 	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	
-	lua_settop(L, 1); // discard superfluous arguments
+	lua_settop(L, 2); // discard superfluous arguments
+
+	const bool _through = lua_toboolean(L, 2);
+	lua_pop(L, 1); // bool
 
 	// o = new 
-	int32_t *dummy = lua_newuserdata(L, sizeof(int32_t));
-	(void)dummy;
+	bool *through = lua_newuserdata(L, sizeof(bool));
+	*through= _through;
 
 	// o.uservalue = uservalue
 	lua_insert(L, 1);

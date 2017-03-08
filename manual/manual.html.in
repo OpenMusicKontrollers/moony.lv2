@@ -3181,6 +3181,8 @@ end</code></pre>
 			<dt class="func">OSCResponder(responder)</dt>
 			<dt>responder (table)</dt>
 				<dd>table with responder callbacks</dd>
+			<dt>through (boolean)</dt>
+				<dd>flag whether to let unhandled messages through, defaults to false</dd>
 			<dt class="ret">(userdata)</dt>
 				<dd>OSCResponder object</dd>
 		</dl>
@@ -3211,7 +3213,7 @@ local oscR = OSCResponder({
 		-- send a '/pong'
 		forge:time(frames):message('/pong', fmt, var1, var2)
 	end
-})
+}, true) -- route through not matched OSC messages
 
 -- forge test messages
 function stash_sequence(forge)

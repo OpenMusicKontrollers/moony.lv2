@@ -31,17 +31,20 @@ _lmidiresponder__call(lua_State *L)
 	// 3: forge
 	// 4: atom
 	
-	latom_t *lchunk = luaL_checkudata(L, 4, "latom");
+	latom_t *latom = NULL;
+	if(luaL_testudata(L, 4, "latom"))
+		latom = lua_touserdata(L, 4);
 	lua_pop(L, 1); // atom
 
 	// check for valid atom and event type
-	if(lchunk->atom->type != moony->uris.midi_event)
+	if(  !latom
+		|| (latom->atom->type != moony->uris.midi_event) )
 	{
 		lua_pushboolean(L, 0); // not handled
 		return 1;
 	}
 
-	const uint8_t *midi = lchunk->body.raw;
+	const uint8_t *midi = latom->body.raw;
 	const uint8_t status = midi[0];
 	const uint8_t command = status & 0xf0;
 	const bool is_system = command == 0xf0;
@@ -58,10 +61,10 @@ _lmidiresponder__call(lua_State *L)
 		else
 			lua_pushinteger(L, status & 0x0f); // 4: channel
 
-		for(unsigned i=1; i<lchunk->atom->size; i++)
+		for(unsigned i=1; i<latom->atom->size; i++)
 			lua_pushinteger(L, midi[i]);
 
-		lua_call(L, 4 + lchunk->atom->size - 1, 0);
+		lua_call(L, 4 + latom->atom->size - 1, 0);
 	}
 	else if(*through) // through
 	{
@@ -73,8 +76,8 @@ _lmidiresponder__call(lua_State *L)
 		lforge->last.frames = frames;
 
 		if(  !lv2_atom_forge_frame_time(lforge->forge, frames)
-			|| !lv2_atom_forge_atom(lforge->forge, lchunk->atom->size, lchunk->atom->type)
-			|| !lv2_atom_forge_write(lforge->forge, lchunk->body.raw, lchunk->atom->size) )
+			|| !lv2_atom_forge_atom(lforge->forge, latom->atom->size, latom->atom->type)
+			|| !lv2_atom_forge_write(lforge->forge, latom->body.raw, latom->atom->size) )
 			luaL_error(L, forge_buffer_overflow);
 	}
 
