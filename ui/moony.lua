@@ -116,6 +116,8 @@ local field_constant = token(l.OPERATOR, P('.')) * token(l.CONSTANT, word_match{
 	'label', 'range', 'comment',
 	-- moony Units
 	'Conversion', 'Unit', 'bar', 'beat', 'bpm', 'cent', 'cm', 'coef', 'conversion', 'db', 'degree', 'frame', 'hz', 'inch', 'khz', 'km', 'm', 'mhz', 'midiNote', 'midiController', 'mile', 'min', 'mm', 'ms', 'name', 'oct', 'pc', 'prefixConversion', 'render', 's', 'semitone12TET', 'symbol', 'unit',
+	-- moony Ui
+	'updateRate',
 	-- moony Canvas
 	'graph', 'body', 'BeginPath', 'ClosePath', 'Arc', 'CurveTo', 'LineTo', 'MoveTo', 'Rectangle', 'Style', 'LineWidth', 'LineDash', 'LineCap', 'LineJoin',
 	'MiterLimit', 'Stroke', 'Fill', 'Clip', 'Save', 'Restore', 'Translate', 'Scale', 'Rotate', 'Reset', 'FontSize', 'FillText',
@@ -139,7 +141,7 @@ local library = token('library', word_match{
 	-- Lua
 	'coroutine', 'string', 'utf8', 'table', 'math', 'debug', 'lpeg', 'base64', 'ascii85', 'aes128',
 	-- Moony
-	'Atom', 'MIDI', 'Time', 'OSC', 'Core', 'Buf_Size', 'Patch', 'RDF', 'RDFS', 'Units', 'Options', 'Canvas'
+	'Atom', 'MIDI', 'Time', 'OSC', 'Core', 'Buf_Size', 'Patch', 'RDF', 'RDFS', 'Units', 'Options', 'Canvas', 'Ui'
 })
 
 -- Identifiers.

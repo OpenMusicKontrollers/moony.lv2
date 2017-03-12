@@ -248,6 +248,7 @@ struct _moony_t {
 		LV2_URID bufsz_max_block_length;
 		LV2_URID bufsz_min_block_length;
 		LV2_URID bufsz_sequence_size;
+		LV2_URID ui_update_rate;
 
 		patch_t patch;
 
@@ -274,7 +275,8 @@ struct _moony_t {
 		uint32_t max_block_length;
 		uint32_t min_block_length;
 		uint32_t sequence_size;
-		uint32_t sample_rate;
+		float sample_rate;
+		float update_rate;
 	} opts;
 
 	LV2_OSC_URID osc_urid;

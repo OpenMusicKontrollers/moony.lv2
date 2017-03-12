@@ -1143,6 +1143,8 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 		LV2_BUF_SIZE__maxBlockLength);
 	moony->uris.bufsz_sequence_size = moony->map->map(moony->map->handle,
 		LV2_BUF_SIZE__sequenceSize);
+	moony->uris.ui_update_rate= moony->map->map(moony->map->handle,
+		LV2_UI__updateRate);
 
 	moony->uris.patch.self = moony->map->map(moony->map->handle, subject);
 
@@ -1258,6 +1260,8 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 				moony->opts.max_block_length = *(int32_t *)opt->value;
 			else if(opt->key == moony->uris.bufsz_sequence_size)
 				moony->opts.sequence_size = *(int32_t *)opt->value;
+			else if(opt->key == moony->uris.ui_update_rate)
+				moony->opts.update_rate = *(float *)opt->value;
 		}
 	}
 	moony->opts.sample_rate = sample_rate;
@@ -1527,6 +1531,13 @@ moony_open(moony_t *moony, lua_State *L)
 
 	lua_newtable(L);
 	{
+		SET_MAP(L, LV2_UI__, updateRate);
+		//TODO add more and document
+	}
+	lua_setglobal(L, "Ui");
+
+	lua_newtable(L);
+	{
 		SET_MAP(L, RDF__, value);
 		SET_MAP(L, RDF__, type);
 	}
@@ -1649,7 +1660,14 @@ moony_open(moony_t *moony, lua_State *L)
 		if(moony->opts.sample_rate)
 		{
 			lua_pushinteger(L, core_sample_rate);
-			lua_pushinteger(L, moony->opts.sample_rate);
+			lua_pushnumber(L, moony->opts.sample_rate);
+			lua_rawset(L, -3);
+		}
+
+		if(moony->opts.update_rate)
+		{
+			lua_pushinteger(L, moony->uris.ui_update_rate);
+			lua_pushnumber(L, moony->opts.update_rate);
 			lua_rawset(L, -3);
 		}
 	}
