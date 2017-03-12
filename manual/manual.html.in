@@ -313,7 +313,11 @@ span.brace {
 				<li><a href="#responder-midi">MIDIResponder</a></li>
 				<li><a href="#responder-osc">OSCResponder</a></li>
 				<li><a href="#responder-time">TimeResponder</a></li>
-				<li><a href="#responder-state">StateResponder</a></li>
+				<li><a href="#responder-state">StateResponder</a>
+					<ul>
+						<li><a href="#responder-parameter">Parameter</a></li>
+					</ul>
+				</li>
 			</ul>
 		</li>
 
@@ -3444,7 +3448,7 @@ end</code></pre>
 
 		<pre><code data-ref="responder-state">-- StateResponder
 
-local urn = HashMap('urn:moony:xzy')
+local urn = HashMap('urn:moony:xzy#')
 
 -- define read-only parameter
 local period = {
@@ -3529,6 +3533,67 @@ function check(seq)
 		assert(atom[Patch.property].body == urn.period)
 		assert(atom[Patch.value].body == 5.0)
 	end
+end</code></pre>
+		</div>
+
+		<!-- Parameter -->
+		<div class="api-section">
+		<h2 id="responder-parameter">Parameter</h2>
+		<p>Adds convenience accessor metamethods to any parameter property table.</p>
+
+		<dl>
+			<dt class="func">Parameter(param)</dt>
+			<dt>param (table)</dt>
+				<dd>table with parameter properties</dd>
+			<dt class="ret">(table)</dt>
+				<dd>table with parameter properties plus metamethods</dd>
+		</dl>
+
+		<dl>
+			<dt class="func">param:__call(value, frames=nil, forge=nil) | param(value, frames=nil, forge=nil)</dt>
+			<dt>value (integer | number | string | boolean)</dt>
+				<dd>new value to set parameter to</dd>
+			<dt>frames (integer)</dt>
+				<dd>frame time value is set on, defaults to nil</dd>
+			<dt>forge (userdata)</dt>
+				<dd>forge to send patch messages to, defaults to nil</dd>
+		</dl>
+
+		<dl>
+			<dt class="func">param:__call() | param()</dt>
+			<dt class="ret">(integer | number | string | boolean)</dt>
+				<dd>current value parameter is set to</dd>
+		</dl>
+
+		<pre><code data-ref="responder-parameter">-- Parameter
+
+local foo = Parameter({
+	[RDFS.label] = 'Foo',
+	[RDFS.range] = Atom.Float,
+	[Core.minimum] = 0.0,
+	[Core.maximum] = 1.0,
+	[RDF.value] = 0.5
+})
+
+local bar = Parameter({
+	[RDFS.label] = 'Bar',
+	[RDFS.range] = Atom.Int,
+	[Core.minimum] = 0,
+	[Core.maximum] = 10,
+	[RDF.value] = 5
+})
+
+function stash(forge)
+	assert(foo() == 0.5)
+	assert(foo[RDF.value] == 0.5)
+
+	foo(0.8)
+	assert(foo() == 0.8)
+
+	foo[RDF.value] = 0.9
+	assert(foo[RDF.value] == 0.9)
+
+	--TODO
 end</code></pre>
 		</div>
 
