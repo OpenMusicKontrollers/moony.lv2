@@ -371,16 +371,16 @@ moony_bypass(moony_t *moony)
 __realtime static inline void
 moony_err(moony_t *moony, const char *msg)
 {
-	const char *error = msg;
-	const char *err = strstr(error, "\"]:"); // search end mark of header [string ""]:
+	const char *err = strstr(msg, "\"]:"); // search end mark of header [string ""]:
 	err = err
 		? err + 3 // skip header end mark
-		: error; // use whole error string alternatively
+		: msg; // use whole error string alternatively
 
 	if(moony->log)
 		lv2_log_trace(&moony->logger, "%s\n", err);
 
-	snprintf(moony->error, MOONY_MAX_ERROR_LEN, "%s", err);
+	if(moony->error[0] == '\0') // don't overwrite any previous error message
+		snprintf(moony->error, MOONY_MAX_ERROR_LEN, "%s", err);
 
 	moony->error_out = 1;
 }
