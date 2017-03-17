@@ -345,40 +345,44 @@ _lv2_canvas_render_fillText(cairo_t *ctx,
 }
 
 static inline void
-_lv2_canvas_qsort(LV2_Canvas_Meth *a, unsigned n)
+_lv2_canvas_qsort(LV2_Canvas_Meth *A, int n)
 {
 	if(n < 2)
 		return;
 
-	const LV2_Canvas_Meth *p = &a[n/2];
+	LV2_Canvas_Meth *p = A;
 
-	unsigned i, j;
-	for(i=0, j=n-1; ; i++, j--)
+	int i = -1;
+	int j = n;
+
+	while(true)
 	{
-		while(a[i].command < p->command)
-			i++;
+		do {
+			i += 1;
+		} while(A[i].command < p->command);
 
-		while(p->command < a[j].command)
-			j--;
+		do {
+			j -= 1;
+		} while(A[j].command > p->command);
 
 		if(i >= j)
 			break;
 
-		const LV2_Canvas_Meth t = a[i];
-		a[i] = a[j];
-		a[j] = t;
+		const LV2_Canvas_Meth tmp = A[i];
+		A[i] = A[j];
+		A[j] = tmp;
 	}
 
-	_lv2_canvas_qsort(a, i);
-	_lv2_canvas_qsort(&a[i], n - i);
+	_lv2_canvas_qsort(A, j + 1);
+	_lv2_canvas_qsort(A + j + 1, n - j - 1);
 }
 
 static inline LV2_Canvas_Meth *
-_lv2_canvas_bsearch(LV2_URID p, LV2_Canvas_Meth *a, unsigned n)
+_lv2_canvas_bsearch(LV2_URID p, LV2_Canvas_Meth *a, int n)
 {
 	LV2_Canvas_Meth *base = a;
 
-	for(unsigned N = n, half; N > 1; N -= half)
+	for(int N = n, half; N > 1; N -= half)
 	{
 		half = N/2;
 		LV2_Canvas_Meth *dst = &base[half];
