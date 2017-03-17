@@ -51,7 +51,7 @@
 
 #include <api_vm.h>
 #include <osc.lv2/osc.h>
-#include <xpress.h>
+#include <xpress.lv2/xpress.h>
 
 #include <lua.h>
 #include <lauxlib.h>
