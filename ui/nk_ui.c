@@ -246,7 +246,6 @@ struct _plughandle_t {
 
 	atom_ser_t ser;
 
-	float dy;
 	browser_type_t browser_type;
 	prop_t *browser_target;
 
@@ -1962,12 +1961,17 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 {
 	plughandle_t *handle = data;
 
+	const float dy = 20.f * nk_pugl_get_scale(&handle->win);
+
 	ctx->clip.paste = _paste;
 	ctx->clip.copy = _copy;
 	ctx->clip.userdata.ptr = handle;
 
+	// modify default button style
+	struct nk_style_button *bst = &handle->win.ctx.style.button;
+	bst->rounding = (dy - 2*bst->border) / 2;
+
 	struct nk_input *in = &ctx->input;
-	const float dy = handle->dy;
 	const struct nk_vec2 window_padding = ctx->style.window.padding;
 	const struct nk_vec2 group_padding = ctx->style.window.group_padding;
 	const float header_h = 1*dy + 2*window_padding.y;
@@ -2705,36 +2709,24 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		}
 	}
 
-	const char *NK_SCALE = getenv("NK_SCALE");
-	const float scale = NK_SCALE ? atof(NK_SCALE) : 1.f;
-	handle->dy = 20.f * scale;
-
 	nk_pugl_config_t *cfg = &handle->win.cfg;
-	cfg->width = 1280 * scale;
-	cfg->height = 720 * scale;
+	cfg->width = 1280;
+	cfg->height = 720;
 	cfg->resizable = true;
 	cfg->ignore = false;
 	cfg->class = "moony";
 	cfg->title = "Moony";
 	cfg->parent = (intptr_t)parent;
+	cfg->host_resize = host_resize;
 	cfg->data = handle;
 	cfg->expose = _expose;
 
-	char *path;
-	if(asprintf(&path, "%sCousine-Regular.ttf", bundle_path) == -1)
-		path = NULL;
-
-	cfg->font.face = path;
-	cfg->font.size = 13 * scale;
+	if(asprintf(&cfg->font.face, "%sCousine-Regular.ttf", bundle_path) == -1)
+		cfg->font.face = NULL;
+	cfg->font.size = 13;
 	
 	*(intptr_t *)widget = nk_pugl_init(&handle->win);
 	nk_pugl_show(&handle->win);
-
-	if(path)
-		free(path);
-
-	if(host_resize)
-		host_resize->ui_resize(host_resize->handle, cfg->width, cfg->height);
 
 	handle->ser.moony = NULL;
 	handle->ser.size = 1024;
@@ -2781,7 +2773,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		lua_setfield(handle->L, -2, "path");
 		lua_pop(handle->L, 1); // package
 
-		path = NULL;
+		char *path = NULL;
 		if(asprintf(&path, "%s%s", bundle_path, "lexer.lua") != -1)
 		{
 			if(luaL_dofile(handle->L, path))
@@ -2818,7 +2810,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 
 	// modify default button style
 	struct nk_style_button *bst = &handle->win.ctx.style.button;
-	bst->rounding = (handle->dy - 2*bst->border) / 2;
+	//bst->rounding = (dy - 2*bst->border) / 2; // in _expose, depends on scaling
 	bst->image_padding.x = -bst->padding.x - bst->border - 1;
 	bst->image_padding.y = -bst->padding.y - bst->border - 1;
 	bst->text_hover = nk_white;
