@@ -71,16 +71,19 @@ struct _nk_pugl_config_t {
 	unsigned min_height;
 
 	bool resizable;
+	bool fixed_aspect;
 	bool ignore;
 	const char *class;
 	const char *title;
 
 	struct {
-		const char *face;
+		char *face;
 		int size;
 	} font;
 
 	intptr_t parent;
+
+	LV2UI_Resize *host_resize;
 
 	void *data;
 	nk_pugl_expose_t expose;
@@ -88,6 +91,7 @@ struct _nk_pugl_config_t {
 
 struct _nk_pugl_window_t {
 	nk_pugl_config_t cfg;
+	float scale;
 
 	PuglView *view;
 	int quit;
@@ -159,6 +163,9 @@ nk_pugl_copy_to_clipboard(nk_pugl_window_t *win, const char *selection, size_t l
 NK_PUGL_API const char *
 nk_pugl_paste_from_clipboard(nk_pugl_window_t *win, size_t *len);
 
+NK_PUGL_API float
+nk_pugl_get_scale(nk_pugl_window_t *win);
+
 #ifdef __cplusplus
 }
 #endif
@@ -206,9 +213,8 @@ static const struct nk_draw_vertex_layout_element vertex_layout [] = {
 
 #if defined(__APPLE__)
 #	define GL_EXT(name) name
-#endif
 
-#if defined(_WIN32)
+#elif defined(_WIN32)
 static void *
 _nk_pugl_gl_ext(const char *name)
 {
@@ -227,9 +233,8 @@ _nk_pugl_gl_ext(const char *name)
   return p;
 }
 #	define GL_EXT(name) (nk##name)_nk_pugl_gl_ext(#name)
-#endif
 
-#if !defined(__APPLE__) && !defined(_WIN32)
+#else
 static void *
 _nk_pugl_gl_ext(const char *name)
 {
@@ -383,28 +388,104 @@ _nk_pugl_render_gl2(nk_pugl_window_t *win)
 	nk_clear(&win->ctx);
 }
 
-static inline void
-_nk_pugl_font_stash_begin(nk_pugl_window_t *win)
+static void
+_nk_pugl_font_init(nk_pugl_window_t *win)
 {
-	struct nk_font_atlas *atlas = &win->atlas;
+	nk_pugl_config_t *cfg = &win->cfg;
 
+	const int font_size = cfg->font.size * win->scale;
+
+	// init nuklear font
+	struct nk_font *ttf = NULL;
+	struct nk_font_config fcfg = nk_font_config(font_size);
+	static const nk_rune range [] = {
+		0x0020, 0x007F, // Basic Latin
+		0x00A0, 0x00FF, // Latin-1 Supplement
+		0x0100, 0x017F, // Latin Extended-A
+		0x0180, 0x024F, // Latin Extended-B
+		0x0300, 0x036F, // Combining Diacritical Marks
+		0x0370, 0x03FF, // Greek and Coptic
+		0x0400, 0x04FF, // Cyrillic
+		0x0500, 0x052F, // Cyrillic Supplementary
+		0
+	};
+	fcfg.range = range;
+
+	struct nk_font_atlas *atlas = &win->atlas;
 	nk_font_atlas_init_default(atlas);
 	nk_font_atlas_begin(atlas);
-}
 
-static inline void
-_nk_pugl_font_stash_end(nk_pugl_window_t *win)
-{
-	struct nk_font_atlas *atlas = &win->atlas;
+	if(cfg->font.face && font_size)
+		ttf = nk_font_atlas_add_from_file(&win->atlas, cfg->font.face, font_size, &fcfg);
+
 	int w = 0;
 	int h = 0;
-
+	struct nk_draw_null_texture null;
 	const void *image = nk_font_atlas_bake(atlas, &w, &h, NK_FONT_ATLAS_RGBA32);
 	_nk_pugl_device_upload_atlas(win, image, w, h);
-	nk_font_atlas_end(atlas, nk_handle_id(win->font_tex), &win->null);
+	nk_font_atlas_end(atlas, nk_handle_id(win->font_tex), &null);
 
 	if(atlas->default_font)
 		nk_style_set_font(&win->ctx, &atlas->default_font->handle);
+
+	if(ttf)
+		nk_style_set_font(&win->ctx, &ttf->handle);
+}
+
+static void
+_nk_pugl_font_deinit(nk_pugl_window_t *win)
+{
+	nk_font_atlas_clear(&win->atlas);
+
+	if(win->font_tex)
+		glDeleteTextures(1, (const GLuint *)&win->font_tex);
+}
+
+static void
+_nk_pugl_resize(nk_pugl_window_t *win)
+{
+	nk_pugl_config_t *cfg = &win->cfg;
+
+	if(cfg->host_resize)
+	{
+		cfg->host_resize->ui_resize(cfg->host_resize->handle,
+			cfg->width*win->scale, cfg->height*win->scale);
+	}
+}
+
+static void
+_nk_pugl_reconfigure(nk_pugl_window_t *win)
+{
+	puglEnterContext(win->view);
+	{
+		_nk_pugl_font_deinit(win);
+		_nk_pugl_font_init(win);
+	}
+	puglLeaveContext(win->view, false);
+
+#if 0
+	if(!win->cfg->resizable)
+		_nk_pugl_resize(win);
+#endif
+}
+
+static void
+_nk_pugl_zoom_in(nk_pugl_window_t *win)
+{
+	win->scale += 0.1;
+
+	_nk_pugl_reconfigure(win);
+}
+
+static void
+_nk_pugl_zoom_out(nk_pugl_window_t *win)
+{
+	if(win->scale >= 0.6)
+	{
+		win->scale -= 0.1;
+
+		_nk_pugl_reconfigure(win);
+	}
 }
 
 static void
@@ -622,6 +703,17 @@ _nk_pugl_other_key_down(nk_pugl_window_t *win, const PuglEventKey *ev)
 		{
 			if(modifier)
 			{
+				if(ev->character == '+')
+				{
+					_nk_pugl_zoom_in(win);
+					break;
+				}
+				else if(ev->character == '-')
+				{
+					_nk_pugl_zoom_out(win);
+					break;
+				}
+
 				// unescape ASCII control chars + Control
 				const uint32_t character = ev->character | 0x60;
 
@@ -839,7 +931,15 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 			const PuglEventScroll *ev = (const PuglEventScroll *)e;
 
 			_nk_pugl_modifiers(win, ev->state);
-			nk_input_scroll(ctx, ev->dy);
+			if(win->state & PUGL_MOD_CTRL)
+			{
+				if(ev->dy > 0)
+					_nk_pugl_zoom_in(win);
+				else
+					_nk_pugl_zoom_out(win);
+			}
+			else
+				nk_input_scroll(ctx, ev->dy);
 
 			puglPostRedisplay(win->view);
 			break;
@@ -880,18 +980,36 @@ nk_pugl_init(nk_pugl_window_t *win)
 	nk_pugl_config_t *cfg = &win->cfg;
 	struct nk_convert_config *conv = &win->conv;
 
-#if !defined(__APPLE__) && !defined(_WIN32)
+	const char *NK_SCALE = getenv("NK_SCALE");
+	const float scale = NK_SCALE ? atof(NK_SCALE) : 1.f;
+	const float dpi0 = 96.f; // reference DPI we're designing for
+
+#if defined(__APPLE__)
+	const float dpi1 = dpi0; //TODO implement this
+#elif defined(_WIN32)
+	// GetDpiForSystem/Monitor/Window is Win10 only
+	HDC screen = GetDC(NULL);
+	const float dpi1 = GetDeviceCaps(screen, LOGPIXELSX);
+	ReleaseDC(NULL, screen);
+#else
 	win->async = (atomic_flag)ATOMIC_FLAG_INIT;
 	win->disp = XOpenDisplay(0);
+	const float dpi1 = XDisplayWidth(win->disp, 0) * 25.4f / XDisplayWidthMM(win->disp, 0);
 #endif
+
+	win->scale = scale * dpi1 / dpi0;
+	if(win->scale < 0.5)
+		win->scale = 0.5;
 	win->has_left = true;
 
 	// init pugl
 	win->view = puglInit(NULL, NULL);
 	puglInitWindowClass(win->view, cfg->class ? cfg->class : "nuklear");
-	puglInitWindowSize(win->view, cfg->width, cfg->height);
-	puglInitWindowMinSize(win->view, cfg->min_width, cfg->min_height);
+	puglInitWindowSize(win->view, cfg->width*win->scale, cfg->height*win->scale);
+	puglInitWindowMinSize(win->view, cfg->min_width*win->scale, cfg->min_height*win->scale);
 	puglInitResizable(win->view, cfg->resizable);
+	if(cfg->fixed_aspect)
+		puglInitWindowAspectRatio(win->view, cfg->width, cfg->height, cfg->width, cfg->height);
 	puglInitWindowParent(win->view, cfg->parent);
 	puglInitTransientFor(win->view, cfg->parent);
 	puglSetHandle(win->view, win);
@@ -909,28 +1027,8 @@ nk_pugl_init(nk_pugl_window_t *win)
 		nk_buffer_init_default(&win->ebuf);
 		nk_init_default(&win->ctx, 0);
 
-		// init nuklear font
-		struct nk_font *ttf = NULL;
-		struct nk_font_config fcfg = nk_font_config(cfg->font.size);
-		static const nk_rune range [] = {
-			0x0020, 0x007F, // Basic Latin
-			0x00A0, 0x00FF, // Latin-1 Supplement
-			0x0100, 0x017F, // Latin Extended-A
-			0x0180, 0x024F, // Latin Extended-B
-			0x0300, 0x036F, // Combining Diacritical Marks
-			0x0370, 0x03FF, // Greek and Coptic
-			0x0400, 0x04FF, // Cyrillic
-			0x0500, 0x052F, // Cyrillic Supplementary
-			0
-		};
-    fcfg.range = range;
-
-		_nk_pugl_font_stash_begin(win);
-		if(cfg->font.face && cfg->font.size)
-			ttf = nk_font_atlas_add_from_file(&win->atlas, cfg->font.face, cfg->font.size, &fcfg);
-		_nk_pugl_font_stash_end(win);
-		if(ttf)
-			nk_style_set_font(&win->ctx, &ttf->handle);
+		// init font system
+		_nk_pugl_font_init(win);
 
 		win->glGenerateMipmap = GL_EXT(glGenerateMipmap);
 	}
@@ -962,6 +1060,7 @@ nk_pugl_show(nk_pugl_window_t *win)
 		return;
 
 	puglShowWindow(win->view);
+	_nk_pugl_resize(win);
 }
 
 NK_PUGL_API void
@@ -984,12 +1083,11 @@ nk_pugl_shutdown(nk_pugl_window_t *win)
 	if(win->last.buffer)
 		free(win->last.buffer);
 
+
 	puglEnterContext(win->view);
 	{
-		// shutdown nuklear font
-		nk_font_atlas_clear(&win->atlas);
-		if(win->font_tex)
-			glDeleteTextures(1, &win->font_tex);
+		// deinit font system
+		_nk_pugl_font_deinit(win);
 
 		// shutdown nuklear
 		nk_buffer_free(&win->cmds);
@@ -1048,15 +1146,11 @@ nk_pugl_async_redisplay(nk_pugl_window_t *win)
 
 #if defined(__APPLE__)
 // TODO
-#endif
-
-#if defined(_WIN32)
+#elif defined(_WIN32)
 	const HWND widget = (HWND)win->widget;
 	const int status = SendNotifyMessage(widget, WM_PAINT, 0, 0);
 	(void)status;
-#endif
-
-#if !defined(__APPLE__) && !defined(_WIN32)
+#else
 	const Window widget = (Window)win->widget;
 	XExposeEvent xevent = {
 		.type = Expose,
@@ -1166,6 +1260,12 @@ NK_PUGL_API const char *
 nk_pugl_paste_from_clipboard(nk_pugl_window_t *win, size_t *len)
 {
 	return puglPasteFromClipboard(win->view, len);
+}
+
+NK_PUGL_API float
+nk_pugl_get_scale(nk_pugl_window_t *win)
+{
+	return win->scale;
 }
 
 #ifdef __cplusplus
