@@ -562,7 +562,9 @@ xpress_leave(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
 	// create alive message
 	if(ctrl.nvoices > 0)
 	{
+#if 0
 		printf("-> %u\n", ctrl.nvoices);
+#endif
 		// forge new alive message
 		LV2_Atom_Forge_Frame obj_frame;
 
