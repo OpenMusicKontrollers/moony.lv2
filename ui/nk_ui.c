@@ -253,6 +253,8 @@ struct _plughandle_t {
 	struct nk_text_edit editor;
 	bool dirty;
 
+	bool has_control_a;
+
 	char error [MOONY_MAX_ERROR_LEN];
 	int error_sz;
 
@@ -1732,6 +1734,8 @@ _parameter_widget_urid(plughandle_t *handle, struct nk_context *ctx, prop_t *pro
 		prop_commited = true;
 	if( (state & NK_EDIT_ACTIVE) && (old_len != nk_str_len_char(&prop->value.editor.string)) )
 		prop->dirty = true;
+	if( (state & NK_EDIT_ACTIVE) && handle->has_control_a)
+		nk_textedit_select_all(&prop->value.editor);
 
 	if(!editable)
 		return;
@@ -1781,6 +1785,8 @@ _parameter_widget_string(plughandle_t *handle, struct nk_context *ctx, prop_t *p
 		prop_commited = true;
 	if( (state & NK_EDIT_ACTIVE) && (old_len != nk_str_len_char(&prop->value.editor.string)) )
 		prop->dirty = true;
+	if( (state & NK_EDIT_ACTIVE) && handle->has_control_a)
+		nk_textedit_select_all(&prop->value.editor);
 
 	if(!editable)
 		return;
@@ -1996,7 +2002,8 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 		const bool has_control_f = nk_pugl_is_shortcut_pressed(in, 'f', true);
 		const bool has_control_n = nk_pugl_is_shortcut_pressed(in, 'n', true);
 		const bool has_control_t = nk_pugl_is_shortcut_pressed(in, 't', true);
-		const bool has_control_a = nk_pugl_is_shortcut_pressed(in, 'a', true);
+		const bool has_control_k = nk_pugl_is_shortcut_pressed(in, 'k', true);
+		handle->has_control_a = nk_pugl_is_shortcut_pressed(in, 'a', true);
 		bool has_commited = false;
 
 		nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 3);
@@ -2113,6 +2120,8 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					}
 					if( (state & NK_EDIT_ACTIVE) && (old_len != nk_str_len_char(&handle->editor.string)) )
 						handle->dirty = true;
+					if( (state & NK_EDIT_ACTIVE) && handle->has_control_a)
+						nk_textedit_select_all(&handle->editor);
 
 					// actually draw line numbers (after editor window)
 					if(ln_states != NK_WIDGET_INVALID)
@@ -2320,11 +2329,11 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 		{
 			nk_layout_row_push(ctx, 0.15);
 			if(_tooltip_visible(ctx))
-				nk_tooltip(ctx, "Ctrl-A");
-			nk_style_push_style_item(ctx, &ctx->style.button.normal, has_control_a
+				nk_tooltip(ctx, "Ctrl-K");
+			nk_style_push_style_item(ctx, &ctx->style.button.normal, has_control_k
 				? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
 				: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
-			if(nk_button_image_label(ctx, handle->browser.icons.panic, "Panic", NK_TEXT_RIGHT) || has_control_a)
+			if(nk_button_image_label(ctx, handle->browser.icons.panic, "Panic", NK_TEXT_RIGHT) || has_control_k)
 			{
 				const int32_t i32 = 1;
 				_patch_set(handle, handle->moony_panic, sizeof(int32_t), handle->forge.Bool, &i32);
