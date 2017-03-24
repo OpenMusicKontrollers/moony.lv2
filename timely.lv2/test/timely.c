@@ -22,6 +22,7 @@
 #include <timely.h>
 
 #include <lv2/lv2plug.in/ns/ext/log/log.h>
+#include <lv2/lv2plug.in/ns/ext/log/logger.h>
 
 #define TIMELY_PREFIX		"http://open-music-kontrollers.ch/lv2/timely#"
 #define TIMELY_TEST_URI	TIMELY_PREFIX"test"
@@ -31,59 +32,69 @@ typedef struct _plughandle_t plughandle_t;
 struct _plughandle_t {
 	LV2_URID_Map *map;
 	LV2_Log_Log *log;
+	LV2_Log_Logger logger;
 	timely_t timely;
 
-	LV2_URID log_trace;
 
 	const LV2_Atom_Sequence *event_in;
 };
-
-static int
-_log_vprintf(plughandle_t *handle, LV2_URID type, const char *fmt, va_list args)
-{
-	return handle->log->vprintf(handle->log->handle, type, fmt, args);
-}
-
-// non-rt || rt with LV2_LOG__Trace
-static int
-_log_printf(plughandle_t *handle, LV2_URID type, const char *fmt, ...)
-{
-  va_list args;
-	int ret;
-
-  va_start (args, fmt);
-	ret = _log_vprintf(handle, type, fmt, args);
-  va_end(args);
-
-	return ret;
-}
 
 static void
 _timely_cb(timely_t *timely, int64_t frames, LV2_URID type, void *data)
 {
 	plughandle_t *handle = data;
 
-	const char *uri = NULL;
+	const int64_t frame = TIMELY_FRAME(timely);
 
 	if(type == TIMELY_URI_BAR_BEAT(timely))
-		uri = LV2_TIME__barBeat;
+	{
+		const float bar_beat = TIMELY_BAR_BEAT_RAW(timely);
+		lv2_log_trace(&handle->logger, "0x%08"PRIx64" %4"PRIi64" time:barBeat          %f\n",
+			frame, frames, bar_beat);
+	}
 	else if(type == TIMELY_URI_BAR(timely))
-		uri = LV2_TIME__bar;
+	{
+		const int64_t bar = TIMELY_BAR(timely);
+		lv2_log_trace(&handle->logger, "0x%08"PRIx64" %4"PRIi64" time:bar              %"PRIi64"\n",
+			frame, frames, bar);
+	}
 	else if(type == TIMELY_URI_BEAT_UNIT(timely))
-		uri = LV2_TIME__beatUnit;
+	{
+		const int32_t beat_unit = TIMELY_BEAT_UNIT(timely);
+		lv2_log_trace(&handle->logger, "0x%08"PRIx64" %4"PRIi64" time:beatUnit         %"PRIi32"\n",
+			frame, frames, beat_unit);
+	}
 	else if(type == TIMELY_URI_BEATS_PER_BAR(timely))
-		uri = LV2_TIME__beatsPerBar;
+	{
+		const float bpb = TIMELY_BEATS_PER_BAR(timely);
+		lv2_log_trace(&handle->logger, "0x%08"PRIx64" %4"PRIi64" time:beatsPerBar      %f\n",
+			frame, frames, bpb);
+	}
 	else if(type == TIMELY_URI_BEATS_PER_MINUTE(timely))
-		uri = LV2_TIME__beatsPerMinute;
+	{
+		const float bpm = TIMELY_BEATS_PER_MINUTE(timely);
+		lv2_log_trace(&handle->logger, "0x%08"PRIx64" %4"PRIi64" time:beatsPerMinute   %f\n",
+			frame, frames, bpm);
+	}
 	else if(type == TIMELY_URI_FRAME(timely))
-		uri = LV2_TIME__frame;
+	{
+		/*
+		lv2_log_trace(&handle->logger, "0x%08"PRIx64" %4"PRIi64" time:frame            %"PRIi64"\n",
+			frame, frames, frame);
+		*/
+	}
 	else if(type == TIMELY_URI_FRAMES_PER_SECOND(timely))
-		uri = LV2_TIME__framesPerSecond;
+	{
+		const float fps = TIMELY_FRAMES_PER_SECOND(timely);
+		lv2_log_trace(&handle->logger, "0x%08"PRIx64" %4"PRIi64" time:framesPerSecond  %f\n",
+			frame, frames, fps);
+	}
 	else if(type == TIMELY_URI_SPEED(timely))
-		uri = LV2_TIME__speed;
-
-	const int64_t frame = TIMELY_FRAME(timely);
-	_log_printf(data, handle->log_trace, "0x%08"PRIx64" %4"PRIi64" %s (%i)", frame, frames, uri, type);
+	{
+		const float speed = TIMELY_SPEED(timely);
+		lv2_log_trace(&handle->logger, "0x%08"PRIx64" %4"PRIi64" time:speed            %f\n",
+			frame, frames, speed);
+	}
 }
 
 static LV2_Handle
@@ -117,14 +128,14 @@ instantiate(const LV2_Descriptor* descriptor, double rate,
 		return NULL;
 	}
 
-	handle->log_trace = handle->map->map(handle->map->handle, LV2_LOG__Trace);
+	lv2_log_logger_init(&handle->logger, handle->map, handle->log);
 
 	timely_mask_t mask = TIMELY_MASK_BAR_BEAT
 		| TIMELY_MASK_BAR
 		| TIMELY_MASK_BEAT_UNIT
 		| TIMELY_MASK_BEATS_PER_BAR
 		| TIMELY_MASK_BEATS_PER_MINUTE
-		| TIMELY_MASK_FRAME
+		//| TIMELY_MASK_FRAME
 		| TIMELY_MASK_FRAMES_PER_SECOND
 		| TIMELY_MASK_SPEED
 		| TIMELY_MASK_BAR_BEAT_WHOLE
