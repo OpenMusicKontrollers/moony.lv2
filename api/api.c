@@ -880,20 +880,35 @@ _work(LV2_Handle instance,
 	const void *body)
 {
 	moony_t *moony = instance;
+	const moony_job_t *job = body;
 
-	assert(size == sizeof(moony_mem_t));
-	const moony_mem_t *request = body;
-	uint32_t i = request->i;
-
-	if(request->mem) // request to free memory from _work_response
+	switch(job->type)
 	{
-		moony_vm_mem_free(request->mem, moony->vm.size[i]);
-	}
-	else // request to allocate memory from moony_vm_mem_extend
-	{
-		moony->vm.area[i] = moony_vm_mem_alloc(moony->vm.size[i]);
+		case MOONY_JOB_MEM_ALLOC:
+		{
+			const moony_mem_t *mem = &job->mem;
+			const uint32_t i = mem->i;
 
-		respond(target, size, body); // signal to _work_response
+			moony->vm.area[i] = moony_vm_mem_alloc(moony->vm.size[i]);
+
+			const LV2_Worker_Status status = respond(target, size, body); // signal to _work_response
+			(void)status; //FIXME check
+		} break;
+		case MOONY_JOB_MEM_FREE:
+		{
+			const moony_mem_t *mem = &job->mem;
+			const uint32_t i = mem->i;
+
+			moony_vm_mem_free(mem->mem, moony->vm.size[i]);
+		} break;
+
+		case MOONY_JOB_CODE:
+		{
+			//FIXME
+		} break;
+
+		case MOONY_JOB_VM: // never reached
+			break;
 	}
 
 	return LV2_WORKER_SUCCESS;
@@ -903,37 +918,55 @@ __realtime static LV2_Worker_Status
 _work_response(LV2_Handle instance, uint32_t size, const void *body)
 {
 	moony_t *moony = instance;
+	const moony_job_t *job = body;
 
-	assert(size == sizeof(moony_mem_t));
-	const moony_mem_t *request = body;
-	uint32_t i = request->i;
-
-	if(!moony->vm.area[i]) // allocation failed
-		return LV2_WORKER_ERR_UNKNOWN;
-
-	// tlsf add pool
-	moony->vm.pool[i] = tlsf_add_pool(moony->vm.tlsf,
-		moony->vm.area[i], moony->vm.size[i]); //FIXME stoat complains about printf
-
-	if(!moony->vm.pool[i]) // pool addition failed
+	switch(job->type)
 	{
-		const moony_mem_t req = {
-			.i = i,
-			.mem = moony->vm.area[i]
-		};
-		moony->vm.area[i] = NULL;
+		case MOONY_JOB_MEM_ALLOC:
+		{
+			const moony_mem_t *mem = &job->mem;
+			const uint32_t i = mem->i;
 
-		// schedule freeing of memory to _work
-		LV2_Worker_Status status = moony->sched->schedule_work(
-			moony->sched->handle, sizeof(moony_mem_t), &req);
-		if( (status != LV2_WORKER_SUCCESS) && moony->log)
-			lv2_log_warning(&moony->logger, "moony: schedule_work failed\n");
+			if(!moony->vm.area[i]) // allocation failed
+				return LV2_WORKER_ERR_UNKNOWN;
 
-		return LV2_WORKER_ERR_UNKNOWN;
+			// tlsf add pool
+			moony->vm.pool[i] = tlsf_add_pool(moony->vm.tlsf,
+				moony->vm.area[i], moony->vm.size[i]); //FIXME stoat complains about printf
+
+			if(!moony->vm.pool[i]) // pool addition failed
+			{
+				const moony_job_t req = {
+					.type = MOONY_JOB_MEM_FREE,
+					.mem = {
+						.i = i,
+						.mem = moony->vm.area[i]
+					}
+				};
+				moony->vm.area[i] = NULL;
+
+				// schedule freeing of memory to _work
+				const LV2_Worker_Status status = moony->sched->schedule_work(
+					moony->sched->handle, sizeof(moony_job_t), &req);
+				if( (status != LV2_WORKER_SUCCESS) && moony->log)
+					lv2_log_warning(&moony->logger, "moony: schedule_work failed\n");
+
+				return LV2_WORKER_ERR_UNKNOWN;
+			}
+
+			moony->vm.space += moony->vm.size[i];
+			//printf("mem extended to %zu KB\n", moony->vm.space / 1024);
+		} break;
+
+		case MOONY_JOB_VM:
+		{
+			//FIXME
+		} break;
+
+		case MOONY_JOB_MEM_FREE:
+		case MOONY_JOB_CODE:
+			break; // never reached
 	}
-
-	moony->vm.space += moony->vm.size[i];
-	//printf("mem extended to %zu KB\n", moony->vm.space / 1024);
 
 	return LV2_WORKER_SUCCESS;
 }

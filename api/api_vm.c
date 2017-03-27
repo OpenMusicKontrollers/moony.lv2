@@ -293,14 +293,17 @@ moony_vm_mem_extend(moony_vm_t *vm)
 		if(vm->area[i]) // pool already allocated/in-use
 			continue;
 
-		const moony_mem_t request = {
-			.i = i,
-			.mem = NULL
+		const moony_job_t req = {
+			.type = MOONY_JOB_MEM_ALLOC,
+			.mem = {
+				.i = i,
+				.mem = NULL
+			}
 		};
 
 		// schedule allocation of memory to _work
-		LV2_Worker_Status status = moony->sched->schedule_work(
-			moony->sched->handle, sizeof(moony_mem_t), &request);
+		const LV2_Worker_Status status = moony->sched->schedule_work(
+			moony->sched->handle, sizeof(moony_job_t), &req);
 
 		// toggle working flag
 		if(status == LV2_WORKER_SUCCESS)
