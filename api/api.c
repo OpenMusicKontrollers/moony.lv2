@@ -882,33 +882,55 @@ _work(LV2_Handle instance,
 	moony_t *moony = instance;
 	const moony_job_t *job = body;
 
-	switch(job->type)
+	if(job->atom.type == moony->forge.Tuple)
 	{
-		case MOONY_JOB_MEM_ALLOC:
-		{
-			const moony_mem_t *mem = &job->mem;
-			const uint32_t i = mem->i;
+		const moony_mem_t *mem = &job->mem;
+		const uint32_t i = mem->i32.body;
 
+		if(mem->i64.body == 0) // memory allocation requested
+		{
 			moony->vm.area[i] = moony_vm_mem_alloc(moony->vm.size[i]);
 
-			const LV2_Worker_Status status = respond(target, size, body); // signal to _work_response
-			(void)status; //FIXME check
-		} break;
-		case MOONY_JOB_MEM_FREE:
+			return respond(target, size, body); // signal to _work_response
+		}
+		else // memory free requested
 		{
-			const moony_mem_t *mem = &job->mem;
-			const uint32_t i = mem->i;
+			void *ptr = (void *)mem->i64.body;
 
-			moony_vm_mem_free(mem->mem, moony->vm.size[i]);
-		} break;
-
-		case MOONY_JOB_CODE:
+			moony_vm_mem_free(ptr, moony->vm.size[i]);
+		}
+	}
+	else if(job->atom.type == moony->forge.Object)
+	{
+		if(job->obj.body.otype == moony->uris.patch.set)
 		{
-			//FIXME
-		} break;
+			const LV2_Atom_URID *property = NULL;
+			const LV2_Atom_Int *sequence = NULL;
+			const LV2_Atom *value = NULL;
 
-		case MOONY_JOB_VM: // never reached
-			break;
+			LV2_Atom_Object_Query q[] = {
+				{ moony->uris.patch.property, (const LV2_Atom **)&property },
+				{ moony->uris.patch.sequence, (const LV2_Atom **)&sequence },
+				{ moony->uris.patch.value, &value },
+				{ 0, NULL }
+			};
+			lv2_atom_object_query(&job->obj, q);
+
+			int32_t sequence_num = 0;
+			if(sequence && (sequence->atom.type == moony->forge.Int))
+				sequence_num = sequence->body;
+			(void)sequence_num; //FIXME use
+
+			if(  property && value
+				&& (property->atom.type == moony->forge.URID) )
+			{
+				if( (property->body == moony->uris.moony_code) && (value->type == moony->forge.String) )
+				{
+					//printf("_work\n%s\n\n", LV2_ATOM_BODY_CONST(value));
+					//TODO
+				}
+			}
+		}
 	}
 
 	return LV2_WORKER_SUCCESS;
@@ -920,52 +942,37 @@ _work_response(LV2_Handle instance, uint32_t size, const void *body)
 	moony_t *moony = instance;
 	const moony_job_t *job = body;
 
-	switch(job->type)
+	if(job->atom.type == moony->forge.Tuple)
 	{
-		case MOONY_JOB_MEM_ALLOC:
+		const moony_mem_t *mem = &job->mem;
+		const uint32_t i = mem->i32.body;
+
+		if(!moony->vm.area[i]) // allocation failed
+			return LV2_WORKER_ERR_UNKNOWN;
+
+		// tlsf add pool
+		moony->vm.pool[i] = tlsf_add_pool(moony->vm.tlsf,
+			moony->vm.area[i], moony->vm.size[i]); //FIXME stoat complains about printf
+
+		if(!moony->vm.pool[i]) // pool addition failed
 		{
-			const moony_mem_t *mem = &job->mem;
-			const uint32_t i = mem->i;
+			moony_job_t req;
+			memcpy(&req, mem, sizeof(moony_mem_t));
+			req.mem.i64.body = (int64_t)moony->vm.area[i];
 
-			if(!moony->vm.area[i]) // allocation failed
-				return LV2_WORKER_ERR_UNKNOWN;
+			moony->vm.area[i] = NULL;
 
-			// tlsf add pool
-			moony->vm.pool[i] = tlsf_add_pool(moony->vm.tlsf,
-				moony->vm.area[i], moony->vm.size[i]); //FIXME stoat complains about printf
+			// schedule freeing of memory to _work
+			const LV2_Worker_Status status = moony->sched->schedule_work(
+				moony->sched->handle, lv2_atom_total_size(&req.atom), &req);
+			if( (status != LV2_WORKER_SUCCESS) && moony->log)
+				lv2_log_warning(&moony->logger, "moony: schedule_work failed\n");
 
-			if(!moony->vm.pool[i]) // pool addition failed
-			{
-				const moony_job_t req = {
-					.type = MOONY_JOB_MEM_FREE,
-					.mem = {
-						.i = i,
-						.mem = moony->vm.area[i]
-					}
-				};
-				moony->vm.area[i] = NULL;
+			return LV2_WORKER_ERR_UNKNOWN;
+		}
 
-				// schedule freeing of memory to _work
-				const LV2_Worker_Status status = moony->sched->schedule_work(
-					moony->sched->handle, sizeof(moony_job_t), &req);
-				if( (status != LV2_WORKER_SUCCESS) && moony->log)
-					lv2_log_warning(&moony->logger, "moony: schedule_work failed\n");
-
-				return LV2_WORKER_ERR_UNKNOWN;
-			}
-
-			moony->vm.space += moony->vm.size[i];
-			//printf("mem extended to %zu KB\n", moony->vm.space / 1024);
-		} break;
-
-		case MOONY_JOB_VM:
-		{
-			//FIXME
-		} break;
-
-		case MOONY_JOB_MEM_FREE:
-		case MOONY_JOB_CODE:
-			break; // never reached
+		moony->vm.space += moony->vm.size[i];
+		//printf("mem extended to %zu KB\n", moony->vm.space / 1024);
 	}
 
 	return LV2_WORKER_SUCCESS;
@@ -2101,6 +2108,11 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 #ifdef USE_MANUAL_GC
 					lua_gc(L, LUA_GCSTEP, 0);
 #endif
+
+					// send code to worker thread
+					const LV2_Worker_Status status = moony->sched->schedule_work(
+						moony->sched->handle, lv2_atom_total_size(&obj->atom), obj);
+					(void)status; //FIXME
 
 					// load chunk
 					const char *str = LV2_ATOM_BODY_CONST(value);

@@ -24,17 +24,9 @@
 // from vm.c
 #define MOONY_POOL_NUM 8
 
-typedef enum _moony_job_enum_t moony_job_enum_t;
-typedef struct _moony_vm_t moony_vm_t;
 typedef struct _moony_mem_t moony_mem_t;
-typedef struct _moony_job_t moony_job_t;
-
-enum _moony_job_enum_t {
-	MOONY_JOB_MEM_ALLOC,
-	MOONY_JOB_MEM_FREE,
-	MOONY_JOB_CODE,
-	MOONY_JOB_VM
-};
+typedef struct _moony_vm_t moony_vm_t;
+typedef union _moony_job_t moony_job_t;
 
 struct _moony_vm_t {
 	tlsf_t tlsf;
@@ -50,18 +42,15 @@ struct _moony_vm_t {
 };
 
 struct _moony_mem_t {
-	int i;
-	void *mem;
+	LV2_Atom_Tuple tup;
+	LV2_Atom_Int i32;
+	LV2_Atom_Long i64;
 };
 
-struct _moony_job_t {
-	moony_job_enum_t type;
-
-	union {
-		moony_vm_t *vm;
-		moony_mem_t mem;
-		char code [0];
-	};
+union _moony_job_t {
+	LV2_Atom atom;
+	moony_mem_t mem;
+	LV2_Atom_Object obj;
 };
 
 int moony_vm_init(moony_vm_t *vm, size_t mem_size, bool testing);

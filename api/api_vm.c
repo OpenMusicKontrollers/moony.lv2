@@ -294,16 +294,27 @@ moony_vm_mem_extend(moony_vm_t *vm)
 			continue;
 
 		const moony_job_t req = {
-			.type = MOONY_JOB_MEM_ALLOC,
 			.mem = {
-				.i = i,
-				.mem = NULL
+				.tup = {
+					.atom.size = 32,
+					.atom.type = moony->forge.Tuple,
+				},
+				.i32 = {
+					.atom.size = sizeof(int32_t),
+					.atom.type = moony->forge.Int,
+					.body = i,
+				},
+				.i64 = {
+					.atom.size = sizeof(int64_t),
+					.atom.type = moony->forge.Long,
+					.body = 0
+				}
 			}
 		};
 
 		// schedule allocation of memory to _work
 		const LV2_Worker_Status status = moony->sched->schedule_work(
-			moony->sched->handle, sizeof(moony_job_t), &req);
+			moony->sched->handle, lv2_atom_total_size(&req.atom), &req);
 
 		// toggle working flag
 		if(status == LV2_WORKER_SUCCESS)
