@@ -234,10 +234,11 @@ main(int argc, char **argv)
 	{
 		return -1;
 	}
+	moony_vm_lock(handle.moony.vm);
 
 	handle.iface = extension_data(LV2_WORKER__interface);
 
-	lua_State *L = handle.moony.vm.L;
+	lua_State *L = moony_current(&handle.moony);
 	moony_open(&handle.moony, L);
 
 	lua_pushstring(L, "map");
@@ -263,6 +264,7 @@ main(int argc, char **argv)
 	for(urid_t *itm=handle.urids; itm->urid; itm++)
 		free(itm->uri);
 
+	moony_vm_unlock(handle.moony.vm);
 	moony_deinit(&handle.moony);
 
 	return ret;

@@ -302,7 +302,8 @@ struct _moony_t {
 #endif
 	LV2_Canvas_URID canvas_urid;
 
-	moony_vm_t vm;
+	moony_vm_t *vm;
+	moony_vm_t *vm_new;
 
 	bool once;
 	volatile int props_out;
@@ -385,10 +386,16 @@ moony_err(moony_t *moony, const char *msg)
 	moony->error_out = 1;
 }
 
+__realtime static inline lua_State *
+moony_current(moony_t *moony)
+{
+	return moony->vm->L;
+}
+
 __realtime static inline void
 moony_error(moony_t *moony)
 {
-	lua_State *L = moony->vm.L;
+	lua_State *L = moony_current(moony);
 
 	const char *msg = lua_tostring(L, -1);
 	if(msg)
@@ -428,13 +435,13 @@ _moony_patch(patch_t *patch, LV2_Atom_Forge *forge, LV2_URID key,
 }
 
 void *
-moony_alloc(moony_t *moony, size_t nsize);
+moony_rt_alloc(moony_vm_t *vm, size_t nsize);
 
 void *
-moony_realloc(moony_t *moony, void *buf, size_t osize, size_t nsize);
+moony_rt_realloc(moony_vm_t *vm, void *buf, size_t osize, size_t nsize);
 
 void
-moony_free(moony_t *moony, void *buf, size_t osize);
+moony_rt_free(moony_vm_t *vm, void *buf, size_t osize);
 
 LV2_Atom_Forge_Ref
 _sink_rt(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size);

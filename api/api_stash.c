@@ -24,7 +24,7 @@ _lstash__gc(lua_State *L)
 	atom_ser_t *ser = &lstash->ser;
 
 	if(ser->buf)
-		moony_free(ser->moony, ser->buf, ser->size);
+		moony_rt_free(ser->moony->vm, ser->buf, ser->size);
 
 	return 0;
 }
@@ -84,7 +84,7 @@ _lstash(lua_State *L)
 	ser->moony = moony;
 	ser->size = 1024;
 	ser->offset = 0; // reset stash pointer
-	ser->buf = moony_alloc(moony, ser->size);
+	ser->buf = moony_rt_alloc(moony->vm, ser->size);
 
 	if(!ser->buf)
 		lua_pushnil(L); // memory allocation failed

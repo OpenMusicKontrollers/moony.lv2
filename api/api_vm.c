@@ -77,9 +77,8 @@ _log_mem(moony_t *moony, void *ptr, size_t osize, size_t nsize)
 #endif
 
 __realtime inline void *
-moony_alloc(moony_t *moony, size_t nsize)
+moony_rt_alloc(moony_vm_t *vm, size_t nsize)
 {
-	moony_vm_t *vm = &moony->vm;
 	vm->used += nsize;
 	if(vm->used > (vm->space >> 1))
 		moony_vm_mem_extend(vm);
@@ -92,9 +91,8 @@ moony_alloc(moony_t *moony, size_t nsize)
 }
 
 __realtime inline void *
-moony_realloc(moony_t *moony, void *buf, size_t osize, size_t nsize)
+moony_rt_realloc(moony_vm_t *vm, void *buf, size_t osize, size_t nsize)
 {
-	moony_vm_t *vm = &moony->vm;
 	vm->used -= osize;
 	vm->used += nsize;
 	if(vm->used > (vm->space >> 1))
@@ -108,9 +106,8 @@ moony_realloc(moony_t *moony, void *buf, size_t osize, size_t nsize)
 }
 
 __realtime inline void
-moony_free(moony_t *moony, void *buf, size_t osize)
+moony_rt_free(moony_vm_t *vm, void *buf, size_t osize)
 {
-	moony_vm_t *vm = &moony->vm;
 	vm->used -= osize;
 	if(vm->used > (vm->space >> 1))
 		moony_vm_mem_extend(vm);
@@ -125,28 +122,29 @@ moony_free(moony_t *moony, void *buf, size_t osize)
 __realtime static void *
 lua_alloc(void *ud, void *ptr, size_t osize, size_t nsize)
 {
-	moony_t *moony = ud;
+	moony_vm_t *vm = ud;
 
 	if(nsize == 0)
 	{
 		if(ptr)
-			moony_free(moony, ptr, osize);
+			moony_rt_free(vm, ptr, osize);
 		return NULL;
 	}
 	else
 	{
 		if(ptr)
-			return moony_realloc(moony, ptr, osize, nsize);
+			return moony_rt_realloc(vm, ptr, osize, nsize);
 		else
-			return moony_alloc(moony, nsize);
+			return moony_rt_alloc(vm, nsize);
 	}
 }
 
-__non_realtime int
-moony_vm_init(moony_vm_t *vm, size_t mem_size, bool testing)
+__non_realtime moony_vm_t *
+moony_vm_new(size_t mem_size, bool testing)
 {
-	moony_t *moony = (void *)vm - offsetof(moony_t, vm);
-	memset(vm, 0x0, sizeof(moony_vm_t));
+	moony_vm_t *vm = calloc(1, sizeof(moony_vm_t));
+	if(!vm)
+		return NULL;
 
 	// initialize array of increasing pool sizes
 	vm->size[0] = mem_size;
@@ -156,76 +154,89 @@ moony_vm_init(moony_vm_t *vm, size_t mem_size, bool testing)
 	// allocate first pool
 	vm->area[0] = moony_vm_mem_alloc(vm->size[0]);
 	if(!vm->area[0])
-		return -1;
+	{
+		moony_vm_mem_free(vm->area[0], vm->size[0]);
+		free(vm);
+		return NULL;
+	}
 	
 	vm->tlsf = tlsf_create_with_pool(vm->area[0], vm->size[0]);
 	if(!vm->tlsf)
-		return -1;
+	{
+		free(vm);
+		return NULL;
+	}
+
 	vm->pool[0] = tlsf_get_pool(vm->tlsf);
 	vm->space += vm->size[0];
-	
-	vm->L = lua_newstate(lua_alloc, moony);
-	if(!vm->L)
-		return -1;
 
-	const int n = lua_gettop(vm->L);
+	lua_State *L = lua_newstate(lua_alloc, vm);
+	if(!L)
+	{
+		free(vm);
+		return NULL;
+	}
 
-	luaL_requiref(vm->L, "base", luaopen_base, 0);
+	vm->L = L;
 
-	luaL_requiref(vm->L, "coroutine", luaopen_coroutine, 1);
-	luaL_requiref(vm->L, "table", luaopen_table, 1);
-	luaL_requiref(vm->L, "string", luaopen_string, 1);
-	luaL_requiref(vm->L, "math", luaopen_math, 1);
-	luaL_requiref(vm->L, "utf8", luaopen_utf8, 1);
-	luaL_requiref(vm->L, "debug", luaopen_debug, 1);
+	const int n = lua_gettop(L);
 
-	luaL_requiref(vm->L, "lpeg", luaopen_lpeg, 1);
-	luaL_requiref(vm->L, "base64", luaopen_base64, 1);
-	luaL_requiref(vm->L, "ascii85", luaopen_ascii85, 1);
-	luaL_requiref(vm->L, "aes128", luaopen_aes128, 1);
+	luaL_requiref(L, "base", luaopen_base, 0);
+
+	luaL_requiref(L, "coroutine", luaopen_coroutine, 1);
+	luaL_requiref(L, "table", luaopen_table, 1);
+	luaL_requiref(L, "string", luaopen_string, 1);
+	luaL_requiref(L, "math", luaopen_math, 1);
+	luaL_requiref(L, "utf8", luaopen_utf8, 1);
+	luaL_requiref(L, "debug", luaopen_debug, 1);
+
+	luaL_requiref(L, "lpeg", luaopen_lpeg, 1);
+	luaL_requiref(L, "base64", luaopen_base64, 1);
+	luaL_requiref(L, "ascii85", luaopen_ascii85, 1);
+	luaL_requiref(L, "aes128", luaopen_aes128, 1);
 
 	if(testing)
 	{
-		luaL_requiref(vm->L, "io", luaopen_io, 1);
-		luaL_requiref(vm->L, "package", luaopen_package, 1);
-		//luaL_requiref(vm->L, "os", luaopen_os, 1);
-		//luaL_requiref(vm->L, "bit32", luaopen_bit32, 1);
+		luaL_requiref(L, "io", luaopen_io, 1);
+		luaL_requiref(L, "package", luaopen_package, 1);
+		//luaL_requiref(L, "os", luaopen_os, 1);
+		//luaL_requiref(L, "bit32", luaopen_bit32, 1);
 	}
 
-	lua_settop(vm->L, n);
+	lua_settop(L, n);
 
 	if(!testing)
 	{
 		// clear dofile
-		lua_pushnil(vm->L);
-		lua_setglobal(vm->L, "dofile");
+		lua_pushnil(L);
+		lua_setglobal(L, "dofile");
 
 		// clear loadfile
-		lua_pushnil(vm->L);
-		lua_setglobal(vm->L, "loadfile");
+		lua_pushnil(L);
+		lua_setglobal(L, "loadfile");
 	}
 
 #ifdef USE_MANUAL_GC
 	// manual garbage collector
-	lua_gc(vm->L, LUA_GCSTOP, 0); // disable automatic garbage collection
-	lua_gc(vm->L, LUA_GCSETPAUSE, 0); // don't wait to start a new cycle
-	lua_gc(vm->L, LUA_GCSETSTEPMUL, 100); // set step size to run 'as fast a memory allocation'
+	lua_gc(L, LUA_GCSTOP, 0); // disable automatic garbage collection
+	lua_gc(L, LUA_GCSETPAUSE, 0); // don't wait to start a new cycle
+	lua_gc(L, LUA_GCSETSTEPMUL, 100); // set step size to run 'as fast a memory allocation'
 #else
 	// automatic garbage collector
-	lua_gc(vm->L, LUA_GCRESTART, 0); // enable automatic garbage collection
-	lua_gc(vm->L, LUA_GCSETPAUSE, 105); // next step when memory increased by 5%
-	lua_gc(vm->L, LUA_GCSETSTEPMUL, 105); // run 5% faster than memory allocation
+	lua_gc(L, LUA_GCRESTART, 0); // enable automatic garbage collection
+	lua_gc(L, LUA_GCSETPAUSE, 105); // next step when memory increased by 5%
+	lua_gc(L, LUA_GCSETSTEPMUL, 105); // run 5% faster than memory allocation
 #endif
 
-	return 0;
+	return vm;
 }
 
-__non_realtime int
-moony_vm_deinit(moony_vm_t *vm)
+__non_realtime void
+moony_vm_free(moony_vm_t *vm)
 {
 	if(vm->L)
 		lua_close(vm->L);
-	vm->L = NULL;
+
 	vm->used = 0;
 
 	for(int i=(MOONY_POOL_NUM-1); i>=0; i--)
@@ -245,7 +256,7 @@ moony_vm_deinit(moony_vm_t *vm)
 	tlsf_destroy(vm->tlsf);
 	vm->tlsf = NULL;
 
-	return 0;
+	free(vm);
 }
 
 __non_realtime void *
@@ -293,32 +304,49 @@ moony_vm_mem_extend(moony_vm_t *vm)
 		if(vm->area[i]) // pool already allocated/in-use
 			continue;
 
-		const moony_job_t req = {
-			.mem = {
-				.tup = {
-					.atom.size = 32,
-					.atom.type = moony->forge.Tuple,
-				},
-				.i32 = {
-					.atom.size = sizeof(int32_t),
-					.atom.type = moony->forge.Int,
-					.body = i,
-				},
-				.i64 = {
-					.atom.size = sizeof(int64_t),
-					.atom.type = moony->forge.Long,
-					.body = 0
-				}
+		if(vm->locked)
+		{
+			vm->area[i] = moony_vm_mem_alloc(vm->size[i]);
+			if(vm->area[i])
+			{
+				vm->pool[i] = tlsf_add_pool(vm->tlsf,
+					vm->area[i], vm->size[i]); //FIXME stoat complains about printf
+
+				if(vm->pool[i])
+					vm->space += vm->size[i];
+				else
+					moony_vm_mem_free(vm->area[i], vm->size[i]);
 			}
-		};
+		}
+		else
+		{
+			const moony_job_t req = {
+				.mem = {
+					.tup = {
+						.atom.size = 32,
+						.atom.type = moony->forge.Tuple,
+					},
+					.i32 = {
+						.atom.size = sizeof(int32_t),
+						.atom.type = moony->forge.Int,
+						.body = i,
+					},
+					.i64 = {
+						.atom.size = sizeof(int64_t),
+						.atom.type = moony->forge.Long,
+						.body = 0
+					}
+				}
+			};
 
-		// schedule allocation of memory to _work
-		const LV2_Worker_Status status = moony->sched->schedule_work(
-			moony->sched->handle, lv2_atom_total_size(&req.atom), &req);
+			// schedule allocation of memory to _work
+			const LV2_Worker_Status status = moony->sched->schedule_work(
+				moony->sched->handle, lv2_atom_total_size(&req.atom), &req);
 
-		// toggle working flag
-		if(status == LV2_WORKER_SUCCESS)
-			moony->working = 1;
+			// toggle working flag
+			if(status == LV2_WORKER_SUCCESS)
+				moony->working = 1;
+		}
 
 		return 0;
 	}
@@ -326,4 +354,16 @@ moony_vm_mem_extend(moony_vm_t *vm)
 	moony->fully_extended = 1;
 
 	return -1;
+}
+
+void 
+moony_vm_lock(moony_vm_t *vm)
+{
+	vm->locked = true;
+}
+
+void
+moony_vm_unlock(moony_vm_t *vm)
+{
+	vm->locked = false;
 }

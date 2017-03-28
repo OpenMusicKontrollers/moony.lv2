@@ -79,7 +79,7 @@ _loscresponder_method(const char *path, const LV2_Atom_Tuple *arguments, void *d
 {
 	osc_responder_data_t *ord = data;
 	moony_t *moony = ord->moony;
-	lua_State *L = moony->vm.L;
+	lua_State *L = moony_current(moony);
 	//LV2_Atom_Forge *forge = &moony->forge;
 	LV2_OSC_URID *osc_urid = &moony->osc_urid;
 	//LV2_URID_Unmap *unmap = moony->unmap;

@@ -55,7 +55,9 @@ instantiate(const LV2_Descriptor* descriptor, double rate, const char *bundle_pa
 		free(handle);
 		return NULL;
 	}
-	moony_open(&handle->moony, handle->moony.vm.L);
+	moony_vm_lock(handle->moony.vm);
+	moony_open(&handle->moony, moony_current(&handle->moony));
+	moony_vm_unlock(handle->moony.vm);
 	
 	if(!strcmp(descriptor->URI, MOONY_C1XC1_URI))
 		handle->max_val = 1;
@@ -154,7 +156,6 @@ __realtime static void
 run(LV2_Handle instance, uint32_t nsamples)
 {
 	Handle *handle = (Handle *)instance;
-	lua_State *L = handle->moony.vm.L;
 
 	handle->sample_count = nsamples;
 
@@ -179,6 +180,8 @@ run(LV2_Handle instance, uint32_t nsamples)
 		// run
 		if(!moony_bypass(&handle->moony))
 		{
+			lua_State *L = moony_current(&handle->moony);
+
 			if(lua_gettop(L) != 1)
 			{
 				// cache for reuse

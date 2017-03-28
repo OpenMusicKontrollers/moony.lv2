@@ -39,6 +39,8 @@ struct _moony_vm_t {
 	size_t used;
 
 	lua_State *L;
+
+	bool locked;
 };
 
 struct _moony_mem_t {
@@ -53,10 +55,14 @@ union _moony_job_t {
 	LV2_Atom_Object obj;
 };
 
-int moony_vm_init(moony_vm_t *vm, size_t mem_size, bool testing);
-int moony_vm_deinit(moony_vm_t *vm);
+moony_vm_t *moony_vm_new(size_t mem_size, bool testing);
+void moony_vm_free(moony_vm_t *vm);
+
 void *moony_vm_mem_alloc(size_t size);
 void moony_vm_mem_free(void *area, size_t size);
 int moony_vm_mem_extend(moony_vm_t *vm);
+
+void moony_vm_lock(moony_vm_t *vm);
+void moony_vm_unlock(moony_vm_t *vm);
 
 #endif
