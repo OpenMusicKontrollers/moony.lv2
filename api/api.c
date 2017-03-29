@@ -678,7 +678,7 @@ _compile(moony_t *moony, const char *chunk)
 	strcpy(moony->chunk, chunk);
 	_unlock(&moony->lock.state);
 
-	moony_vm_t *vm = moony_vm_new(0x20000, false); //FIXME
+	moony_vm_t *vm = moony_vm_new(moony->mem_size, moony->testing, moony);
 	if(!vm)
 		return NULL;
 
@@ -1033,7 +1033,9 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 		return -1;
 	}
 
-	moony->vm = moony_vm_new(mem_size, testing);
+	moony->mem_size = mem_size;
+	moony->testing = testing;
+	moony->vm = moony_vm_new(moony->mem_size, testing, moony);
 	if(!moony->vm)
 	{
 		fprintf(stderr, "Lua VM cannot be initialized\n");

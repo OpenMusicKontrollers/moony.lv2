@@ -38,9 +38,10 @@ extern int luaopen_ascii85(lua_State *L);
 //#define MOONY_LOG_MEM
 #ifdef MOONY_LOG_MEM
 __realtime static inline void
-_log_mem(moony_t *moony, void *ptr, size_t osize, size_t nsize)
+_log_mem(moony_vm_t *vm, void *ptr, size_t osize, size_t nsize)
 {
-	moony_vm_t *vm = &moony->vm;
+	moony_t *moony = vm->data;
+
 	if(moony->log)
 	{
 		char suffix0 = ' ';
@@ -69,9 +70,8 @@ _log_mem(moony_t *moony, void *ptr, size_t osize, size_t nsize)
 			used >>= 10;
 		}
 
-		if(moony->log)
-			lv2_log_trace(&moony->logger, "space: %4zu%c, used: %4zu%c, old: %4zu, new: %4zu, data: %p\n",
-				space, suffix0, used, suffix1, osize, nsize, ptr);
+		lv2_log_trace(&moony->logger, "space: %4zu%c, used: %4zu%c, old: %4zu, new: %4zu, data: %p\n",
+			space, suffix0, used, suffix1, osize, nsize, ptr);
 	}
 }
 #endif
@@ -84,7 +84,7 @@ moony_rt_alloc(moony_vm_t *vm, size_t nsize)
 		moony_vm_mem_extend(vm);
 
 #ifdef MOONY_LOG_MEM
-	_log_mem(moony, NULL, 0, nsize);
+	_log_mem(vm, NULL, 0, nsize);
 #endif
 
 	return tlsf_malloc(vm->tlsf, nsize);
@@ -99,7 +99,7 @@ moony_rt_realloc(moony_vm_t *vm, void *buf, size_t osize, size_t nsize)
 		moony_vm_mem_extend(vm);
 
 #ifdef MOONY_LOG_MEM
-	_log_mem(moony, buf, osize, nsize);
+	_log_mem(vm, buf, osize, nsize);
 #endif
 
 	return tlsf_realloc(vm->tlsf, buf, nsize);
@@ -113,7 +113,7 @@ moony_rt_free(moony_vm_t *vm, void *buf, size_t osize)
 		moony_vm_mem_extend(vm);
 
 #ifdef MOONY_LOG_MEM
-	_log_mem(moony, buf, osize, 0);
+	_log_mem(vm, buf, osize, 0);
 #endif
 
 	tlsf_free(vm->tlsf, buf);
@@ -140,11 +140,13 @@ lua_alloc(void *ud, void *ptr, size_t osize, size_t nsize)
 }
 
 __non_realtime moony_vm_t *
-moony_vm_new(size_t mem_size, bool testing)
+moony_vm_new(size_t mem_size, bool testing, void *data)
 {
 	moony_vm_t *vm = calloc(1, sizeof(moony_vm_t));
 	if(!vm)
 		return NULL;
+
+	vm->data = data;
 
 	// initialize array of increasing pool sizes
 	vm->size[0] = mem_size;
@@ -275,6 +277,7 @@ moony_vm_mem_alloc(size_t size)
 		return NULL;
 
 	mlock(area, size);
+	memset(area, 0x0, size);
 	return area;
 }
 
@@ -293,7 +296,7 @@ moony_vm_mem_free(void *area, size_t size)
 __realtime int
 moony_vm_mem_extend(moony_vm_t *vm)
 {
-	moony_t *moony = (void *)vm - offsetof(moony_t, vm);
+	moony_t *moony = vm->data;
 
 	// request processing or fully extended?
 	if(moony->working || moony->fully_extended)

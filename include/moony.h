@@ -318,6 +318,9 @@ struct _moony_t {
 
 	latom_driver_hash_t atom_driver_hash [DRIVER_HASH_MAX];
 
+	size_t mem_size;
+	bool testing;
+
 	atomic_int editor_hidden;
 	atomic_int log_hidden;
 	atomic_int param_hidden;

@@ -41,6 +41,8 @@ struct _moony_vm_t {
 	lua_State *L;
 
 	bool locked;
+
+	void *data;
 };
 
 enum _moony_job_enum_t {
@@ -65,7 +67,7 @@ struct _moony_job_t {
 	};
 };
 
-moony_vm_t *moony_vm_new(size_t mem_size, bool testing);
+moony_vm_t *moony_vm_new(size_t mem_size, bool testing, void *data);
 void moony_vm_free(moony_vm_t *vm);
 
 void *moony_vm_mem_alloc(size_t size);
