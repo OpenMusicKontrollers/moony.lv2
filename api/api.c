@@ -626,8 +626,7 @@ _state_save(LV2_Handle instance,
 		lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_SAVE);
 		if(lua_pcall(L, 0, 0, 0))
 		{
-			if(moony->log) //TODO send to UI, too
-				lv2_log_error(&moony->logger, "%s\n", lua_tostring(L, -1));
+			moony_err_async(moony, lua_tostring(L, -1));
 			lua_pop(L, 1);
 		}
 #ifdef USE_MANUAL_GC
@@ -680,12 +679,18 @@ _compile(moony_t *moony, const char *chunk)
 
 	moony_vm_t *vm = moony_vm_new(moony->mem_size, moony->testing, moony);
 	if(!vm)
+	{
+		moony_err_async(moony, "moony_vm_new failed");
 		return NULL;
+	}
 
 	moony_vm_lock(vm);
 	moony_open(moony, vm->L);
 	if(luaL_dostring(vm->L, chunk))
 	{
+		moony_err_async(moony, lua_tostring(vm->L, -1));
+		lua_pop(vm->L, 1);
+
 		moony_vm_free(vm);
 		return NULL;
 	}
@@ -838,17 +843,15 @@ _state_restore(LV2_Handle instance,
 				if(vm_old)
 					moony_vm_free(vm_old);
 			}
-			else
-				; //FIXME
 		}
 		else
 		{
-			moony_err(moony, "restore: moony:code too long");
+			moony_err_async(moony, "restore: moony:code too long");
 		}
 	}
 	else
 	{
-		moony_err(moony, "restore: moony:code property not found");
+		moony_err_async(moony, "restore: moony:code property not found");
 	}
 
 	return LV2_STATE_SUCCESS;
@@ -900,7 +903,9 @@ _work_job(moony_t *moony,
 					moony_vm_free(vm_old);
 			}
 			else
+			{
 				return LV2_WORKER_ERR_UNKNOWN;
+			}
 		} break;
 		case MOONY_JOB_VM_FREE:
 		{
@@ -909,6 +914,10 @@ _work_job(moony_t *moony,
 		case MOONY_JOB_STATE_FREE:
 		{
 			free(job->state_atom);
+		} break;
+		case MOONY_JOB_ERR_FREE:
+		{
+			free(job->err);
 		} break;
 	}
 
@@ -985,6 +994,7 @@ _work_response(LV2_Handle instance, uint32_t size, const void *body)
 		case MOONY_JOB_MEM_FREE:
 		case MOONY_JOB_VM_FREE:
 		case MOONY_JOB_STATE_FREE:
+		case MOONY_JOB_ERR_FREE:
 			break; // never reached
 	}
 
@@ -1025,6 +1035,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 {
 	atomic_init(&moony->state_atom_new, 0);
 	atomic_init(&moony->vm_new, 0);
+	atomic_init(&moony->err_new, 0);
 
 	moony->from_dsp = varchunk_new(MOONY_MAX_CHUNK_LEN * 2, true);
 	if(!moony->from_dsp)
@@ -1901,6 +1912,25 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 	LV2_Atom_Forge *forge = &moony->notify_forge;
 	LV2_Atom_Forge_Ref ref = moony->notify_ref;
 
+	char *err_new = (char *)atomic_exchange_explicit(&moony->err_new, 0, memory_order_relaxed);
+	if(err_new)
+	{
+		if(moony->error[0] == 0x0) // don't overwrite any previous error message
+			snprintf(moony->error, MOONY_MAX_ERROR_LEN, "%s", err_new);
+		moony->error_out = 1;
+
+		moony_job_t *req;
+		if((req = varchunk_write_request(moony->from_dsp, sizeof(moony_job_t))))
+		{
+			req->type = MOONY_JOB_ERR_FREE;
+			req->err = err_new;
+
+			varchunk_write_advance(moony->from_dsp, sizeof(moony_job_t));
+			if(moony_wake_worker(moony->sched) != LV2_WORKER_SUCCESS)
+				; //FIXME
+		}
+	}
+
 	LV2_Atom *state_atom_new = (LV2_Atom *)atomic_exchange_explicit(&moony->state_atom_new, 0, memory_order_relaxed);
 	if(state_atom_new)
 	{
@@ -2024,7 +2054,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 				}
 				else if(property->body == moony->uris.moony_error)
 				{
-					if(strlen(moony->error) > 0)
+					if(moony->error[0] != 0x0)
 						moony->error_out = 1;
 				}
 				else if(property->body == moony->uris.moony_editorHidden)

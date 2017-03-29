@@ -292,6 +292,8 @@ struct _moony_t {
 	moony_vm_t *vm;
 	atomic_uintptr_t vm_new;
 
+	atomic_uintptr_t err_new;
+
 	bool once;
 	volatile int props_out;
 	volatile int dirty_out;
@@ -358,6 +360,35 @@ moony_bypass(moony_t *moony)
 	return moony->error[0] != '\0';
 }
 
+__non_realtime static inline void
+moony_err_async(moony_t *moony, const char *msg)
+{
+	const char *err = strstr(msg, "\"]:"); // search end mark of header [string ""]:
+	err = err
+		? err + 3 // skip header end mark
+		: msg; // use whole error string alternatively
+
+	if(moony->log)
+		lv2_log_error(&moony->logger, "%s\n", err);
+
+	char *err_new = strdup(err);
+	if(err_new)
+	{
+		uintptr_t err_old = 0;
+		const bool match = atomic_compare_exchange_strong_explicit(&moony->err_new,
+			&err_old, (uintptr_t)err_new, memory_order_release, memory_order_relaxed);
+		if(match) // we have successfully exchanged
+		{
+			if(err_old)
+				free((char *)err_old);
+		}
+		else // !match, aka previous error message not consumed yet
+		{
+			free(err_new);
+		}
+	}
+}
+
 __realtime static inline void
 moony_err(moony_t *moony, const char *msg)
 {
@@ -371,7 +402,6 @@ moony_err(moony_t *moony, const char *msg)
 
 	if(moony->error[0] == '\0') // don't overwrite any previous error message
 		snprintf(moony->error, MOONY_MAX_ERROR_LEN, "%s", err);
-
 	moony->error_out = 1;
 }
 
