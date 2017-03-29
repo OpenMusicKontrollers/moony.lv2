@@ -304,7 +304,7 @@ struct _moony_t {
 	LV2_Canvas_URID canvas_urid;
 
 	moony_vm_t *vm;
-	moony_vm_t *vm_new;
+	atomic_uintptr_t vm_new;
 
 	bool once;
 	volatile int props_out;
@@ -324,6 +324,8 @@ struct _moony_t {
 	} lock;
 
 	LV2_Atom *state_atom;
+	atomic_uintptr_t state_atom_new;
+
 	LV2_Atom *stash_atom;
 	uint32_t stash_size;
 
@@ -332,15 +334,15 @@ struct _moony_t {
 		uint32_t size;
 	} render;
 
+	varchunk_t *from_dsp;
+
 	latom_driver_hash_t atom_driver_hash [DRIVER_HASH_MAX];
 
-	varchunk_t *to_worker;
-
-	_Atomic int32_t editor_hidden;
-	_Atomic int32_t log_hidden;
-	_Atomic int32_t param_hidden;
-	_Atomic int32_t param_cols;
-	_Atomic int32_t param_rows;
+	atomic_int editor_hidden;
+	atomic_int log_hidden;
+	atomic_int param_hidden;
+	atomic_int param_cols;
+	atomic_int param_rows;
 	char error [MOONY_MAX_ERROR_LEN];
 	char trace [MOONY_MAX_TRACE_LEN];
 	char chunk [MOONY_MAX_CHUNK_LEN];
@@ -356,7 +358,7 @@ bool moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequenc
 void moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames);
 const void* extension_data(const char* uri);
 void *moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type, bool cache);
-LV2_Worker_Status moony_wake_worker(moony_t *moony);
+LV2_Worker_Status moony_wake_worker(const LV2_Worker_Schedule *work_sched);
 
 __realtime static inline void
 moony_freeuserdata(moony_t *moony)

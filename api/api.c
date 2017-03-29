@@ -508,8 +508,9 @@ _save(lua_State *L)
 }
 
 __non_realtime static LV2_State_Status
-_state_save(LV2_Handle instance, LV2_State_Store_Function store,
-	LV2_State_Handle state, uint32_t flags, const LV2_Feature *const *features)
+_state_save(LV2_Handle instance,
+	LV2_State_Store_Function store, LV2_State_Handle state,
+	uint32_t flags, const LV2_Feature *const *features)
 {
 	moony_t *moony = (moony_t *)instance;
 
@@ -635,21 +636,21 @@ _state_save(LV2_Handle instance, LV2_State_Store_Function store,
 
 		_unlock(&moony->lock.state);
 
-		LV2_Atom *atom = (LV2_Atom *)ser.buf;
-		if( (atom->type) && (atom->size) )
+		LV2_Atom *state_atom_new = (LV2_Atom *)ser.buf;
+		if( (state_atom_new->type) && (state_atom_new->size) )
 		{
 			status = store(
 				state,
 				moony->uris.moony_state,
-				LV2_ATOM_BODY(atom),
-				atom->size,
-				atom->type,
+				LV2_ATOM_BODY(state_atom_new),
+				state_atom_new->size,
+				state_atom_new->type,
 				LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
 		}
 
-		if(moony->state_atom)
-			free(moony->state_atom);
-		moony->state_atom = atom;
+		LV2_Atom *state_atom_old = (LV2_Atom *)atomic_exchange_explicit(&moony->state_atom_new, (uintptr_t)state_atom_new, memory_order_relaxed);
+		if(state_atom_old)
+			free(state_atom_old);
 	}
 
 	return status;
@@ -669,33 +670,43 @@ _restore(lua_State *L)
 	return 0;
 }
 
-__realtime static void
-_clear_global_callbacks(lua_State *L)
+__non_realtime static moony_vm_t *
+_compile(moony_t *moony, const char *chunk)
 {
-	lua_pushnil(L);
-	lua_setglobal(L, "stash");
+	// update chunk
+	_spin_lock(&moony->lock.state);
+	strcpy(moony->chunk, chunk);
+	_unlock(&moony->lock.state);
 
-	lua_pushnil(L);
-	lua_setglobal(L, "apply");
+	moony_vm_t *vm = moony_vm_new(0x20000, false); //FIXME
+	if(!vm)
+		return NULL;
 
-	lua_pushnil(L);
-	lua_setglobal(L, "save");
+	moony_vm_lock(vm);
+	moony_open(moony, vm->L);
+	if(luaL_dostring(vm->L, chunk))
+	{
+		moony_vm_free(vm);
+		return NULL;
+	}
+	moony_vm_unlock(vm);
 
-	lua_pushnil(L);
-	lua_setglobal(L, "restore");
-
-	lua_pushnil(L);
-	lua_setglobal(L, "once");
-
-	lua_pushnil(L);
-	lua_setglobal(L, "run");
+	return vm;
 }
 
 __non_realtime static LV2_State_Status
-_state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_State_Handle state, uint32_t flags, const LV2_Feature *const *features)
+_state_restore(LV2_Handle instance,
+	LV2_State_Retrieve_Function retrieve, LV2_State_Handle state,
+	uint32_t flags, const LV2_Feature *const *features)
 {
 	moony_t *moony = (moony_t *)instance;
-	lua_State *L = moony_current(moony);
+	const LV2_Worker_Schedule *work_sched = NULL;
+
+	for(unsigned i = 0; features[i]; i++)
+	{
+		if(!strcmp(features[i]->URI, LV2_WORKER__schedule))
+			work_sched = features[i]->data;
+	}
 
 	size_t size;
 	uint32_t type;
@@ -783,6 +794,31 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 		atomic_store_explicit(&moony->param_rows, *i32, memory_order_release);
 	}
 
+	// get state
+	const uint8_t *body = retrieve(
+		state,
+		moony->uris.moony_state,
+		&size,
+		&type,
+		&flags2
+	);
+
+	if(body && size && type)
+	{
+		// allocate new state_atom
+		LV2_Atom *state_atom_new = malloc(sizeof(LV2_Atom) + size);
+		if(state_atom_new)
+		{
+			state_atom_new->size = size;
+			state_atom_new->type = type;
+			memcpy(LV2_ATOM_BODY(state_atom_new), body, size);
+
+			LV2_Atom *state_atom_old = (LV2_Atom *)atomic_exchange_explicit(&moony->state_atom_new, (uintptr_t)state_atom_new, memory_order_relaxed);
+			if(state_atom_old)
+				free(state_atom_old);
+		}
+	}
+
 	// get code chunk
 	const char *chunk = retrieve(
 		state,
@@ -795,23 +831,15 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 	{
 		if(size <= MOONY_MAX_CHUNK_LEN)
 		{
-			// lock Lua state, so it cannot be accessed by realtime thread
-			_spin_lock(&moony->lock.state);
-
-			strncpy(moony->chunk, chunk, size);
-
-			_clear_global_callbacks(L);
-			if(luaL_dostring(L, moony->chunk))
-				moony_error(moony);
+			moony_vm_t *vm_new = _compile(moony, chunk);
+			if(vm_new)
+			{
+				moony_vm_t *vm_old = (moony_vm_t *)atomic_exchange_explicit(&moony->vm_new, (uintptr_t)vm_new, memory_order_relaxed);
+				if(vm_old)
+					moony_vm_free(vm_old);
+			}
 			else
-				moony->error[0] = 0x0; // reset error flag
-
-			moony->dirty_out = 1; // trigger update of UI
-			moony->error_out = 1; // trigger update of UI
-			moony->props_out = 1; // trigger update of UI
-			moony->once = true; // trigger call of 'once'
-
-			_unlock(&moony->lock.state);
+				; //FIXME
 		}
 		else
 		{
@@ -823,47 +851,6 @@ _state_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_St
 		moony_err(moony, "restore: moony:code property not found");
 	}
 
-	const uint8_t *body = retrieve(
-		state,
-		moony->uris.moony_state,
-		&size,
-		&type,
-		&flags2
-	);
-
-	if(body && size && type)
-	{
-		// allocate new state_atom
-		LV2_Atom *state_atom = malloc(sizeof(LV2_Atom) + size);
-		if(state_atom)
-		{
-			// lock Lua state, so it cannot be accessed by realtime thread
-			_spin_lock(&moony->lock.state);
-
-			if(moony->state_atom) // clear old state_atom
-				free(moony->state_atom);
-			moony->state_atom = state_atom;
-
-			moony->state_atom->size = size;
-			moony->state_atom->type = type;
-			memcpy(LV2_ATOM_BODY(moony->state_atom), body, size);
-
-			// restore Lua defined properties
-			lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_RESTORE);
-			if(lua_pcall(L, 0, 0, 0))
-			{
-				if(moony->log) //TODO send to UI, too
-					lv2_log_error(&moony->logger, "%s\n", lua_tostring(L, -1));
-				lua_pop(L, 1);
-			}
-#ifdef USE_MANUAL_GC
-			lua_gc(L, LUA_GCSTEP, 0);
-#endif
-
-			_unlock(&moony->lock.state);
-		}
-	}
-
 	return LV2_STATE_SUCCESS;
 }
 
@@ -871,6 +858,62 @@ static const LV2_State_Interface state_iface = {
 	.save = _state_save,
 	.restore = _state_restore
 };
+
+__non_realtime static LV2_Worker_Status
+_work_job(moony_t *moony,
+	LV2_Worker_Respond_Function respond,
+	LV2_Worker_Respond_Handle target,
+	const moony_job_t *job)
+{
+	//printf("_work: %i\n", job->type);
+
+	switch(job->type)
+	{
+		case MOONY_JOB_MEM_ALLOC:
+		{
+			const int32_t i = job->mem.i;
+			moony->vm->area[i] = moony_vm_mem_alloc(moony->vm->size[i]);
+
+			const moony_job_t req = {
+				.type = MOONY_JOB_MEM_ALLOC,
+				.mem = {
+					.i = i
+				}
+			};
+
+			return respond(target, sizeof(moony_job_t), &req); // signal to _work_response
+		} break;
+		case MOONY_JOB_MEM_FREE:
+		{
+			const int32_t i =job->mem.i;
+			void *ptr= job->mem.ptr;
+
+			moony_vm_mem_free(ptr, moony->vm->size[i]);
+		} break;
+		case MOONY_JOB_VM_ALLOC:
+		{
+			moony_vm_t *vm_new = _compile(moony, job->chunk);
+			if(vm_new)
+			{
+				moony_vm_t *vm_old = (moony_vm_t *)atomic_exchange_explicit(&moony->vm_new, (uintptr_t)vm_new, memory_order_relaxed);
+				if(vm_old)
+					moony_vm_free(vm_old);
+			}
+			else
+				return LV2_WORKER_ERR_UNKNOWN;
+		} break;
+		case MOONY_JOB_VM_FREE:
+		{
+			moony_vm_free(job->vm);
+		} break;
+		case MOONY_JOB_STATE_FREE:
+		{
+			free(job->state_atom);
+		} break;
+	}
+
+	return LV2_WORKER_SUCCESS;
+}
 
 __non_realtime static LV2_Worker_Status
 _work(LV2_Handle instance,
@@ -885,72 +928,11 @@ _work(LV2_Handle instance,
 
 	size_t sz;
 	const moony_job_t *job;
-	while((job = varchunk_read_request(moony->to_worker, &sz)))
+	while((job = varchunk_read_request(moony->from_dsp, &sz)))
 	{
-		//printf("_work: %i\n", job->type);
-		switch(job->type)
-		{
-			case MOONY_JOB_MEM_ALLOC:
-			{
-				const int32_t i = job->mem.i;
-				moony->vm->area[i] = moony_vm_mem_alloc(moony->vm->size[i]);
+		status = _work_job(moony, respond, target, job);
 
-				const moony_job_t req = {
-					.type = MOONY_JOB_MEM_ALLOC,
-					.mem = {
-						.i = i
-					}
-				};
-
-				status = respond(target, sizeof(moony_job_t), &req); // signal to _work_response
-			} break;
-			case MOONY_JOB_MEM_FREE:
-			{
-				const int32_t i =job->mem.i;
-				void *ptr= job->mem.ptr;
-
-				moony_vm_mem_free(ptr, moony->vm->size[i]);
-			} break;
-			case MOONY_JOB_VM_ALLOC:
-			{
-				moony_vm_t *vm = moony_vm_new(0x20000, false); //FIXME
-				if(!vm)
-				{
-					//FIXME report error
-					status = LV2_WORKER_ERR_UNKNOWN;
-					break;
-				}
-
-				moony_vm_lock(vm);
-				moony_open(moony, vm->L);
-				if(luaL_dostring(vm->L, job->chunk))
-					status = LV2_WORKER_ERR_UNKNOWN;
-				moony_vm_unlock(vm);
-
-				if(status == LV2_WORKER_ERR_UNKNOWN)
-				{
-					//FIXME report error
-					moony_vm_free(vm);
-					break;
-				}
-
-				// update chunk
-				strcpy(moony->chunk, job->chunk);
-
-				const moony_job_t req = {
-					.type = MOONY_JOB_VM_ALLOC,
-					.vm = vm
-				};
-
-				status = respond(target, sizeof(moony_job_t), &req); // signal to _work_response
-			} break;
-			case MOONY_JOB_VM_FREE:
-			{
-				moony_vm_free(job->vm);
-			} break;
-		}
-
-		varchunk_read_advance(moony->to_worker);
+		varchunk_read_advance(moony->from_dsp);
 	}
 
 	return status;
@@ -979,7 +961,7 @@ _work_response(LV2_Handle instance, uint32_t size, const void *body)
 			if(!moony->vm->pool[i]) // pool addition failed
 			{
 				moony_job_t *req;
-				if((req = varchunk_write_request(moony->to_worker, sizeof(moony_job_t))))
+				if((req = varchunk_write_request(moony->from_dsp, sizeof(moony_job_t))))
 				{
 					req->type = MOONY_JOB_MEM_FREE;
 					req->mem.i = i;
@@ -987,8 +969,8 @@ _work_response(LV2_Handle instance, uint32_t size, const void *body)
 
 					moony->vm->area[i] = NULL;
 
-					varchunk_write_advance(moony->to_worker, sizeof(moony_job_t));
-					if(moony_wake_worker(moony) != LV2_WORKER_SUCCESS)
+					varchunk_write_advance(moony->from_dsp, sizeof(moony_job_t));
+					if(moony_wake_worker(moony->sched) != LV2_WORKER_SUCCESS)
 						; //FIXME
 				}
 
@@ -998,14 +980,11 @@ _work_response(LV2_Handle instance, uint32_t size, const void *body)
 			moony->vm->space += moony->vm->size[i];
 			//printf("mem extended to %zu KB\n", moony->vm->space / 1024);
 		} break;
-		case MOONY_JOB_VM_ALLOC:
-		{
-			assert(moony->vm_new == NULL);
-			moony->vm_new = job->vm; // switch vm
-		} break;
 
+		case MOONY_JOB_VM_ALLOC:
 		case MOONY_JOB_MEM_FREE:
 		case MOONY_JOB_VM_FREE:
+		case MOONY_JOB_STATE_FREE:
 			break; // never reached
 	}
 
@@ -1141,14 +1120,22 @@ __non_realtime int
 moony_init(moony_t *moony, const char *subject, double sample_rate,
 	const LV2_Feature *const *features, size_t mem_size, bool testing)
 {
+	atomic_init(&moony->state_atom_new, 0);
+	atomic_init(&moony->vm_new, 0);
+
+	moony->from_dsp = varchunk_new(MOONY_MAX_CHUNK_LEN * 2, true);
+	if(!moony->from_dsp)
+	{
+		fprintf(stderr, "varchunk_new failed\n");
+		return -1;
+	}
+
 	moony->vm = moony_vm_new(mem_size, testing);
 	if(!moony->vm)
 	{
 		fprintf(stderr, "Lua VM cannot be initialized\n");
 		return -1;
 	}
-
-	moony->to_worker = varchunk_new(MOONY_MAX_CHUNK_LEN * 2, true);
 
 	LV2_Options_Option *opts = NULL;
 	bool load_default_state = false;
@@ -1363,9 +1350,11 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 __non_realtime void
 moony_deinit(moony_t *moony)
 {
+	LV2_Atom *state_atom_old = (LV2_Atom *)atomic_load_explicit(&moony->state_atom_new, memory_order_relaxed);
+	if(state_atom_old)
+		free(state_atom_old);
 	if(moony->state_atom)
 		free(moony->state_atom);
-	moony->state_atom = NULL;
 
 	if(moony->stash_atom)
 		moony_rt_free(moony->vm, moony->stash_atom, moony->stash_size);
@@ -1385,10 +1374,14 @@ moony_deinit(moony_t *moony)
 		free(moony->image_surface.data);
 	moony->image_surface.data = NULL;
 
-	moony_vm_free(moony->vm);
+	moony_vm_t *vm_old = (moony_vm_t *)atomic_load_explicit(&moony->vm_new, memory_order_relaxed);
+	if(vm_old)
+		moony_vm_free(vm_old);
+	if(moony->vm)
+		moony_vm_free(moony->vm);
 
-	if(moony->to_worker)
-		varchunk_free(moony->to_worker);
+	if(moony->from_dsp)
+		varchunk_free(moony->from_dsp);
 }
 
 #define _protect_metatable(L, idx) \
@@ -2009,10 +2002,10 @@ _patch_set(patch_t *patch, LV2_Atom_Forge *forge, LV2_URID property, uint32_t si
 }
 
 __realtime LV2_Worker_Status
-moony_wake_worker(moony_t *moony)
+moony_wake_worker(const LV2_Worker_Schedule *work_sched)
 {
 	int32_t dummy;
-	return moony->sched->schedule_work(moony->sched->handle, sizeof(int32_t), &dummy);
+	return work_sched->schedule_work(work_sched->handle, sizeof(int32_t), &dummy);
 }
 
 __realtime bool
@@ -2021,11 +2014,32 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 	LV2_Atom_Forge *forge = &moony->notify_forge;
 	LV2_Atom_Forge_Ref ref = moony->notify_ref;
 
-	if(moony->vm_new)
+	LV2_Atom *state_atom_new = (LV2_Atom *)atomic_exchange_explicit(&moony->state_atom_new, 0, memory_order_relaxed);
+	if(state_atom_new)
+	{
+		LV2_Atom *state_atom_old = moony->state_atom;
+		moony->state_atom = state_atom_new;
+
+		if(state_atom_old)
+		{
+			moony_job_t *req;
+			if((req = varchunk_write_request(moony->from_dsp, sizeof(moony_job_t))))
+			{
+				req->type = MOONY_JOB_STATE_FREE;
+				req->state_atom = state_atom_old;
+
+				varchunk_write_advance(moony->from_dsp, sizeof(moony_job_t));
+				if(moony_wake_worker(moony->sched) != LV2_WORKER_SUCCESS)
+					; //FIXME
+			}
+		}
+	}
+
+	moony_vm_t *vm_new = (moony_vm_t *)atomic_exchange_explicit(&moony->vm_new, 0, memory_order_relaxed);
+	if(vm_new)
 	{
 		moony_vm_t *vm_old = moony->vm;
-		moony->vm = moony->vm_new;
-		moony->vm_new = NULL;
+		moony->vm = vm_new;
 
 		lua_State *L = moony_current(moony);
 
@@ -2050,24 +2064,35 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 			lua_gc(L, LUA_GCSTEP, 0);
 #endif
 
-			moony_rt_free(vm_old, moony->stash_atom, moony->stash_size);
+			if(vm_old)
+				moony_rt_free(vm_old, moony->stash_atom, moony->stash_size);
 			moony->stash_atom = NULL;
 			moony->stash_size = 0;
 		}
 
-		moony_job_t *req;
-		if((req = varchunk_write_request(moony->to_worker, sizeof(moony_job_t))))
+		if(vm_old)
 		{
-			req->type = MOONY_JOB_VM_FREE;
-			req->vm = vm_old;
+			moony_job_t *req;
+			if((req = varchunk_write_request(moony->from_dsp, sizeof(moony_job_t))))
+			{
+				req->type = MOONY_JOB_VM_FREE;
+				req->vm = vm_old;
 
-			varchunk_write_advance(moony->to_worker, sizeof(moony_job_t));
-			if(moony_wake_worker(moony) != LV2_WORKER_SUCCESS)
-				; //FIXME
+				varchunk_write_advance(moony->from_dsp, sizeof(moony_job_t));
+				if(moony_wake_worker(moony->sched) != LV2_WORKER_SUCCESS)
+					; //FIXME
+			}
 		}
 
+#if 0
 		moony->once = true;
 		moony->props_out = 1; // trigger update of UI
+#else
+		moony->dirty_out = 1; // trigger update of UI
+		moony->error_out = 1; // trigger update of UI
+		moony->props_out = 1; // trigger update of UI
+		moony->once = true; // trigger call of 'once'
+#endif
 	}
 
 	lua_State *L = moony_current(moony);
@@ -2209,13 +2234,13 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 					// send code to worker thread
 					const size_t sz = sizeof(moony_job_t) + value->size;
 					moony_job_t *req;
-					if((req = varchunk_write_request(moony->to_worker, sz)))
+					if((req = varchunk_write_request(moony->from_dsp, sz)))
 					{
 						req->type = MOONY_JOB_VM_ALLOC;
 						memcpy(req->chunk, LV2_ATOM_BODY_CONST(value), value->size);
 
-						varchunk_write_advance(moony->to_worker, sz);
-						if(moony_wake_worker(moony) != LV2_WORKER_SUCCESS)
+						varchunk_write_advance(moony->from_dsp, sz);
+						if(moony_wake_worker(moony->sched) != LV2_WORKER_SUCCESS)
 							; //FIXME
 					}
 				}

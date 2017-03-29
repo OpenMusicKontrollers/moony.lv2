@@ -321,13 +321,13 @@ moony_vm_mem_extend(moony_vm_t *vm)
 		else
 		{
 			moony_job_t *req;
-			if((req = varchunk_write_request(moony->to_worker, sizeof(moony_job_t))))
+			if((req = varchunk_write_request(moony->from_dsp, sizeof(moony_job_t))))
 			{
 				req->type = MOONY_JOB_MEM_ALLOC;
 				req->mem.i = i;
 
-				varchunk_write_advance(moony->to_worker, sizeof(moony_job_t));
-				if(moony_wake_worker(moony) == LV2_WORKER_SUCCESS)
+				varchunk_write_advance(moony->from_dsp, sizeof(moony_job_t));
+				if(moony_wake_worker(moony->sched) == LV2_WORKER_SUCCESS)
 					moony->working = 1; // toggle working flag
 			}
 		}
