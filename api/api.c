@@ -1008,101 +1008,6 @@ static const LV2_Worker_Interface work_iface = {
 	.end_run = _end_run
 };
 
-#ifdef BUILD_INLINE_DISPLAY
-__non_realtime static inline LV2_Inline_Display_Image_Surface *
-_cairo_init(moony_t *moony, int w, int h)
-{
-	LV2_Inline_Display_Image_Surface *surf = &moony->image_surface;
-
-	surf->width = w;
-	surf->height = w > h ? h : w; // try to use 1:1 ratio
-	surf->stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, surf->width);
-	surf->data = realloc(surf->data, surf->stride * surf->height);
-	if(!surf->data)
-		return NULL;
-
-	moony->cairo.surface = cairo_image_surface_create_for_data(
-		surf->data, CAIRO_FORMAT_ARGB32, surf->width, surf->height, surf->stride);
-
-	if(moony->cairo.surface)
-	{
-		cairo_surface_set_device_scale(moony->cairo.surface, surf->width, surf->height);
-
-		moony->cairo.ctx = cairo_create(moony->cairo.surface);
-		if(moony->cairo.ctx)
-		{
-			cairo_select_font_face(moony->cairo.ctx, "cairo:monospace", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
-		}
-	}
-
-	return surf;
-}
-
-__non_realtime static inline void
-_cairo_deinit(moony_t *moony)
-{
-	LV2_Inline_Display_Image_Surface *surf = &moony->image_surface;
-
-	if(moony->cairo.ctx)
-	{
-		cairo_destroy(moony->cairo.ctx);
-		moony->cairo.ctx = NULL;
-	}
-
-	if(moony->cairo.surface)
-	{
-		cairo_surface_finish(moony->cairo.surface);
-		cairo_surface_destroy(moony->cairo.surface);
-		moony->cairo.surface = NULL;
-	}
-
-	if(surf->data)
-	{
-		free(surf->data);
-		surf->data = NULL;
-	}
-}
-#endif
-
-__non_realtime static LV2_Inline_Display_Image_Surface *
-_render(LV2_Handle instance, uint32_t w, uint32_t h)
-{
-	moony_t *moony = instance;
-
-#ifdef BUILD_INLINE_DISPLAY
-	// prepare pixel surface in all cases
-	LV2_Inline_Display_Image_Surface *surf = &moony->image_surface;
-
-	if( (surf->width != (int)w) || (surf->height > (int)h) || !surf->data)
-	{
-		_cairo_deinit(moony);
-		surf = _cairo_init(moony, w, h);
-	}
-
-	if(!surf)
-		return NULL;
-
-	_spin_lock(&moony->lock.render)
-	if(moony->render.graph)
-	{
-		lv2_canvas_render(&moony->canvas, moony->cairo.ctx, moony->render.graph);
-	}
-	else
-	{
-		surf = NULL;
-	}
-	_unlock(&moony->lock.render);
-
-	return surf;
-#else
-	return NULL;
-#endif
-}
-
-static const LV2_Inline_Display_Interface inlinedisplay_iface = {
-	.render = _render
-};
-
 __non_realtime const void*
 extension_data(const char* uri)
 {
@@ -1110,8 +1015,6 @@ extension_data(const char* uri)
 		return &work_iface;
 	else if(!strcmp(uri, LV2_STATE__interface))
 		return &state_iface;
-	else if(!strcmp(uri, LV2_INLINEDISPLAY__interface))
-		return &inlinedisplay_iface;
 	else
 		return NULL;
 }
@@ -1158,8 +1061,6 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 			load_default_state = true;
 		else if(!strcmp(features[i]->URI, XPRESS_VOICE_MAP))
 			moony->voice_map = features[i]->data;
-		else if(!strcmp(features[i]->URI, LV2_INLINEDISPLAY__queue_draw))
-			moony->queue_draw = features[i]->data;
 	}
 
 	if(!moony->map)
@@ -1248,9 +1149,6 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->uris.atom_frame_time = moony->map->map(moony->map->handle, LV2_ATOM__frameTime);
 	moony->uris.atom_beat_time = moony->map->map(moony->map->handle, LV2_ATOM__beatTime);
 
-#ifdef BUILD_INLINE_DISPLAY
-	lv2_canvas_init(&moony->canvas, moony->map);
-#endif
 	lv2_canvas_urid_init(&moony->canvas_urid, moony->map);
 
 	lv2_osc_urid_init(&moony->osc_urid, moony->map);
@@ -1360,19 +1258,6 @@ moony_deinit(moony_t *moony)
 		moony_rt_free(moony->vm, moony->stash_atom, moony->stash_size);
 	moony->stash_atom = NULL;
 	moony->stash_size = 0;
-
-	if(moony->render.graph)
-		moony_rt_free(moony->vm, moony->render.graph, moony->render.size);
-	moony->render.graph = NULL;
-	moony->render.size = 0;
-
-#ifdef BUILD_INLINE_DISPLAY
-	_cairo_deinit(moony);
-#endif
-
-	if(moony->image_surface.data)
-		free(moony->image_surface.data);
-	moony->image_surface.data = NULL;
 
 	moony_vm_t *vm_old = (moony_vm_t *)atomic_load_explicit(&moony->vm_new, memory_order_relaxed);
 	if(vm_old)
@@ -2140,10 +2025,6 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 					if(strlen(moony->error) > 0)
 						moony->error_out = 1;
 				}
-				else if(property->body == moony->canvas_urid.Canvas_graph)
-				{
-					moony->graph_out = 1;
-				}
 				else if(property->body == moony->uris.moony_editorHidden)
 				{
 					const int32_t i32 = atomic_load_explicit(&moony->editor_hidden, memory_order_acquire);
@@ -2365,49 +2246,6 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 	LV2_Atom_Forge *forge = &moony->notify_forge;
 	LV2_Atom_Forge_Ref ref = moony->notify_ref;
 
-	// intercept canvas:Graph
-	LV2_ATOM_SEQUENCE_FOREACH(notify, ev)
-	{
-		const LV2_Atom_Object *obj = (const LV2_Atom_Object *)&ev->body;
-
-		if(  lv2_atom_forge_is_object_type(forge, obj->atom.type)
-			&& (obj->body.otype == moony->uris.patch.set) )
-		{
-			const LV2_Atom_URID *property = NULL;
-			const LV2_Atom *graph = NULL;
-
-			lv2_atom_object_get(obj, moony->uris.patch.property, &property,
-				moony->uris.patch.value, &graph, 0);
-
-			if(  property && (property->atom.type == forge->URID)
-				&& (property->body == moony->canvas_urid.Canvas_graph)
-				&& graph && (graph->type == forge->Tuple) )
-			{
-				if(_try_lock(&moony->lock.render))
-				{
-					const uint32_t sz = lv2_atom_total_size(graph);
-
-					moony->render.graph = moony_rt_realloc(moony->vm, moony->render.graph, moony->render.size, sz);
-					if(moony->render.graph)
-					{
-						moony->render.size = sz;
-						memcpy(moony->render.graph, graph, sz);
-					}
-					else
-					{
-						moony->render.size = 0;
-					}
-
-					// update inline display
-					if(moony->queue_draw)
-						moony->queue_draw->queue_draw(moony->queue_draw->handle);
-
-					_unlock(&moony->lock.render);
-				}
-			}
-		}
-	}
-
 	if(moony->trace_out)
 	{
 		char *pch = strtok(moony->trace, "\n");
@@ -2431,31 +2269,6 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 		if(moony->log)
 			lv2_log_trace(&moony->logger, "trace buffer overflow\n");
 		moony->trace_overflow = 0; // reset flag
-	}
-
-	if(moony->graph_out)
-	{
-		if(moony->render.graph)
-		{
-			// update web_ui
-			LV2_Atom_Forge_Frame obj_frame;
-			if(ref)
-				ref = lv2_atom_forge_frame_time(forge, frames);
-			if(ref)
-				ref = lv2_atom_forge_object(forge, &obj_frame, 0, moony->uris.patch.set);
-			//FIXME subject, sequenceNumber
-			if(ref)
-				ref = lv2_atom_forge_key(forge, moony->uris.patch.property);
-			if(ref)
-				ref = lv2_atom_forge_urid(forge, moony->canvas_urid.Canvas_graph);
-			if(ref)
-				ref = lv2_atom_forge_key(forge, moony->uris.patch.value);
-			if(ref)
-				ref = lv2_atom_forge_write(forge, moony->render.graph, moony->render.size);
-			if(ref)
-				lv2_atom_forge_pop(forge, &obj_frame);
-		}
-		moony->graph_out = 0;
 	}
 
 	if(ref)

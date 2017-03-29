@@ -47,8 +47,6 @@
 #include <lv2/lv2plug.in/ns/extensions/ui/ui.h>
 #include <lv2/lv2plug.in/ns/extensions/units/units.h>
 
-#include <lv2_extensions.h>
-
 #include <api_vm.h>
 #include <osc.lv2/osc.h>
 #include <xpress.lv2/xpress.h>
@@ -58,9 +56,6 @@
 #include <lauxlib.h>
 
 #include <canvas.lv2/forge.h>
-#ifdef BUILD_INLINE_DISPLAY
-#	include <canvas.lv2/render.h>
-#endif
 
 #define __realtime __attribute__((annotate("realtime")))
 #define __non_realtime __attribute__((annotate("non-realtime")))
@@ -292,15 +287,6 @@ struct _moony_t {
 
 	xpress_map_t *voice_map;
 
-	LV2_Inline_Display *queue_draw;
-	LV2_Inline_Display_Image_Surface image_surface;
-#ifdef BUILD_INLINE_DISPLAY
-	struct {
-		cairo_surface_t *surface;
-		cairo_t *ctx;
-	} cairo;
-	LV2_Canvas canvas;
-#endif
 	LV2_Canvas_URID canvas_urid;
 
 	moony_vm_t *vm;
@@ -312,7 +298,6 @@ struct _moony_t {
 	volatile int error_out;
 	volatile int trace_out;
 	volatile int trace_overflow;
-	volatile int graph_out;
 
 	// udata cache
 	int itr [MOONY_UDATA_COUNT];
@@ -328,11 +313,6 @@ struct _moony_t {
 
 	LV2_Atom *stash_atom;
 	uint32_t stash_size;
-
-	struct {
-		LV2_Atom_Tuple *graph;
-		uint32_t size;
-	} render;
 
 	varchunk_t *from_dsp;
 
