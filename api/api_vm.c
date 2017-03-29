@@ -320,32 +320,16 @@ moony_vm_mem_extend(moony_vm_t *vm)
 		}
 		else
 		{
-			const moony_job_t req = {
-				.mem = {
-					.tup = {
-						.atom.size = 32,
-						.atom.type = moony->forge.Tuple,
-					},
-					.i32 = {
-						.atom.size = sizeof(int32_t),
-						.atom.type = moony->forge.Int,
-						.body = i,
-					},
-					.i64 = {
-						.atom.size = sizeof(int64_t),
-						.atom.type = moony->forge.Long,
-						.body = 0
-					}
-				}
-			};
+			moony_job_t *req;
+			if((req = varchunk_write_request(moony->to_worker, sizeof(moony_job_t))))
+			{
+				req->type = MOONY_JOB_MEM_ALLOC;
+				req->mem.i = i;
 
-			// schedule allocation of memory to _work
-			const LV2_Worker_Status status = moony->sched->schedule_work(
-				moony->sched->handle, lv2_atom_total_size(&req.atom), &req);
-
-			// toggle working flag
-			if(status == LV2_WORKER_SUCCESS)
-				moony->working = 1;
+				varchunk_write_advance(moony->to_worker, sizeof(moony_job_t));
+				if(moony_wake_worker(moony) == LV2_WORKER_SUCCESS)
+					moony->working = 1; // toggle working flag
+			}
 		}
 
 		return 0;

@@ -52,6 +52,7 @@
 #include <api_vm.h>
 #include <osc.lv2/osc.h>
 #include <xpress.lv2/xpress.h>
+#include <varchunk.h>
 
 #include <lua.h>
 #include <lauxlib.h>
@@ -333,6 +334,8 @@ struct _moony_t {
 
 	latom_driver_hash_t atom_driver_hash [DRIVER_HASH_MAX];
 
+	varchunk_t *to_worker;
+
 	_Atomic int32_t editor_hidden;
 	_Atomic int32_t log_hidden;
 	_Atomic int32_t param_hidden;
@@ -353,6 +356,7 @@ bool moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequenc
 void moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames);
 const void* extension_data(const char* uri);
 void *moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type, bool cache);
+LV2_Worker_Status moony_wake_worker(moony_t *moony);
 
 __realtime static inline void
 moony_freeuserdata(moony_t *moony)

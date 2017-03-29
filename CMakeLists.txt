@@ -17,6 +17,7 @@ include_directories(${PROJECT_SOURCE_DIR}/ui)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/plugin)
 include_directories(${PROJECT_SOURCE_DIR}/pugl)
+include_directories(${PROJECT_SOURCE_DIR}/varchunk)
 include_directories(${PROJECT_BINARY_DIR})
 
 # check for visibility support in compiler on Unices

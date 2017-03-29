@@ -24,15 +24,15 @@
 // from vm.c
 #define MOONY_POOL_NUM 8
 
-typedef struct _moony_mem_t moony_mem_t;
+typedef enum _moony_job_enum_t moony_job_enum_t;
 typedef struct _moony_vm_t moony_vm_t;
-typedef union _moony_job_t moony_job_t;
+typedef struct _moony_job_t moony_job_t;
 
 struct _moony_vm_t {
 	tlsf_t tlsf;
 
 	size_t size [MOONY_POOL_NUM];
-	void *area [MOONY_POOL_NUM]; // 128K, 256K, 512K, 1M, 2M, 4M, 8M, 16M
+	void *area [MOONY_POOL_NUM];
 	pool_t pool [MOONY_POOL_NUM];
 
 	size_t space;
@@ -43,16 +43,24 @@ struct _moony_vm_t {
 	bool locked;
 };
 
-struct _moony_mem_t {
-	LV2_Atom_Tuple tup;
-	LV2_Atom_Int i32;
-	LV2_Atom_Long i64;
+enum _moony_job_enum_t {
+	MOONY_JOB_MEM_ALLOC,
+	MOONY_JOB_MEM_FREE,
+	MOONY_JOB_VM_ALLOC,
+	MOONY_JOB_VM_FREE
 };
 
-union _moony_job_t {
-	LV2_Atom atom;
-	moony_mem_t mem;
-	LV2_Atom_Object obj;
+struct _moony_job_t {
+	moony_job_enum_t type;
+
+	union {
+		struct {
+			int32_t i;
+			void *ptr;
+		} mem;
+		moony_vm_t *vm;
+		char chunk [0];
+	};
 };
 
 moony_vm_t *moony_vm_new(size_t mem_size, bool testing);
