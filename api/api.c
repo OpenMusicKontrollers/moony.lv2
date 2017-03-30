@@ -530,24 +530,17 @@ _state_save(LV2_Handle instance,
 	moony_t *moony = (moony_t *)instance;
 
 	LV2_State_Status status = LV2_STATE_SUCCESS;
-	char *chunk = NULL;
 
-	_spin_lock(&moony->lock.state);
-	chunk = strdup(moony->chunk);
-	_unlock(&moony->lock.state);
-
-	if(chunk)
+	if(moony->chunk_nrt)
 	{
 		status = store(
 			state,
 			moony->uris.moony_code,
-			chunk,
-			strlen(chunk) + 1,
+			moony->chunk_nrt,
+			strlen(moony->chunk_nrt) + 1,
 			moony->forge.String,
 			LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
 		(void)status; //TODO check status
-
-		free(chunk);
 	}
 
 	const int32_t minor_version = MOONY_MINOR_VERSION;
@@ -687,10 +680,21 @@ _restore(lua_State *L)
 __non_realtime static moony_vm_t *
 _compile(moony_t *moony, const char *chunk)
 {
-	// update chunk
-	_spin_lock(&moony->lock.state);
-	strcpy(moony->chunk, chunk);
-	_unlock(&moony->lock.state);
+	// save a copy for _state_save
+	if(moony->chunk_nrt)
+		free(moony->chunk_nrt);
+	moony->chunk_nrt = strdup(chunk);
+	if(!moony->chunk_nrt)
+		return NULL;
+
+	char *chunk_new = strdup(chunk);
+	if(!chunk_new)
+		return NULL;
+
+	// chunk is always updated, even if compilation should fail
+	char *chunk_old = (char *)atomic_exchange_explicit(&moony->chunk_new, (uintptr_t)chunk_new, memory_order_relaxed);
+	if(chunk_old)
+		free(chunk_old);
 
 	moony_vm_t *vm = moony_vm_new(moony->mem_size, moony->testing, moony);
 	if(!vm)
@@ -926,13 +930,9 @@ _work_job(moony_t *moony,
 		{
 			moony_vm_free(job->vm);
 		} break;
-		case MOONY_JOB_STATE_FREE:
+		case MOONY_JOB_PTR_FREE:
 		{
-			free(job->state_atom);
-		} break;
-		case MOONY_JOB_ERR_FREE:
-		{
-			free(job->err);
+			free(job->ptr);
 		} break;
 	}
 
@@ -1008,8 +1008,7 @@ _work_response(LV2_Handle instance, uint32_t size, const void *body)
 		case MOONY_JOB_VM_ALLOC:
 		case MOONY_JOB_MEM_FREE:
 		case MOONY_JOB_VM_FREE:
-		case MOONY_JOB_STATE_FREE:
-		case MOONY_JOB_ERR_FREE:
+		case MOONY_JOB_PTR_FREE:
 			break; // never reached
 	}
 
@@ -1051,6 +1050,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	atomic_init(&moony->state_atom_new, 0);
 	atomic_init(&moony->vm_new, 0);
 	atomic_init(&moony->err_new, 0);
+	atomic_init(&moony->chunk_new, 0);
 
 	moony->from_dsp = varchunk_new(MOONY_MAX_CHUNK_LEN * 2, true);
 	if(!moony->from_dsp)
@@ -1112,6 +1112,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 			"-- host does not support state:loadDefaultState feature\n\n"
 			"function run(n, control, notify, ...)\n"
 			"end");
+		moony->chunk_nrt = strdup(moony->chunk);
 	}
 	if(!moony->voice_map)
 		moony->voice_map = &voice_map_fallback;
@@ -1291,6 +1292,17 @@ moony_deinit(moony_t *moony)
 		moony_vm_free(vm_old);
 	if(moony->vm)
 		moony_vm_free(moony->vm);
+
+	char *err_old = (char *)atomic_load_explicit(&moony->err_new, memory_order_relaxed);
+	if(err_old)
+		free(err_old);
+
+	char *chunk_old = (char *)atomic_load_explicit(&moony->chunk_new, memory_order_relaxed);
+	if(chunk_old)
+		free(chunk_old);
+
+	if(moony->chunk_nrt)
+		free(moony->chunk_nrt);
 
 	if(moony->from_dsp)
 		varchunk_free(moony->from_dsp);
@@ -1927,6 +1939,27 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 	LV2_Atom_Forge *forge = &moony->notify_forge;
 	LV2_Atom_Forge_Ref ref = moony->notify_ref;
 
+	char *chunk_new = (char *)atomic_exchange_explicit(&moony->chunk_new, 0, memory_order_relaxed);
+	if(chunk_new)
+	{
+		snprintf(moony->chunk, MOONY_MAX_CHUNK_LEN, "%s", chunk_new);
+		moony->dirty_out = true;
+
+		moony->error[0] = 0x0; // clear error message
+		moony->error_out = true;
+
+		moony_job_t *req;
+		if((req = varchunk_write_request(moony->from_dsp, sizeof(moony_job_t))))
+		{
+			req->type = MOONY_JOB_PTR_FREE;
+			req->ptr = chunk_new;
+
+			varchunk_write_advance(moony->from_dsp, sizeof(moony_job_t));
+			if(moony_wake_worker(moony->sched) != LV2_WORKER_SUCCESS)
+				moony_trace(moony, "waking worker failed");
+		}
+	}
+
 	char *err_new = (char *)atomic_exchange_explicit(&moony->err_new, 0, memory_order_relaxed);
 	if(err_new)
 	{
@@ -1937,8 +1970,8 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 		moony_job_t *req;
 		if((req = varchunk_write_request(moony->from_dsp, sizeof(moony_job_t))))
 		{
-			req->type = MOONY_JOB_ERR_FREE;
-			req->err = err_new;
+			req->type = MOONY_JOB_PTR_FREE;
+			req->ptr = err_new;
 
 			varchunk_write_advance(moony->from_dsp, sizeof(moony_job_t));
 			if(moony_wake_worker(moony->sched) != LV2_WORKER_SUCCESS)
@@ -1957,8 +1990,8 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 			moony_job_t *req;
 			if((req = varchunk_write_request(moony->from_dsp, sizeof(moony_job_t))))
 			{
-				req->type = MOONY_JOB_STATE_FREE;
-				req->state_atom = state_atom_old;
+				req->type = MOONY_JOB_PTR_FREE;
+				req->ptr = state_atom_old;
 
 				varchunk_write_advance(moony->from_dsp, sizeof(moony_job_t));
 				if(moony_wake_worker(moony->sched) != LV2_WORKER_SUCCESS)
@@ -2016,15 +2049,8 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 			}
 		}
 
-#if 0
 		moony->once = true;
 		moony->props_out = true; // trigger update of UI
-#else
-		moony->dirty_out = true; // trigger update of UI
-		moony->error_out = true; // trigger update of UI
-		moony->props_out = true; // trigger update of UI
-		moony->once = true; // trigger call of 'once'
-#endif
 	}
 
 	lua_State *L = moony_current(moony);
@@ -2149,8 +2175,6 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 			{
 				if( (property->body == moony->uris.moony_code) && (value->type == forge->String) )
 				{
-					moony->error[0] = 0x0; // reset error flag
-
 					// stash
 					lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_STASH);
 					if(lua_pcall(L, 0, 0, 0))
@@ -2185,6 +2209,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 					else // succeeded loading chunk
 					{
 						moony->error[0] = 0x0; // reset error flag
+						moony->error_out = true;
 					}
 				}
 				else if( (property->body == moony->uris.moony_editorHidden) && (value->type == forge->Bool) )

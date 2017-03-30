@@ -50,8 +50,7 @@ enum _moony_job_enum_t {
 	MOONY_JOB_MEM_FREE,
 	MOONY_JOB_VM_ALLOC,
 	MOONY_JOB_VM_FREE,
-	MOONY_JOB_STATE_FREE,
-	MOONY_JOB_ERR_FREE
+	MOONY_JOB_PTR_FREE
 };
 
 struct _moony_job_t {
@@ -63,8 +62,7 @@ struct _moony_job_t {
 			void *ptr;
 		} mem;
 		moony_vm_t *vm;
-		LV2_Atom *state_atom;
-		char *err;
+		void *ptr;
 		char chunk [0];
 	};
 };

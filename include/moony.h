@@ -322,6 +322,8 @@ struct _moony_t {
 
 	char trace [MOONY_MAX_TRACE_LEN];
 	char chunk [MOONY_MAX_CHUNK_LEN];
+	atomic_uintptr_t chunk_new;
+	char *chunk_nrt;
 };
 
 // in api.c
@@ -348,7 +350,7 @@ moony_freeuserdata(moony_t *moony)
 __realtime static inline bool
 moony_bypass(moony_t *moony)
 {
-	return moony->error[0] != '\0';
+	return moony->error[0] != 0x0;
 }
 
 __realtime static inline const char *
@@ -396,7 +398,7 @@ moony_err(moony_t *moony, const char *msg)
 	if(moony->log)
 		lv2_log_trace(&moony->logger, "%s\n", err);
 
-	if(moony->error[0] == '\0') // don't overwrite any previous error message
+	if(moony->error[0] == 0x0) // don't overwrite any previous error message
 		snprintf(moony->error, MOONY_MAX_ERROR_LEN, "%s", err);
 	moony->error_out = true;
 }
