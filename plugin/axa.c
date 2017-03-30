@@ -191,7 +191,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 
 	moony_pre(&handle->moony, handle->notify);
 
-	if(_try_lock(&handle->moony.lock.state))
+	if(_try_lock(&handle->moony.state_lock))
 	{
 		// apply stash, if any
 		if(handle->stashed)
@@ -238,7 +238,7 @@ run(LV2_Handle instance, uint32_t nsamples)
 			handle->stashed = false;
 		}
 
-		_unlock(&handle->moony.lock.state);
+		_unlock(&handle->moony.state_lock);
 	}
 	else
 	{

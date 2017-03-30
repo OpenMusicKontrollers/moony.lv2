@@ -627,21 +627,21 @@ _state_save(LV2_Handle instance,
 		lv2_atom_forge_set_sink(&moony->state_forge, _sink_non_rt, _deref, &ser);
 
 		// lock Lua state, so it cannot be accessed by realtime thread
-		_spin_lock(&moony->lock.state);
-
-		// restore Lua defined properties
-		lua_State *L = moony_current(moony);
-		lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_SAVE);
-		if(lua_pcall(L, 0, 0, 0))
+		_spin_lock(&moony->state_lock);
 		{
-			moony_err_async(moony, lua_tostring(L, -1));
-			lua_pop(L, 1);
-		}
+			// restore Lua defined properties
+			lua_State *L = moony_current(moony);
+			lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_SAVE);
+			if(lua_pcall(L, 0, 0, 0))
+			{
+				moony_err_async(moony, lua_tostring(L, -1));
+				lua_pop(L, 1);
+			}
 #ifdef USE_MANUAL_GC
-		lua_gc(L, LUA_GCSTEP, 0);
+			lua_gc(L, LUA_GCSTEP, 0);
 #endif
-
-		_unlock(&moony->lock.state);
+		}
+		_unlock(&moony->state_lock);
 
 		LV2_Atom *state_atom_new = (LV2_Atom *)ser.buf;
 		if( (state_atom_new->type) && (state_atom_new->size) )
@@ -1051,6 +1051,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	atomic_init(&moony->vm_new, 0);
 	atomic_init(&moony->err_new, 0);
 	atomic_init(&moony->chunk_new, 0);
+	moony->state_lock = (atomic_flag)ATOMIC_FLAG_INIT;
 
 	moony->from_dsp = varchunk_new(MOONY_MAX_CHUNK_LEN * 2, true);
 	if(!moony->from_dsp)
@@ -1259,8 +1260,6 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 
 	moony->dirty_out = true; // trigger update of UI
 	moony->props_out = true; // trigger update of UI
-
-	atomic_flag_clear_explicit(&moony->lock.state, memory_order_relaxed);
 
 	moony_freeuserdata(moony);
 

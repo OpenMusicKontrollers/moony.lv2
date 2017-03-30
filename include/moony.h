@@ -294,9 +294,7 @@ struct _moony_t {
 	int itr [MOONY_UDATA_COUNT];
 	int upc [MOONY_UPCLOSURE_COUNT];
 
-	struct {
-		atomic_flag state;
-	} lock;
+	atomic_flag state_lock;
 
 	LV2_Atom *state_atom;
 	atomic_uintptr_t state_atom_new;
