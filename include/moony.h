@@ -83,6 +83,7 @@
 
 #define MOONY_EDITOR_HIDDEN_URI	MOONY_URI"#editorHidden"
 #define MOONY_LOG_HIDDEN_URI	MOONY_URI"#logHidden"
+#define MOONY_LOG_FOLLOW_URI	MOONY_URI"#logFollow"
 #define MOONY_PARAM_HIDDEN_URI	MOONY_URI"#paramHidden"
 
 #define MOONY_PARAM_COLS_URI	MOONY_URI"#paramCols"
@@ -226,6 +227,7 @@ struct _moony_t {
 		LV2_URID moony_state;
 		LV2_URID moony_editorHidden;
 		LV2_URID moony_logHidden;
+		LV2_URID moony_logFollow;
 		LV2_URID moony_paramHidden;
 		LV2_URID moony_paramCols;
 		LV2_URID moony_paramRows;
@@ -311,6 +313,7 @@ struct _moony_t {
 
 	atomic_int editor_hidden;
 	atomic_int log_hidden;
+	atomic_int log_follow;
 	atomic_int param_hidden;
 	atomic_int param_cols;
 	atomic_int param_rows;

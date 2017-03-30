@@ -207,6 +207,7 @@ struct _plughandle_t {
 	LV2_URID moony_panic;
 	LV2_URID moony_editorHidden;
 	LV2_URID moony_logHidden;
+	LV2_URID moony_logFollow;
 	LV2_URID moony_paramHidden;
 	LV2_URID moony_paramCols;
 	LV2_URID moony_paramRows;
@@ -260,7 +261,6 @@ struct _plughandle_t {
 
 	int n_trace;
 	char **traces;
-	int follow;
 
 	int n_writable;
 	prop_t *writables;
@@ -279,6 +279,7 @@ struct _plughandle_t {
 
 	int32_t editor_hidden;
 	int32_t log_hidden;
+	int32_t log_follow;
 	int32_t param_hidden;
 	int32_t param_rows;
 	int32_t param_cols;
@@ -2221,11 +2222,11 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					struct nk_list_view lview;
 					const float dh = style->font->height + style->edit.row_padding;
 					nk_flags flags = NK_WINDOW_BORDER;
-					if(handle->follow)
+					if(handle->log_follow)
 						flags |= NK_WINDOW_NO_SCROLLBAR;
 					if(nk_list_view_begin(ctx, &lview, "Traces", flags, dh, handle->n_trace))
 					{
-						if(handle->follow)
+						if(handle->log_follow)
 						{
 							lview.end = NK_MAX(handle->n_trace, 0);
 							lview.begin = NK_MAX(lview.end - lview.count, 0);
@@ -2255,7 +2256,10 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						_clear_log(handle);
 					nk_style_pop_style_item(ctx);
 
-					nk_checkbox_label(ctx, "Follow", &handle->follow);
+					const int log_follow = handle->log_follow;
+					handle->log_follow = nk_check_label(ctx, "Follow", handle->log_follow);
+					if(log_follow != handle->log_follow)
+						_patch_set(handle, handle->moony_logFollow, sizeof(int32_t), handle->forge.Bool, &handle->log_follow);
 
 					nk_group_end(ctx);
 				}
@@ -2631,6 +2635,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	handle->moony_panic = handle->map->map(handle->map->handle, MOONY_PANIC_URI);
 	handle->moony_editorHidden = handle->map->map(handle->map->handle, MOONY_EDITOR_HIDDEN_URI);
 	handle->moony_logHidden = handle->map->map(handle->map->handle, MOONY_LOG_HIDDEN_URI);
+	handle->moony_logFollow = handle->map->map(handle->map->handle, MOONY_LOG_FOLLOW_URI);
 	handle->moony_paramHidden = handle->map->map(handle->map->handle, MOONY_PARAM_HIDDEN_URI);
 	handle->moony_paramCols = handle->map->map(handle->map->handle, MOONY_PARAM_COLS_URI);
 	handle->moony_paramRows = handle->map->map(handle->map->handle, MOONY_PARAM_ROWS_URI);
@@ -2748,6 +2753,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	_patch_get(handle, handle->moony_error);
 	_patch_get(handle, handle->moony_editorHidden);
 	_patch_get(handle, handle->moony_logHidden);
+	_patch_get(handle, handle->moony_logFollow);
 	_patch_get(handle, handle->moony_paramHidden);
 	_patch_get(handle, handle->moony_paramCols);
 	_patch_get(handle, handle->moony_paramRows);
@@ -3131,6 +3137,7 @@ _patch_set_self(plughandle_t *handle, LV2_URID property, const LV2_Atom *value)
 		// new state may have these differently, so request them
 		_patch_get(handle, handle->moony_editorHidden);
 		_patch_get(handle, handle->moony_logHidden);
+		_patch_get(handle, handle->moony_logFollow);
 		_patch_get(handle, handle->moony_paramHidden);
 		_patch_get(handle, handle->moony_paramCols);
 		_patch_get(handle, handle->moony_paramRows);
@@ -3189,6 +3196,15 @@ _patch_set_self(plughandle_t *handle, LV2_URID property, const LV2_Atom *value)
 		if(value->type == handle->forge.Bool)
 		{
 			handle->log_hidden = ((const LV2_Atom_Bool *)value)->body;
+
+			nk_pugl_post_redisplay(&handle->win);
+		}
+	}
+	else if(property == handle->moony_logFollow)
+	{
+		if(value->type == handle->forge.Bool)
+		{
+			handle->log_follow = ((const LV2_Atom_Bool *)value)->body;
 
 			nk_pugl_post_redisplay(&handle->win);
 		}

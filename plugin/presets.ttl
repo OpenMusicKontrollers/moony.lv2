@@ -44,6 +44,10 @@ moony:logHidden
 	a lv2:Parameter ;
 	rdfs:range atom:Bool ;
 	rdfs:label "Log tab hidden state" .
+moony:logFollow
+	a lv2:Parameter ;
+	rdfs:range atom:Bool ;
+	rdfs:label "Log follow state" .
 moony:paramHidden
 	a lv2:Parameter ;
 	rdfs:range atom:Bool ;
@@ -96,6 +100,7 @@ moony:bank-through_control-through
 	state:state [
 		moony:editorHidden false ;
 		moony:logHidden true ;
+		moony:logFollow true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -110,6 +115,7 @@ moony:bank-through_atom-through
 	state:state [
 		moony:editorHidden false ;
 		moony:logHidden true ;
+		moony:logFollow true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -128,6 +134,7 @@ moony:bank-through_atom-through2
 	state:state [
 		moony:editorHidden false ;
 		moony:logHidden true ;
+		moony:logFollow true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -148,6 +155,7 @@ moony:bank-through_atom-through4
 	state:state [
 		moony:editorHidden false ;
 		moony:logHidden true ;
+		moony:logFollow true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -176,6 +184,7 @@ moony:bank-multiplex_atom-multiplex2
 	state:state [
 		moony:editorHidden false ;
 		moony:logHidden true ;
+		moony:logFollow true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -193,6 +202,7 @@ moony:bank-multiplex_atom-multiplex4
 	state:state [
 		moony:editorHidden false ;
 		moony:logHidden true ;
+		moony:logFollow true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -212,6 +222,7 @@ moony:bank-midi_midi-responder
 	state:state [
 		moony:editorHidden false ;
 		moony:logHidden true ;
+		moony:logFollow true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -237,6 +248,7 @@ moony:bank-time_midi-sequencer
 	state:state [
 		moony:editorHidden false ;
 		moony:logHidden true ;
+		moony:logFollow true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -286,6 +298,7 @@ moony:bank-osc_osc-responder
 	state:state [
 		moony:editorHidden false ;
 		moony:logHidden true ;
+		moony:logFollow true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -311,6 +324,7 @@ moony:bank-state_state-responder
 	state:state [
 		moony:editorHidden false ;
 		moony:logHidden true ;
+		moony:logFollow true ;
 		moony:paramHidden false ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -498,6 +512,7 @@ moony:bank-tutorial_part-1
 	state:state [
 		moony:editorHidden false ;
 		moony:logHidden true ;
+		moony:logFollow true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -539,6 +554,7 @@ moony:bank-tutorial_part-2
 	state:state [
 		moony:editorHidden false ;
 		moony:logHidden true ;
+		moony:logFollow true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -580,6 +596,7 @@ moony:bank-tutorial_part-3
 	state:state [
 		moony:editorHidden false ;
 		moony:logHidden true ;
+		moony:logFollow true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -672,6 +689,7 @@ moony:bank-tutorial_part-4
 	state:state [
 		moony:editorHidden false ;
 		moony:logHidden true ;
+		moony:logFollow true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -759,6 +777,7 @@ moony:bank-tutorial_part-5
 	state:state [
 		moony:editorHidden false ;
 		moony:logHidden true ;
+		moony:logFollow true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -817,6 +836,7 @@ moony:bank-tutorial_part-6
 	state:state [
 		moony:editorHidden false ;
 		moony:logHidden true ;
+		moony:logFollow true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -915,6 +935,7 @@ moony:bank-template_part-1
 	state:state [
 		moony:editorHidden false ;
 		moony:logHidden true ;
+		moony:logFollow true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -996,6 +1017,7 @@ moony:bank-template_part-2
 	state:state [
 		moony:editorHidden false ;
 		moony:logHidden true ;
+		moony:logFollow true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -1058,6 +1080,7 @@ moony:bank-template_part-3
 	state:state [
 		moony:editorHidden false ;
 		moony:logHidden true ;
+		moony:logFollow true ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -1086,6 +1109,7 @@ moony:bank-template_part-4
 	state:state [
 		moony:editorHidden false ;
 		moony:logHidden true ;
+		moony:logFollow true ;
 		moony:paramHidden false ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;

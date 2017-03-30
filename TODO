@@ -8,4 +8,3 @@
 * api: add forge:vectorize
 * api: simplify forge:set
 * api: improve Parameter
-* state: store logFollow
