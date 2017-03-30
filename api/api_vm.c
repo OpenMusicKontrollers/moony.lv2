@@ -307,7 +307,7 @@ moony_vm_mem_extend(moony_vm_t *vm)
 		if(vm->area[i]) // pool already allocated/in-use
 			continue;
 
-		if(vm->locked)
+		if(vm->nrt)
 		{
 			vm->area[i] = moony_vm_mem_alloc(vm->size[i]);
 			if(vm->area[i])
@@ -344,13 +344,13 @@ moony_vm_mem_extend(moony_vm_t *vm)
 }
 
 void 
-moony_vm_lock(moony_vm_t *vm)
+moony_vm_nrt_enter(moony_vm_t *vm)
 {
-	vm->locked = true;
+	vm->nrt = true;
 }
 
 void
-moony_vm_unlock(moony_vm_t *vm)
+moony_vm_nrt_leave(moony_vm_t *vm)
 {
-	vm->locked = false;
+	vm->nrt = false;
 }

@@ -328,7 +328,7 @@ struct _moony_t {
 int moony_init(moony_t *moony, const char *subject, double sample_rate,
 	const LV2_Feature *const *features, size_t mem_size, bool testing);
 void moony_deinit(moony_t *moony);
-void moony_open(moony_t *moony, lua_State *L);
+void moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L);
 void moony_pre(moony_t *moony, LV2_Atom_Sequence *notify);
 bool moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *notify);
 void moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames);
@@ -399,6 +399,15 @@ moony_err(moony_t *moony, const char *msg)
 	if(moony->error[0] == '\0') // don't overwrite any previous error message
 		snprintf(moony->error, MOONY_MAX_ERROR_LEN, "%s", err);
 	moony->error_out = true;
+}
+
+__realtime static inline void
+moony_trace(moony_t *moony, const char *msg)
+{
+	const char *err = _err_skip(msg);
+
+	if(moony->log)
+		lv2_log_trace(&moony->logger, "%s\n", err);
 }
 
 __realtime static inline lua_State *

@@ -313,11 +313,13 @@ static const luaL_Reg lnote_mt [] = {
 __realtime static int
 _log(lua_State *L)
 {
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	int n = lua_gettop(L);
 
 	if(!n)
 		return 0;
+
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	moony_vm_t *vm = lua_touserdata(L, lua_upvalueindex(2));
 
 	luaL_Buffer buf;
 	luaL_buffinit(L, &buf);
@@ -340,29 +342,42 @@ _log(lua_State *L)
 
 	size_t len;
 	const char *res = lua_tolstring(L, -1, &len);
+
 	if(moony->log)
-		lv2_log_trace(&moony->logger, "%s\n", res);
-
-	// feedback to UI
-	if(!moony->trace_overflow)
 	{
-		char *end = strrchr(moony->trace, '\0'); // search end of string
-		if(end)
-		{
-			const size_t sz = end - moony->trace + 1;
-			if(MOONY_MAX_TRACE_LEN - sz > len)
-			{
-				if(end != moony->trace)
-				{
-					*end++ = '\n'; // append to
-					*end = '\0';
-				}
+		if(vm->nrt) // we're running in worker thread
+			lv2_log_note(&moony->logger, "%s\n", res);
+		else // we're running in rt-thread
+			lv2_log_trace(&moony->logger, "%s\n", res);
+	}
 
-				snprintf(end, len + 1, "%s", res);
-				moony->trace_out = true; // set flag
+	if(vm->nrt) // we're running in worker thread
+	{
+		//FIXME
+	}
+	else // we're running in rt-hread
+	{
+		// feedback to UI
+		if(!moony->trace_overflow)
+		{
+			char *end = strrchr(moony->trace, '\0'); // search end of string
+			if(end)
+			{
+				const size_t sz = end - moony->trace + 1;
+				if(MOONY_MAX_TRACE_LEN - sz > len)
+				{
+					if(end != moony->trace)
+					{
+						*end++ = '\n'; // append to
+						*end = '\0';
+					}
+
+					snprintf(end, len + 1, "%s", res);
+					moony->trace_out = true; // set flag
+				}
+				else
+					moony->trace_overflow = true;
 			}
-			else
-				moony->trace_overflow = true;
 		}
 	}
 
@@ -684,8 +699,8 @@ _compile(moony_t *moony, const char *chunk)
 		return NULL;
 	}
 
-	moony_vm_lock(vm);
-	moony_open(moony, vm->L);
+	moony_vm_nrt_enter(vm);
+	moony_open(moony, vm, vm->L);
 	if(luaL_dostring(vm->L, chunk))
 	{
 		moony_err_async(moony, lua_tostring(vm->L, -1));
@@ -694,7 +709,7 @@ _compile(moony_t *moony, const char *chunk)
 		moony_vm_free(vm);
 		return NULL;
 	}
-	moony_vm_unlock(vm);
+	moony_vm_nrt_leave(vm);
 
 	return vm;
 }
@@ -980,7 +995,7 @@ _work_response(LV2_Handle instance, uint32_t size, const void *body)
 
 					varchunk_write_advance(moony->from_dsp, sizeof(moony_job_t));
 					if(moony_wake_worker(moony->sched) != LV2_WORKER_SUCCESS)
-						; //FIXME
+						moony_trace(moony, "waking worker failed");
 				}
 
 				return LV2_WORKER_ERR_UNKNOWN;
@@ -1290,7 +1305,7 @@ moony_deinit(moony_t *moony)
 	lua_setfield(L, idx - 1, "__index");
 
 __non_realtime void
-moony_open(moony_t *moony, lua_State *L)
+moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 {
 	luaL_newmetatable(L, "latom");
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
@@ -1653,7 +1668,8 @@ moony_open(moony_t *moony, lua_State *L)
 
 	// overwrite print function with LV2 log
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
-	lua_pushcclosure(L, _log, 1);
+	lua_pushlightuserdata(L, vm); // @ upvalueindex 2
+	lua_pushcclosure(L, _log, 2);
 	lua_setglobal(L, "print");
 
 	// MIDIResponder metatable
@@ -1926,7 +1942,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 
 			varchunk_write_advance(moony->from_dsp, sizeof(moony_job_t));
 			if(moony_wake_worker(moony->sched) != LV2_WORKER_SUCCESS)
-				; //FIXME
+				moony_trace(moony, "waking worker failed");
 		}
 	}
 
@@ -1946,7 +1962,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 
 				varchunk_write_advance(moony->from_dsp, sizeof(moony_job_t));
 				if(moony_wake_worker(moony->sched) != LV2_WORKER_SUCCESS)
-					; //FIXME
+					moony_trace(moony, "waking worker failed");
 			}
 		}
 	}
@@ -1996,7 +2012,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 
 				varchunk_write_advance(moony->from_dsp, sizeof(moony_job_t));
 				if(moony_wake_worker(moony->sched) != LV2_WORKER_SUCCESS)
-					; //FIXME
+					moony_trace(moony, "waking worker failed");
 			}
 		}
 
@@ -2153,7 +2169,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 
 						varchunk_write_advance(moony->from_dsp, sz);
 						if(moony_wake_worker(moony->sched) != LV2_WORKER_SUCCESS)
-							; //FIXME
+							moony_trace(moony, "waking worker failed");
 					}
 				}
 				else if( (property->body == moony->uris.moony_selection) && (value->type == forge->String) )

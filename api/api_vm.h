@@ -40,7 +40,7 @@ struct _moony_vm_t {
 
 	lua_State *L;
 
-	bool locked;
+	bool nrt;
 
 	void *data;
 };
@@ -76,7 +76,7 @@ void *moony_vm_mem_alloc(size_t size);
 void moony_vm_mem_free(void *area, size_t size);
 int moony_vm_mem_extend(moony_vm_t *vm);
 
-void moony_vm_lock(moony_vm_t *vm);
-void moony_vm_unlock(moony_vm_t *vm);
+void moony_vm_nrt_enter(moony_vm_t *vm);
+void moony_vm_nrt_leave(moony_vm_t *vm);
 
 #endif

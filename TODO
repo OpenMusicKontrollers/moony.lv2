@@ -9,4 +9,4 @@
 * api: simplify forge:set
 * api: improve Parameter
 * state: store logFollow
-* api: async print
+* api: thread-safe update of moony->chunk
