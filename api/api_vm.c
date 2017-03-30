@@ -331,14 +331,14 @@ moony_vm_mem_extend(moony_vm_t *vm)
 
 				varchunk_write_advance(moony->from_dsp, sizeof(moony_job_t));
 				if(moony_wake_worker(moony->sched) == LV2_WORKER_SUCCESS)
-					moony->working = 1; // toggle working flag
+					moony->working = true; // toggle working flag
 			}
 		}
 
 		return 0;
 	}
 
-	moony->fully_extended = 1;
+	moony->fully_extended = true;
 
 	return -1;
 }

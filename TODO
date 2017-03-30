@@ -9,3 +9,4 @@
 * api: simplify forge:set
 * api: improve Parameter
 * state: store logFollow
+* api: async print

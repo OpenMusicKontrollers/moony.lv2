@@ -114,12 +114,6 @@ extern const LV2_Descriptor c1a1xc1a1;
 extern const LV2_Descriptor c2a1xc2a1;
 extern const LV2_Descriptor c4a1xc4a1;
 
-extern const LV2UI_Descriptor simple_ui;
-extern const LV2UI_Descriptor simple_kx;
-
-extern const LV2UI_Descriptor web_ui;
-extern const LV2UI_Descriptor web_kx;
-
 extern const LV2UI_Descriptor nk_ui;
 
 typedef enum _moony_udata_t {
@@ -276,8 +270,8 @@ struct _moony_t {
 	LV2_OSC_Schedule *osc_sched;
 
 	LV2_Worker_Schedule *sched;
-	volatile int working;
-	volatile int fully_extended;
+	bool working;
+	bool fully_extended;
 
 	LV2_Log_Log *log;
 	LV2_Log_Logger logger;
@@ -289,14 +283,12 @@ struct _moony_t {
 	moony_vm_t *vm;
 	atomic_uintptr_t vm_new;
 
-	atomic_uintptr_t err_new;
-
 	bool once;
-	volatile int props_out;
-	volatile int dirty_out;
-	volatile int error_out;
-	volatile int trace_out;
-	volatile int trace_overflow;
+	bool props_out;
+	bool dirty_out;
+	bool error_out;
+	bool trace_out;
+	bool trace_overflow;
 
 	// udata cache
 	int itr [MOONY_UDATA_COUNT];
@@ -304,7 +296,6 @@ struct _moony_t {
 
 	struct {
 		atomic_flag state;
-		atomic_flag render;
 	} lock;
 
 	LV2_Atom *state_atom;
@@ -325,7 +316,10 @@ struct _moony_t {
 	atomic_int param_hidden;
 	atomic_int param_cols;
 	atomic_int param_rows;
+
 	char error [MOONY_MAX_ERROR_LEN];
+	atomic_uintptr_t err_new;
+
 	char trace [MOONY_MAX_TRACE_LEN];
 	char chunk [MOONY_MAX_CHUNK_LEN];
 };
@@ -351,19 +345,27 @@ moony_freeuserdata(moony_t *moony)
 		moony->upc[i] = 1; // reset iterator
 }
 
-__realtime static inline int
+__realtime static inline bool
 moony_bypass(moony_t *moony)
 {
 	return moony->error[0] != '\0';
 }
 
-__non_realtime static inline void
-moony_err_async(moony_t *moony, const char *msg)
+__realtime static inline const char *
+_err_skip(const char *msg)
 {
 	const char *err = strstr(msg, "\"]:"); // search end mark of header [string ""]:
 	err = err
 		? err + 3 // skip header end mark
 		: msg; // use whole error string alternatively
+
+	return err;
+}
+
+__non_realtime static inline void
+moony_err_async(moony_t *moony, const char *msg)
+{
+	const char *err = _err_skip(msg);
 
 	if(moony->log)
 		lv2_log_error(&moony->logger, "%s\n", err);
@@ -389,17 +391,14 @@ moony_err_async(moony_t *moony, const char *msg)
 __realtime static inline void
 moony_err(moony_t *moony, const char *msg)
 {
-	const char *err = strstr(msg, "\"]:"); // search end mark of header [string ""]:
-	err = err
-		? err + 3 // skip header end mark
-		: msg; // use whole error string alternatively
+	const char *err = _err_skip(msg);
 
 	if(moony->log)
 		lv2_log_trace(&moony->logger, "%s\n", err);
 
 	if(moony->error[0] == '\0') // don't overwrite any previous error message
 		snprintf(moony->error, MOONY_MAX_ERROR_LEN, "%s", err);
-	moony->error_out = 1;
+	moony->error_out = true;
 }
 
 __realtime static inline lua_State *

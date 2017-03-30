@@ -359,10 +359,10 @@ _log(lua_State *L)
 				}
 
 				snprintf(end, len + 1, "%s", res);
-				moony->trace_out = 1; // set flag
+				moony->trace_out = true; // set flag
 			}
 			else
-				moony->trace_overflow = 1;
+				moony->trace_overflow = true;
 		}
 	}
 
@@ -1007,7 +1007,7 @@ _end_run(LV2_Handle instance)
 	moony_t *moony = instance;
 
 	// do nothing
-	moony->working = 0;
+	moony->working = false;
 
 	return LV2_WORKER_SUCCESS;
 }
@@ -1241,11 +1241,10 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	}
 	moony->opts.sample_rate = sample_rate;
 
-	moony->dirty_out = 1; // trigger update of UI
-	moony->props_out = 1; // trigger update of UI
+	moony->dirty_out = true; // trigger update of UI
+	moony->props_out = true; // trigger update of UI
 
 	atomic_flag_clear_explicit(&moony->lock.state, memory_order_relaxed);
-	atomic_flag_clear_explicit(&moony->lock.render, memory_order_relaxed);
 
 	moony_freeuserdata(moony);
 
@@ -1917,7 +1916,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 	{
 		if(moony->error[0] == 0x0) // don't overwrite any previous error message
 			snprintf(moony->error, MOONY_MAX_ERROR_LEN, "%s", err_new);
-		moony->error_out = 1;
+		moony->error_out = true;
 
 		moony_job_t *req;
 		if((req = varchunk_write_request(moony->from_dsp, sizeof(moony_job_t))))
@@ -2003,11 +2002,11 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 
 #if 0
 		moony->once = true;
-		moony->props_out = 1; // trigger update of UI
+		moony->props_out = true; // trigger update of UI
 #else
-		moony->dirty_out = 1; // trigger update of UI
-		moony->error_out = 1; // trigger update of UI
-		moony->props_out = 1; // trigger update of UI
+		moony->dirty_out = true; // trigger update of UI
+		moony->error_out = true; // trigger update of UI
+		moony->props_out = true; // trigger update of UI
 		moony->once = true; // trigger call of 'once'
 #endif
 	}
@@ -2050,12 +2049,12 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 			{
 				if(property->body == moony->uris.moony_code)
 				{
-					moony->dirty_out = 1;
+					moony->dirty_out = true;
 				}
 				else if(property->body == moony->uris.moony_error)
 				{
 					if(moony->error[0] != 0x0)
-						moony->error_out = 1;
+						moony->error_out = true;
 				}
 				else if(property->body == moony->uris.moony_editorHidden)
 				{
@@ -2100,7 +2099,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 			}
 			else // !property
 			{
-				moony->props_out = 1; // trigger update of UI
+				moony->props_out = true; // trigger update of UI
 			}
 		}
 		else if(obj->body.otype == moony->uris.patch.set)
@@ -2242,7 +2241,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 		if(ref)
 			lv2_atom_forge_pop(forge, &obj_frame);
 
-		moony->props_out = 0;
+		moony->props_out = false;
 	}
 
 	if(moony->dirty_out)
@@ -2253,7 +2252,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 		if(ref)
 			ref = _moony_patch(&moony->uris.patch, forge, moony->uris.moony_code, moony->chunk, len);
 
-		moony->dirty_out = 0; // reset flag
+		moony->dirty_out = false; // reset flag
 	}
 
 	if(moony->error_out)
@@ -2264,7 +2263,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 		if(ref)
 			ref = _moony_patch(&moony->uris.patch, forge, moony->uris.moony_error, moony->error, len);
 
-		moony->error_out = 0; // reset flag
+		moony->error_out = false; // reset flag
 	}
 
 	moony->notify_ref = ref;
@@ -2293,14 +2292,14 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 		}
 
 		moony->trace[0] = '\0';
-		moony->trace_out = 0; // reset flag
+		moony->trace_out = false; // reset flag
 	}
 
 	if(moony->trace_overflow)
 	{
 		if(moony->log)
 			lv2_log_trace(&moony->logger, "trace buffer overflow\n");
-		moony->trace_overflow = 0; // reset flag
+		moony->trace_overflow = false; // reset flag
 	}
 
 	if(ref)
