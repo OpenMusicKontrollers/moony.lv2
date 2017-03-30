@@ -35,9 +35,7 @@ moony:c1xc1
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
 	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_1_ui ;
-	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_2_kx ;
-	@NK_WRAP@ui:ui moony:ui_3_nk ;
+	@UI_WRAP@ui:ui moony:moony_ui ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:c2xc2
@@ -45,9 +43,7 @@ moony:c2xc2
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
 	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_1_ui ;
-	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_2_kx ;
-	@NK_WRAP@ui:ui moony:ui_3_nk ;
+	@UI_WRAP@ui:ui moony:moony_ui ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:c4xc4
@@ -55,9 +51,7 @@ moony:c4xc4
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
 	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_1_ui ;
-	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_2_kx ;
-	@NK_WRAP@ui:ui moony:ui_3_nk ;
+	@UI_WRAP@ui:ui moony:moony_ui ;
 	rdfs:seeAlso <moony.ttl> .
 
 # atom in, atom out
@@ -66,9 +60,7 @@ moony:a1xa1
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
 	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_1_ui ;
-	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_2_kx ;
-	@NK_WRAP@ui:ui moony:ui_3_nk ;
+	@UI_WRAP@ui:ui moony:moony_ui ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:a2xa2
@@ -76,9 +68,7 @@ moony:a2xa2
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
 	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_1_ui ;
-	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_2_kx ;
-	@NK_WRAP@ui:ui moony:ui_3_nk ;
+	@UI_WRAP@ui:ui moony:moony_ui ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:a4xa4
@@ -86,9 +76,7 @@ moony:a4xa4
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
 	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_1_ui ;
-	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_2_kx ;
-	@NK_WRAP@ui:ui moony:ui_3_nk ;
+	@UI_WRAP@ui:ui moony:moony_ui ;
 	rdfs:seeAlso <moony.ttl> .
 
 # control/atom in, control/atom out
@@ -97,9 +85,7 @@ moony:c1a1xc1a1
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
 	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_1_ui ;
-	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_2_kx ;
-	@NK_WRAP@ui:ui moony:ui_3_nk ;
+	@UI_WRAP@ui:ui moony:moony_ui ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:c2a1xc2a1
@@ -107,9 +93,7 @@ moony:c2a1xc2a1
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
 	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_1_ui ;
-	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_2_kx ;
-	@NK_WRAP@ui:ui moony:ui_3_nk ;
+	@UI_WRAP@ui:ui moony:moony_ui ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:c4a1xc4a1
@@ -117,25 +101,13 @@ moony:c4a1xc4a1
 	lv2:minorVersion @MOONY_MINOR_VERSION@ ;
 	lv2:microVersion @MOONY_MICRO_VERSION@ ;
 	lv2:binary <moony@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_1_ui ;
-	@SIMPLE_WRAP@ui:ui moony:ui_2_simple_2_kx ;
-	@NK_WRAP@ui:ui moony:ui_3_nk ;
+	@UI_WRAP@ui:ui moony:moony_ui ;
 	rdfs:seeAlso <moony.ttl> .
 
-# Simple UI
-moony:ui_2_simple_1_ui
-	a ui:UI ;
-	ui:binary <moony_simple@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	rdfs:seeAlso <moony_ui.ttl> .
-moony:ui_2_simple_2_kx
-	a kx:Widget ;
-	ui:binary <moony_simple@CMAKE_SHARED_MODULE_SUFFIX@> ;
-	rdfs:seeAlso <moony_ui.ttl> .
-
-# NK UI
-moony:ui_3_nk
+# UI
+moony:moony_ui
 	a ui:@MOONY_UI_TYPE@ ;
-	ui:binary <moony_nk@CMAKE_SHARED_MODULE_SUFFIX@> ;
+	ui:binary <moony_ui@CMAKE_SHARED_MODULE_SUFFIX@> ;
 	rdfs:seeAlso <moony_ui.ttl> .
 
 # Banks

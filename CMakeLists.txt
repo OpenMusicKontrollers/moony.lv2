@@ -4,7 +4,6 @@ project(moony.lv2)
 
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/tlsf-3.0)
-include_directories(${PROJECT_SOURCE_DIR}/kx.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/osc.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/timely.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/xpress.lv2)
@@ -12,7 +11,6 @@ include_directories(${PROJECT_SOURCE_DIR}/lua-5.3.4)
 include_directories(${PROJECT_SOURCE_DIR}/tiny-AES128-C)
 include_directories(${PROJECT_SOURCE_DIR}/laes128)
 include_directories(${PROJECT_SOURCE_DIR}/api)
-include_directories(${PROJECT_SOURCE_DIR}/ui)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/plugin)
 include_directories(${PROJECT_SOURCE_DIR}/pugl)
@@ -72,32 +70,15 @@ set(LIBS ${LIBS} ${LV2_LDFLAGS})
 
 # options
 include(CMakeDependentOption)
-option(BUILD_SIMPLE_UI "Build simple external UI" OFF)
-option(BUILD_NK_UI "Build nuklear UI" ON)
+option(BUILD_UI "Build UI" ON)
 option(USE_MANUAL_GC "Use manual garbage collection" OFF)
 
 if(USE_MANUAL_GC)
 	add_definitions("-DUSE_MANUAL_GC")
 endif()
 
-if(BUILD_SIMPLE_UI)
-	add_library(moony_simple MODULE
-		ui/moony_simple.c
-		ui/simple_ui.c)
-	target_link_libraries(moony_simple ${LIBS_SIMPLE})
-	set_target_properties(moony_simple PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
-	set_target_properties(moony_simple PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
-	set_target_properties(moony_simple PROPERTIES PREFIX "")
-	if(NOT WIN32)
-		set_target_properties(moony_simple PROPERTIES LINK_FLAGS "-Wl,-e,lv2ui_descriptor")
-	endif()
-	install(TARGETS moony_simple DESTINATION ${PLUGIN_DEST})
-else()
-	set(SIMPLE_WRAP "#")
-endif()
-
-if(BUILD_NK_UI)
-	set(LIBS_NK ${LIBS_NK} m)
+if(BUILD_UI)
+	set(LIBS_UI ${LIBS_UI} m)
 
 	if(WIN32)
 		set(MOONY_UI_TYPE "WindowsUI")
@@ -109,11 +90,11 @@ if(BUILD_NK_UI)
 
 	find_package(OpenGL)
 	if(${OPENGL_FOUND})
-		set(LIBS_NK ${LIBS_NK} ${OPENGL_LIBRARIES})
+		set(LIBS_UI ${LIBS_UI} ${OPENGL_LIBRARIES})
 	else() # try pkg-config
 		pkg_search_module(GL REQUIRED gl)
 		if(${GL_FOUND})
-			set(LIBS_NK ${LIBS_NK} ${GL_LDFLAGS})
+			set(LIBS_UI ${LIBS_UI} ${GL_LDFLAGS})
 		else()
 			message(FATAL_ERROR "OpenGL not found")
 		endif()
@@ -123,14 +104,14 @@ if(BUILD_NK_UI)
 	if(WIN32)
 		find_library(GDI32_LIBRARY NAMES gdi32)
 		if(GDI32_LIBRARY)
-			set(LIBS_NK ${LIBS_NK} ${GDI32_LIBRARY})
+			set(LIBS_UI ${LIBS_UI} ${GDI32_LIBRARY})
 		else()
 			message(FATAL_ERROR "gdi32 library not found")
 		endif()
 
 		find_library(USER32_LIBRARY NAMES user32)
 		if(USER32_LIBRARY)
-			set(LIBS_NK ${LIBS_NK} ${USER32_LIBRARY})
+			set(LIBS_UI ${LIBS_UI} ${USER32_LIBRARY})
 		else()
 			message(FATAL_ERROR "user32 library not found")
 		endif()
@@ -140,7 +121,7 @@ if(BUILD_NK_UI)
 	elseif(APPLE)
 		find_library(COCOA_LIBRARY NAMES Cocoa)
 		if(COCOA_LIBRARY)
-			set(LIBS_NK ${LIBS_NK} ${COCOA_LIBRARY})
+			set(LIBS_UI ${LIBS_UI} ${COCOA_LIBRARY})
 		else()
 			message(FATAL_ERROR "Cocoa framework not found")
 		endif()
@@ -150,30 +131,30 @@ if(BUILD_NK_UI)
 	else() # GNU/Linux
 		pkg_search_module(X11 REQUIRED x11>=1.6)
 		include_directories(${X11_INCLUDE_DIRS})
-		set(LIBS_NK ${LIBS_NK} ${X11_LDFLAGS})
+		set(LIBS_UI ${LIBS_UI} ${X11_LDFLAGS})
 
 		pkg_search_module(XEXT REQUIRED xext>=1.3)
 		include_directories(${XEXT_INCLUDE_DIRS})
-		set(LIBS_NK ${LIBS_NK} ${XEXT_LDFLAGS})
+		set(LIBS_UI ${LIBS_UI} ${XEXT_LDFLAGS})
 
 		set(TAR_UI ${TAR_UI} pugl/pugl/pugl_x11.c)
 	endif()
 
-	add_library(moony_nk MODULE
-		ui/moony_nk.c
-		ui/nk_ui.c
+	add_library(moony_ui MODULE
+		plugin/moony_nk.c
+		plugin/nk_ui.c
 		${TAR_UI}
 		$<TARGET_OBJECTS:lua>
 		$<TARGET_OBJECTS:lpeg>)
-	target_link_libraries(moony_nk ${LIBS_NK})
-	set_target_properties(moony_nk PROPERTIES PREFIX "")
+	target_link_libraries(moony_ui ${LIBS_UI})
+	set_target_properties(moony_ui PROPERTIES PREFIX "")
 	if(NOT WIN32)
-		set_target_properties(moony_nk PROPERTIES LINK_FLAGS "-Wl,-e,lv2ui_descriptor")
+		set_target_properties(moony_ui PROPERTIES LINK_FLAGS "-Wl,-e,lv2ui_descriptor")
 	endif()
-	install(TARGETS moony_nk DESTINATION ${PLUGIN_DEST})
+	install(TARGETS moony_ui DESTINATION ${PLUGIN_DEST})
 	install(FILES ${PROJECT_SOURCE_DIR}/nuklear/extra_font/Cousine-Regular.ttf DESTINATION ${PLUGIN_DEST})
-	install(FILES ${PROJECT_SOURCE_DIR}/ui/lexer.lua DESTINATION ${PLUGIN_DEST})
-	install(FILES ${PROJECT_SOURCE_DIR}/ui/moony.lua DESTINATION ${PLUGIN_DEST})
+	install(FILES ${PROJECT_SOURCE_DIR}/plugin/lexer.lua DESTINATION ${PLUGIN_DEST})
+	install(FILES ${PROJECT_SOURCE_DIR}/plugin/moony.lua DESTINATION ${PLUGIN_DEST})
 	install(FILES ${PROJECT_SOURCE_DIR}/png/bell.png DESTINATION ${PLUGIN_DEST})
 	install(FILES ${PROJECT_SOURCE_DIR}/png/cancel-1.png DESTINATION ${PLUGIN_DEST})
 	install(FILES ${PROJECT_SOURCE_DIR}/png/cancel.png DESTINATION ${PLUGIN_DEST})
@@ -196,7 +177,7 @@ if(BUILD_NK_UI)
 	install(FILES ${PROJECT_SOURCE_DIR}/logo/omk_logo_256x256.png DESTINATION ${PLUGIN_DEST})
 	install(FILES ${PROJECT_SOURCE_DIR}/logo/moony_logo.png DESTINATION ${PLUGIN_DEST})
 else()
-	set(NK_WRAP "#")
+	set(UI_WRAP "#")
 endif()
 
 add_library(lua OBJECT
@@ -340,8 +321,8 @@ if(BUILD_TESTING)
 			${PROJECT_BINARY_DIR}/manual.html
 		DEPENDS
 			moony_test
-			${PROJECT_SOURCE_DIR}/ui/lexer.lua
-			${PROJECT_SOURCE_DIR}/ui/moony.lua
+			${PROJECT_SOURCE_DIR}/plugin/lexer.lua
+			${PROJECT_SOURCE_DIR}/plugin/moony.lua
 			${PROJECT_SOURCE_DIR}/manual/hilight.lua
 			${PROJECT_SOURCE_DIR}/manual/manual.html.in)
 	add_custom_target(moony_manual ALL DEPENDS ${PROJECT_BINARY_DIR}/manual.html)

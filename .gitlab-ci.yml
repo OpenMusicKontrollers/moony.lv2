@@ -21,7 +21,7 @@ stages:
   script:
     - mkdir build
     - pushd build
-    - cmake -DCAIRO_INCLUDE_DIRS="/opt/${CI_BUILD_NAME}/include" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=0 -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR} -DPLUGIN_DEST="${BASE_NAME}-$(cat ../VERSION)/${CI_BUILD_NAME}/${BASE_NAME}" -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FILE} ..
+    - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=0 -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR} -DPLUGIN_DEST="${BASE_NAME}-$(cat ../VERSION)/${CI_BUILD_NAME}/${BASE_NAME}" -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FILE} ..
     - cmake .. # needed for darwin
     - make
     - make install
@@ -31,7 +31,7 @@ stages:
   script:
     - mkdir build
     - pushd build
-    - cmake -DCAIRO_INCLUDE_DIRS="/opt/${CI_BUILD_NAME}/include" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=1 -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR} -DPLUGIN_DEST="${BASE_NAME}-$(cat ../VERSION)/${CI_BUILD_NAME}/${BASE_NAME}" -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FILE} ..
+    - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=1 -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR} -DPLUGIN_DEST="${BASE_NAME}-$(cat ../VERSION)/${CI_BUILD_NAME}/${BASE_NAME}" -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FILE} ..
     - cmake .. # needed for darwin
     - make
     - make install

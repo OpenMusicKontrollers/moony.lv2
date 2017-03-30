@@ -1,4 +1,4 @@
-package.path = package.path .. ';../ui/?.lua'
+package.path = package.path .. ';../plugin/?.lua'
 
 local lexer = require('lexer')
 local moony = lexer.load('moony')

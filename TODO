@@ -2,11 +2,10 @@
 * doc: Canvas
 * api: xpress
 * api: CanvasResponder
-* gui: external editor
-* api: remove inline-display/cairo once ardour supports routing atoms
 
 === High priority
 * doc: Parameter
 * api: add forge:vectorize
 * api: simplify forge:set
 * api: improve Parameter
+* state: store logFollow
