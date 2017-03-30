@@ -104,7 +104,8 @@ struct _timely_t {
 #define TIMELY_URI_SPEED(timely)							((timely)->urid.time_speed)
 
 #define TIMELY_BAR_BEAT_RAW(timely)						((timely)->pos.bar_beat)
-#define TIMELY_BAR_BEAT(timely)								(floor((timely)->pos.bar_beat) + (timely)->offset.beat / (timely)->frames_per_beat)
+#define TIMELY_BAR_BEAT(timely)								(floor((timely)->pos.bar_beat) \
+	+ (timely)->offset.beat / (timely)->frames_per_beat)
 #define TIMELY_BAR(timely)										((timely)->pos.bar)
 #define TIMELY_BEAT_UNIT(timely)							((timely)->pos.beat_unit)
 #define TIMELY_BEATS_PER_BAR(timely)					((timely)->pos.beats_per_bar)
@@ -209,8 +210,12 @@ _timely_deatomize_body(timely_t *timely, int64_t frames, uint32_t size,
 static inline void
 _timely_refresh(timely_t *timely)
 {
-	timely->frames_per_beat = 240.0 / (timely->pos.beats_per_minute * timely->pos.beat_unit)
-		* timely->pos.frames_per_second;
+	const float speed = (timely->pos.speed != 0.f)
+		? timely->pos.speed
+		: 1.f; // prevent divisions through zero later on
+
+	timely->frames_per_beat = 240.0 * timely->pos.frames_per_second
+		/ (timely->pos.beats_per_minute * timely->pos.beat_unit * timely->pos.speed);
 	timely->frames_per_bar = timely->frames_per_beat * timely->pos.beats_per_bar;
 
 	// bar
@@ -297,7 +302,7 @@ timely_advance_body(timely_t *timely, uint32_t size, uint32_t type,
 	}
 
 	// are we rolling?
-	if(timely->pos.speed > 0.f)
+	if(timely->pos.speed != 0.f)
 	{
 		if( (timely->offset.bar == 0) && (timely->pos.bar == 0) )
 		{
