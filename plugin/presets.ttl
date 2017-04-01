@@ -81,10 +81,6 @@ stateR:pInt
 	a lv2:Parameter ;
 	rdfs:label "An Int" ;
 	rdfs:range atom:Int .
-stateR:pPath
-	a lv2:Parameter ;
-	rdfs:label "A Path" ;
-	rdfs:range atom:Path .
 stateR:pString
 	a lv2:Parameter ;
 	rdfs:label "A String" ;
@@ -328,27 +324,29 @@ moony:bank-state_state-responder
 		moony:paramHidden false ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
-		moony:code """local urid = HashMap('urn:moony:stateR#')
+		moony:code """local urn = HashMap('urn:moony:stateR#')
+local sync = false
 
 local pLong
-local pInt = {
+local pInt = Parameter{
   [RDFS.label] = 'Integer',
   [RDFS.comment] = 'This is an Integer',
   [RDFS.range] = Atom.Int,
   [Units.unit] = Units.hz,
   [Core.minimum] = 0,
   [Core.maximum] = 10,
-  [RDF.value] = 5,
-  [Patch.Set] = function(self, frames, forge, value)
-    self[RDF.value] = value
-    pLong[RDF.value] = value * 2
-    if forge then
-      forge:time(frames):set(urid.pLong):long(pLong[RDF.value]):pop()
-    end
+	_value = 5,
+	[Patch.Get] = function(self)
+		return self._value
+	end,
+	[Patch.Set] = function(self, value)
+		self._value = value
+		pLong(value * 2)
+		sync = true
   end
 }
 
-pLong = {
+pLong = Parameter{
   [RDFS.label] = 'Long',
   [RDFS.comment] = 'This is a Long',
   [RDFS.range] = Atom.Long,
@@ -359,24 +357,25 @@ pLong = {
 }
 
 local pDouble
-local pFloat = {
+local pFloat = Parameter{
   [RDFS.label] = 'Float',
   [RDFS.comment] = 'This is a Float',
   [RDFS.range] = Atom.Float,
   [Units.unit] = Units.m,
   [Core.minimum] = -1.0,
   [Core.maximum] = 1.0,
-  [RDF.value] = 0.0,
-  [Patch.Set] = function(self, frames, forge, value)
-    self[RDF.value] = value
-    pDouble[RDF.value] = value * 2
-    if forge then
-      forge:time(frames):set(urid.pDouble):double(pDouble[RDF.value]):pop()
-    end
-  end
+	_value = 0.0,
+	[Patch.Get] = function(self)
+		return self._value
+	end,
+	[Patch.Set] = function(self, value)
+		self._value = value
+		pDouble(value * 2)
+		sync = true
+	end
 }
 
-pDouble = {
+pDouble = Parameter{
   [RDFS.label] = 'Double',
   [RDFS.comment] = 'This is a Double',
   [RDFS.range] = Atom.Double,
@@ -386,63 +385,44 @@ pDouble = {
   [RDF.value] = pFloat[RDF.value] * 2
 }
 
-local pBool = {
+local pBool = Parameter{
   [RDFS.label] = 'Bool',
   [RDFS.comment] = 'This is a Boolean',
   [RDFS.range] = Atom.Bool,
   [RDF.value] = true
 }
 
-local pURI
-local pURID = {
+local pURID = Parameter{
   [RDFS.label] = 'URID',
   [RDFS.comment] = 'This is an URID',
   [RDFS.range] = Atom.URID,
-  [RDF.value] = MIDI.MidiEvent,
-  [Patch.Set] = function(self, frames, forge, value)
-    self[RDF.value] = value
-    pURI[RDF.value] = Unmap[value]
-    if forge then
-      forge:time(frames):set(urid.pURI):uri(pURI[RDF.value]):pop()
-    end
-  end
+	[RDF.value] = MIDI.MidiEvent
 }
 
-pURI = {
-  [RDFS.label] = 'URI',
-  [RDFS.comment] = 'This is an URI',
-  [RDFS.range] = Atom.URI,
-  [RDF.value] = Unmap(MIDI.MidiEvent)
-}
-
-local pString = {
+local pString = Parameter{
   [RDFS.label] = 'String',
   [RDFS.comment] = 'This is a String',
   [RDFS.range] = Atom.String,
   [RDF.value] = 'hello world'
 }
 
-local pChunk = {
+local pChunk = Parameter{
   [RDFS.label] = 'Chunk',
   [RDFS.comment] = 'This is a Chunk',
   [RDFS.range] = Atom.Chunk,
-  [RDF.value] = string.char(0x1, 0x2, 0x3),
-  [Patch.Set] = function(self, frames, forge, value)
-    self[RDF.value] = value
+  _value = string.char(0x1, 0x2, 0x3),
+  [Patch.Get] = function(self)
+		return self._value
+	end,
+	[Patch.Set] = function(self, value)
+		self._value = value
     for i = 1, #value do
       print(i, string.byte(value, i))
     end
   end
 }
 
-local pPath = {
-  [RDFS.label] = 'Path',
-  [RDFS.comment] = 'This is a Path',
-  [RDFS.range] = Atom.Path,
-  [RDF.value] = '/tmp/file.suffix'
-}
-
-local pEnum = {
+local pEnum = Parameter{
   [RDFS.label] = 'Enum',
   [RDFS.comment] = 'This is an Enum',
   [RDFS.range] = Atom.Int,
@@ -456,23 +436,21 @@ local pEnum = {
   }
 }
 
-local stateR = StateResponder({
+local stateR = StateResponder{
   [Patch.writable] = {
-    [urid.pInt] = pInt,
-    [urid.pFloat] = pFloat,
-    [urid.pBool] = pBool,
-    [urid.pURID] = pURID,
-    [urid.pString] = pString,
-    [urid.pChunk] = pChunk,
-    [urid.pPath] = pPath,
-    [urid.pEnum] = pEnum
+    [urn.pInt] = pInt,
+    [urn.pFloat] = pFloat,
+    [urn.pBool] = pBool,
+    [urn.pURID] = pURID,
+    [urn.pString] = pString,
+    [urn.pChunk] = pChunk,
+    [urn.pEnum] = pEnum
   },
   [Patch.readable] = {
-    [urid.pLong] = pLong,
-    [urid.pDouble] = pDouble,
-    [urid.pURI] = pURI
+    [urn.pLong] = pLong,
+    [urn.pDouble] = pDouble
   }
-})
+}
 
 function save(forge)
   stateR:stash(forge)
@@ -480,9 +458,6 @@ end
 
 function restore(atom)
   stateR:apply(atom)
-  pLong[RDF.value] = pInt[RDF.value] * 2
-  pDouble[RDF.value] = pFloat[RDF.value] * 2
-  pURI[RDF.value] = Unmap[pURID[RDF.value]]
 end
 
 function once(n, control, notify)
@@ -491,7 +466,10 @@ end
 
 function run(n, control, notify)
   for frames, atom in control:foreach() do
-    stateR(frames, notify, atom)
+    if stateR(frames, notify, atom) and sync then
+			stateR:sync(frames, notify)
+			sync = false
+		end
   end
 end""" ;
 		moony:state [
@@ -500,7 +478,6 @@ end""" ;
 			stateR:pEnum 0 ;
 			stateR:pFloat "8e-1"^^xsd:float ;
 			stateR:pInt 9 ;
-			stateR:pPath <file:///tmp/file.suffix> ;
 			stateR:pString "world hello" ;
 			stateR:pURID <http://lv2plug.in/ns/ext/midi#MidiEvent>
 		]
@@ -1119,7 +1096,7 @@ moony:bank-template_part-4
 local urn = HashMap('urn:moony:template-4#')
 
 -- define single parameter
-local param = {
+local param = Parameter({
 	[RDFS.label] = 'Awesome Parameter',
 	[RDFS.comment] = 'does this and that...',
 	[RDFS.range] = Atom.Int,
@@ -1127,7 +1104,7 @@ local param = {
 	[Core.maximum] = 10,
 	[Units.unit] = Units.hz,
 	[RDF.value] = 5
-}
+})
 
 -- define a StateResponder object
 local stateR = StateResponder({

@@ -5,6 +5,5 @@
 
 === High priority
 * doc: Parameter
-* api: add forge:vectorize
+* api: simplify forge:vector
 * api: simplify forge:set
-* api: improve Parameter

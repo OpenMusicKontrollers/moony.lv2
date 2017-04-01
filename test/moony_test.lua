@@ -1423,23 +1423,24 @@ do
 		[RDF.value] = 2
 	}
 
+	assert(state_int() == state_int[RDF.value])
 	assert(state_int() == 2)
 	assert(state_int(1) == 2)
 	assert(state_int() == 1)
 
-	local state_flt = {
+	local state_flt = Parameter{
 		[RDFS.label] = 'Flt',
 		[RDFS.range] = Atom.Float,
 		[Core.minimum] = -0.5,
 		[Core.maximum] = 10.0,
-		[RDF.value] = 1.0,
-		[Patch.Get] = function(self, frames, forge)
+		_value = 1.0,
+		[Patch.Get] = function(self)
 			flt_get_responded = true
-			return self[RDF.value]
+			return self._value
 		end,
-		[Patch.Set] = function(self, frames, forge, value)
+		[Patch.Set] = function(self, value)
+			self._value = value
 			flt_set_responded = true
-			self[RDF.value] = value
 		end
 	}
 
@@ -1460,17 +1461,26 @@ do
 		-- state:stash
 		forge:frameTime(4)
 		state:stash(forge)
+
+		-- state:sync
+		state:sync(5, forge)
+
+		--FIXME state:register()
 	end
 
 	local function consumer(seq, forge)
+		assert(#seq == 6)
+
 		for frames, atom in seq:foreach() do
 			if frames < 4 then
 				assert(state(frames, forge, atom) == true)
 			end
 		end
 
-		assert(state_int[RDF.value] == 2)
-		assert(state_flt[RDF.value] == 2.0)
+		assert(state_int() == state_int[RDF.value])
+		assert(state_int() == 2)
+		assert(state_flt() == state_flt[RDF.value])
+		assert(state_flt() == 2.0)
 		assert(flt_get_responded)
 		assert(flt_set_responded)
 
@@ -1485,8 +1495,23 @@ do
 
 		-- test state:apply
 		state:apply(atom)
-		assert(state_int[RDF.value] == 1)
-		assert(state_flt[RDF.value] == 1.0)
+		assert(state_int() == 1)
+		assert(state_flt() == 1.0)
+
+		-- test state:sync
+		atom = seq[6]
+		assert(atom.type == Atom.Object)
+		assert(#atom == 3)
+		assert(atom[Patch.subject].type == Atom.URID)
+		assert(atom[Patch.sequenceNumber].type == Atom.Int)
+		assert(atom[Patch.sequenceNumber].body == 0)
+		local body = atom[Patch.body]
+		assert(body.type == Atom.Object)
+		assert(#body == 2)
+		assert(body[urid.int].type == Atom.Int)
+		assert(body[urid.int].body == 1)
+		assert(body[urid.flt].type == Atom.Float)
+		assert(body[urid.flt].body == 1.0)
 	end
 
 	test(producer, consumer)

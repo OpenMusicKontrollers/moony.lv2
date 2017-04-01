@@ -3431,6 +3431,16 @@ end</code></pre>
 		</dl>
 
 		<dl>
+			<dt class="func">stateR:sync(frames, forge)</dt>
+			<dt>frames (integer)</dt>
+				<dd>frame time of current event</dd>
+			<dt>forge (userdata)</dt>
+				<dd>forge object to sync state to</dd>
+			<dt class="ret">(userdata)</dt>
+				<dd>self forge object</dd>
+		</dl>
+
+		<dl>
 			<dt class="func">stateR:stash(forge)</dt>
 			<dt>forge (userdata)</dt>
 				<dd>forge object to stash responder state to</dd>
@@ -3451,7 +3461,7 @@ end</code></pre>
 local urn = HashMap('urn:moony:xzy#')
 
 -- define read-only parameter
-local period = {
+local period = Parameter{
 	[RDFS.label] = 'Period',
 	[RDFS.comment] = 'set period',
 	[RDFS.range] = Atom.Float,
@@ -3462,7 +3472,7 @@ local period = {
 }
 
 -- define read-write parameter
-local frequency = {
+local frequency = Parameter{
 	[RDFS.label] = 'Frequency',
 	[RDFS.comment] = 'set frequency',
 	[RDFS.range] = Atom.Int,

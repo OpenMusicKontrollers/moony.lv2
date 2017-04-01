@@ -18,6 +18,51 @@
 #include <api_parameter.h>
 
 __realtime static int
+_lparameter__index(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	// 1: self
+	// 2: key
+
+	if(lua_isinteger(L, 2) && (lua_tointeger(L, 2) == moony->uris.rdf_value))
+	{
+		if(lua_geti(L, 1, moony->uris.patch.get) == LUA_TFUNCTION)
+		{
+			lua_pushvalue(L, 1); // self
+			lua_call(L, 1, 1);
+
+			return 1;
+		}
+	}
+
+	lua_pushnil(L);
+	return 1;
+}
+
+__realtime static int
+_lparameter__newindex(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	// 1: self
+	// 2: key
+	// 3: value
+
+	if(lua_isinteger(L, 2) && (lua_tointeger(L, 2) == moony->uris.rdf_value))
+	{
+		if(lua_geti(L, 1, moony->uris.patch.set) == LUA_TFUNCTION)
+		{
+			lua_pushvalue(L, 1); // self
+			lua_pushvalue(L, 3); // value
+			lua_call(L, 2, 0);
+		}
+	}
+
+	return 0;
+}
+
+__realtime static int
 _lparameter__call(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -26,16 +71,13 @@ _lparameter__call(lua_State *L)
 	// 1: self
 	// 2: value or nil
 
-	// get current value
+	// push old value on stack
 	lua_geti(L, 1, moony->uris.rdf_value);
-	//TODO call patch:Get?
 
-	if(!lua_isnil(L, 2))
+	if(!lua_isnil(L, 2)) // has value to set
 	{
-		// set new value
 		lua_pushvalue(L, 2);
-		lua_seti(L, 1, moony->uris.rdf_value);
-		//TODO call patch:Set?
+		lua_seti(L, 1, moony->uris.rdf_value); // param[RDF.value] = value
 	}
 
 	return 1;
@@ -64,6 +106,8 @@ _lparameter(lua_State *L)
 }
 
 const luaL_Reg lparameter_mt [] = {
+	{"__index", _lparameter__index},
+	{"__newindex", _lparameter__newindex},
 	{"__call", _lparameter__call},
 	{NULL, NULL}
 };
