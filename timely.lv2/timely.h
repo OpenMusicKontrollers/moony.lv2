@@ -215,7 +215,7 @@ _timely_refresh(timely_t *timely)
 		: 1.f; // prevent divisions through zero later on
 
 	timely->frames_per_beat = 240.0 * timely->pos.frames_per_second
-		/ (timely->pos.beats_per_minute * timely->pos.beat_unit * timely->pos.speed);
+		/ (timely->pos.beats_per_minute * timely->pos.beat_unit * speed);
 	timely->frames_per_bar = timely->frames_per_beat * timely->pos.beats_per_bar;
 
 	// bar
