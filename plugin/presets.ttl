@@ -255,14 +255,14 @@ moony:bank-time_midi-sequencer
       forge:time(frames):midi(MIDI.Controller, MIDI.AllNotesOff)
     end
   end,
-  [Time.barBeat] = function(self, frames, forge, bar_beat)
-    if self.rolling and forge then
+  [Time.barBeat] = function(self, frames, forge, barBeat)
+    if self.rolling and forge and math.tointeger(barBeat) then
       forge:time(frames):midi(MIDI.NoteOff, 24, 0x7f)
       forge:time(frames):midi(MIDI.NoteOn, 24, 0x7f)
     end
   end,
   [Time.bar] = function(self, frames, forge, bar)
-    if self.rolling and forge then
+    if self.rolling and forge and math.tointeger(bar) then
       forge:time(frames):midi(MIDI.NoteOff, 48, 0x7f)
       forge:time(frames):midi(MIDI.NoteOn, 48, 0x7f)
     end
