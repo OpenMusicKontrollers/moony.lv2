@@ -141,6 +141,7 @@ instantiate(const LV2_Descriptor* descriptor, double rate,
 		| TIMELY_MASK_BAR_BEAT_WHOLE
 		| TIMELY_MASK_BAR_WHOLE;
 	timely_init(&handle->timely, handle->map, rate, mask, _timely_cb, handle);
+	timely_set_multiplier(&handle->timely, 1.f);
 
 	return handle;
 }

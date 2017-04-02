@@ -75,6 +75,8 @@ struct _timely_t {
 		float speed;
 	} pos;
 
+	float multiplier;
+
 	double frames_per_beat;
 	double frames_per_bar;
 
@@ -82,11 +84,6 @@ struct _timely_t {
 		double beat;
 		double bar;
 	} offset;
-
-	struct {
-		double beat;
-		double bar;
-	} window;
 
 	bool first;
 	timely_mask_t mask;
@@ -149,18 +146,26 @@ _timely_deatomize_body(timely_t *timely, int64_t frames, uint32_t size,
 			timely->cb(timely, frames, timely->urid.time_speed, timely->data);
 	}
 
-	if(beat_unit && (beat_unit->body != timely->pos.beat_unit) )
+	if(beat_unit)
 	{
-		timely->pos.beat_unit = beat_unit->body;
-		if(timely->mask & TIMELY_MASK_BEAT_UNIT)
-			timely->cb(timely, frames, timely->urid.time_beatUnit, timely->data);
+		const int32_t _beat_unit = beat_unit->body * timely->multiplier;
+		if(_beat_unit != timely->pos.beat_unit)
+		{
+			timely->pos.beat_unit = _beat_unit;
+			if(timely->mask & TIMELY_MASK_BEAT_UNIT)
+				timely->cb(timely, frames, timely->urid.time_beatUnit, timely->data);
+		}
 	}
 
-	if(beats_per_bar && (beats_per_bar->body != timely->pos.beats_per_bar) )
+	if(beats_per_bar)
 	{
-		timely->pos.beats_per_bar = beats_per_bar->body;
-		if(timely->mask & TIMELY_MASK_BEATS_PER_BAR)
-			timely->cb(timely, frames, timely->urid.time_beatsPerBar, timely->data);
+		const float _beats_per_bar = beats_per_bar->body * timely->multiplier;
+		if(_beats_per_bar != timely->pos.beats_per_bar)
+		{
+			timely->pos.beats_per_bar = _beats_per_bar;
+			if(timely->mask & TIMELY_MASK_BEATS_PER_BAR)
+				timely->cb(timely, frames, timely->urid.time_beatsPerBar, timely->data);
+		}
 	}
 
 	if(beats_per_minute && (beats_per_minute->body != timely->pos.beats_per_minute) )
@@ -191,11 +196,15 @@ _timely_deatomize_body(timely_t *timely, int64_t frames, uint32_t size,
 			timely->cb(timely, frames, timely->urid.time_bar, timely->data);
 	}
 
-	if(bar_beat && (bar_beat->body != timely->pos.bar_beat) )
+	if(bar_beat)
 	{
-		timely->pos.bar_beat = bar_beat->body;
-		if(timely->mask & TIMELY_MASK_BAR_BEAT)
-			timely->cb(timely, frames, timely->urid.time_barBeat, timely->data);
+		const float _bar_beat = bar_beat->body * timely->multiplier;
+		if(_bar_beat != timely->pos.bar_beat)
+		{
+			timely->pos.bar_beat = _bar_beat;
+			if(timely->mask & TIMELY_MASK_BAR_BEAT)
+				timely->cb(timely, frames, timely->urid.time_barBeat, timely->data);
+		}
 	}
 
 	// send speed last upon transport start
@@ -219,11 +228,9 @@ _timely_refresh(timely_t *timely)
 	timely->frames_per_bar = timely->frames_per_beat * timely->pos.beats_per_bar;
 
 	// bar
-	timely->window.bar = timely->frames_per_bar;
 	timely->offset.bar = timely->pos.bar_beat * timely->frames_per_beat;
 
 	// beat
-	timely->window.beat = timely->frames_per_beat;
 	double integral;
 	double beat_beat = modf(timely->pos.bar_beat, &integral);
 	(void)integral;
@@ -253,6 +260,8 @@ timely_init(timely_t *timely, LV2_URID_Map *map, double rate,
 	timely->urid.time_framesPerSecond = map->map(map->handle, LV2_TIME__framesPerSecond);
 	timely->urid.time_speed = map->map(map->handle, LV2_TIME__speed);
 
+	timely->multiplier = 1.f;
+
 	timely->pos.speed = 0.f;
 	timely->pos.bar_beat = 0.f;
 	timely->pos.bar = 0;
@@ -261,6 +270,22 @@ timely_init(timely_t *timely, LV2_URID_Map *map, double rate,
 	timely->pos.beats_per_minute = 120.f;
 	timely->pos.frame = 0;
 	timely->pos.frames_per_second = rate;
+
+	_timely_refresh(timely);
+
+	timely->first = true;
+}
+
+static inline void
+timely_set_multiplier(timely_t *timely, float multiplier)
+{
+	const float mul = multiplier / timely->multiplier;
+
+	timely->pos.bar_beat *= mul;
+	timely->pos.beat_unit *= mul;
+	timely->pos.beats_per_bar *= mul;
+
+	timely->multiplier = multiplier;
 
 	_timely_refresh(timely);
 
@@ -319,10 +344,10 @@ timely_advance_body(timely_t *timely, uint32_t size, uint32_t type,
 		unsigned update_frame = to;
 		for(unsigned i=from; i<to; i++)
 		{
-			if(timely->offset.bar >= timely->window.bar)
+			if(timely->offset.bar >= timely->frames_per_bar)
 			{
 				timely->pos.bar += 1;
-				timely->offset.bar -= timely->window.bar;
+				timely->offset.bar -= timely->frames_per_bar;
 
 				if(timely->mask & TIMELY_MASK_FRAME)
 					timely->cb(timely, (update_frame = i), timely->urid.time_frame, timely->data);
@@ -331,10 +356,10 @@ timely_advance_body(timely_t *timely, uint32_t size, uint32_t type,
 					timely->cb(timely, i, timely->urid.time_bar, timely->data);
 			}
 
-			if( (timely->offset.beat >= timely->window.beat) )
+			if( (timely->offset.beat >= timely->frames_per_beat) )
 			{
 				timely->pos.bar_beat = floor(timely->pos.bar_beat) + 1;
-				timely->offset.beat -= timely->window.beat;
+				timely->offset.beat -= timely->frames_per_beat;
 
 				if(timely->pos.bar_beat >= timely->pos.beats_per_bar)
 					timely->pos.bar_beat -= timely->pos.beats_per_bar;
