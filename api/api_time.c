@@ -87,7 +87,7 @@ _ltimeresponder__call(lua_State *L)
 	// 3: to
 	// 4: data aka forge
 	// 5: atom || nil
-	
+
 	timely_t *timely = lua_touserdata(L, 1);
 	int64_t from = luaL_checkinteger(L, 2);
 	int64_t to = luaL_checkinteger(L, 3);
@@ -110,7 +110,7 @@ _ltimeresponder_apply(lua_State *L)
 {
 	// 1: self
 	// 2: atom
-	
+
 	lua_pushinteger(L, 0);
 	lua_insert(L, 2); // from
 
@@ -176,7 +176,7 @@ _ltimeresponder__index(lua_State *L)
 	lua_settop(L, 2); // discard superfluous arguments
 	// 1: self
 	// 2: type
-	
+
 	timely_t *timely = lua_touserdata(L, 1);
 
 	int ltype = lua_type(L, 2);
@@ -189,6 +189,8 @@ _ltimeresponder__index(lua_State *L)
 				lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_TIME_STASH);
 			else if(!strcmp(key, "apply"))
 				lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_TIME_APPLY);
+			else if(!strcmp(key, "multiplier"))
+				lua_pushnumber(L, timely->multiplier);
 			else
 				lua_pushnil(L);
 		}
@@ -240,12 +242,36 @@ _ltimeresponder__index(lua_State *L)
 	return 1;
 }
 
+__realtime static int
+_ltimeresponder__newindex(lua_State *L)
+{
+	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	lua_settop(L, 3); // discard superfluous arguments
+	// 1: self
+	// 2: key
+	// 3: value
+
+	timely_t *timely = lua_touserdata(L, 1);
+
+	if(lua_type(L, 2) == LUA_TSTRING)
+	{
+		if(!strcmp(lua_tostring(L, 2), "multiplier"))
+		{
+			const float multiplier = luaL_checknumber(L, 3);
+			timely_set_multiplier(timely, multiplier);
+		}
+	}
+
+	return 0;
+}
+
 __realtime int
 _ltimeresponder(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	
-	lua_settop(L, 1); // discard superfluous arguments
+
+	lua_settop(L, 2); // discard superfluous arguments
 
 	timely_mask_t mask = TIMELY_MASK_BAR_BEAT
 		| TIMELY_MASK_BAR
@@ -265,10 +291,14 @@ _ltimeresponder(lua_State *L)
 		lua_newtable(L);
 	}
 
+	const float multiplier = luaL_optnumber(L, 2, 1.f);
+	lua_pop(L, 1); // multiplier
+
 	// TODO do we want to cache/reuse this, too?
 	timely_t *timely = lua_newuserdata(L, sizeof(timely_t)); // userdata
 	timely_init(timely, moony->map, moony->opts.sample_rate, mask,
 		_ltimeresponder_cb, L);
+	timely_set_multiplier(timely, multiplier);
 
 	// userdata.uservalue = o
 	lua_insert(L, 1);
@@ -284,6 +314,7 @@ _ltimeresponder(lua_State *L)
 
 const luaL_Reg ltimeresponder_mt [] = {
 	{"__index", _ltimeresponder__index},
+	{"__newindex", _ltimeresponder__newindex},
 	{"__call", _ltimeresponder__call},
 	{NULL, NULL}
 };

@@ -1020,7 +1020,7 @@ do
 			end
 		end,
 	}
-	local time_responder = TimeResponder(time_cb)
+	local time_responder = TimeResponder(time_cb, 1.0)
 
 	local function producer(forge)
 		local obj = forge:frameTime(0):object(Time.Position)
@@ -1037,6 +1037,11 @@ do
 		-- time:stash
 		forge:frameTime(1)
 		time_responder:stash(forge)
+
+		assert(time_responder.multiplier == 1.0)
+		time_responder.multiplier = 2.0
+		assert(time_responder.multiplier == 2.0)
+		time_responder.multiplier = 1.0
 	end
 
 	local function consumer(seq)
