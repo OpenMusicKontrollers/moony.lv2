@@ -327,15 +327,38 @@ _log(lua_State *L)
   lua_getglobal(L, "tostring"); //TODO cache this
   for(int i=1; i<=n; i++)
 	{
-    lua_pushvalue(L, -1);  // function to be called
-    lua_pushvalue(L, i);   // value to print
-    lua_call(L, 1, 1);
     if(i>1)
-			luaL_addlstring(&buf, "\t", 1);
-		size_t len;
-		const char *s = lua_tolstring(L, -1, &len);
-		luaL_addlstring(&buf, s, len);
-    lua_pop(L, 1);  // pop result
+			luaL_addchar(&buf, '\t');
+
+		if(lua_type(L, i) == LUA_TSTRING)
+		{
+			const size_t max_len = 512;
+			size_t len;
+			const char *s = lua_tolstring(L, i, &len);
+			if(len > max_len) // truncate if string too long
+			{
+				luaL_addlstring(&buf, s, max_len);
+				const size_t trunc_len = 32;
+				char trunc [trunc_len];
+				snprintf(trunc, trunc_len, " [+%zu chars]", len - max_len);
+				luaL_addstring(&buf, trunc);
+			}
+			else // use whole string
+			{
+				luaL_addlstring(&buf, s, len);
+			}
+		}
+		else // !LUA-TSTRING
+		{
+			lua_pushvalue(L, -1);  // function to be called
+			lua_pushvalue(L, i);   // value to print
+			lua_call(L, 1, 1);
+
+			size_t len;
+			const char *s = lua_tolstring(L, -1, &len);
+			luaL_addlstring(&buf, s, len);
+			lua_pop(L, 1);  // pop result
+		}
   }
 
 	luaL_pushresult(&buf);
