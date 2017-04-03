@@ -123,6 +123,10 @@ local field_constant = token(l.OPERATOR, P('.')) * token(l.CONSTANT, word_match{
 	'MiterLimit', 'Stroke', 'Fill', 'Clip', 'Save', 'Restore', 'Translate', 'Scale', 'Rotate', 'Reset', 'FontSize', 'FillText',
 	'lineCapButt', 'lineCapRound', 'lineCapSquare', 'lineJoinMiter', 'lineJoinRound', 'lineJoinBevel',
 	'mouseButtonLeft', 'mouseButtonMiddle', 'mouseButtonRight', 'mouseWheelX', 'mouseWheelY', 'mousePositionX', 'mousePositionY', 'mouseFocus',
+	-- moony Moony
+	'color', 'syntax',
+	-- moony Lua
+	'lang',
 
 	-- moony common
 	'type', 'body', 'raw',
@@ -141,7 +145,7 @@ local library = token('library', word_match{
 	-- Lua
 	'coroutine', 'string', 'utf8', 'table', 'math', 'debug', 'lpeg', 'base64', 'ascii85', 'aes128',
 	-- Moony
-	'Atom', 'MIDI', 'Time', 'OSC', 'Core', 'Buf_Size', 'Patch', 'RDF', 'RDFS', 'Units', 'Options', 'Canvas', 'Ui'
+	'Atom', 'MIDI', 'Time', 'OSC', 'Core', 'Buf_Size', 'Patch', 'RDF', 'RDFS', 'Units', 'Options', 'Canvas', 'Ui', 'Moony', 'Lua'
 })
 
 -- Identifiers.

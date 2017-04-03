@@ -1175,6 +1175,8 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->uris.moony_paramHidden = moony->map->map(moony->map->handle, MOONY_PARAM_HIDDEN_URI);
 	moony->uris.moony_paramCols = moony->map->map(moony->map->handle, MOONY_PARAM_COLS_URI);
 	moony->uris.moony_paramRows = moony->map->map(moony->map->handle, MOONY_PARAM_ROWS_URI);
+	moony->uris.moony_color = moony->map->map(moony->map->handle, MOONY__color);
+	moony->uris.moony_syntax = moony->map->map(moony->map->handle, MOONY__syntax);
 
 	moony->uris.midi_event = moony->map->map(moony->map->handle, LV2_MIDI__MidiEvent);
 
@@ -1676,6 +1678,19 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 		SET_MAP(L, CANVAS__, mouseFocus);
 	}
 	lua_setglobal(L, "Canvas");
+
+	lua_newtable(L);
+	{
+		SET_MAP(L, MOONY__, color);
+		SET_MAP(L, MOONY__, syntax);
+	}
+	lua_setglobal(L, "Moony");
+
+	lua_newtable(L);
+	{
+		SET_MAP(L, LUA__, lang);
+	}
+	lua_setglobal(L, "Lua");
 
 	lua_newtable(L);
 	{

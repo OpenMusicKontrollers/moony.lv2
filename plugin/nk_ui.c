@@ -211,6 +211,9 @@ struct _plughandle_t {
 	LV2_URID moony_paramHidden;
 	LV2_URID moony_paramCols;
 	LV2_URID moony_paramRows;
+	LV2_URID moony_color;
+	LV2_URID moony_syntax;
+	LV2_URID lua_lang;
 	LV2_URID rdfs_label;
 	LV2_URID rdfs_range;
 	LV2_URID rdfs_comment;
@@ -243,7 +246,6 @@ struct _plughandle_t {
 	LV2_URID units_pc;
 	LV2_URID units_s;
 	LV2_URID units_semitone12TET;
-	LV2_URID canvas_Style;
 
 	atom_ser_t ser;
 
@@ -1960,6 +1962,9 @@ _patch_set_string(plughandle_t *handle, prop_t *prop, uint32_t size, const char 
 
 	_set_string(str, size, body);
 
+	if(prop->value.editor.lexer.lex)
+		prop->value.editor.lexer.needs_refresh = 1;
+
 	nk_pugl_post_redisplay(&handle->win);
 }
 
@@ -2639,6 +2644,9 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	handle->moony_paramHidden = handle->map->map(handle->map->handle, MOONY_PARAM_HIDDEN_URI);
 	handle->moony_paramCols = handle->map->map(handle->map->handle, MOONY_PARAM_COLS_URI);
 	handle->moony_paramRows = handle->map->map(handle->map->handle, MOONY_PARAM_ROWS_URI);
+	handle->moony_color = handle->map->map(handle->map->handle, MOONY__color);
+	handle->moony_syntax = handle->map->map(handle->map->handle, MOONY__syntax);
+	handle->lua_lang = handle->map->map(handle->map->handle, LUA__lang);
 	handle->rdfs_label = handle->map->map(handle->map->handle, RDFS__label);
 	handle->rdfs_range= handle->map->map(handle->map->handle, RDFS__range);
 	handle->rdfs_comment = handle->map->map(handle->map->handle, RDFS__comment);
@@ -2672,8 +2680,6 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	handle->units_pc = handle->map->map(handle->map->handle, LV2_UNITS__pc);
 	handle->units_s = handle->map->map(handle->map->handle, LV2_UNITS__s);
 	handle->units_semitone12TET = handle->map->map(handle->map->handle, LV2_UNITS__semitone12TET);
-
-	handle->canvas_Style = handle->map->map(handle->map->handle, CANVAS__Style);
 
 	handle->controller = controller;
 	handle->writer = write_function;
@@ -2938,6 +2944,9 @@ _patch_set_parameter_value(plughandle_t *handle, LV2_URID property,
 			struct nk_str *str = &prop->value.editor.string;
 			nk_str_clear(str);
 			nk_str_append_text_utf8(str, LV2_ATOM_BODY_CONST(value), value->size - 1);
+
+			if(prop->value.editor.lexer.lex)
+				prop->value.editor.lexer.needs_refresh = 1;
 		}
 		else if(prop->range == handle->forge.Chunk)
 		{
@@ -3055,7 +3064,7 @@ _patch_set_parameter_property(plughandle_t *handle, LV2_URID subject, LV2_URID p
 			else if(unit->body == handle->units_semitone12TET)
 				prop->unit = strdup("semi");
 		}
-		else if( (property == handle->canvas_Style)
+		else if( (property == handle->moony_color)
 			&& (value->type == handle->forge.Long) )
 		{
 			const LV2_Atom_Long *style = (const LV2_Atom_Long *)value;
@@ -3065,6 +3074,17 @@ _patch_set_parameter_property(plughandle_t *handle, LV2_URID subject, LV2_URID p
 				(style->body >> 16) & 0xff,
 				(style->body >>  8) & 0xff,
 				(style->body >>  0) & 0xff);
+		}
+		else if( (property == handle->moony_syntax)
+			&& (value->type == handle->forge.URID) )
+		{
+			const LV2_Atom_URID *syntax = (const LV2_Atom_URID *)value;
+
+			if(syntax->body == handle->lua_lang)
+			{
+				prop->value.editor.lexer.lex = _lex;
+				prop->value.editor.lexer.data = handle->L;
+			}
 		}
 		else if( (property == handle->lv2_minimum)
 			&& (!prop->range || (prop->range == value->type)) )

@@ -73,6 +73,7 @@
 #define MOONY_MAX_TRACE_LEN		0x800 // 2KB
 
 #define MOONY_URI							"http://open-music-kontrollers.ch/lv2/moony"
+#define MOONY_PREFIX					MOONY_URI"#"
 
 #define MOONY_CODE_URI				MOONY_URI"#code"
 #define MOONY_SELECTION_URI		MOONY_URI"#selection"
@@ -80,6 +81,9 @@
 #define MOONY_TRACE_URI				MOONY_URI"#trace"
 #define MOONY_STATE_URI				MOONY_URI"#state"
 #define MOONY_PANIC_URI				MOONY_URI"#panic"
+
+#define MOONY__color					MOONY_URI"#color"
+#define MOONY__syntax					MOONY_URI"#syntax"
 
 #define MOONY_EDITOR_HIDDEN_URI	MOONY_URI"#editorHidden"
 #define MOONY_LOG_HIDDEN_URI	MOONY_URI"#logHidden"
@@ -102,6 +106,8 @@
 #define MOONY_C1A1XC1A1_URI		MOONY_URI"#c1a1xc1a1"
 #define MOONY_C2A1XC2A1_URI		MOONY_URI"#c2a1xc2a1"
 #define MOONY_C4A1XC4A1_URI		MOONY_URI"#c4a1xc4a1"
+
+#define LUA__lang							"http://lua.org#lang"
 
 extern const LV2_Descriptor c1xc1;
 extern const LV2_Descriptor c2xc2;
@@ -231,6 +237,8 @@ struct _moony_t {
 		LV2_URID moony_paramHidden;
 		LV2_URID moony_paramCols;
 		LV2_URID moony_paramRows;
+		LV2_URID moony_color;
+		LV2_URID moony_syntax;
 
 		LV2_URID midi_event;
 
