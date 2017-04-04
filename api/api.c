@@ -295,18 +295,79 @@ _lnote__index(lua_State *L)
 	return 1;
 }
 
-__realtime static int
-_lnote__call(lua_State *L)
-{
-	lua_settop(L, 2);
-	lua_gettable(L, -2); // self[uri]
-
-	return 1;
-}
-
 static const luaL_Reg lnote_mt [] = {
 	{"__index", _lnote__index},
 	{"__call", _lnote__index},
+	{NULL, NULL}
+};
+
+__realtime static int
+_lopts__index(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	const LV2_URID key = luaL_checkinteger(L, 2);
+
+	if(moony->opts)
+	{
+		for(LV2_Options_Option *opt = moony->opts;
+			(opt->key != 0) && (opt->value != NULL);
+			opt++)
+		{
+			if(opt->key == key)
+			{
+				const LV2_Atom *atom = (const LV2_Atom *)&opt->size;
+				_latom_body_new(L, atom, opt->value, false);
+				return 1;
+			}
+		}
+	}
+
+	lua_pushnil(L); // not found
+	return 1;
+}
+
+__realtime static int
+_lopts_itr(lua_State *L)
+{
+	LV2_Options_Option **opt_ptr = lua_touserdata(L, lua_upvalueindex(1));
+	LV2_Options_Option *opt = *opt_ptr;
+
+	if( (opt->key != 0) && (opt->value != NULL) )
+	{
+		const LV2_Atom *atom = (const LV2_Atom *)&opt->size;
+		lua_pushinteger(L, opt->key);
+		_latom_body_new(L, atom, opt->value, false);
+
+		*opt_ptr = opt + 1;
+		return 2;
+	}
+
+	lua_pushnil(L);
+	return 1;
+}
+
+__realtime static int
+_lopts__pairs(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	if(moony->opts)
+	{
+		LV2_Options_Option **opt_ptr = lua_newuserdata(L, sizeof(LV2_Options_Option **));
+		*opt_ptr = moony->opts;
+		lua_pushcclosure(L, _lopts_itr, 1);
+		return 1;
+	}
+
+	lua_pushnil(L);
+	return 1;
+}
+
+static const luaL_Reg lopts_mt [] = {
+	{"__index", _lopts__index},
+	{"__call", _lopts__index},
+	{"__pairs", _lopts__pairs},
 	{NULL, NULL}
 };
 
@@ -405,31 +466,6 @@ _log(lua_State *L)
 	}
 
 	return 0;
-}
-
-__realtime static int
-_options(lua_State *L)
-{
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	const LV2_URID key = luaL_checkinteger(L, 1);
-
-	if(moony->opts)
-	{
-		for(LV2_Options_Option *opt = moony->opts;
-			(opt->key != 0) && (opt->value != NULL);
-			opt++)
-		{
-			if(opt->key == key)
-			{
-				const LV2_Atom *atom = (const LV2_Atom *)&opt->size;
-				_latom_body_new(L, atom, opt->value, false);
-				return 1;
-			}
-		}
-	}
-
-	lua_pushnil(L); // not found
-	return 1;
 }
 
 __realtime LV2_Atom_Forge_Ref
@@ -1404,6 +1440,30 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 	lua_setmetatable(L, -2);
 	lua_setglobal(L, "Unmap");
 
+	// Note
+	lua_newtable(L);
+	lua_newtable(L);
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	luaL_setfuncs(L, lnote_mt, 1);
+	_protect_metatable(L, -1);
+	lua_setmetatable(L, -2);
+	lua_setglobal(L, "Note");
+
+	// lv2.opts
+	lua_newtable(L);
+	lua_newtable(L);
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	luaL_setfuncs(L, lopts_mt, 1);
+	_protect_metatable(L, -1);
+	lua_setmetatable(L, -2);
+	lua_setglobal(L, "Options");
+
+	// overwrite print function with LV2 log
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	lua_pushlightuserdata(L, vm); // @ upvalueindex 2
+	lua_pushcclosure(L, _log, 2);
+	lua_setglobal(L, "print");
+
 	// lv2.hash
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	lua_pushcclosure(L, _lhash_map, 1);
@@ -1431,12 +1491,6 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 	lua_setfield(L, -2, #PROPERTY); \
 	urid; \
 })
-
-	lua_newtable(L);
-	{
-		SET_MAP(L, LV2_CORE__, ControlPort);
-	}
-	lua_setglobal(L, "State");
 
 	lua_newtable(L);
 	{
@@ -1479,15 +1533,6 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 		}
 	}
 	lua_setglobal(L, "MIDI");
-
-	// Note
-	lua_newtable(L);
-	lua_newtable(L);
-	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
-	luaL_setfuncs(L, lnote_mt, 1);
-	_protect_metatable(L, -1);
-	lua_setmetatable(L, -2);
-	lua_setglobal(L, "Note");
 
 	lua_newtable(L);
 	{
@@ -1703,17 +1748,6 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_FORGE);
 	lua_newtable(L);
 		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_STASH);
-
-	// overwrite print function with LV2 log
-	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
-	lua_pushlightuserdata(L, vm); // @ upvalueindex 2
-	lua_pushcclosure(L, _log, 2);
-	lua_setglobal(L, "print");
-
-	// Options
-	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
-	lua_pushcclosure(L, _options, 1);
-	lua_setglobal(L, "Options");
 
 	// MIDIResponder metatable
 	luaL_newmetatable(L, "lmidiresponder");

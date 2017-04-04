@@ -748,7 +748,7 @@ end</code></pre>
 		function.</p>
 
 		<dl>
-			<dt class="func">function Map(URI)</dt>
+			<dt class="func">Map:__call(URI) | Map(URI) | Map:__index(URI) | Map[URI]</dt>
 			<dt>URI (string)</dt>
 				<dd>URI to be mapped</dd>
 			<dt class="ret">(integer)</dt>
@@ -770,11 +770,11 @@ local bar_urid = Map[prefix .. 'bar']</code></pre>
 		function.</p>
 
 		<dl>
-			<dt class="func">function Unmap(URID)</dt>
+			<dt class="func">Unmap:__call(URID) | Unmap(URID) | Unmap:__index(URID) | Unmap[URID]</dt>
 			<dt>URID (integer)</dt>
 				<dd>URID to be unmapped</dd>
 			<dt class="ret">(string)</dt>
-				<dd>unmapped URi</dd>
+				<dd>unmapped URI</dd>
 		</dl>
 
 		<pre><code data-ref="urid-unmap">-- Unmap can be indexed or called as function
@@ -803,7 +803,7 @@ assert(prefix .. 'bar' == bar_uri)</code></pre>
 		<a href="#responder-state">StateResponder</a>.</p>
 
 		<dl>
-			<dt class="func">function HashMap(prefix)</dt>
+			<dt class="func">HashMap(prefix)</dt>
 			<dt>prefix (string)</dt>
 				<dd>prefix string to be appended to</dd>
 			<dt class="ret">(table)</dt>
@@ -828,7 +828,7 @@ assert(hashmap.bar == bar_urid)</code></pre>
 		and time.</p>
 
 		<dl>
-			<dt class="func">function VoiceMap()</dt>
+			<dt class="func">VoiceMap()</dt>
 			<dt class="ret">(integer)</dt>
 				<dd>unique integer ID</dd>
 		</dl>
@@ -3009,24 +3009,34 @@ assert(io.body == 13)</code></pre>
 	If the host exports those values, they may be queried via the options table.</p>
 
 		<dl>
-			<dt class="func">Options:__call(key)</dt>
-			<dt>key (integer)</dt>
+			<dt class="func">Options:__call(URID) | Options(URID) | Options:__index(URID) | Options[URID]</dt>
+			<dt>URID (integer)</dt>
 				<dd>key to index options table with as integer URID, e.g. valid keys are:
 				Param.sampleRate, Buf_Size.sequenceSize, Buf_Size.minBlockLength, Buf_Size.maxBlockLength, Ui.updateRate</dd>
 			<dt class="ret">(userdata)</dt>
 				<dd>value of indexed key as atom object</dd>
 		</dl>
 
+		<dl>
+			<dt class="func">Options:__pairs()</dt>
+			<dt class="ret">(integer | userdata)</dt>
+				<dd>iterates over all options, returning option key and atom userdata.</dd>
+		</dl>
+
 		<pre><code data-ref="options">-- Options
 
--- sample rate is always available
-local sampleRate = Options(Param.sampleRate)
-assert(sampleRate.body == 48000)
 
 -- only available if exported by host
-local sequenceSize = Options(Buf_Size.sequenceSize)
-local minBlockLength = Options(Buf_Size.minBlockLength)
-local maxBlockLength = Options(Buf_Size.maxBlockLength)</code></pre>
+local sampleRate = Options[Param.sampleRate]
+assert(sampleRate.body == 48000)
+local sequenceSize = Options[Buf_Size.sequenceSize]
+local minBlockLength = Options[Buf_Size.minBlockLength]
+local maxBlockLength = Options[Buf_Size.maxBlockLength]
+local updateRate = Options(Ui.updateRate)
+	
+for urid, atom in pairs(Options) do
+	print(Unmap[urid], atom)
+end</code></pre>
 	</div>
 
 	<!-- Responder -->

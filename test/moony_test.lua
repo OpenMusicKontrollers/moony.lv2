@@ -1261,10 +1261,15 @@ end
 -- Options
 print('[test] Options')
 do
-	assert(Options(Param.sampleRate).body == 48000)
-	assert(Options(Buf_Size.minBlockLength) == nil)
-	assert(Options(Buf_Size.maxBlockLength) == nil)
+	assert(Options[Param.sampleRate].body == 48000)
+	assert(Options[Buf_Size.minBlockLength] == nil)
+	assert(Options[Buf_Size.maxBlockLength] == nil)
 	assert(Options(Buf_Size.sequenceSize) == nil)
+
+	for k, v in pairs(Options) do
+		assert(k == Param.sampleRate)
+		assert(v.body == 48000)
+	end
 end
 
 -- Patch
