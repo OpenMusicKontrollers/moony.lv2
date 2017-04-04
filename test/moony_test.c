@@ -204,6 +204,23 @@ main(int argc, char **argv)
 		.vprintf = _vprintf
 	};
 
+	const LV2_URID param_sampleRate = map.map(map.handle, LV2_PARAMETERS__sampleRate);
+	const LV2_URID atom_Float = map.map(map.handle, LV2_ATOM__Float);
+
+	const float srate = 48000.f;
+	LV2_Options_Option opts [] = {
+		{
+			.key = param_sampleRate,
+			.size = sizeof(float),
+			.type = atom_Float,
+			.value = &srate
+		},
+		{
+			.key = 0,
+			.value =NULL
+		}
+	};
+
 	const LV2_Feature feat_map = {
 		.URI = LV2_URID__map,
 		.data = &map
@@ -220,17 +237,22 @@ main(int argc, char **argv)
 		.URI = LV2_LOG__log,
 		.data = &log
 	};
+	const LV2_Feature feat_opts = {
+		.URI = LV2_OPTIONS__options,
+		.data = opts
+	};
 
 	const LV2_Feature *const features [] = {
 		&feat_map,
 		&feat_unmap,
 		&feat_sched,
 		&feat_log,
+		&feat_opts,
 		NULL
 	};
 	
 	if(moony_init(&handle.moony, "http://open-music-kontrollers.ch/lv2/moony#test",
-		48000, features, 0x800000, true)) // 8MB initial memory
+		srate, features, 0x800000, true)) // 8MB initial memory
 	{
 		return -1;
 	}

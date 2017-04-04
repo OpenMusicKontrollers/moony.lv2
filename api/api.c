@@ -407,6 +407,31 @@ _log(lua_State *L)
 	return 0;
 }
 
+__realtime static int
+_options(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	const LV2_URID key = luaL_checkinteger(L, 1);
+
+	if(moony->opts)
+	{
+		for(LV2_Options_Option *opt = moony->opts;
+			(opt->key != 0) && (opt->value != NULL);
+			opt++)
+		{
+			if(opt->key == key)
+			{
+				const LV2_Atom *atom = (const LV2_Atom *)&opt->size;
+				_latom_body_new(L, atom, opt->value, false);
+				return 1;
+			}
+		}
+	}
+
+	lua_pushnil(L); // not found
+	return 1;
+}
+
 __realtime LV2_Atom_Forge_Ref
 _sink_rt(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
 {
@@ -1092,6 +1117,8 @@ __non_realtime int
 moony_init(moony_t *moony, const char *subject, double sample_rate,
 	const LV2_Feature *const *features, size_t mem_size, bool testing)
 {
+	moony->sample_rate = sample_rate;
+
 	atomic_init(&moony->state_atom_new, 0);
 	atomic_init(&moony->vm_new, 0);
 	atomic_init(&moony->err_new, 0);
@@ -1114,7 +1141,6 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 		return -1;
 	}
 
-	LV2_Options_Option *opts = NULL;
 	bool load_default_state = false;
 
 	for(unsigned i=0; features[i]; i++)
@@ -1128,7 +1154,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 		else if(!strcmp(features[i]->URI, LV2_LOG__log))
 			moony->log = features[i]->data;
 		else if(!strcmp(features[i]->URI, LV2_OPTIONS__options))
-			opts = features[i]->data;
+			moony->opts = features[i]->data;
 		else if(!strcmp(features[i]->URI, LV2_OSC__schedule))
 			moony->osc_sched = features[i]->data;
 		else if(!strcmp(features[i]->URI, LV2_STATE__loadDefaultState))
@@ -1179,15 +1205,6 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->uris.moony_syntax = moony->map->map(moony->map->handle, MOONY__syntax);
 
 	moony->uris.midi_event = moony->map->map(moony->map->handle, LV2_MIDI__MidiEvent);
-
-	moony->uris.bufsz_min_block_length = moony->map->map(moony->map->handle,
-		LV2_BUF_SIZE__minBlockLength);
-	moony->uris.bufsz_max_block_length = moony->map->map(moony->map->handle,
-		LV2_BUF_SIZE__maxBlockLength);
-	moony->uris.bufsz_sequence_size = moony->map->map(moony->map->handle,
-		LV2_BUF_SIZE__sequenceSize);
-	moony->uris.ui_update_rate= moony->map->map(moony->map->handle,
-		LV2_UI__updateRate);
 
 	moony->uris.patch.self = moony->map->map(moony->map->handle, subject);
 
@@ -1287,24 +1304,6 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 
 	assert(pos == DRIVER_HASH_MAX);
 	qsort(latom_driver_hash, DRIVER_HASH_MAX, sizeof(latom_driver_hash_t), _hash_sort);
-
-	if(opts)
-	{
-		for(LV2_Options_Option *opt = opts;
-			(opt->key != 0) && (opt->value != NULL);
-			opt++)
-		{
-			if(opt->key == moony->uris.bufsz_min_block_length)
-				moony->opts.min_block_length = *(int32_t *)opt->value;
-			else if(opt->key == moony->uris.bufsz_max_block_length)
-				moony->opts.max_block_length = *(int32_t *)opt->value;
-			else if(opt->key == moony->uris.bufsz_sequence_size)
-				moony->opts.sequence_size = *(int32_t *)opt->value;
-			else if(opt->key == moony->uris.ui_update_rate)
-				moony->opts.update_rate = *(float *)opt->value;
-		}
-	}
-	moony->opts.sample_rate = sample_rate;
 
 	moony->dirty_out = true; // trigger update of UI
 	moony->props_out = true; // trigger update of UI
@@ -1433,8 +1432,6 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 	urid; \
 })
 
-	LV2_URID core_sample_rate;
-
 	lua_newtable(L);
 	{
 		SET_MAP(L, LV2_CORE__, ControlPort);
@@ -1529,7 +1526,6 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 
 	lua_newtable(L);
 	{
-		core_sample_rate = SET_MAP(L, LV2_CORE__, sampleRate);
 		SET_MAP(L, LV2_CORE__, minimum);
 		SET_MAP(L, LV2_CORE__, maximum);
 		SET_MAP(L, LV2_CORE__, scalePoint);
@@ -1683,53 +1679,22 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 	{
 		SET_MAP(L, MOONY__, color);
 		SET_MAP(L, MOONY__, syntax);
+		//TODO more
 	}
 	lua_setglobal(L, "Moony");
+
+	lua_newtable(L);
+	{
+		SET_MAP(L, LV2_PARAMETERS__, sampleRate);
+		//TODO more
+	}
+	lua_setglobal(L, "Param");
 
 	lua_newtable(L);
 	{
 		SET_MAP(L, LUA__, lang);
 	}
 	lua_setglobal(L, "Lua");
-
-	lua_newtable(L);
-	{
-		if(moony->opts.min_block_length)
-		{
-			lua_pushinteger(L, moony->uris.bufsz_min_block_length);
-			lua_pushinteger(L, moony->opts.min_block_length);
-			lua_rawset(L, -3);
-		}
-
-		if(moony->opts.max_block_length)
-		{
-			lua_pushinteger(L, moony->uris.bufsz_max_block_length);
-			lua_pushinteger(L, moony->opts.max_block_length);
-			lua_rawset(L, -3);
-		}
-
-		if(moony->opts.sequence_size)
-		{
-			lua_pushinteger(L, moony->uris.bufsz_sequence_size);
-			lua_pushinteger(L, moony->opts.sequence_size);
-			lua_rawset(L, -3);
-		}
-
-		if(moony->opts.sample_rate)
-		{
-			lua_pushinteger(L, core_sample_rate);
-			lua_pushnumber(L, moony->opts.sample_rate);
-			lua_rawset(L, -3);
-		}
-
-		if(moony->opts.update_rate)
-		{
-			lua_pushinteger(L, moony->uris.ui_update_rate);
-			lua_pushnumber(L, moony->opts.update_rate);
-			lua_rawset(L, -3);
-		}
-	}
-	lua_setglobal(L, "Options");
 
 	// create userdata caches
 	lua_newtable(L);
@@ -1744,6 +1709,11 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 	lua_pushlightuserdata(L, vm); // @ upvalueindex 2
 	lua_pushcclosure(L, _log, 2);
 	lua_setglobal(L, "print");
+
+	// Options
+	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
+	lua_pushcclosure(L, _options, 1);
+	lua_setglobal(L, "Options");
 
 	// MIDIResponder metatable
 	luaL_newmetatable(L, "lmidiresponder");

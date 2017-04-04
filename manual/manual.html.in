@@ -1654,7 +1654,7 @@ function stash(forge)
 			tup:char(string.byte('c')) -- 'c'char
 			tup:rgba(0xbb0000ff) -- reddish, 'r'gba
 			tup:midi(MIDI.NoteOn, Note['C-0'], 64) -- 'm'idi
-			tup:urid(Core.sampleRate) -- 'S'ymbol
+			tup:urid(Param.sampleRate) -- 'S'ymbol
 		end
 	end
 end</code></pre>
@@ -3009,24 +3009,24 @@ assert(io.body == 13)</code></pre>
 	If the host exports those values, they may be queried via the options table.</p>
 
 		<dl>
-			<dt class="func">Options:__index(key) | Options[key]</dt>
+			<dt class="func">Options:__call(key)</dt>
 			<dt>key (integer)</dt>
-				<dd>key to index options table with as integer URID, valid keys are:
-				Core.sampleRate, Buf_Size.sequenceSize, Buf_Size.minBlockLength, Buf_Size.maxBlockLength</dd>
-			<dt class="ret">(integer)</dt>
-				<dd>value of index key</dd>
+				<dd>key to index options table with as integer URID, e.g. valid keys are:
+				Param.sampleRate, Buf_Size.sequenceSize, Buf_Size.minBlockLength, Buf_Size.maxBlockLength, Ui.updateRate</dd>
+			<dt class="ret">(userdata)</dt>
+				<dd>value of indexed key as atom object</dd>
 		</dl>
 
 		<pre><code data-ref="options">-- Options
 
 -- sample rate is always available
-local sampleRate = Options[Core.sampleRate]
-assert(sampleRate == 48000)
+local sampleRate = Options(Param.sampleRate)
+assert(sampleRate.body == 48000)
 
 -- only available if exported by host
-local sequenceSize = Options[Buf_Size.sequenceSize]
-local minBlockLength = Options[Buf_Size.minBlockLength]
-local maxBlockLength = Options[Buf_Size.maxBlockLength]</code></pre>
+local sequenceSize = Options(Buf_Size.sequenceSize)
+local minBlockLength = Options(Buf_Size.minBlockLength)
+local maxBlockLength = Options(Buf_Size.maxBlockLength)</code></pre>
 	</div>
 
 	<!-- Responder -->
@@ -3812,6 +3812,7 @@ assert(ascii85.decode(encoded) == value)</code></pre>
 
 local ctx = {
 	core =  HashMap('http://lv2plug.in/ns/lv2core#'),
+	param = HashMap('http://lv2plug.in/ns/ext/parameters#'),
 	atom =  HashMap('http://lv2plug.in/ns/ext/atom#'),
 	time =  HashMap('http://lv2plug.in/ns/ext/time#'),
 	midi =  HashMap('http://lv2plug.in/ns/ext/midi#'),
@@ -3819,7 +3820,7 @@ local ctx = {
 	patch = HashMap('http://lv2plug.in/ns/ext/patch#'),
 	units = HashMap('http://lv2plug.in/ns/extensions/units#'),
 	osc =   HashMap('http://open-music-kontrollers.ch/lv2/osc#'),
-	rdf =  HashMap('http://www.w3.org/1999/02/22-rdf-syntax-ns#'),
+	rdf =   HashMap('http://www.w3.org/1999/02/22-rdf-syntax-ns#'),
 	rdfs =   HashMap('http://www.w3.org/2000/01/rdf-schema#'),
 }
 
@@ -3882,8 +3883,10 @@ assert(OSC.Impulse == ctx.osc.Impulse)
 assert(OSC.Char == ctx.osc.Char)
 assert(OSC.RGBA == ctx.osc.RGBA)
 
+-- LV2 Param URID constants
+assert(Param.sampleRate == ctx.param.sampleRate)
+
 -- LV2 Core URID constants
-assert(Core.sampleRate == ctx.core.sampleRate)
 assert(Core.minimum == ctx.core.minimum)
 assert(Core.maximum == ctx.core.maximum)
 assert(Core.scalePoint == ctx.core.scalePoint)

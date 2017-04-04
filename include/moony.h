@@ -43,6 +43,7 @@
 #include <lv2/lv2plug.in/ns/ext/buf-size/buf-size.h>
 #include <lv2/lv2plug.in/ns/ext/options/options.h>
 #include <lv2/lv2plug.in/ns/ext/patch/patch.h>
+#include <lv2/lv2plug.in/ns/ext/parameters/parameters.h>
 #include <lv2/lv2plug.in/ns/lv2core/lv2.h>
 #include <lv2/lv2plug.in/ns/extensions/ui/ui.h>
 #include <lv2/lv2plug.in/ns/extensions/units/units.h>
@@ -216,6 +217,8 @@ struct _patch_t {
 struct _moony_t {
 	LV2_URID_Map *map;
 	LV2_URID_Unmap *unmap;
+	LV2_Options_Option *opts;
+
 	LV2_Atom_Forge forge;
 	LV2_Atom_Forge state_forge;
 	LV2_Atom_Forge stash_forge;
@@ -223,6 +226,8 @@ struct _moony_t {
 
 	LV2_Atom_Forge_Frame notify_frame;
 	LV2_Atom_Forge_Ref notify_ref;
+
+	double sample_rate;
 
 	struct {
 		LV2_URID moony_code;
@@ -241,11 +246,6 @@ struct _moony_t {
 		LV2_URID moony_syntax;
 
 		LV2_URID midi_event;
-
-		LV2_URID bufsz_max_block_length;
-		LV2_URID bufsz_min_block_length;
-		LV2_URID bufsz_sequence_size;
-		LV2_URID ui_update_rate;
 
 		patch_t patch;
 
@@ -267,14 +267,6 @@ struct _moony_t {
 		LV2_URID atom_beat_time;
 		LV2_URID atom_frame_time;
 	} uris;
-
-	struct {
-		uint32_t max_block_length;
-		uint32_t min_block_length;
-		uint32_t sequence_size;
-		float sample_rate;
-		float update_rate;
-	} opts;
 
 	LV2_OSC_URID osc_urid;
 	LV2_OSC_Schedule *osc_sched;

@@ -474,7 +474,6 @@ local osc_lib = lib_const('OSC', {
 })
 
 local core_lib = lib_const('Core', {
-	'sampleRate', --FIXME Properties
 	'minimum',
 	'maximum',
 	'scalePoint'
@@ -617,9 +616,13 @@ local lua_lib = lib_const('Lua', {
 	'lang'
 })
 
+local param_lib = lib_const('Param', {
+	'sampleRate'
+})
+
 local api_lib = atom_lib + midi_lib + time_lib + osc_lib + core_lib + bufsz_lib
 	+ patch_lib + rdfs_lib + rdf_lib + units_lib + ui_lib + canvas_lib + moony_lib
-	+ lua_lib
+	+ lua_lib + param_lib
 
 -- Field functions
 local field_func = token(T.OPERATOR, S('.:')) * token(T.FUNCTION, word_match{

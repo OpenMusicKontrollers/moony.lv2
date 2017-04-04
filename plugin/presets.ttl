@@ -678,7 +678,7 @@ local chord = {0, 3, 7, 11} -- table with chord note offsets
 local offset = 0.1 -- time offset between notes in seconds
 
 local schedule = {} -- table to store Note events
-local dur = math.floor(offset * Options[Core.sampleRate]) -- time offset in frames
+local dur = math.floor(offset * Options(Param.sampleRate).body) -- time offset in frames
 
 -- compare function to sort scheduled messages according to frame time
 local function cmp(a, b)

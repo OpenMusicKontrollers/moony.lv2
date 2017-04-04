@@ -138,6 +138,21 @@ int
 _latom_seq_multiplex_itr(lua_State *L);
 
 __realtime static inline latom_t *
+_latom_body_new(lua_State *L, const LV2_Atom *atom, const void *body, bool cache)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	latom_t *latom = moony_newuserdata(L, moony, MOONY_UDATA_ATOM, cache);
+	if(atom)
+	{
+		latom->atom = atom;
+		latom->body.raw = body;
+	}
+
+	return latom;
+}
+
+__realtime static inline latom_t *
 _latom_new(lua_State *L, const LV2_Atom *atom, bool cache)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));

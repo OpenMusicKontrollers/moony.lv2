@@ -296,7 +296,7 @@ _ltimeresponder(lua_State *L)
 
 	// TODO do we want to cache/reuse this, too?
 	timely_t *timely = lua_newuserdata(L, sizeof(timely_t)); // userdata
-	timely_init(timely, moony->map, moony->opts.sample_rate, mask,
+	timely_init(timely, moony->map, moony->sample_rate, mask,
 		_ltimeresponder_cb, L);
 	timely_set_multiplier(timely, multiplier);
 
