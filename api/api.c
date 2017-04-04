@@ -435,33 +435,26 @@ _log(lua_State *L)
 			lv2_log_trace(&moony->logger, "%s\n", res);
 	}
 
-	if(vm->nrt) // we're running in worker thread
+	// feedback to UI
+	if(!vm->trace_overflow)
 	{
-		//FIXME
-	}
-	else // we're running in rt-hread
-	{
-		// feedback to UI
-		if(!moony->trace_overflow)
+		char *end = strrchr(vm->trace, '\0'); // search end of string
+		if(end)
 		{
-			char *end = strrchr(moony->trace, '\0'); // search end of string
-			if(end)
+			const size_t sz = end - vm->trace + 1;
+			if(MOONY_MAX_TRACE_LEN - sz > len)
 			{
-				const size_t sz = end - moony->trace + 1;
-				if(MOONY_MAX_TRACE_LEN - sz > len)
+				if(end != vm->trace)
 				{
-					if(end != moony->trace)
-					{
-						*end++ = '\n'; // append to
-						*end = '\0';
-					}
-
-					snprintf(end, len + 1, "%s", res);
-					moony->trace_out = true; // set flag
+					*end++ = '\n'; // append to
+					*end = '\0';
 				}
-				else
-					moony->trace_overflow = true;
+
+				snprintf(end, len + 1, "%s", res);
+				vm->trace_out = true; // set flag
 			}
+			else
+				vm->trace_overflow = true;
 		}
 	}
 
@@ -2396,10 +2389,11 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 {
 	LV2_Atom_Forge *forge = &moony->notify_forge;
 	LV2_Atom_Forge_Ref ref = moony->notify_ref;
+	moony_vm_t *vm = moony->vm;
 
-	if(moony->trace_out)
+	if(vm->trace_out)
 	{
-		char *pch = strtok(moony->trace, "\n");
+		char *pch = strtok(vm->trace, "\n");
 		while(pch)
 		{
 			uint32_t len = strlen(pch);
@@ -2411,15 +2405,15 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 			pch = strtok(NULL, "\n");
 		}
 
-		moony->trace[0] = '\0';
-		moony->trace_out = false; // reset flag
+		vm->trace[0] = '\0';
+		vm->trace_out = false; // reset flag
 	}
 
-	if(moony->trace_overflow)
+	if(vm->trace_overflow)
 	{
 		if(moony->log)
 			lv2_log_trace(&moony->logger, "trace buffer overflow\n");
-		moony->trace_overflow = false; // reset flag
+		vm->trace_overflow = false; // reset flag
 	}
 
 	if(ref)

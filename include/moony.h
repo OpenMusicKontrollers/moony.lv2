@@ -71,7 +71,6 @@
 
 #define MOONY_MAX_CHUNK_LEN		0x20000 // 128KB
 #define MOONY_MAX_ERROR_LEN		0x800 // 2KB
-#define MOONY_MAX_TRACE_LEN		0x800 // 2KB
 
 #define MOONY_URI							"http://open-music-kontrollers.ch/lv2/moony"
 #define MOONY_PREFIX					MOONY_URI"#"
@@ -289,8 +288,6 @@ struct _moony_t {
 	bool props_out;
 	bool dirty_out;
 	bool error_out;
-	bool trace_out;
-	bool trace_overflow;
 
 	// udata cache
 	int itr [MOONY_UDATA_COUNT];
@@ -321,7 +318,6 @@ struct _moony_t {
 	char error [MOONY_MAX_ERROR_LEN];
 	atomic_uintptr_t err_new;
 
-	char trace [MOONY_MAX_TRACE_LEN];
 	char chunk [MOONY_MAX_CHUNK_LEN];
 	atomic_uintptr_t chunk_new;
 	char *chunk_nrt;

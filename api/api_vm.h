@@ -23,6 +23,7 @@
 
 // from vm.c
 #define MOONY_POOL_NUM 8
+#define MOONY_MAX_TRACE_LEN		0x800 // 2KB
 
 typedef enum _moony_job_enum_t moony_job_enum_t;
 typedef struct _moony_vm_t moony_vm_t;
@@ -39,10 +40,12 @@ struct _moony_vm_t {
 	size_t used;
 
 	lua_State *L;
-
 	bool nrt;
-
 	void *data;
+
+	bool trace_out;
+	bool trace_overflow;
+	char trace [MOONY_MAX_TRACE_LEN];
 };
 
 enum _moony_job_enum_t {
