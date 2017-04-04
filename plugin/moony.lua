@@ -25,8 +25,7 @@ local comment = token(l.COMMENT, block_comment + line_comment)
 -- Strings.
 local sq_str = l.delimited_range("'", true, false, true)
 local dq_str = l.delimited_range('"', true, false, true)
-local string = token(l.STRING, sq_str + dq_str) +
-               token('longstring', longstring)
+local string = token(l.STRING, sq_str + dq_str + longstring)
 
 -- Numbers.
 local lua_integer = P('-')^-1 * (l.hex_num + l.dec_num)
@@ -173,34 +172,6 @@ M._rules = {
   {'comment', comment},
   {'number', number},
   {'operator', operator + braces}
-}
-
-M._tokenstyles = {
-  longstring = l.STYLE_STRING,
-  library = l.STYLE_TYPE,
-}
-
-local function fold_longcomment(text, pos, line, s, match)
-  if match == '[' then
-    if line:find('^%[=*%[', s) then return 1 end
-  elseif match == ']' then
-    if line:find('^%]=*%]', s) then return -1 end
-  end
-  return 0
-end
-
-M._foldsymbols = {
-  _patterns = {'%l+', '[%({%)}]', '[%[%]]', '%-%-'},
-  [l.KEYWORD] = {
-    ['if'] = 1, ['do'] = 1, ['function'] = 1, ['end'] = -1, ['repeat'] = 1,
-    ['until'] = -1
-  },
-  [l.COMMENT] = {
-    ['['] = fold_longcomment, [']'] = fold_longcomment,
-    ['--'] = l.fold_line_comments('--')
-  },
-  longstring = {['['] = 1, [']'] = -1},
-  [l.OPERATOR] = {['('] = 1, ['{'] = 1, [')'] = -1, ['}'] = -1}
 }
 
 return M
