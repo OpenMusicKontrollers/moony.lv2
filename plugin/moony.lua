@@ -130,14 +130,18 @@ local func = token(T.FUNCTION, word_match{
 	'OSCResponder',
 	'TimeResponder',
 	'StateResponder',
-	'Map',
-	'Unmap',
 	'VoiceMap',
 	'Stash',
-	'Note',
 	'HashMap',
 	'Parameter',
-	'Options'
+})
+
+-- Functions.
+local tabs = token(T.LIBRARY, word_match{
+	'Options',
+	'Note',
+	'Map',
+	'Unmap'
 })
 
 local function lib_func(name, keys)
@@ -757,7 +761,7 @@ M._rules = {
   {'constant', constant + field_constant},
   {'function', func + field_func},
   {'binops', binops},
-  {'library', lpeg_lib + string_lib + coroutine_lib + utf8_lib + table_lib + math_lib + debug_lib + base64_lib + ascii85_lib + aes128_lib + api_lib},
+  {'library', tabs + lpeg_lib + string_lib + coroutine_lib + utf8_lib + table_lib + math_lib + debug_lib + base64_lib + ascii85_lib + aes128_lib + api_lib},
   {'label', label + self},
   {'identifier', identifier},
   {'string', string},
