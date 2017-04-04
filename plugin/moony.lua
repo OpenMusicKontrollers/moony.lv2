@@ -6,10 +6,25 @@ local l = require('lexer')
 local token, word_match = l.token, l.word_match
 local P, R, S = lpeg.P, lpeg.R, lpeg.S
 
+local T = {
+	WHITESPACE	= 0xdddddd,
+	KEYWORD			= 0x00698f,
+	FUNCTION		= 0x00aeef,
+	CONSTANT		= 0xff6600,
+	LIBRARY			= 0x8dff0a,
+	IDENTIFIER	= 0xdddddd,
+	STRING			= 0x58c554,
+	COMMENT			= 0x555555,
+	NUMBER			= 0xfbfb00,
+	LABEL				= 0xfdc251,
+	OPERATOR		= 0xcc0000,
+	BRACE				= 0xffffff
+}
+
 local M = {_NAME = 'moony'}
 
 -- Whitespace.
-local ws = token(l.WHITESPACE, l.space^1)
+local ws = token(T.WHITESPACE, l.space^1)
 
 local longstring = lpeg.Cmt('[' * lpeg.C(P('=')^0) * '[', function(input, index, eq)
 	local _, e = input:find(']'..eq..']', index, true)
@@ -19,19 +34,19 @@ end)
 -- Comments.
 local line_comment = '--' * l.nonnewline ^0
 local block_comment = '--' * longstring
-local comment = token(l.COMMENT, block_comment + line_comment)
+local comment = token(T.COMMENT, block_comment + line_comment)
 
 -- Strings.
 local sq_str = l.delimited_range("'", true, false, true)
 local dq_str = l.delimited_range('"', true, false, true)
-local string = token(l.STRING, sq_str + dq_str + longstring)
+local string = token(T.STRING, sq_str + dq_str + longstring)
 
 -- Numbers.
 local lua_integer = P('-')^-1 * (l.hex_num + l.dec_num)
-local number = token(l.NUMBER, l.float + lua_integer)
+local number = token(T.NUMBER, l.float + lua_integer)
 
 -- Keywords.
-local keyword = token(l.KEYWORD, word_match{
+local keyword = token(T.KEYWORD, word_match{
 	'while',
 	'do',
 	'end',
@@ -51,7 +66,7 @@ local keyword = token(l.KEYWORD, word_match{
 })
 
 -- Functions.
-local func = token(l.FUNCTION, word_match{
+local func = token(T.FUNCTION, word_match{
 	-- Lua basic
 	'collectgarbage',
 	'error',
@@ -131,7 +146,7 @@ local function lib_func(name, keys)
 		local pat = P(v)
 		post = post and (post + pat) or pat
 	end
-	return token('library', P(name)) * (token(l.OPERATOR, S('.')) * token(l.FUNCTION, post))^-1
+	return token(T.LIBRARY, P(name)) * (token(T.OPERATOR, S('.')) * token(T.FUNCTION, post))^-1
 end
 
 local function lib_const(name, keys)
@@ -140,7 +155,7 @@ local function lib_const(name, keys)
 		local pat = P(v)
 		post = post and (post + pat) or pat
 	end
-	return token('library', P(name)) * (token(l.OPERATOR, S('.')) * token(l.CONSTANT, post))^-1
+	return token(T.LIBRARY, P(name)) * (token(T.OPERATOR, S('.')) * token(T.CONSTANT, post))^-1
 end
 
 local lpeg_lib_func = lib_func('lpeg', {
@@ -607,7 +622,7 @@ local api_lib = atom_lib + midi_lib + time_lib + osc_lib + core_lib + bufsz_lib
 	+ lua_lib
 
 -- Field functions
-local field_func = token(l.OPERATOR, S('.:')) * token(l.FUNCTION, word_match{
+local field_func = token(T.OPERATOR, S('.:')) * token(T.FUNCTION, word_match{
 	-- moony primitive
 	'frameTime',
 	'beatTime',
@@ -693,7 +708,7 @@ local field_func = token(l.OPERATOR, S('.:')) * token(l.FUNCTION, word_match{
 })
 
 -- Constants.
-local constant = token(l.CONSTANT, word_match{
+local constant = token(T.CONSTANT, word_match{
   'true',
 	'false',
 	'nil',
@@ -702,7 +717,7 @@ local constant = token(l.CONSTANT, word_match{
 })
 
 -- Field constants.
-local field_constant = token(l.OPERATOR, P('.')) * token(l.CONSTANT, word_match{
+local field_constant = token(T.OPERATOR, P('.')) * token(T.CONSTANT, word_match{
 	-- moony primitive
 	'type',
 	'body',
@@ -722,16 +737,16 @@ local field_constant = token(l.OPERATOR, P('.')) * token(l.CONSTANT, word_match{
 })
 
 -- Identifiers.
-local identifier = token(l.IDENTIFIER, l.word)
+local identifier = token(T.IDENTIFIER, l.word)
 
 -- Labels.
-local label = token(l.LABEL, '::' * l.word * '::')
-local self = token(l.LABEL, P('self'))
+local label = token(T.LABEL, '::' * l.word * '::')
+local self = token(T.LABEL, P('self'))
 
 -- Operators.
-local binops = token('binop', word_match{'and', 'or', 'not'})
-local operator = token(l.OPERATOR, S('+-*/%^#=<>&|~;:,.'))
-local braces = token('brace', S('{}[]()'))
+local binops = token(T.OPERATOR, word_match{'and', 'or', 'not'})
+local operator = token(T.OPERATOR, S('+-*/%^#=<>&|~;:,.'))
+local braces = token(T.BRACE, S('{}[]()'))
 
 M._rules = {
   {'whitespace', ws},

@@ -95,62 +95,6 @@ pre {
 	padding:1em;
 	border:1px solid #414141;
 }
-
-span.whitespace {
-	color:#dddddd;
-}
-
-span.keyword {
-	color:#00698f;
-}
-
-span.function {
-	color:#00aeef;
-}
-
-span.constant {
-	color:#ff6600;
-}
-
-span.library {
-	color:#8dff0a;
-}
-
-span.table {
-	color:#8dff0a;
-}
-
-span.identifier {
-	color:#dddddd;
-}
-
-span.string {
-	color:#58c554;
-}
-
-span.comment {
-	color:#555555;
-}
-
-span.number {
-	color:#fbfb00;
-}
-
-span.label {
-	color:#fdc251;
-}
-
-span.binop {
-	color:#cc0000;
-}
-
-span.operator {
-	color:#cc0000;
-}
-
-span.brace {
-	color:#ffffff
-}
 </style>
 </head>
 

@@ -39,7 +39,7 @@ local function parse(pin)
 			sub = string.gsub(sub, '\t', '  ')
 
 			if token then
-				ret = ret .. string.format('<span class="%s">%s</span>', token, sub)
+				ret = ret .. string.format('<span style="color:#%06x;"">%s</span>', token, sub)
 			else
 				ret = ret .. sub
 			end

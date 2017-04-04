@@ -1384,40 +1384,12 @@ _lex(void *data, const char *code, int code_sz)
 				struct nk_token *token = &tokens[i/2];
 
 				lua_rawgeti(L, -1, i + 1);
-				const char *token_str = luaL_checkstring(L, -1);
+				const nk_uint token_col = luaL_checkinteger(L, -1);
+				token->color = nk_rgb(
+					(token_col >> 16) & 0xff, 
+					(token_col >>  8) & 0xff,
+					(token_col >>  0) & 0xff);
 				lua_pop(L, 1);
-
-				//TODO cache colors
-				if(!strcmp(token_str, "whitespace"))
-					token->color = nk_rgb(0xdd, 0xdd, 0xdd);
-				else if(!strcmp(token_str, "keyword"))
-					token->color = nk_rgb(0x00, 0x69, 0x8f);
-				else if(!strcmp(token_str, "function"))
-					token->color = nk_rgb(0x00, 0xae, 0xef);
-				else if(!strcmp(token_str, "constant"))
-					token->color = nk_rgb(0xff, 0x66, 0x00);
-				else if(!strcmp(token_str, "library"))
-					token->color = nk_rgb(0x8d, 0xff, 0x0a);
-				else if(!strcmp(token_str, "table"))
-					token->color = nk_rgb(0x8d, 0xff, 0x0a);
-				else if(!strcmp(token_str, "identifier"))
-					token->color = nk_rgb(0xdd, 0xdd, 0xdd);
-				else if(!strcmp(token_str, "string"))
-					token->color = nk_rgb(0x58, 0xc5, 0x54);
-				else if(!strcmp(token_str, "comment"))
-					token->color = nk_rgb(0x55, 0x55, 0x55);
-				else if(!strcmp(token_str, "number"))
-					token->color = nk_rgb(0xfb, 0xfb, 0x00);
-				else if(!strcmp(token_str, "label"))
-					token->color = nk_rgb(0xfd, 0xc2, 0x51);
-				else if(!strcmp(token_str, "binop"))
-					token->color = nk_rgb(0xcc, 0x00, 0x00);
-				else if(!strcmp(token_str, "operator"))
-					token->color = nk_rgb(0xcc, 0x00, 0x00);
-				else if(!strcmp(token_str, "brace"))
-					token->color = nk_rgb(0xff, 0xff, 0xff);
-				else
-					token->color = nk_rgb(0xdd, 0xdd, 0xdd);
 
 				lua_rawgeti(L, -1, i + 2);
 				const int token_offset = luaL_checkinteger(L, -1);
