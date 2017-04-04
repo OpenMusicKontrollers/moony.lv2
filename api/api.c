@@ -2068,10 +2068,20 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 	moony_vm_t *vm_new = (moony_vm_t *)atomic_exchange_explicit(&moony->vm_new, 0, memory_order_relaxed);
 	if(vm_new)
 	{
+		lua_State *L = moony_current(moony);
+
+		// stash
+		lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_STASH);
+		if(lua_pcall(L, 0, 0, 0))
+			moony_error(moony);
+#ifdef USE_MANUAL_GC
+		lua_gc(L, LUA_GCSTEP, 0);
+#endif
+
+		// switch VM states
 		moony_vm_t *vm_old = moony->vm;
 		moony->vm = vm_new;
-
-		lua_State *L = moony_current(moony);
+		L = moony_current(moony);
 
 		if(moony->state_atom)
 		{
@@ -2248,14 +2258,6 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 			{
 				if( (property->body == moony->uris.moony_code) && (value->type == forge->String) )
 				{
-					// stash
-					lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_STASH);
-					if(lua_pcall(L, 0, 0, 0))
-						moony_error(moony);
-#ifdef USE_MANUAL_GC
-					lua_gc(L, LUA_GCSTEP, 0);
-#endif
-
 					// send code to worker thread
 					const size_t sz = sizeof(moony_job_t) + value->size;
 					moony_job_t *req;
