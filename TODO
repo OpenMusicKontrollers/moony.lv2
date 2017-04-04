@@ -7,3 +7,4 @@
 * doc: Parameter
 * api: simplify forge:vector
 * api: simplify forge:set
+* api: design Options interface as function
