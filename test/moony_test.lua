@@ -1295,14 +1295,14 @@ do
 		local remove = patch:remove()
 		remove:key(RDFS.label):urid(Patch.wildcard)
 		remove:key(RDFS.range):urid(Patch.wildcard)
-		remove:key(Core.minimum):urid(Patch.wildcard)
-		remove:key(Core.maximum):urid(Patch.wildcard)
+		remove:key(LV2.minimum):urid(Patch.wildcard)
+		remove:key(LV2.maximum):urid(Patch.wildcard)
 		remove:pop()
 		local add = patch:add()
 		add:key(RDFS.label):string('A dummy label')
 		add:key(RDFS.range):urid(Atom.Int)
-		add:key(Core.minimum):int(0)
-		add:key(Core.maximum):int(10)
+		add:key(LV2.minimum):int(0)
+		add:key(LV2.maximum):int(10)
 		add:pop()
 		patch:pop()
 
@@ -1369,12 +1369,12 @@ do
 		assert(patch[Patch.sequenceNumber].body == rtid)
 		assert(patch[Patch.remove][RDFS.label].body == Patch.wildcard)
 		assert(patch[Patch.remove][RDFS.range].body == Patch.wildcard)
-		assert(patch[Patch.remove][Core.minimum].body == Patch.wildcard)
-		assert(patch[Patch.remove][Core.maximum].body == Patch.wildcard)
+		assert(patch[Patch.remove][LV2.minimum].body == Patch.wildcard)
+		assert(patch[Patch.remove][LV2.maximum].body == Patch.wildcard)
 		assert(patch[Patch.add][RDFS.label].body == 'A dummy label')
 		assert(patch[Patch.add][RDFS.range].body == Atom.Int)
-		assert(patch[Patch.add][Core.minimum].body == 0)
-		assert(patch[Patch.add][Core.maximum].body == 10)
+		assert(patch[Patch.add][LV2.minimum].body == 0)
+		assert(patch[Patch.add][LV2.maximum].body == 10)
 
 		local put = seq[7]
 		assert(put.type == Atom.Object)
@@ -1421,8 +1421,8 @@ do
 	local state_int = Parameter{
 		[RDFS.label] = 'Int',
 		[RDFS.range] = Atom.Int,
-		[Core.minimum] = 0,
-		[Core.maximum] = 10,
+		[LV2.minimum] = 0,
+		[LV2.maximum] = 10,
 		[RDF.value] = 2
 	}
 
@@ -1434,8 +1434,8 @@ do
 	local state_flt = Parameter{
 		[RDFS.label] = 'Flt',
 		[RDFS.range] = Atom.Float,
-		[Core.minimum] = -0.5,
-		[Core.maximum] = 10.0,
+		[LV2.minimum] = -0.5,
+		[LV2.maximum] = 10.0,
 		_value = 1.0,
 		[Patch.Get] = function(self)
 			flt_get_responded = true

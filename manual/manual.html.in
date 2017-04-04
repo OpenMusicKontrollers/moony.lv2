@@ -3420,8 +3420,8 @@ local period = Parameter{
 	[RDFS.label] = 'Period',
 	[RDFS.comment] = 'set period',
 	[RDFS.range] = Atom.Float,
-	[Core.minimum] = 1.0,
-	[Core.maximum] = 10.0,
+	[LV2.minimum] = 1.0,
+	[LV2.maximum] = 10.0,
 	[Units.unit] = Units.s,
 	[RDF.value] = 5.0
 }
@@ -3431,8 +3431,8 @@ local frequency = Parameter{
 	[RDFS.label] = 'Frequency',
 	[RDFS.comment] = 'set frequency',
 	[RDFS.range] = Atom.Int,
-	[Core.minimum] = 1,
-	[Core.maximum] = 48000,
+	[LV2.minimum] = 1,
+	[LV2.maximum] = 48000,
 	[Units.unit] = Units.hz,
 	[RDF.value] = 44100
 }
@@ -3535,16 +3535,16 @@ end</code></pre>
 local foo = Parameter({
 	[RDFS.label] = 'Foo',
 	[RDFS.range] = Atom.Float,
-	[Core.minimum] = 0.0,
-	[Core.maximum] = 1.0,
+	[LV2.minimum] = 0.0,
+	[LV2.maximum] = 1.0,
 	[RDF.value] = 0.5
 })
 
 local bar = Parameter({
 	[RDFS.label] = 'Bar',
 	[RDFS.range] = Atom.Int,
-	[Core.minimum] = 0,
-	[Core.maximum] = 10,
+	[LV2.minimum] = 0,
+	[LV2.maximum] = 10,
 	[RDF.value] = 5
 })
 
@@ -3811,17 +3811,19 @@ assert(ascii85.decode(encoded) == value)</code></pre>
 		<pre><code data-ref="constants">-- Constants
 
 local ctx = {
-	core =  HashMap('http://lv2plug.in/ns/lv2core#'),
+	lv2   = HashMap('http://lv2plug.in/ns/lv2core#'),
 	param = HashMap('http://lv2plug.in/ns/ext/parameters#'),
-	atom =  HashMap('http://lv2plug.in/ns/ext/atom#'),
-	time =  HashMap('http://lv2plug.in/ns/ext/time#'),
-	midi =  HashMap('http://lv2plug.in/ns/ext/midi#'),
+	atom  = HashMap('http://lv2plug.in/ns/ext/atom#'),
+	time  = HashMap('http://lv2plug.in/ns/ext/time#'),
+	midi  = HashMap('http://lv2plug.in/ns/ext/midi#'),
 	bufsz = HashMap('http://lv2plug.in/ns/ext/buf-size#'),
 	patch = HashMap('http://lv2plug.in/ns/ext/patch#'),
 	units = HashMap('http://lv2plug.in/ns/extensions/units#'),
-	osc =   HashMap('http://open-music-kontrollers.ch/lv2/osc#'),
-	rdf =   HashMap('http://www.w3.org/1999/02/22-rdf-syntax-ns#'),
-	rdfs =   HashMap('http://www.w3.org/2000/01/rdf-schema#'),
+	osc   = HashMap('http://open-music-kontrollers.ch/lv2/osc#'),
+	rdf   = HashMap('http://www.w3.org/1999/02/22-rdf-syntax-ns#'),
+	rdfs  = HashMap('http://www.w3.org/2000/01/rdf-schema#'),
+	moony = HashMap('http://open-music-kontrollers.ch/lv2/moony#'),
+	lua   = HashMap('http://lua.org#'),
 }
 
 -- Atom URID constants
@@ -3886,10 +3888,10 @@ assert(OSC.RGBA == ctx.osc.RGBA)
 -- LV2 Param URID constants
 assert(Param.sampleRate == ctx.param.sampleRate)
 
--- LV2 Core URID constants
-assert(Core.minimum == ctx.core.minimum)
-assert(Core.maximum == ctx.core.maximum)
-assert(Core.scalePoint == ctx.core.scalePoint)
+-- LV2 LV2 URID constants
+assert(LV2.minimum == ctx.lv2.minimum)
+assert(LV2.maximum == ctx.lv2.maximum)
+assert(LV2.scalePoint == ctx.lv2.scalePoint)
 
 -- Buffer size URID constants
 assert(Buf_Size.minBlockLength == ctx.bufsz.minBlockLength)
@@ -3965,7 +3967,14 @@ assert(Units.render == ctx.units.render)
 assert(Units.s == ctx.units.s)
 assert(Units.semitone12TET == ctx.units.semitone12TET)
 assert(Units.symbol == ctx.units.symbol)
-assert(Units.unit == ctx.units.unit)</code></pre>
+assert(Units.unit == ctx.units.unit)
+
+-- Moony URID constants
+assert(Moony.color == ctx.moony.color)
+assert(Moony.syntax == ctx.moony.syntax)
+
+-- Lua URID constants
+assert(Lua.lang == ctx.lua.lang)</code></pre>
 	</div>
 
 	<div class="api-section">

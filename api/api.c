@@ -1530,7 +1530,7 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 		SET_MAP(L, LV2_CORE__, maximum);
 		SET_MAP(L, LV2_CORE__, scalePoint);
 	}
-	lua_setglobal(L, "Core");
+	lua_setglobal(L, "LV2");
 
 	lua_newtable(L);
 	{

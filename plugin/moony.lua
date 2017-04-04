@@ -473,7 +473,7 @@ local osc_lib = lib_const('OSC', {
 	'RGBA'
 })
 
-local core_lib = lib_const('Core', {
+local core_lib = lib_const('LV2', {
 	'minimum',
 	'maximum',
 	'scalePoint'

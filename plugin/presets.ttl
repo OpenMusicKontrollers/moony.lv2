@@ -333,8 +333,8 @@ local pInt = Parameter{
   [RDFS.comment] = 'This is an Integer',
   [RDFS.range] = Atom.Int,
   [Units.unit] = Units.hz,
-  [Core.minimum] = 0,
-  [Core.maximum] = 10,
+  [LV2.minimum] = 0,
+  [LV2.maximum] = 10,
 	_value = 5,
 	[Patch.Get] = function(self)
 		return self._value
@@ -351,8 +351,8 @@ pLong = Parameter{
   [RDFS.comment] = 'This is a Long',
   [RDFS.range] = Atom.Long,
   [Units.unit] = Units.hz,
-  [Core.minimum] = pInt[Core.minimum] * 2,
-  [Core.maximum] = pInt[Core.maximum] * 2,
+  [LV2.minimum] = pInt[LV2.minimum] * 2,
+  [LV2.maximum] = pInt[LV2.maximum] * 2,
   [RDF.value] = pInt[RDF.value] * 2
 }
 
@@ -362,8 +362,8 @@ local pFloat = Parameter{
   [RDFS.comment] = 'This is a Float',
   [RDFS.range] = Atom.Float,
   [Units.unit] = Units.m,
-  [Core.minimum] = -1.0,
-  [Core.maximum] = 1.0,
+  [LV2.minimum] = -1.0,
+  [LV2.maximum] = 1.0,
 	_value = 0.0,
 	[Patch.Get] = function(self)
 		return self._value
@@ -380,8 +380,8 @@ pDouble = Parameter{
   [RDFS.comment] = 'This is a Double',
   [RDFS.range] = Atom.Double,
   [Units.unit] = Units.m,
-  [Core.minimum] = pFloat[Core.minimum] * 2,
-  [Core.maximum] = pFloat[Core.maximum] * 2,
+  [LV2.minimum] = pFloat[LV2.minimum] * 2,
+  [LV2.maximum] = pFloat[LV2.maximum] * 2,
   [RDF.value] = pFloat[RDF.value] * 2
 }
 
@@ -427,9 +427,9 @@ local pEnum = Parameter{
   [RDFS.comment] = 'This is an Enum',
   [RDFS.range] = Atom.Int,
   [RDF.value] = 0,
-  [Core.minimum] = 0,
-  [Core.maximum] = 2,
-  [Core.scalePoint] = {
+  [LV2.minimum] = 0,
+  [LV2.maximum] = 2,
+  [LV2.scalePoint] = {
     zero = 0,
     one = 1,
     two = 2
@@ -1100,8 +1100,8 @@ local param = Parameter({
 	[RDFS.label] = 'Awesome Parameter',
 	[RDFS.comment] = 'does this and that...',
 	[RDFS.range] = Atom.Int,
-	[Core.minimum] = 0,
-	[Core.maximum] = 10,
+	[LV2.minimum] = 0,
+	[LV2.maximum] = 10,
 	[Units.unit] = Units.hz,
 	[RDF.value] = 5
 })
