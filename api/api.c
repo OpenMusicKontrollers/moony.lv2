@@ -623,7 +623,7 @@ _state_save(LV2_Handle instance,
 	const int32_t minor_version = MOONY_MINOR_VERSION;
 	status = store(
 		state,
-		moony->uris.core_minor_version,
+		moony->uris.lv2_minor_version,
 		&minor_version,
 		sizeof(int32_t),
 		moony->forge.Int,
@@ -633,7 +633,7 @@ _state_save(LV2_Handle instance,
 	const int32_t micro_version = MOONY_MICRO_VERSION;
 	status = store(
 		state,
-		moony->uris.core_micro_version,
+		moony->uris.lv2_micro_version,
 		&micro_version,
 		sizeof(int32_t),
 		moony->forge.Int,
@@ -826,7 +826,7 @@ _state_restore(LV2_Handle instance,
 	// get minor version
 	const int32_t *minor_version = retrieve(
 		state,
-		moony->uris.core_minor_version,
+		moony->uris.lv2_minor_version,
 		&size,
 		&type,
 		&flags2);
@@ -836,7 +836,7 @@ _state_restore(LV2_Handle instance,
 	// get micro version
 	const int32_t *micro_version = retrieve(
 		state,
-		moony->uris.core_micro_version,
+		moony->uris.lv2_micro_version,
 		&size,
 		&type,
 		&flags2);
@@ -1261,11 +1261,11 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 
 	moony->uris.rdf_value = moony->map->map(moony->map->handle, RDF__value);
 
-	moony->uris.core_minimum = moony->map->map(moony->map->handle, LV2_CORE__minimum);
-	moony->uris.core_maximum = moony->map->map(moony->map->handle, LV2_CORE__maximum);
-	moony->uris.core_scale_point = moony->map->map(moony->map->handle, LV2_CORE__scalePoint);
-	moony->uris.core_minor_version= moony->map->map(moony->map->handle, LV2_CORE__minorVersion);
-	moony->uris.core_micro_version= moony->map->map(moony->map->handle, LV2_CORE__microVersion);
+	moony->uris.lv2_minimum = moony->map->map(moony->map->handle, LV2_CORE__minimum);
+	moony->uris.lv2_maximum = moony->map->map(moony->map->handle, LV2_CORE__maximum);
+	moony->uris.lv2_scale_point = moony->map->map(moony->map->handle, LV2_CORE__scalePoint);
+	moony->uris.lv2_minor_version= moony->map->map(moony->map->handle, LV2_CORE__minorVersion);
+	moony->uris.lv2_micro_version= moony->map->map(moony->map->handle, LV2_CORE__microVersion);
 
 	moony->uris.units_unit = moony->map->map(moony->map->handle, LV2_UNITS__unit);
 	moony->uris.units_symbol = moony->map->map(moony->map->handle, LV2_UNITS__symbol);

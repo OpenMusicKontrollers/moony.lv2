@@ -254,11 +254,11 @@ struct _moony_t {
 
 		LV2_URID rdf_value;
 
-		LV2_URID core_minimum;
-		LV2_URID core_maximum;
-		LV2_URID core_scale_point;
-		LV2_URID core_minor_version;
-		LV2_URID core_micro_version;
+		LV2_URID lv2_minimum;
+		LV2_URID lv2_maximum;
+		LV2_URID lv2_scale_point;
+		LV2_URID lv2_minor_version;
+		LV2_URID lv2_micro_version;
 
 		LV2_URID units_unit;
 		LV2_URID units_symbol;
