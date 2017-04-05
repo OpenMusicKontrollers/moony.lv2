@@ -831,6 +831,75 @@ _latom_vec__tostring(lua_State *L, latom_t *latom)
 	return 1;
 }
 
+__realtime static int
+_latom_vec_value(lua_State *L, latom_t *latom)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	const int n = (latom->atom->size - sizeof(LV2_Atom_Vector_Body))
+		/ latom->body.vec->child_size;
+	const void *ptr = LV2_ATOM_VECTOR_BODY_ITEM_CONST(latom->body.vec, 0);
+
+	lua_createtable(L, n, 0);
+
+	if(latom->body.vec->child_type == moony->forge.Bool)
+	{
+		const int32_t *i32 = ptr;
+		for(int i=0; i<n; i++)
+		{
+			lua_pushboolean(L, i32[i]);
+			lua_rawseti(L, -2, i+1);
+		}
+	}
+	else if(latom->body.vec->child_type == moony->forge.Int)
+	{
+		const int32_t *i32 = ptr;
+		for(int i=0; i<n; i++)
+		{
+			lua_pushinteger(L, i32[i]);
+			lua_rawseti(L, -2, i+1);
+		}
+	}
+	else if(latom->body.vec->child_type == moony->forge.URID)
+	{
+		const uint32_t *u32 = ptr;
+		for(int i=0; i<n; i++)
+		{
+			lua_pushinteger(L, u32[i]);
+			lua_rawseti(L, -2, i+1);
+		}
+	}
+	else if(latom->body.vec->child_type == moony->forge.Long)
+	{
+		const int64_t *i64 = ptr;
+		for(int i=0; i<n; i++)
+		{
+			lua_pushinteger(L, i64[i]);
+			lua_rawseti(L, -2, i+1);
+		}
+	}
+	else if(latom->body.vec->child_type == moony->forge.Float)
+	{
+		const float *f32 = ptr;
+		for(int i=0; i<n; i++)
+		{
+			lua_pushnumber(L, f32[i]);
+			lua_rawseti(L, -2, i+1);
+		}
+	}
+	else if(latom->body.vec->child_type == moony->forge.Double)
+	{
+		const double *f64 = ptr;
+		for(int i=0; i<n; i++)
+		{
+			lua_pushnumber(L, f64[i]);
+			lua_rawseti(L, -2, i+1);
+		}
+	}
+
+	return 1;
+}
+
 __realtime int
 _latom_vec_unpack(lua_State *L)
 {
@@ -839,7 +908,7 @@ _latom_vec_unpack(lua_State *L)
 	const int count = (latom->atom->size - sizeof(LV2_Atom_Vector_Body))
 		/ latom->body.vec->child_size;
 
-	int n = lua_gettop(L);
+	const int n = lua_gettop(L);
 	int min = 1;
 	int max = count;
 
@@ -921,6 +990,7 @@ const latom_driver_t latom_vector_driver = {
 	.__indexk = _latom_vec__indexk,
 	.__len = _latom_vec__len,
 	.__tostring = _latom_vec__tostring,
+	.value = _latom_vec_value,
 	.unpack = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_VECTOR_UNPACK,
 	.foreach = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_VECTOR_FOREACH
 };

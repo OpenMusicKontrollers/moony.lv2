@@ -1272,6 +1272,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 
 	moony->uris.atom_frame_time = moony->map->map(moony->map->handle, LV2_ATOM__frameTime);
 	moony->uris.atom_beat_time = moony->map->map(moony->map->handle, LV2_ATOM__beatTime);
+	moony->uris.atom_child_type = moony->map->map(moony->map->handle, LV2_ATOM__childType);
 
 	lv2_canvas_urid_init(&moony->canvas_urid, moony->map);
 
@@ -1507,6 +1508,7 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 		SET_MAP(L, LV2_ATOM__, Vector);
 		SET_MAP(L, LV2_ATOM__, beatTime);
 		SET_MAP(L, LV2_ATOM__, frameTime);
+		SET_MAP(L, LV2_ATOM__, childType);
 	}
 	lua_setglobal(L, "Atom");
 

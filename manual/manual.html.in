@@ -3855,6 +3855,7 @@ assert(Atom.Tuple == ctx.atom.Tuple)
 assert(Atom.Vector == ctx.atom.Vector)
 assert(Atom.beatTime == ctx.atom.beatTime)
 assert(Atom.frameTime == ctx.atom.frameTime)
+assert(Atom.childType == ctx.atom.childType)
 
 -- Time URID constants
 assert(Time.Position == ctx.time.Position)

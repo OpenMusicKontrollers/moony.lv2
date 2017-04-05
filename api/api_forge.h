@@ -42,7 +42,8 @@ struct _lforge_t {
 };
 
 LV2_Atom_Forge_Ref
-_lforge_basic(lua_State *L, int pos, LV2_Atom_Forge *forge, LV2_URID range);
+_lforge_basic(lua_State *L, int pos, LV2_Atom_Forge *forge,
+	LV2_URID range, LV2_URID child_type);
 
 int
 _lforge_autopop_itr(lua_State *L);

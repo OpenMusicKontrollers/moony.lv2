@@ -36,6 +36,7 @@ _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 
 		const char *label = ""; // fallback
 		LV2_URID range = 0; // fallback
+		LV2_URID child_type = 0; // fallback
 
 		if(lua_geti(L, -1, moony->uris.rdfs_label) == LUA_TSTRING)
 			label = lua_tostring(L, -1);
@@ -44,6 +45,10 @@ _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 		if(lua_geti(L, -1, moony->uris.rdfs_range) == LUA_TNUMBER)
 			range = lua_tointeger(L, -1);
 		lua_pop(L, 1); // range
+
+		if(lua_geti(L, -1, moony->uris.atom_child_type) == LUA_TNUMBER)
+			child_type= lua_tointeger(L, -1);
+		lua_pop(L, 1); // child_type
 
 		if(  !lv2_atom_forge_frame_time(lforge->forge, frames)
 		  || !lv2_atom_forge_object(lforge->forge, &obj_frame, 0, moony->uris.patch.patch) )
@@ -154,10 +159,14 @@ _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 				}
 				lua_pop(L, 1); // comment
 
+				const LV2_URID range2 = (range == lforge->forge->Vector)
+					? child_type
+					: range;
+
 				if(lua_geti(L, -1, moony->uris.lv2_minimum) != LUA_TNIL)
 				{
 					if(  !lv2_atom_forge_key(lforge->forge, moony->uris.lv2_minimum)
-						|| !_lforge_basic(L, -1, lforge->forge, range) )
+						|| !_lforge_basic(L, -1, lforge->forge, range2, 0) )
 						luaL_error(L, forge_buffer_overflow);
 				}
 				lua_pop(L, 1); // minimum
@@ -165,7 +174,7 @@ _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 				if(lua_geti(L, -1, moony->uris.lv2_maximum) != LUA_TNIL)
 				{
 					if(  !lv2_atom_forge_key(lforge->forge, moony->uris.lv2_maximum)
-						|| !_lforge_basic(L, -1, lforge->forge, range) )
+						|| !_lforge_basic(L, -1, lforge->forge, range2, 0) )
 						luaL_error(L, forge_buffer_overflow);
 				}
 				lua_pop(L, 1); // maximum
@@ -229,7 +238,7 @@ _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 							|| !lv2_atom_forge_string(lforge->forge, point, point_size)
 
 							|| !lv2_atom_forge_key(lforge->forge, moony->uris.rdf_value)
-							|| !_lforge_basic(L, -1, lforge->forge, range) )
+							|| !_lforge_basic(L, -1, lforge->forge, range, 0) )
 							luaL_error(L, forge_buffer_overflow);
 						
 						lv2_atom_forge_pop(lforge->forge, &scale_point_frame); // core:scalePoint
@@ -435,11 +444,17 @@ _lstateresponder__call(lua_State *L)
 				if(found_it)
 				{
 					LV2_URID range = 0; // fallback
+					LV2_URID child_type = 0; //fallback
 
 					// get atom type
 					if(lua_geti(L, -1, moony->uris.rdfs_range) == LUA_TNUMBER)
 						range = lua_tointeger(L, -1);
 					lua_pop(L, 1); // range
+
+					// get child type
+					if(lua_geti(L, -1, moony->uris.atom_child_type) == LUA_TNUMBER)
+						child_type = lua_tointeger(L, -1);
+					lua_pop(L, 1); // child_type
 
 					LV2_Atom_Forge_Frame obj_frame;
 
@@ -468,7 +483,7 @@ _lstateresponder__call(lua_State *L)
 						if(lua_geti(L, -1, moony->uris.rdf_value) != LUA_TNIL)
 						{
 							if(  !lv2_atom_forge_key(lforge->forge, moony->uris.patch.value)
-								|| !_lforge_basic(L, -1, lforge->forge, range) )
+								|| !_lforge_basic(L, -1, lforge->forge, range, child_type) )
 								luaL_error(L, forge_buffer_overflow);
 						}
 						lua_pop(L, 1); // value
@@ -607,15 +622,20 @@ _lstateresponder_sync(lua_State *L)
 				{
 					const LV2_URID key = lua_tointeger(L, -2); // key
 					LV2_URID range = 0; // fallback
+					LV2_URID child_type = 0; // fallback
 
 					if(lua_geti(L, -1, moony->uris.rdfs_range) == LUA_TNUMBER) // prop[RDFS.range]
 						range = lua_tointeger(L, -1);
 					lua_pop(L, 1); // range
 
+					if(lua_geti(L, -1, moony->uris.atom_child_type) == LUA_TNUMBER) // prop[Atom.childType]
+						child_type = lua_tointeger(L, -1);
+					lua_pop(L, 1); // child_type
+
 					if(lua_geti(L, -1, moony->uris.rdf_value) != LUA_TNIL)
 					{
 						if(  !lv2_atom_forge_key(lforge->forge, key)
-							|| !_lforge_basic(L, -1, lforge->forge, range) )
+							|| !_lforge_basic(L, -1, lforge->forge, range, child_type) )
 							luaL_error(L, forge_buffer_overflow);
 					}
 					lua_pop(L, 1); // nil || rdf_value
@@ -633,15 +653,20 @@ _lstateresponder_sync(lua_State *L)
 				{
 					const LV2_URID key = lua_tointeger(L, -2); // key
 					LV2_URID range = 0; // fallback
+					LV2_URID child_type = 0; // fallback
 
 					if(lua_geti(L, -1, moony->uris.rdfs_range) == LUA_TNUMBER) // prop[RDFS.range]
 						range = lua_tointeger(L, -1);
 					lua_pop(L, 1); // range
 
+					if(lua_geti(L, -1, moony->uris.atom_child_type) == LUA_TNUMBER) // prop[Atom.childType]
+						child_type = lua_tointeger(L, -1);
+					lua_pop(L, 1); // child_type
+
 					if(lua_geti(L, -1, moony->uris.rdf_value) != LUA_TNIL)
 					{
 						if(  !lv2_atom_forge_key(lforge->forge, key)
-							|| !_lforge_basic(L, -1, lforge->forge, range) )
+							|| !_lforge_basic(L, -1, lforge->forge, range, child_type) )
 							luaL_error(L, forge_buffer_overflow);
 					}
 					lua_pop(L, 1); // nil || rdf_value
@@ -691,15 +716,20 @@ _lstateresponder_stash(lua_State *L)
 		// uses 'key' (at index -2) and 'value' (at index -1)
 		const LV2_URID key = luaL_checkinteger(L, -2);
 		LV2_URID range = 0; // fallback
+		LV2_URID child_type = 0; // fallback
 
 		if(lua_geti(L, -1, moony->uris.rdfs_range) == LUA_TNUMBER) // prop[RDFS.range]
 			range = lua_tointeger(L, -1);
 		lua_pop(L, 1); // range
 
+		if(lua_geti(L, -1, moony->uris.atom_child_type) == LUA_TNUMBER) // prop[Atom.child_type]
+			child_type = lua_tointeger(L, -1);
+		lua_pop(L, 1); // child_type
+
 		if(lua_geti(L, -1, moony->uris.rdf_value) != LUA_TNIL) // prop[RDF.value]
 		{
 			if(  !lv2_atom_forge_key(lforge->forge, key)
-				|| !_lforge_basic(L, -1, lforge->forge, range) )
+				|| !_lforge_basic(L, -1, lforge->forge, range, child_type) )
 				luaL_error(L, forge_buffer_overflow);
 		}
 		lua_pop(L, 1); // value

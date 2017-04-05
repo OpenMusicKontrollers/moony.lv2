@@ -84,6 +84,7 @@ _strndup(const char *s, size_t n)
 #endif
 
 typedef struct _chunk_t chunk_t;
+typedef struct _vec_t vec_t;
 typedef union _body_t body_t;
 typedef struct _prop_t prop_t;
 typedef enum _browser_type_t browser_type_t;
@@ -95,13 +96,21 @@ struct _chunk_t {
 	uint8_t *body;
 };
 
+struct _vec_t {
+	uint32_t child_num;
+	uint32_t child_type;
+	uint8_t *body;
+};
+
 union _body_t {
 	int32_t i;
 	int64_t h;
+	uint32_t u;
 	float f;
 	double d;
 	struct nk_text_edit editor;
 	chunk_t chunk;
+	vec_t vec;
 };
 
 struct _prop_t {
@@ -763,6 +772,11 @@ _prop_free(plughandle_t *handle, prop_t *prop)
 	{
 		if(prop->value.chunk.body)
 			free(prop->value.chunk.body);
+	}
+	else if(prop->range == handle->forge.Vector)
+	{
+		if(prop->value.vec.body)
+			free(prop->value.vec.body);
 	}
 
 	if(prop->points)
@@ -1832,6 +1846,120 @@ _parameter_widget_chunk(plughandle_t *handle, struct nk_context *ctx, prop_t *pr
 	}
 }
 
+static inline void
+_plot_i32(struct nk_context *ctx, prop_t *prop)
+{
+	const unsigned n = prop->value.vec.child_num;
+
+	if(nk_chart_begin(ctx, NK_CHART_LINES, n, prop->minimum.i, prop->maximum.i))
+	{
+		const int32_t *i32 = (int32_t *)prop->value.vec.body;
+
+		for(unsigned i = 0; i < n; i++)
+		{
+			const nk_flags ret = nk_chart_push(ctx, i32[i]);
+			if(ret & NK_CHART_HOVERING)
+			{
+				char label [16];
+				snprintf(label, 16, "%u: %"PRIi32, i, i32[i]);
+				nk_tooltip(ctx, label);
+			}
+		}
+	}
+	nk_chart_end(ctx);
+}
+
+static inline void
+_plot_i64(struct nk_context *ctx, prop_t *prop)
+{
+	const unsigned n = prop->value.vec.child_num;
+
+	if(nk_chart_begin(ctx, NK_CHART_LINES, n, prop->minimum.h, prop->maximum.h))
+	{
+		const int64_t *i64 = (int64_t *)prop->value.vec.body;
+
+		for(unsigned i = 0; i < n; i++)
+		{
+			const nk_flags ret = nk_chart_push(ctx, i64[i]);
+			if(ret & NK_CHART_HOVERING)
+			{
+				char label [16];
+				snprintf(label, 16, "%u: %"PRIi64, i, i64[i]);
+				nk_tooltip(ctx, label);
+			}
+		}
+	}
+	nk_chart_end(ctx);
+}
+
+static inline void
+_plot_f32(struct nk_context *ctx, prop_t *prop)
+{
+	const unsigned n = prop->value.vec.child_num;
+
+	if(nk_chart_begin(ctx, NK_CHART_LINES, n, prop->minimum.f, prop->maximum.f))
+	{
+		const float *f32 = (float *)prop->value.vec.body;
+
+		for(unsigned i = 0; i < n; i++)
+		{
+			const nk_flags ret = nk_chart_push(ctx, f32[i]);
+			if(ret & NK_CHART_HOVERING)
+			{
+				char label [16];
+				snprintf(label, 16, "%u: %f", i, f32[i]);
+				nk_tooltip(ctx, label);
+			}
+		}
+	}
+	nk_chart_end(ctx);
+}
+
+static inline void
+_plot_f64(struct nk_context *ctx, prop_t *prop)
+{
+	const unsigned n = prop->value.vec.child_num;
+
+	if(nk_chart_begin(ctx, NK_CHART_LINES, n, prop->minimum.d, prop->maximum.d))
+	{
+		const double *f64 = (double *)prop->value.vec.body;
+
+		for(unsigned i = 0; i < n; i++)
+		{
+			const nk_flags ret = nk_chart_push(ctx, f64[i]);
+			if(ret & NK_CHART_HOVERING)
+			{
+				char label [16];
+				snprintf(label, 16, "%u: %lf", i, f64[i]);
+				nk_tooltip(ctx, label);
+			}
+		}
+	}
+	nk_chart_end(ctx);
+}
+
+static void
+_parameter_widget_vector(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
+	bool editable, bool has_shift_enter, float dy, int ndy)
+{
+	nk_layout_row_dynamic(ctx, dy*(ndy-1), 1);
+
+	if(prop->value.vec.child_type == handle->forge.Bool)
+		_plot_i32(ctx, prop);
+	else if(prop->value.vec.child_type == handle->forge.Int)
+		_plot_i32(ctx, prop);
+	else if(prop->value.vec.child_type == handle->forge.URID)
+		_plot_i32(ctx, prop);
+	else if(prop->value.vec.child_type == handle->forge.Long)
+		_plot_i64(ctx, prop);
+	else if(prop->value.vec.child_type == handle->forge.Float)
+		_plot_f32(ctx, prop);
+	else if(prop->value.vec.child_type == handle->forge.Double)
+		_plot_f64(ctx, prop);
+	else
+		nk_spacing(ctx, 1); // unsupported atom:childType
+}
+
 static void
 _parameter_widget_nil(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
 	bool editable, bool has_shift_enter, float dy, int ndy)
@@ -1891,6 +2019,10 @@ _parameter_widget(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
 		else if(prop->range == handle->forge.Chunk)
 		{
 			_parameter_widget_chunk(handle, ctx, prop, editable, has_shift_enter, dy, ndy);
+		}
+		else if(prop->range == handle->forge.Vector)
+		{
+			_parameter_widget_vector(handle, ctx, prop, editable, has_shift_enter, dy, ndy);
 		}
 		else if(prop->range == 0)
 		{
@@ -2901,6 +3033,8 @@ _patch_set_parameter_value(plughandle_t *handle, LV2_URID property,
 		else if(prop->range == handle->forge.Bool)
 		{
 			prop->value.i = ((const LV2_Atom_Bool *)value)->body;
+			prop->minimum.i = 0;
+			prop->maximum.i = 1;
 		}
 		else if(prop->range == handle->forge.URID)
 		{
@@ -2927,6 +3061,26 @@ _patch_set_parameter_value(plughandle_t *handle, LV2_URID property,
 			if(prop->value.chunk.body)
 			{
 				memcpy(prop->value.chunk.body, LV2_ATOM_BODY_CONST(value), value->size);
+			}
+			else
+			{
+				//TODO handle error
+			}
+		}
+		else if(prop->range == handle->forge.Vector)
+		{
+			const LV2_Atom_Vector *vec = (const LV2_Atom_Vector *)value;
+			const uint32_t vec_body_size = vec->atom.size - sizeof(LV2_Atom_Vector_Body);
+			const void *vec_body = LV2_ATOM_CONTENTS_CONST(LV2_Atom_Vector, value);
+
+			prop->value.vec.child_num = vec->body.child_size
+				? vec_body_size / vec->body.child_size
+				: 0;
+			prop->value.vec.child_type = vec->body.child_type;
+			prop->value.vec.body = realloc(prop->value.vec.body, vec_body_size);
+			if(prop->value.vec.body)
+			{
+				memcpy(prop->value.vec.body, vec_body, vec_body_size);
 			}
 			else
 			{
@@ -3059,10 +3213,14 @@ _patch_set_parameter_property(plughandle_t *handle, LV2_URID subject, LV2_URID p
 			}
 		}
 		else if( (property == handle->lv2_minimum)
-			&& (!prop->range || (prop->range == value->type)) )
+			&& (!prop->range || (prop->range == handle->forge.Vector) || (prop->range == value->type)) )
 		{
 			if(value->type == handle->forge.Int)
 				prop->minimum.i = ((const LV2_Atom_Int *)(value))->body;
+			else if(value->type == handle->forge.Bool)
+				prop->minimum.i = 0; // overwrite
+			else if(value->type == handle->forge.URID)
+				prop->minimum.u = ((const LV2_Atom_URID *)(value))->body;
 			else if(value->type == handle->forge.Long)
 				prop->minimum.h = ((const LV2_Atom_Long *)(value))->body;
 			else if(value->type == handle->forge.Float)
@@ -3072,10 +3230,14 @@ _patch_set_parameter_property(plughandle_t *handle, LV2_URID subject, LV2_URID p
 			//FIXME handle more types?
 		}
 		else if( (property == handle->lv2_maximum)
-			&& (!prop->range || (prop->range == value->type)) )
+			&& (!prop->range || (prop->range == handle->forge.Vector) || (prop->range == value->type)) )
 		{
 			if(value->type == handle->forge.Int)
 				prop->maximum.i = ((const LV2_Atom_Int *)(value))->body;
+			else if(value->type == handle->forge.Bool)
+				prop->maximum.i = 1; // overwrite
+			else if(value->type == handle->forge.URID)
+				prop->maximum.u = ((const LV2_Atom_URID *)(value))->body;
 			else if(value->type == handle->forge.Long)
 				prop->maximum.h = ((const LV2_Atom_Long *)(value))->body;
 			else if(value->type == handle->forge.Float)

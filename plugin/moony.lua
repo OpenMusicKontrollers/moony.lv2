@@ -338,7 +338,8 @@ local atom_lib = lib_const('Atom', {
 	'URID',
 	'Vector',
 	'frameTime',
-	'beatTime'
+	'beatTime',
+	'childType'
 })
 
 local midi_lib = lib_const('MIDI', {

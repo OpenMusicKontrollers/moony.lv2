@@ -271,8 +271,61 @@ _lforge_basic_midi(lua_State *L, int pos, LV2_Atom_Forge *forge)
 	return _lforge_basic_bytes(L, pos, forge, moony->uris.midi_event);
 }
 
+__realtime static inline LV2_Atom_Forge_Ref
+_lforge_basic_vector(lua_State *L, int pos, LV2_Atom_Forge *forge,
+	LV2_URID child_type)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	uint32_t child_size = 0;
+	if(  (child_type == forge->Bool)
+		|| (child_type == forge->Int)
+		|| (child_type == forge->Float)
+		|| (child_type == forge->URID) )
+	{
+		child_size = 4;
+	}
+	else if( (child_type == forge->Long)
+		|| (child_type == forge->Double) )
+	{
+		child_size = 8;
+	}
+	// else not a supported atom:childType
+
+	LV2_Atom_Forge_Frame frame;
+	LV2_Atom_Forge_Ref ref = lv2_atom_forge_vector_head(forge, &frame, child_size, child_type);
+
+	if(child_size)
+	{
+		lua_pushnil(L);
+		while(lua_next(L, -2) && ref)
+		{
+			if(child_type == forge->Bool)
+				ref = lv2_atom_forge_bool(forge, lua_toboolean(L, -1));
+			else if(child_type == forge->Int)
+				ref = lv2_atom_forge_int(forge, lua_tointeger(L, -1));
+			else if(child_type == forge->Long)
+				ref = lv2_atom_forge_long(forge, lua_tointeger(L, -1));
+			else if(child_type == forge->URID)
+				ref = lv2_atom_forge_urid(forge, lua_tointeger(L, -1));
+			else if(child_type == forge->Float)
+				ref = lv2_atom_forge_float(forge, lua_tonumber(L, -1));
+			else if(child_type == forge->Double)
+				ref = lv2_atom_forge_double(forge, lua_tonumber(L, -1));
+
+			lua_pop(L, 1); // value
+		}
+	}
+
+	if(ref)
+		lv2_atom_forge_pop(forge, &frame);
+
+	return ref;
+}
+
 __realtime LV2_Atom_Forge_Ref
-_lforge_basic(lua_State *L, int pos, LV2_Atom_Forge *forge, LV2_URID range)
+_lforge_basic(lua_State *L, int pos, LV2_Atom_Forge *forge,
+	LV2_URID range, LV2_URID child_type)
 {
 	//FIXME binary lookup?
 	if(range == forge->Int)
@@ -297,8 +350,10 @@ _lforge_basic(lua_State *L, int pos, LV2_Atom_Forge *forge, LV2_URID range)
 		return _lforge_basic_literal(L, pos, forge);
 	else if(range == forge->Chunk)
 		return _lforge_basic_chunk(L, pos, forge);
+	else if( (range == forge->Vector) && (child_type != 0) )
+		return _lforge_basic_vector(L, pos, forge, child_type);
 
-	return luaL_error(L, "not a basic type");
+	return lv2_atom_forge_atom(forge, 0, 0); // fall-back
 }
 
 __realtime static int

@@ -265,6 +265,7 @@ struct _moony_t {
 
 		LV2_URID atom_beat_time;
 		LV2_URID atom_frame_time;
+		LV2_URID atom_child_type;
 	} uris;
 
 	LV2_OSC_URID osc_urid;
