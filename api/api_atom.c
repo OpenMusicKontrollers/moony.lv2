@@ -805,9 +805,9 @@ _latom_vec__indexi(lua_State *L, latom_t *latom)
 __realtime static int
 _latom_vec__indexk(lua_State *L, latom_t *latom, const char *key)
 {
-	if(!strcmp(key, "child_type"))
+	if(!strcmp(key, "childType"))
 		lua_pushinteger(L, latom->body.vec->child_type);
-	else if(!strcmp(key, "child_size"))
+	else if(!strcmp(key, "childSize"))
 		lua_pushinteger(L, latom->body.vec->child_size);
 	else
 		lua_pushnil(L);

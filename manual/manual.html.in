@@ -718,7 +718,7 @@ function restore(atom)
 
 		if itm then
 			assert(itm.type == Atom.Vector)
-			assert(itm.child_type == Atom.Float)
+			assert(itm.childType == Atom.Float)
 
 			state[k] = { itm:unpack() }
 			assert(#state[k] == 3)
@@ -2877,13 +2877,13 @@ end</code></pre>
 			</dl>
 
 			<dl>
-				<dt class="attr">vec.child_size</dt>
+				<dt class="attr">vec.childSize</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>atom vector child size</dd>
 			</dl>
 
 			<dl>
-				<dt class="attr">vec.child_type</dt>
+				<dt class="attr">vec.childType</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom vector child type</dd>
 			</dl>
@@ -2924,8 +2924,8 @@ function apply(vec)
 	assert(#vec == 3) -- query number of items
 	print(tostring(vec)) -- convert to string
 	assert(vec.type == Atom.Vector) -- query type of atom
-	assert(vec.child_size == 4) -- query child size of atom
-	assert(vec.child_type == Atom.Int) -- query child type of atom
+	assert(vec.childSize == 4) -- query child size of atom
+	assert(vec.childType == Atom.Int) -- query child type of atom
 
 	-- iterate over
 	for i, atom in vec:foreach() do

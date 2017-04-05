@@ -1195,8 +1195,8 @@ do
 		local vec = seq[1]
 		assert(vec.type == Atom.Vector)
 		assert(#vec == 4)
-		assert(vec.child_type == Atom.Int)
-		assert(vec.child_size == 4)
+		assert(vec.childType == Atom.Int)
+		assert(vec.childSize == 4)
 
 		for i, atom in vec:foreach() do
 			assert(atom.type == Atom.Int)
@@ -1206,8 +1206,8 @@ do
 		vec = seq[2]
 		assert(vec.type == Atom.Vector)
 		assert(#vec == 4)
-		assert(vec.child_type == Atom.Long)
-		assert(vec.child_size == 8)
+		assert(vec.childType == Atom.Long)
+		assert(vec.childSize == 8)
 
 		for i, atom in vec:foreach() do
 			assert(atom.type == Atom.Long)
@@ -1217,8 +1217,8 @@ do
 		vec = seq[3]
 		assert(vec.type == Atom.Vector)
 		assert(#vec == 2)
-		assert(vec.child_type == Atom.Bool)
-		assert(vec.child_size == 4)
+		assert(vec.childType == Atom.Bool)
+		assert(vec.childSize == 4)
 		assert(vec[0] == nil)
 		assert(vec[1].body == true)
 		assert(vec[2].body == false)
@@ -1227,8 +1227,8 @@ do
 		vec = seq[4]
 		assert(vec.type == Atom.Vector)
 		assert(#vec == 2)
-		assert(vec.child_type == Atom.Float)
-		assert(vec.child_size == 4)
+		assert(vec.childType == Atom.Float)
+		assert(vec.childSize == 4)
 		local a, b = vec:unpack()
 		assert(a.body == 1.0)
 		assert(b.body == 2.0)
@@ -1236,8 +1236,8 @@ do
 		vec = seq[5]
 		assert(vec.type == Atom.Vector)
 		assert(#vec == 2)
-		assert(vec.child_type == Atom.Double)
-		assert(vec.child_size == 8)
+		assert(vec.childType == Atom.Double)
+		assert(vec.childSize == 8)
 		local a, b = vec:unpack()
 		assert(a.body == 3.3)
 		assert(b.body == 4.4)
@@ -1245,8 +1245,8 @@ do
 		vec = seq[6]
 		assert(vec.type == Atom.Vector)
 		assert(#vec == 2)
-		assert(vec.child_type == Atom.URID)
-		assert(vec.child_size == 4)
+		assert(vec.childType == Atom.URID)
+		assert(vec.childSize == 4)
 		local a, b = vec:unpack(1, 1)
 		assert(a.body == Atom.Int)
 		assert(b == nil)
