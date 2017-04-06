@@ -28,6 +28,8 @@ extern "C" {
 #include <lv2/lv2plug.in/ns/ext/urid/urid.h>
 #include <lv2/lv2plug.in/ns/ext/atom/atom.h>
 #include <lv2/lv2plug.in/ns/ext/atom/forge.h>
+#include <lv2/lv2plug.in/ns/ext/patch/patch.h>
+#include <lv2/lv2plug.in/ns/ext/state/state.h>
 
 /*****************************************************************************
  * API START
@@ -39,9 +41,9 @@ extern "C" {
 #define XPRESS_VOICE_MAP		XPRESS_PREFIX"voiceMap"
 
 // Message types
-#define XPRESS_TOKEN				XPRESS_PREFIX"Token"
-#define XPRESS_FREE					XPRESS_PREFIX"Free"
-#define XPRESS_ALIVE				XPRESS_PREFIX"Alive"
+#define XPRESS_PUT					XPRESS_PREFIX"Put"
+#define XPRESS_DELETE				XPRESS_PREFIX"Delete"
+#define XPRESS_CLEAR				XPRESS_PREFIX"Clear"
 
 // Properties
 #define XPRESS_UUID					XPRESS_PREFIX"uuid"
@@ -63,31 +65,24 @@ typedef enum _xpress_event_t xpress_event_t;
 typedef struct _xpress_map_t xpress_map_t;
 typedef struct _xpress_state_t xpress_state_t;
 typedef struct _xpress_voice_t xpress_voice_t;
-typedef struct _xpress_ctrl_t xpress_ctrl_t;
 typedef struct _xpress_iface_t xpress_iface_t;
 typedef struct _xpress_t xpress_t;
 
 // function callbacks
 typedef xpress_uuid_t (*xpress_map_new_uuid_t)(void *handle);
 
-typedef void (*xpress_add_cb_t)(void *data, int64_t frames,
-	const xpress_state_t *state, xpress_uuid_t uuid, void *target);
-typedef void (*xpress_set_cb_t)(void *data, int64_t frames,
-	const xpress_state_t *state, xpress_uuid_t uuid, void *target);
-typedef void (*xpress_del_cb_t)(void *data, int64_t frames,
-	xpress_uuid_t uuid, void *target);
-typedef void (*xpress_alv_cb_t)(void *data, xpress_ctrl_t *ctrl,
+typedef void (*xpress_state_cb_t)(void *data,
+	int64_t frames, const xpress_state_t *state,
 	xpress_uuid_t uuid, void *target);
 
 enum _xpress_event_t {
 	XPRESS_EVENT_ADD					= (1 << 0),
 	XPRESS_EVENT_DEL					= (1 << 1),
-	XPRESS_EVENT_SET					= (1 << 2),
-	XPRESS_EVENT_ALV					= (1 << 3)
+	XPRESS_EVENT_PUT					= (1 << 2)
 };
 
 #define XPRESS_EVENT_NONE		(0)
-#define XPRESS_EVENT_ALL		(XPRESS_EVENT_ADD | XPRESS_EVENT_DEL | XPRESS_EVENT_SET | XPRESS_EVENT_ALV)
+#define XPRESS_EVENT_ALL		(XPRESS_EVENT_ADD | XPRESS_EVENT_DEL | XPRESS_EVENT_PUT)
 
 struct _xpress_state_t {
 	int32_t zone;
@@ -104,21 +99,14 @@ struct _xpress_state_t {
 struct _xpress_iface_t {
 	size_t size;
 
-	xpress_add_cb_t add;
-	xpress_set_cb_t set;
-	xpress_del_cb_t del;
-	xpress_alv_cb_t alv;
+	xpress_state_cb_t add;
+	xpress_state_cb_t put;
+	xpress_state_cb_t del;
 };
 
 struct _xpress_voice_t {
 	xpress_uuid_t uuid;
-	bool alive;
 	void *target;
-};
-
-struct _xpress_ctrl_t {
-	xpress_uuid_t *uuids;
-	unsigned nvoices;
 };
 
 struct _xpress_map_t {
@@ -132,9 +120,9 @@ struct _xpress_t {
 		LV2_URID atom_Long;
 		LV2_URID atom_Float;
 
-		LV2_URID xpress_Token;
-		LV2_URID xpress_Free;
-		LV2_URID xpress_Alive;
+		LV2_URID xpress_Put;
+		LV2_URID xpress_Delete;
+		LV2_URID xpress_Clear;
 
 		LV2_URID xpress_uuid;
 		LV2_URID xpress_zone;
@@ -188,18 +176,9 @@ static inline void *
 xpress_get(xpress_t *xpress, xpress_uuid_t uuid);
 
 // rt-safe
-static inline void
-xpress_enter(xpress_t *xpress);
-
-// rt-safe
 static inline int
 xpress_advance(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
 	const LV2_Atom_Object *obj, LV2_Atom_Forge_Ref *ref);
-
-// rt-safe
-static inline void
-xpress_leave(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
-	LV2_Atom_Forge_Ref *ref);
 
 // rt-safe
 static inline void * 
@@ -211,20 +190,16 @@ xpress_create(xpress_t *xpress, xpress_uuid_t *uuid);
 
 // rt-safe
 static inline int
-xpress_del(xpress_t *xpress, xpress_uuid_t uuid);
+xpress_free(xpress_t *xpress, xpress_uuid_t uuid);
 
 // rt-safe
 static inline LV2_Atom_Forge_Ref
-xpress_free(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
+xpress_del(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
 	xpress_uuid_t uuid);
 
 // rt-safe
-static inline void
-xpress_alv(xpress_t *xpress, xpress_ctrl_t *ctrl, xpress_uuid_t uuid);
-
-// rt-safe
 static inline LV2_Atom_Forge_Ref
-xpress_token(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
+xpress_put(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
 	xpress_uuid_t uuid, const xpress_state_t *state);
 
 // rt-safe
@@ -311,7 +286,7 @@ _xpress_voice_add(xpress_t *xpress, xpress_uuid_t uuid)
 }
 
 static inline void
-_xpress_voice_del(xpress_t *xpress, xpress_voice_t *voice)
+_xpress_voice_free(xpress_t *xpress, xpress_voice_t *voice)
 {
 	voice->uuid = 0;
 
@@ -340,9 +315,9 @@ xpress_init(xpress_t *xpress, const size_t max_nvoices, LV2_URID_Map *map,
 	xpress->urid.atom_Long = map->map(map->handle, LV2_ATOM__Long);
 	xpress->urid.atom_Float = map->map(map->handle, LV2_ATOM__Float);
 
-	xpress->urid.xpress_Token = map->map(map->handle, XPRESS_TOKEN);
-	xpress->urid.xpress_Free= map->map(map->handle, XPRESS_FREE);
-	xpress->urid.xpress_Alive = map->map(map->handle, XPRESS_ALIVE);
+	xpress->urid.xpress_Put = map->map(map->handle, XPRESS_PUT);
+	xpress->urid.xpress_Delete = map->map(map->handle, XPRESS_DELETE);
+	xpress->urid.xpress_Clear = map->map(map->handle, XPRESS_CLEAR);
 
 	xpress->urid.xpress_uuid = map->map(map->handle, XPRESS_UUID);
 	xpress->urid.xpress_zone = map->map(map->handle, XPRESS_ZONE);
@@ -378,15 +353,6 @@ xpress_get(xpress_t *xpress, xpress_uuid_t uuid)
 	return NULL;
 }
 
-static inline void
-xpress_enter(xpress_t *xpress)
-{
-	XPRESS_VOICE_FOREACH(xpress, voice)
-	{
-		voice->alive = false;
-	}
-}
-
 static inline int
 xpress_advance(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
 	const LV2_Atom_Object *obj, LV2_Atom_Forge_Ref *ref)
@@ -394,7 +360,7 @@ xpress_advance(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
 	if(!lv2_atom_forge_is_object_type(forge, obj->atom.type))
 		return 0;
 
-	if(obj->body.otype == xpress->urid.xpress_Token)
+	if(obj->body.otype == xpress->urid.xpress_Put)
 	{
 		const LV2_Atom_Long *uuid = NULL;
 		const LV2_Atom_Int *zone = NULL;
@@ -462,13 +428,13 @@ xpress_advance(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
 		}
 		else
 		{
-			if( (xpress->event_mask & XPRESS_EVENT_SET) && xpress->iface->set)
-				xpress->iface->set(xpress->data, frames, &state, uuid->body, target);
+			if( (xpress->event_mask & XPRESS_EVENT_PUT) && xpress->iface->put)
+				xpress->iface->put(xpress->data, frames, &state, uuid->body, target);
 		}
 
 		return 1;
 	}
-	else if(obj->body.otype == xpress->urid.xpress_Free)
+	else if(obj->body.otype == xpress->urid.xpress_Delete)
 	{
 		const LV2_Atom_Long *uuid = NULL;
 
@@ -488,103 +454,28 @@ xpress_advance(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
 		const xpress_uuid_t voice_uuid = voice->uuid;
 		void *voice_target = voice->target;
 	
-		_xpress_voice_del(xpress, voice);
+		_xpress_voice_free(xpress, voice);
 
 		if( (xpress->event_mask & XPRESS_EVENT_DEL) && xpress->iface->del)
-			xpress->iface->del(xpress->data, frames, voice_uuid, voice_target);
+			xpress->iface->del(xpress->data, frames, NULL, voice_uuid, voice_target);
 
 		return 1;
 	}
-	else if(obj->body.otype == xpress->urid.xpress_Alive)
+	else if(obj->body.otype == xpress->urid.xpress_Clear)
 	{
-		LV2_ATOM_OBJECT_FOREACH(obj, prop)
-		{
-			if(  (prop->key == xpress->urid.xpress_uuid)
-				&& (prop->value.type == xpress->urid.atom_Long) )
-			{
-				const LV2_Atom_Long *uuid = (const LV2_Atom_Long *)&prop->value;
-
-				xpress_voice_t *voice = _xpress_voice_get(xpress, uuid->body);
-
-				if(voice)
-					voice->alive = true;
-			}
-		}
-
-		return 1;
-	}
-
-	return 0; // did not handle an xpress event
-}
-
-static inline void 
-xpress_leave(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
-	LV2_Atom_Forge_Ref *ref)
-{
-	unsigned nvoices = xpress->nvoices;
-
-	// find not-alive voices
-	XPRESS_VOICE_FOREACH(xpress, voice)
-	{
-		if(!voice->alive)
+		XPRESS_VOICE_FREE(xpress, voice)
 		{
 			const xpress_uuid_t voice_uuid = voice->uuid;
 			void *voice_target = voice->target;
 
-			voice->uuid = 0; // mark for removal
-			nvoices--;
-
 			if( (xpress->event_mask & XPRESS_EVENT_DEL) && xpress->iface->del)
-				xpress->iface->del(xpress->data, frames, voice_uuid, voice_target);
-		}
-	}
-
-	// tidy up voices
-	_xpress_sort(xpress);
-	xpress->nvoices = nvoices;
-
-	// get alive child voices
-	xpress_uuid_t uuids [xpress->max_nvoices];
-	xpress_ctrl_t ctrl = {
-		.uuids = uuids,
-		.nvoices = 0
-	};
-
-	XPRESS_VOICE_FOREACH(xpress, voice)
-	{
-		const xpress_uuid_t voice_uuid = voice->uuid;
-		void *voice_target = voice->target;
-
-		if( (xpress->event_mask & XPRESS_EVENT_ALV) && xpress->iface->alv)
-			xpress->iface->alv(xpress->data, &ctrl, voice_uuid, voice_target);
-	}
-
-	// create alive message
-	if(ctrl.nvoices > 0)
-	{
-#if 0
-		printf("-> %u\n", ctrl.nvoices);
-#endif
-		// forge new alive message
-		LV2_Atom_Forge_Frame obj_frame;
-
-		if(*ref)
-			*ref = lv2_atom_forge_frame_time(forge, frames);
-		const LV2_Atom_Forge_Ref obj_ref = *ref;
-		if(*ref)
-			*ref = lv2_atom_forge_object(forge, &obj_frame, 0, xpress->urid.xpress_Alive);
-
-		for(unsigned i = 0; i < ctrl.nvoices; i++)
-		{
-			if(*ref)
-				*ref = lv2_atom_forge_key(forge, xpress->urid.xpress_uuid);
-			if(*ref)
-				*ref = lv2_atom_forge_long(forge, ctrl.uuids[i]);
+				xpress->iface->del(xpress->data, frames, NULL, voice_uuid, voice_target);
 		}
 
-		if(*ref)
-			lv2_atom_forge_pop(forge, &obj_frame);
+		return 1;
 	}
+
+	return 0; // did not handle a patch event
 }
 
 static inline void *
@@ -602,19 +493,19 @@ xpress_create(xpress_t *xpress, xpress_uuid_t *uuid)
 }
 
 static inline int
-xpress_del(xpress_t *xpress, xpress_uuid_t uuid)
+xpress_free(xpress_t *xpress, xpress_uuid_t uuid)
 {
 	xpress_voice_t *voice = _xpress_voice_get(xpress, uuid);
 	if(!voice)
 		return 0; // failed
 
-	_xpress_voice_del(xpress, voice);
+	_xpress_voice_free(xpress, voice);
 
 	return 1;
 }
 
 static inline LV2_Atom_Forge_Ref
-xpress_free(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
+xpress_del(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
 	xpress_uuid_t uuid)
 {
 	LV2_Atom_Forge_Frame obj_frame;
@@ -622,7 +513,7 @@ xpress_free(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
 	LV2_Atom_Forge_Ref ref = lv2_atom_forge_frame_time(forge, frames);
 
 	if(ref)
-		ref = lv2_atom_forge_object(forge, &obj_frame, 0, xpress->urid.xpress_Free);
+		ref = lv2_atom_forge_object(forge, &obj_frame, 0, xpress->urid.xpress_Delete);
 	{
 		if(ref)
 			ref = lv2_atom_forge_key(forge, xpress->urid.xpress_uuid);
@@ -635,17 +526,8 @@ xpress_free(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
 	return ref;
 }
 
-static inline void
-xpress_alv(xpress_t *xpress, xpress_ctrl_t *ctrl, xpress_uuid_t uuid)
-{
-	if(ctrl->nvoices >= xpress->max_nvoices)
-		return;
-
-	ctrl->uuids[ctrl->nvoices++] = uuid;
-}
-
 static inline LV2_Atom_Forge_Ref
-xpress_token(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
+xpress_put(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
 	xpress_uuid_t uuid, const xpress_state_t *state)
 {
 	LV2_Atom_Forge_Frame obj_frame;
@@ -653,7 +535,7 @@ xpress_token(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
 	LV2_Atom_Forge_Ref ref = lv2_atom_forge_frame_time(forge, frames);
 
 	if(ref)
-		ref = lv2_atom_forge_object(forge, &obj_frame, 0, xpress->urid.xpress_Token);
+		ref = lv2_atom_forge_object(forge, &obj_frame, 0, xpress->urid.xpress_Put);
 	{
 		if(ref)
 			ref = lv2_atom_forge_key(forge, xpress->urid.xpress_uuid);
