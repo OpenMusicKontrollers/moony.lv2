@@ -142,7 +142,7 @@ pre {
 				<li><a href="#urid-map">Map</a></li>
 				<li><a href="#urid-unmap">Unmap</a></li>
 				<li><a href="#urid-hashmap">HashMap</a></li>
-				<li><a href="#urid-voicemap">VoiceMap</a></li>
+				<li><a href="#urid-voicemap">Blank</a></li>
 			</ul>
 		</li>
 
@@ -821,24 +821,24 @@ assert(hashmap.bar == bar_urid)</code></pre>
 		</div>
 
 		<div class="api-section">
-		<h2 id="urid-voicemap">VoiceMap</h2>
+		<h2 id="urid-voicemap">Blank</h2>
 		<p>Returns a unique, non-colliding integer ID to be used in event messaging.
 		Especially useful for <a href="#forge-patch">Patch</a> messages or custom
 		event systems where there is a need to track event properties over space
 		and time.</p>
 
 		<dl>
-			<dt class="func">VoiceMap()</dt>
+			<dt class="func">Blank()</dt>
 			<dt class="ret">(integer)</dt>
 				<dd>unique integer ID</dd>
 		</dl>
 
-		<pre><code data-ref="urid-voicemap">-- VoiceMap returns unique integer IDs
+		<pre><code data-ref="urid-voicemap">-- Blank returns unique integer IDs
 
 local cache = {}
 
 for i = 1, 100 do
-	local id = VoiceMap()
+	local id = Blank()
 
 	assert(not cache[id])
 	cache[id] = true

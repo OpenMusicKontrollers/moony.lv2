@@ -1466,7 +1466,7 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 	// lv2.voiceMap
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	lua_pushcclosure(L, _lvoice_map, 1);
-	lua_setglobal(L, "VoiceMap");
+	lua_setglobal(L, "Blank");
 
 	// lv2.midi2cps
 	lua_pushcclosure(L, _lmidi2cps, 0);

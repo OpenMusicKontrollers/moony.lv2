@@ -1278,7 +1278,7 @@ do
 	local subject = Map['http://open-music-kontrollers.ch/lv2/moony#subject']
 	local property = Map['http://open-music-kontrollers.ch/lv2/moony#property']
 	local access = Patch.writable
-	local rtid = VoiceMap() & 0x7fffffff
+	local rtid = Blank() & 0x7fffffff
 
 	local function producer(forge)
 		forge:time(0):get(property, subject, rtid)
@@ -1692,11 +1692,11 @@ do
 end
 
 -- voiceMap
-print('[test] VoiceMap')
+print('[test] Blank')
 do
 	local ids = {}
 	for i=1, 1000 do
-		local id = VoiceMap()
+		local id = Blank()
 		assert(ids[id] == nil)
 		ids[id] = true
 	end

@@ -130,7 +130,7 @@ local func = token(T.FUNCTION, word_match{
 	'OSCResponder',
 	'TimeResponder',
 	'StateResponder',
-	'VoiceMap',
+	'Blank',
 	'Stash',
 	'HashMap',
 	'Parameter',
