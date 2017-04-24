@@ -134,7 +134,7 @@ varchunk_init(varchunk_t *varchunk, size_t body_size, bool release_and_acquire)
 static inline varchunk_t *
 varchunk_new(size_t minimum, bool release_and_acquire)
 {
-	varchunk_t *varchunk;
+	varchunk_t *varchunk = NULL;
 
 	const size_t body_size = varchunk_body_size(minimum);
 	const size_t total_size = sizeof(varchunk_t) + body_size;
