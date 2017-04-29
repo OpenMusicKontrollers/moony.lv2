@@ -1386,7 +1386,7 @@ _lex(void *data, const char *code, int code_sz)
 	{
 		fprintf(stderr, "err: %s\n", lua_tostring(L, -1));
 	}
-	else
+	else if(lua_type(L, -1) == LUA_TTABLE)
 	{
 		const int len = luaL_len(L, -1);
 
@@ -1398,7 +1398,9 @@ _lex(void *data, const char *code, int code_sz)
 				struct nk_token *token = &tokens[i/2];
 
 				lua_rawgeti(L, -1, i + 1);
-				const nk_uint token_col = luaL_checkinteger(L, -1);
+				const nk_uint token_col = lua_type(L, -1) == LUA_TNUMBER
+					? lua_tointeger(L, -1)
+					: 0xdddddd; //FIXME
 				token->color = nk_rgb(
 					(token_col >> 16) & 0xff, 
 					(token_col >>  8) & 0xff,
@@ -1406,7 +1408,7 @@ _lex(void *data, const char *code, int code_sz)
 				lua_pop(L, 1);
 
 				lua_rawgeti(L, -1, i + 2);
-				const int token_offset = luaL_checkinteger(L, -1);
+				const int token_offset = luaL_optinteger(L, -1, 0x0);
 				lua_pop(L, 1);
 
 				token->offset = token_offset - 1;
