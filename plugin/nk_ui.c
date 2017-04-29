@@ -1369,24 +1369,18 @@ _dial_int(struct nk_context *ctx, int32_t min, int32_t *val, int32_t max, float 
 	return res;
 }
 
-static struct nk_token *
-_lex(void *data, const char *code, int code_sz)
+static int
+_lex_protected(lua_State *L)
 {
-	lua_State *L = data;
 	struct nk_token *tokens = NULL;
-	const int top = lua_gettop(L);
-
-	//printf("_lex: %i\n", code_sz);
 
 	lua_getglobal(L, "lexer");
 	lua_getfield(L, -1, "lex");
 	lua_getglobal(L, "moony");
-	lua_pushlstring(L, code, code_sz);
-	if(lua_pcall(L, 2, 1, 0))
-	{
-		fprintf(stderr, "err: %s\n", lua_tostring(L, -1));
-	}
-	else if(lua_type(L, -1) == LUA_TTABLE)
+	lua_pushvalue(L, 1); // code
+	lua_call(L, 2, 1);
+
+	if(lua_type(L, -1) == LUA_TTABLE)
 	{
 		const int len = luaL_len(L, -1);
 
@@ -1398,9 +1392,9 @@ _lex(void *data, const char *code, int code_sz)
 				struct nk_token *token = &tokens[i/2];
 
 				lua_rawgeti(L, -1, i + 1);
-				const nk_uint token_col = lua_type(L, -1) == LUA_TNUMBER
-					? lua_tointeger(L, -1)
-					: 0xdddddd; //FIXME
+				const nk_uint token_col = (lua_type(L, -1) == LUA_TNUMBER)
+					? luaL_checkinteger(L, -1)
+					: 0xdddddd;
 				token->color = nk_rgb(
 					(token_col >> 16) & 0xff, 
 					(token_col >>  8) & 0xff,
@@ -1408,7 +1402,9 @@ _lex(void *data, const char *code, int code_sz)
 				lua_pop(L, 1);
 
 				lua_rawgeti(L, -1, i + 2);
-				const int token_offset = luaL_optinteger(L, -1, 0x0);
+				const int token_offset = (lua_type(L, -1) == LUA_TNUMBER)
+					? lua_tointeger(L, -1)
+					: token->offset + 1;
 				lua_pop(L, 1);
 
 				token->offset = token_offset - 1;
@@ -1417,6 +1413,29 @@ _lex(void *data, const char *code, int code_sz)
 			struct nk_token *token = &tokens[len/2];
 			token->offset = INT32_MAX;
 		}
+	}
+
+	lua_pushlightuserdata(L, tokens);
+	return 1;
+}
+
+static struct nk_token *
+_lex(void *data, const char *code, int code_sz)
+{
+	lua_State *L = data;
+	const int top = lua_gettop(L);
+
+	struct nk_token *tokens = NULL;
+
+	lua_pushcclosure(L, _lex_protected, 0);
+	lua_pushlstring(L, code, code_sz);
+	if(lua_pcall(L, 1, 1, 0))
+	{
+		fprintf(stderr, "err: %s\n", lua_tostring(L, -1));
+	}
+	else if(lua_type(L, -1) == LUA_TLIGHTUSERDATA)
+	{
+		tokens = lua_touserdata(L, -1);
 	}
 
 	lua_settop(L, top);
