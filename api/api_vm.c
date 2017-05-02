@@ -316,9 +316,14 @@ moony_vm_mem_extend(moony_vm_t *vm)
 					vm->area[i], vm->size[i]); //FIXME stoat complains about printf
 
 				if(vm->pool[i])
+				{
 					vm->space += vm->size[i];
+				}
 				else
+				{
 					moony_vm_mem_free(vm->area[i], vm->size[i]);
+					vm->area[i] = NULL;
+				}
 			}
 		}
 		else

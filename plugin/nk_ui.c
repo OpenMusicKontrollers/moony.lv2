@@ -2001,9 +2001,10 @@ static void
 _parameter_widget(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
 	bool editable, bool has_shift_enter, float dy, int ndy)
 {
+	const char *label = prop->label ? prop->label : "Unknown";
 	if(prop->comment && _tooltip_visible(ctx))
 		nk_tooltip(ctx, prop->comment);
-	if(nk_group_begin(ctx, prop->label, NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_NO_SCROLLBAR))
+	if(nk_group_begin(ctx, label, NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_NO_SCROLLBAR))
 	{
 		if(prop->points) // an Enumerator
 		{
