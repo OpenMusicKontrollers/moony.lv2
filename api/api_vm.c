@@ -250,7 +250,7 @@ moony_vm_free(moony_vm_t *vm)
 
 		vm->area[i] = NULL;
 		vm->pool[i] = NULL;
-		vm->size[i] = NULL;
+		vm->size[i] = 0;
 	}
 
 	assert(vm->space == 0);
