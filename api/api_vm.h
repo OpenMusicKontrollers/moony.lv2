@@ -61,7 +61,7 @@ struct _moony_job_t {
 
 	union {
 		struct {
-			int32_t i;
+			size_t size;
 			void *ptr;
 		} mem;
 		moony_vm_t *vm;

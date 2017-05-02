@@ -992,24 +992,17 @@ _work_job(moony_t *moony,
 	{
 		case MOONY_JOB_MEM_ALLOC:
 		{
-			const int32_t i = job->mem.i;
-			moony->vm->area[i] = moony_vm_mem_alloc(moony->vm->size[i]);
-
 			const moony_job_t req = {
 				.type = MOONY_JOB_MEM_ALLOC,
-				.mem = {
-					.i = i
-				}
+				.mem.size = job->mem.size,
+				.mem.ptr = moony_vm_mem_alloc(job->mem.size)
 			};
 
 			return respond(target, sizeof(moony_job_t), &req); // signal to _work_response
 		} break;
 		case MOONY_JOB_MEM_FREE:
 		{
-			const int32_t i =job->mem.i;
-			void *ptr= job->mem.ptr;
-
-			moony_vm_mem_free(ptr, moony->vm->size[i]);
+			moony_vm_mem_free(job->mem.ptr, job->mem.size);
 		} break;
 		case MOONY_JOB_VM_ALLOC:
 		{
@@ -1072,25 +1065,42 @@ _work_response(LV2_Handle instance, uint32_t size, const void *body)
 	{
 		case MOONY_JOB_MEM_ALLOC:
 		{
-			const int32_t i = job->mem.i;
-
-			if(!moony->vm->area[i]) // allocation failed
+			if(!job->mem.ptr) // allocation failed
 				return LV2_WORKER_ERR_UNKNOWN;
 
-			// tlsf add pool
-			moony->vm->pool[i] = tlsf_add_pool(moony->vm->tlsf,
-				moony->vm->area[i], moony->vm->size[i]); //FIXME stoat complains about printf
+			// search for next free pool
+			int i;
+			for(i=0; i<MOONY_POOL_NUM; i++)
+			{
+				if(!moony->vm->area[i])
+					break;
+			}
 
-			if(!moony->vm->pool[i]) // pool addition failed
+			bool failed = true;
+			if(i != MOONY_POOL_NUM) // no overflow
+			{
+				// tlsf add pool
+				moony->vm->size[i] = job->mem.size;
+				moony->vm->area[i] = job->mem.ptr;
+				moony->vm->pool[i] = tlsf_add_pool(moony->vm->tlsf,
+					moony->vm->area[i], moony->vm->size[i]); //FIXME stoat complains about printf
+
+				if(moony->vm->pool[i])
+					failed = false;
+			}
+
+			if(failed) // pool addition failed
 			{
 				moony_job_t *req;
 				if((req = varchunk_write_request(moony->from_dsp, sizeof(moony_job_t))))
 				{
 					req->type = MOONY_JOB_MEM_FREE;
-					req->mem.i = i;
-					req->mem.ptr = moony->vm->area[i];
+					req->mem.size = job->mem.size;
+					req->mem.ptr = job->mem.ptr;
 
+					moony->vm->size[i] = 0;
 					moony->vm->area[i] = NULL;
+					moony->vm->pool[i] = NULL;
 
 					varchunk_write_advance(moony->from_dsp, sizeof(moony_job_t));
 					if(moony_wake_worker(moony->sched) != LV2_WORKER_SUCCESS)

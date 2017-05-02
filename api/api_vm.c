@@ -150,8 +150,6 @@ moony_vm_new(size_t mem_size, bool testing, void *data)
 
 	// initialize array of increasing pool sizes
 	vm->size[0] = mem_size;
-	for(int i=1, sum=mem_size; i<MOONY_POOL_NUM; i++, sum*=2)
-		vm->size[i] = sum;
 
 	// allocate first pool
 	vm->area[0] = moony_vm_mem_alloc(vm->size[0]);
@@ -252,6 +250,7 @@ moony_vm_free(moony_vm_t *vm)
 
 		vm->area[i] = NULL;
 		vm->pool[i] = NULL;
+		vm->size[i] = NULL;
 	}
 
 	assert(vm->space == 0);
@@ -309,6 +308,7 @@ moony_vm_mem_extend(moony_vm_t *vm)
 
 		if(vm->nrt)
 		{
+			vm->size[i] = vm->size[i-1] * 2;
 			vm->area[i] = moony_vm_mem_alloc(vm->size[i]);
 			if(vm->area[i])
 			{
@@ -322,6 +322,7 @@ moony_vm_mem_extend(moony_vm_t *vm)
 				else
 				{
 					moony_vm_mem_free(vm->area[i], vm->size[i]);
+					vm->size[i] = 0;
 					vm->area[i] = NULL;
 				}
 			}
@@ -332,7 +333,8 @@ moony_vm_mem_extend(moony_vm_t *vm)
 			if((req = varchunk_write_request(moony->from_dsp, sizeof(moony_job_t))))
 			{
 				req->type = MOONY_JOB_MEM_ALLOC;
-				req->mem.i = i;
+				req->mem.size = vm->size[i-1] * 2;
+				req->mem.ptr = NULL;
 
 				varchunk_write_advance(moony->from_dsp, sizeof(moony_job_t));
 				if(moony_wake_worker(moony->sched) == LV2_WORKER_SUCCESS)
