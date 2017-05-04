@@ -3039,18 +3039,22 @@ _patch_set_parameter_value(plughandle_t *handle, LV2_URID property,
 		if(prop->range == handle->forge.Int)
 		{
 			prop->value.i = ((const LV2_Atom_Int *)value)->body;
+			prop->value.i = NK_CLAMP(prop->minimum.i, prop->value.i, prop->maximum.i);
 		}
 		else if(prop->range == handle->forge.Long)
 		{
 			prop->value.h = ((const LV2_Atom_Long *)value)->body;
+			prop->value.h = NK_CLAMP(prop->minimum.h, prop->value.h, prop->maximum.h);
 		}
 		else if(prop->range == handle->forge.Float)
 		{
 			prop->value.f = ((const LV2_Atom_Float *)value)->body;
+			prop->value.f = NK_CLAMP(prop->minimum.f, prop->value.f, prop->maximum.f);
 		}
 		else if(prop->range == handle->forge.Double)
 		{
 			prop->value.d = ((const LV2_Atom_Double *)value)->body;
+			prop->value.d = NK_CLAMP(prop->minimum.d, prop->value.d, prop->maximum.d);
 		}
 		else if(prop->range == handle->forge.Bool)
 		{
