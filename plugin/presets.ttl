@@ -483,6 +483,78 @@ end""" ;
 		]
 	] .
 
+moony:bank-canvas_lv2-logo
+	a pset:Preset ;
+	doap:license lic:Artistic-2.0 ;
+	state:state [
+		moony:editorHidden false ;
+		moony:logHidden true ;
+		moony:logFollow true ;
+		moony:paramHidden true ;
+		moony:paramCols 3 ;
+		moony:paramRows 4 ;
+		moony:code """local bg = 0x00000000 -- transparent black
+local fg = 0xff0066ff -- purple
+
+local function render(frames, forge)
+  local ctx = forge:time(frames):graph()
+  
+  -- background
+  ctx:rectangle(0.0, 0.0, 1.0, 1.0):style(bg):fill()
+
+  -- 'L'
+  ctx:beginPath()
+  ctx:moveTo(0.05, 0.275)
+  ctx:lineTo(0.05, 0.73463521816969)
+  ctx:lineTo(0.39996786383766, 0.73463521816969)
+  ctx:lineTo(0.35805418792799, 0.61981755929103)
+  ctx:lineTo(0.16950515672412, 0.61981755929103)
+  ctx:lineTo(0.16950515672412, 0.275)
+  ctx:lineTo(0.05, 0.275)
+  ctx:closePath():style(fg):stroke()
+  
+  -- 'V'
+  ctx:beginPath()
+  ctx:moveTo(0.44035674587458, 0.73463521816969)
+  ctx:lineTo(0.27321237521861, 0.275)
+  ctx:lineTo(0.39612954205777, 0.275)
+  ctx:lineTo(0.5215250619933, 0.61980400005209)
+  ctx:lineTo(0.64678627651808, 0.275)
+  ctx:lineTo(0.76999411666921, 0.275)
+  ctx:lineTo(0.60269884777111, 0.73463521816969)
+  ctx:lineTo(0.44035674587458, 0.73463521816969)
+  ctx:closePath():style(fg):stroke()
+
+  -- '2'
+  ctx:beginPath()
+  ctx:moveTo(0.92679577564592, 0.33745757758451)
+  ctx:curveTo(0.95, 0.37544661222032,
+    0.9486097413556, 0.42890103900541, 0.91866073788306, 0.46581025262318)
+  ctx:curveTo(0.87662774067075, 0.51761178520021,
+    0.84865149155459, 0.52351773004551, 0.8188709443895, 0.55088574387747)
+  ctx:lineTo(0.93798338878322, 0.55088574387747)
+  ctx:lineTo(0.93798338878322, 0.61972641362727)
+  ctx:lineTo(0.68857649440815, 0.61972641362727)
+  ctx:curveTo(0.70410821191941, 0.57897193773781,
+    0.71568706655441, 0.55649255812279, 0.73505227967577, 0.53436493734023)
+  ctx:curveTo(0.78431409785481, 0.47807598612821,
+    0.88073913173375, 0.44149338929647, 0.87483180798279, 0.39074363998918)
+  ctx:curveTo(0.8731729385169, 0.37649219041461,
+    0.86900905711197, 0.34385128732334, 0.80655313421425, 0.34385128732334)
+  ctx:lineTo(0.7834998081023, 0.34385128732334)
+  ctx:lineTo(0.80849192152801, 0.275)
+  ctx:curveTo(0.88098903540187, 0.275,
+    0.90879494370618, 0.30798728419169, 0.92679577564592, 0.33745757758451)
+  ctx:closePath():style(fg):stroke()
+  
+  ctx:pop()
+end
+
+function once(n, control, notify, seq, forge)
+	render(0, forge)	
+end"""
+	] .
+
 moony:bank-tutorial_part-1
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;

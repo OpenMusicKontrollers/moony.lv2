@@ -129,6 +129,9 @@ moony:bank-time
 moony:bank-state
 	a pset:Bank ;
 	rdfs:label "State bank" .
+moony:bank-canvas
+	a pset:Bank ;
+	rdfs:label "Canvas bank" .
 moony:bank-tutorial
 	a pset:Bank ;
 	rdfs:label "Tutorial bank" .
@@ -238,6 +241,22 @@ moony:bank-state_state-responder
 		moony:c4xc4 ;
 	pset:bank moony:bank-state ;
 	rdfs:label "State responder" ;
+	rdfs:seeAlso <presets.ttl> .
+
+# Bank canvas
+moony:bank-canvas_lv2-logo
+	a pset:Preset ;
+	lv2:appliesTo moony:a1xa1 ,
+		moony:a2xa2 ,
+		moony:a4xa4 ,
+		moony:c1a1xc1a1 ,
+		moony:c2a1xc2a1 ,
+		moony:c4a1xc4a1 ,
+		moony:c1xc1 ,
+		moony:c2xc2 ,
+		moony:c4xc4 ;
+	pset:bank moony:bank-canvas ;
+	rdfs:label "LV2 Logo" ;
 	rdfs:seeAlso <presets.ttl> .
 
 # Bank tutorials
