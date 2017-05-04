@@ -21,6 +21,13 @@ local T = {
 	BRACE				= 0xffffff
 }
 
+local function ord(o)
+	table.sort(o, function(a, b)
+		return #a > #b
+	end)
+	return o
+end
+
 local M = {_NAME = 'moony'}
 
 -- Whitespace.
@@ -46,7 +53,7 @@ local lua_integer = P('-')^-1 * (l.hex_num + l.dec_num)
 local number = token(T.NUMBER, l.float + lua_integer)
 
 -- Keywords.
-local keyword = token(T.KEYWORD, word_match{
+local keyword = token(T.KEYWORD, word_match(ord{
 	'while',
 	'do',
 	'end',
@@ -63,10 +70,10 @@ local keyword = token(T.KEYWORD, word_match{
 	'local',
 	'function',
 	'in'
-})
+}))
 
 -- Functions.
-local func = token(T.FUNCTION, word_match{
+local func = token(T.FUNCTION, word_match(ord{
 	-- Lua basic
 	'collectgarbage',
 	'error',
@@ -134,19 +141,19 @@ local func = token(T.FUNCTION, word_match{
 	'Stash',
 	'HashMap',
 	'Parameter',
-})
+}))
 
 -- Functions.
-local tabs = token(T.LIBRARY, word_match{
+local tabs = token(T.LIBRARY, word_match(ord{
 	'Options',
 	'Note',
 	'Map',
 	'Unmap'
-})
+}))
 
 local function lib_func(name, keys)
 	local post = nil
-	for i, v in ipairs(keys) do
+	for i, v in ipairs(ord(keys)) do
 		local pat = P(v)
 		post = post and (post + pat) or pat
 	end
@@ -155,7 +162,7 @@ end
 
 local function lib_const(name, keys)
 	local post = nil
-	for i, v in ipairs(keys) do
+	for i, v in ipairs(ord(keys)) do
 		local pat = P(v)
 		post = post and (post + pat) or pat
 	end
@@ -630,7 +637,7 @@ local api_lib = atom_lib + midi_lib + time_lib + osc_lib + core_lib + bufsz_lib
 	+ lua_lib + param_lib
 
 -- Field functions
-local field_func = token(T.OPERATOR, S('.:')) * token(T.FUNCTION, word_match{
+local field_func = token(T.OPERATOR, S('.:')) * token(T.FUNCTION, word_match(ord{
 	-- moony primitive
 	'frameTime',
 	'beatTime',
@@ -713,19 +720,19 @@ local field_func = token(T.OPERATOR, S('.:')) * token(T.FUNCTION, word_match{
 	-- moony stash
 	'write',
 	'read'
-})
+}))
 
 -- Constants.
-local constant = token(T.CONSTANT, word_match{
+local constant = token(T.CONSTANT, word_match(ord{
   'true',
 	'false',
 	'nil',
 	'_G',
 	'_VERSION'
-})
+}))
 
 -- Field constants.
-local field_constant = token(T.OPERATOR, P('.')) * token(T.CONSTANT, word_match{
+local field_constant = token(T.OPERATOR, P('.')) * token(T.CONSTANT, word_match(ord{
 	-- moony primitive
 	'type',
 	'body',
@@ -737,12 +744,12 @@ local field_constant = token(T.OPERATOR, P('.')) * token(T.CONSTANT, word_match{
 	'id',
 	'otype',
 	-- moony vector
-	'child_type',
-	'child_size',
+	'childType',
+	'childSize',
 	-- moony literal
 	'datatype',
 	'lang'
-})
+}))
 
 -- Identifiers.
 local identifier = token(T.IDENTIFIER, l.word)
