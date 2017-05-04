@@ -1361,9 +1361,6 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	assert(pos == DRIVER_HASH_MAX);
 	qsort(latom_driver_hash, DRIVER_HASH_MAX, sizeof(latom_driver_hash_t), _hash_sort);
 
-	moony->dirty_out = true; // trigger update of UI
-	moony->props_out = true; // trigger update of UI
-
 	moony_freeuserdata(moony);
 
 	moony->editor_hidden = ATOMIC_VAR_INIT(0);
@@ -2015,6 +2012,60 @@ _patch_set(patch_t *patch, LV2_Atom_Forge *forge, LV2_URID property, uint32_t si
 	return ref;
 }
 
+__realtime static inline LV2_Atom_Forge_Ref
+_moony_chunk_out(moony_t *moony, uint32_t frames, LV2_Atom_Forge *forge)
+{
+	const uint32_t len = strlen(moony->chunk);
+
+	LV2_Atom_Forge_Ref ref = lv2_atom_forge_frame_time(forge, frames);
+	if(ref)
+		ref = _moony_patch(&moony->uris.patch, forge, moony->uris.moony_code, moony->chunk, len);
+
+	return ref;
+}
+
+__realtime static inline LV2_Atom_Forge_Ref
+_moony_props_out(moony_t *moony, uint32_t frames, LV2_Atom_Forge *forge)
+{
+	// clear all properties in UI
+	LV2_Atom_Forge_Frame obj_frame, add_frame, rem_frame;
+	LV2_Atom_Forge_Ref ref = lv2_atom_forge_frame_time(forge, 0);
+	if(ref)
+		ref = lv2_atom_forge_object(forge, &obj_frame, 0, moony->uris.patch.patch);
+	if(ref)
+		ref = lv2_atom_forge_key(forge, moony->uris.patch.subject);
+	if(ref)
+		ref = lv2_atom_forge_urid(forge, moony->uris.patch.self);
+	if(ref)
+		ref = lv2_atom_forge_key(forge, moony->uris.patch.sequence);
+	if(ref)
+		ref = lv2_atom_forge_int(forge, 0); // we don't expect a reply
+	if(ref)
+		ref = lv2_atom_forge_key(forge, moony->uris.patch.remove);
+	if(ref)
+		ref = lv2_atom_forge_object(forge, &rem_frame, 0, 0);
+	if(ref)
+		ref = lv2_atom_forge_key(forge, moony->uris.patch.writable);
+	if(ref)
+		ref = lv2_atom_forge_urid(forge, moony->uris.patch.wildcard);
+	if(ref)
+		ref = lv2_atom_forge_key(forge, moony->uris.patch.readable);
+	if(ref)
+		ref = lv2_atom_forge_urid(forge, moony->uris.patch.wildcard);
+	if(ref)
+		lv2_atom_forge_pop(forge, &rem_frame);
+	if(ref)
+		ref = lv2_atom_forge_key(forge, moony->uris.patch.add);
+	if(ref)
+		lv2_atom_forge_object(forge, &add_frame, 0, 0);
+	if(ref)
+		lv2_atom_forge_pop(forge, &add_frame);
+	if(ref)
+		lv2_atom_forge_pop(forge, &obj_frame);
+
+	return ref;
+}
+
 __realtime LV2_Worker_Status
 moony_wake_worker(const LV2_Worker_Schedule *work_sched)
 {
@@ -2032,10 +2083,8 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 	if(chunk_new)
 	{
 		snprintf(moony->chunk, MOONY_MAX_CHUNK_LEN, "%s", chunk_new);
-		moony->dirty_out = true;
-
-		moony->error[0] = 0x0; // clear error message
-		moony->error_out = true;
+		if(ref)
+			ref = _moony_chunk_out(moony, 0, forge);
 
 		moony_job_t *req;
 		if((req = varchunk_write_request(moony->from_dsp, sizeof(moony_job_t))))
@@ -2094,6 +2143,9 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 	{
 		lua_State *L = moony_current(moony);
 
+		moony->error[0] = 0x0; // clear error message
+		moony->error_out = true;
+
 		// stash
 		lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_STASH);
 		if(lua_pcall(L, 0, 0, 0))
@@ -2149,7 +2201,9 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 		}
 
 		moony->once = true;
-		moony->props_out = true; // trigger update of UI
+
+		if(ref)
+			ref = _moony_props_out(moony, 0, forge);
 	}
 
 	lua_State *L = moony_current(moony);
@@ -2190,7 +2244,8 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 			{
 				if(property->body == moony->uris.moony_code)
 				{
-					moony->dirty_out = true;
+					if(ref)
+						ref = _moony_chunk_out(moony, 0, forge);
 				}
 				else if(property->body == moony->uris.moony_error)
 				{
@@ -2248,7 +2303,8 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 			}
 			else // !property
 			{
-				moony->props_out = true; // trigger update of UI
+				if(ref)
+					ref = _moony_props_out(moony, 0, forge);
 			}
 		}
 		else if(obj->body.otype == moony->uris.patch.set)
@@ -2345,60 +2401,6 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 		}
 	}
 
-	// clear all previously defined properties in UI, plugin may send its new properties afterwards
-	if(moony->props_out)
-	{
-		// clear all properties in UI
-		LV2_Atom_Forge_Frame obj_frame, add_frame, rem_frame;
-		if(ref)
-			ref = lv2_atom_forge_frame_time(forge, 0);
-		if(ref)
-			ref = lv2_atom_forge_object(forge, &obj_frame, 0, moony->uris.patch.patch);
-		if(ref)
-			ref = lv2_atom_forge_key(forge, moony->uris.patch.subject);
-		if(ref)
-			ref = lv2_atom_forge_urid(forge, moony->uris.patch.self);
-		if(ref)
-			ref = lv2_atom_forge_key(forge, moony->uris.patch.sequence);
-		if(ref)
-			ref = lv2_atom_forge_int(forge, 0); // we don't expect a reply
-		if(ref)
-			ref = lv2_atom_forge_key(forge, moony->uris.patch.remove);
-		if(ref)
-			ref = lv2_atom_forge_object(forge, &rem_frame, 0, 0);
-		if(ref)
-			ref = lv2_atom_forge_key(forge, moony->uris.patch.writable);
-		if(ref)
-			ref = lv2_atom_forge_urid(forge, moony->uris.patch.wildcard);
-		if(ref)
-			ref = lv2_atom_forge_key(forge, moony->uris.patch.readable);
-		if(ref)
-			ref = lv2_atom_forge_urid(forge, moony->uris.patch.wildcard);
-		if(ref)
-			lv2_atom_forge_pop(forge, &rem_frame);
-		if(ref)
-			ref = lv2_atom_forge_key(forge, moony->uris.patch.add);
-		if(ref)
-			lv2_atom_forge_object(forge, &add_frame, 0, 0);
-		if(ref)
-			lv2_atom_forge_pop(forge, &add_frame);
-		if(ref)
-			lv2_atom_forge_pop(forge, &obj_frame);
-
-		moony->props_out = false;
-	}
-
-	if(moony->dirty_out)
-	{
-		const uint32_t len = strlen(moony->chunk);
-		if(ref)
-			ref = lv2_atom_forge_frame_time(forge, 0);
-		if(ref)
-			ref = _moony_patch(&moony->uris.patch, forge, moony->uris.moony_code, moony->chunk, len);
-
-		moony->dirty_out = false; // reset flag
-	}
-
 	if(moony->error_out)
 	{
 		const uint32_t len = strlen(moony->error);
@@ -2411,6 +2413,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 	}
 
 	moony->notify_ref = ref;
+	moony->notify_snapshot = *forge; // make snapshot if script should error before moony_out
 
 	return moony->once;
 }
@@ -2421,6 +2424,11 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 	LV2_Atom_Forge *forge = &moony->notify_forge;
 	LV2_Atom_Forge_Ref ref = moony->notify_ref;
 	moony_vm_t *vm = moony->vm;
+
+	if(moony_bypass(moony)) // discard any written atoms on notify port since moony_in
+	{
+		*forge = moony->notify_snapshot;
+	}
 
 	if(vm->trace_out)
 	{

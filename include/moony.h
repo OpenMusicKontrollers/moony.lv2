@@ -229,6 +229,7 @@ struct _moony_t {
 
 	LV2_Atom_Forge_Frame notify_frame;
 	LV2_Atom_Forge_Ref notify_ref;
+	LV2_Atom_Forge notify_snapshot;
 
 	double sample_rate;
 
@@ -290,8 +291,6 @@ struct _moony_t {
 	atomic_uintptr_t vm_new;
 
 	bool once;
-	bool props_out;
-	bool dirty_out;
 	bool error_out;
 
 	// udata cache

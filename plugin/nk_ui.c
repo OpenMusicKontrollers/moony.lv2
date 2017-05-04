@@ -3312,6 +3312,7 @@ _patch_set_self(plughandle_t *handle, LV2_URID property, const LV2_Atom *value)
 
 	if(property == handle->moony_code)
 	{
+		_clear_error(handle); // is safe, as moony:code is always received before a moony:error
 		_patch_set_code(handle, value->size, body, false);
 
 		// new state may have these differently, so request them
