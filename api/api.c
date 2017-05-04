@@ -2029,7 +2029,7 @@ _moony_props_out(moony_t *moony, uint32_t frames, LV2_Atom_Forge *forge)
 {
 	// clear all properties in UI
 	LV2_Atom_Forge_Frame obj_frame, add_frame, rem_frame;
-	LV2_Atom_Forge_Ref ref = lv2_atom_forge_frame_time(forge, 0);
+	LV2_Atom_Forge_Ref ref = lv2_atom_forge_frame_time(forge, frames);
 	if(ref)
 		ref = lv2_atom_forge_object(forge, &obj_frame, 0, moony->uris.patch.patch);
 	if(ref)
