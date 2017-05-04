@@ -215,6 +215,38 @@ pre {
 						<li><a href="#forge-error">Error</a></li>
 					</ul>
 				</li>
+				<li><a href="#forge-canvas">Canvas</a>
+					<ul>
+						<li><a href="#forge-graph">Graph</a>
+							<ul>
+								<li><a href="#forge-beginPath">BeginPath</a></li>
+								<li><a href="#forge-closePath">ClosePath</a></li>
+								<li><a href="#forge-arc">Arc</a></li>
+								<li><a href="#forge-curveTo">CurveTo</a></li>
+								<li><a href="#forge-lineTo">LineTo</a></li>
+								<li><a href="#forge-moveTo">MoveTo</a></li>
+								<li><a href="#forge-rectangle">Rectangle</a></li>
+								<li><a href="#forge-style">Style</a></li>
+								<li><a href="#forge-lineWidth">LineWidth</a></li>
+								<li><a href="#forge-lineDash">LineDash</a></li>
+								<li><a href="#forge-lineCap">LineCap</a></li>
+								<li><a href="#forge-lineJoin">LineJoin</a></li>
+								<li><a href="#forge-miterLimit">MiterLimit</a></li>
+								<li><a href="#forge-stroke">Stroke</a></li>
+								<li><a href="#forge-fill">Fill</a></li>
+								<li><a href="#forge-clip">Clip</a></li>
+								<li><a href="#forge-save">Save</a></li>
+								<li><a href="#forge-restore">Restore</a></li>
+								<li><a href="#forge-translate">Translate</a></li>
+								<li><a href="#forge-scale">Scale</a></li>
+								<li><a href="#forge-rotate">Rotate</a></li>
+								<li><a href="#forge-reset">Reset</a></li>
+								<li><a href="#forge-fontSize">FontSize</a></li>
+								<li><a href="#forge-fillText">FillText</a></li>
+							</ul>
+						</li>
+					</ul>
+				</li>
 			</ul>
 		</li>
 
@@ -1865,6 +1897,586 @@ function stash(forge)
 	forge:error(urn.subj, 1002) -- with subject and sequence number
 end</code></pre>
 			</div>
+
+		<!-- Forge Canvas -->
+		<div class="api-section">
+		<h2 id="forge-canvas">Canvas</h2>
+		<p>Atom types that contain Canvas messages as part of their body.
+			Modeled after the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API">HTML5 Canvas API</a>.
+			Needs the author's <a href="https://gitlab.com/OpenMusicKontrollers/canvas.lv2">Canvas</a> LV2 plugin for rendering.</p>
+		</div>
+
+			<!-- Forge Graph -->
+			<div class="api-section">
+			<h3 id="forge-graph">Graph</h3>
+			<p>Forge an atom object of type Patch.Set with an atom tuple as patch.property Canvas.graph.
+				Use this to start create a vector image.</p>
+
+			<dl>
+				<dt class="func">forge:graph(subject=0, sequenceNumber=0)</dt>
+				<dt>subject (integer)</dt>
+					<dd>patch subject as integer URID, defaults to 0</dd>
+				<dt>sequenceNumber (integer)</dt>
+					<dd>patch sequence number as integer, defaults to 0</dd>
+				<dt class="ret">(userdata)</dt>
+					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
+			</dl>
+
+			<pre><code data-ref="forge-graph">-- Forge Graph
+
+function stash(forge)
+	for ctx in forge:time(0):graph():autopop() do
+		ctx:rectangle(0.1, 0.1, 0.8, 0.8):style(0xff000000):fill()
+	end
+end</code></pre>
+			</div>
+
+				<!-- Forge BeginPath -->
+				<div class="api-section">
+				<h3 id="forge-beginPath">BeginPath</h3>
+				<p>Forge an atom object of type Canvas.BeginPath. Manually begin a new path.
+					Not needed for instructions that inherently begin a new path by themeselves:
+					Canvas.MoveTo, Canvas.Arc, Canvas.Rectangle.</p>
+
+				<dl>
+					<dt class="func">forge:beginPath()</dt>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-beginPath">-- Forge BeginPath
+
+function stash(ctx)
+	ctx:beginPath()
+end</code></pre>
+				</div>
+
+				<!-- Forge ClosePath -->
+				<div class="api-section">
+				<h3 id="forge-closePath">ClosePath</h3>
+				<p>Forge an atom object of type Canvas.ClosePath. Close a previously begun path.</p>
+
+				<dl>
+					<dt class="func">forge:closePath()</dt>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-closePath">-- Forge ClosePath
+
+function stash(ctx)
+	ctx:closePath()
+end</code></pre>
+				</div>
+
+				<!-- Forge Arc -->
+				<div class="api-section">
+				<h3 id="forge-arc">Arc</h3>
+				<p>Forge an atom object of type Canvas.Arc. Create an Arc structure.</p>
+
+				<dl>
+					<dt class="func">forge:arc(x, y, r, a=0, b=2*Pi)</dt>
+					<dt>x (number)</dt>
+						<dd>x coordinate of center</dd>
+					<dt>y (number)</dt>
+						<dd>y coordinate of center</dd>
+					<dt>r (number)</dt>
+						<dd>radius</dd>
+					<dt>a (number)</dt>
+						<dd>starting angle in radians, defaults to 0</dd>
+					<dt>b (number)</dt>
+						<dd>ending angle in radians, defaults to 2*Pi</dd>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-arc">-- Forge Arc
+
+function stash(ctx)
+	ctx:arc(0.5, 0.5, 0.1):stroke()
+	ctx:arc(0.5, 0.5, 0.1, math.pi/4, math.pi/2):stroke()
+end</code></pre>
+				</div>
+
+				<!-- Forge CurveTo -->
+				<div class="api-section">
+				<h3 id="forge-curveTo">CurveTo</h3>
+				<p>Forge an atom object of type Canvas.CurveTo. Append a spline curve segment to path.</p>
+
+				<dl>
+					<dt class="func">forge:curveTo(x1, y1, x2, y2, x3, y3)</dt>
+					<dt>x1 (number)</dt>
+						<dd>x coordinate of spline point 1</dd>
+					<dt>y1 (number)</dt>
+						<dd>y1 coordinate of spline point 1</dd>
+					<dt>x2 (number)</dt>
+						<dd>x coordinate of spline point 2</dd>
+					<dt>y2 (number)</dt>
+						<dd>y2 coordinate of spline point 2</dd>
+					<dt>x3 (number)</dt>
+						<dd>x coordinate of spline point 3</dd>
+					<dt>y3 (number)</dt>
+						<dd>y3 coordinate of spline point 3</dd>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-curveTo">-- Forge CurveTo
+
+function stash(ctx)
+	ctx:beginPath():moveTo(0.0, 0.0):curveTo(0.1, 0.1, 0.2, 0.4, 0.3, 0.9):closePath():stroke()
+end</code></pre>
+				</div>
+
+				<!-- Forge LineTo -->
+				<div class="api-section">
+				<h3 id="forge-lineTo">LineTo</h3>
+				<p>Forge an atom object of type Canvas.LineTo. Append line segment to path.</p>
+
+				<dl>
+					<dt class="func">forge:lineTo(x, y)</dt>
+					<dt>x (number)</dt>
+						<dd>x coordinate of line point</dd>
+					<dt>y (number)</dt>
+						<dd>y coordinate of line point</dd>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-lineTo">-- Forge LineTo 
+
+function stash(ctx)
+	ctx:beginPath():moveTo(0.0, 0.0):lineTo(1.0, 1.0):closePath():stroke()
+end</code></pre>
+				</div>
+
+				<!-- Forge MoveTo -->
+				<div class="api-section">
+				<h3 id="forge-moveTo">MoveTo</h3>
+				<p>Forge an atom object of type Canvas.MoveTo. Move to given point and begin new path.</p>
+
+				<dl>
+					<dt class="func">forge:moveTo(x, y)</dt>
+					<dt>x (number)</dt>
+						<dd>x coordinate of point</dd>
+					<dt>y (number)</dt>
+						<dd>y coordinate of point</dd>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-moveTo">-- Forge MoveTo
+
+function stash(ctx)
+	ctx:moveTo(0.0, 0.0)
+end</code></pre>
+				</div>
+
+				<!-- Forge Rectangle -->
+				<div class="api-section">
+				<h3 id="forge-rectangle">Rectangle</h3>
+				<p>Forge an atom object of type Canvas.Rectangle. Create rectangle.</p>
+
+				<dl>
+					<dt class="func">forge:rectangle(x, y, w, h)</dt>
+					<dt>x (number)</dt>
+						<dd>x coordinate of top left point</dd>
+					<dt>y (number)</dt>
+						<dd>y coordinate of top left point</dd>
+					<dt>w (number)</dt>
+						<dd>width of rectangle</dd>
+					<dt>h (number)</dt>
+						<dd>height of rectangle</dd>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-rectangle">-- Forge Rectangle
+
+function stash(ctx)
+	ctx:rectangle(0.1, 0.1, 0.8, 0.8):fill()
+end</code></pre>
+				</div>
+
+				<!-- Forge Style -->
+				<div class="api-section">
+				<h3 id="forge-style">Style</h3>
+				<p>Forge an atom object of type Canvas.Style. Set current stroke and fill color.</p>
+
+				<dl>
+					<dt class="func">forge:style(color)</dt>
+					<dt>color (integer)</dt>
+						<dd>color in ARGB format</dd>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-style">-- Forge Style
+
+function stash(ctx)
+	ctx:rectangle(0.1, 0.1, 0.2, 0.2):style(0xffffffff):fill() -- opaque white
+	ctx:rectangle(0.2, 0.2, 0.2, 0.2):style(0xff0000ff):fill() -- opaque red
+	ctx:rectangle(0.3, 0.3, 0.2, 0.2):style(0x00ff0080):fill() -- half-transparent green
+end</code></pre>
+				</div>
+
+				<!-- Forge LineWidth -->
+				<div class="api-section">
+				<h3 id="forge-lineWidth">LineWidth</h3>
+				<p>Forge an atom object of type Canvas.LineWidth. Set current line width.</p>
+
+				<dl>
+					<dt class="func">forge:lineWidth(width)</dt>
+					<dt>width (number)</dt>
+						<dd>line width</dd>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-lineWidth">-- Forge LineWidth
+
+function stash(ctx)
+	ctx:rectangle(0.1, 0.1, 0.2, 0.2):lineWidth(0.01):stroke()
+	ctx:rectangle(0.2, 0.2, 0.2, 0.2):lineWidth(0.04):stroke()
+end</code></pre>
+				</div>
+
+				<!-- Forge LineDash -->
+				<div class="api-section">
+				<h3 id="forge-lineDash">LineDash</h3>
+				<p>Forge an atom object of type Canvas.LineDash. Set current line dash style.</p>
+
+				<dl>
+					<dt class="func">forge:lineDash(dashLen, spaceLen)</dt>
+					<dt>dashLen (number)</dt>
+						<dd>length of dash lines</dd>
+					<dt>spaceLen (number)</dt>
+						<dd>length of space between dash lines</dd>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-lineDash">-- Forge LineDash
+
+function stash(ctx)
+	ctx:rectangle(0.1, 0.1, 0.2, 0.2):lineDash(0.01, 0.01):stroke()
+	ctx:rectangle(0.2, 0.2, 0.2, 0.2):lineDash(0.01, 0.04):stroke()
+end</code></pre>
+				</div>
+
+				<!-- Forge LineCap -->
+				<div class="api-section">
+				<h3 id="forge-lineCap">LineCap</h3>
+				<p>Forge an atom object of type Canvas.LineCap. Set current line cap style.</p>
+
+				<dl>
+					<dt class="func">forge:lineCap(cap)</dt>
+					<dt>cap (integer)</dt>
+						<dd>line cap type URID: Canvas.lineCapButt, Canvas.lineCapRound, Canvas.lineCapSquare</dd>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-lineCap">-- Forge LineCap
+
+local function tri(ctx, x, y, s, cap)
+	ctx:moveTo(x, y):lineTo(x + s, y):lineTo(x + s, y + s/2):lineCap(cap):stroke()
+end
+
+function stash(ctx)
+	ctx:lineWidth(0.05)
+	tri(ctx, 0.3, 0.1, 0.4, Canvas.lineCapButt)
+	tri(ctx, 0.2, 0.2, 0.4, Canvas.lineCapRound)
+	tri(ctx, 0.1, 0.3, 0.4, Canvas.lineCapSquare)
+end</code></pre>
+				</div>
+
+				<!-- Forge LineJoin -->
+				<div class="api-section">
+				<h3 id="forge-lineJoin">LineJoin</h3>
+				<p>Forge an atom object of type Canvas.LineJoin. Set current line join style.</p>
+
+				<dl>
+					<dt class="func">forge:lineJoin(join)</dt>
+					<dt>join (integer)</dt>
+						<dd>line join type URID: Canvas.lineJoinMiter, Canvas.lineJoinRound, Canvas.lineJoinBevel</dd>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-lineJoin">-- Forge LineJoin
+
+local function tri(ctx, x, y, s, join)
+	ctx:moveTo(x, y):lineTo(x + s, y):lineTo(x + s, y + s/2):lineJoin(join):stroke()
+end
+
+function stash(ctx)
+	ctx:lineWidth(0.05)
+	tri(ctx, 0.3, 0.1, 0.4, Canvas.lineJoinMiter)
+	tri(ctx, 0.2, 0.2, 0.4, Canvas.lineJoinRound)
+	tri(ctx, 0.1, 0.3, 0.4, Canvas.lineJoinBevel)
+end</code></pre>
+				</div>
+
+				<!-- Forge MiterLimit -->
+				<div class="api-section">
+				<h3 id="forge-miterLimit">MiterLimit</h3>
+				<p>Forge an atom object of type Canvas.MiterLimit. Set current line join miter limit.</p>
+
+				<dl>
+					<dt class="func">forge:miterLimit(limit)</dt>
+					<dt>limit (number)</dt>
+						<dd>miter limit</dd>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-miterLimit">-- Forge MiterLimit
+
+local function tri(ctx, x, y, s, limit)
+	ctx:moveTo(x, y):lineTo(x + s, y):lineTo(x + s, y + s/2):lineJoin(Canvas.lineJoinMiter):miterLimit(limit):stroke()
+end
+
+function stash(ctx)
+	ctx:lineWidth(0.05)
+	tri(ctx, 0.3, 0.1, 0.4, 1.0)
+	tri(ctx, 0.2, 0.2, 0.4, 2.0)
+end</code></pre>
+				</div>
+
+				<!-- Forge Stroke -->
+				<div class="api-section">
+				<h3 id="forge-stroke">Stroke</h3>
+				<p>Forge an atom object of type Canvas.Stroke. Stroke current path.</p>
+
+				<dl>
+					<dt class="func">forge:stroke()</dt>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-stroke">-- Forge Stroke
+
+function stash(ctx)
+	ctx:rectangle(0.0, 0.0, 1.0, 1.0):stroke()
+end</code></pre>
+				</div>
+
+				<!-- Forge Fill -->
+				<div class="api-section">
+				<h3 id="forge-fill">Fill</h3>
+				<p>Forge an atom object of type Canvas.Fill. Fill current path.</p>
+
+				<dl>
+					<dt class="func">forge:fill()</dt>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-fill">-- Forge Fill
+
+function stash(ctx)
+	ctx:rectangle(0.0, 0.0, 1.0, 1.0):fill()
+end</code></pre>
+				</div>
+
+				<!-- Forge Clip -->
+				<div class="api-section">
+				<h3 id="forge-clip">Clip</h3>
+				<p>Forge an atom object of type Canvas.Clip. Set current path as clip mask.</p>
+
+				<dl>
+					<dt class="func">forge:clip()</dt>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-clip">-- Forge Clip
+
+function stash(ctx)
+	ctx:save()
+	ctx:arc(0.25, 0.25, 0.25):clip()
+	ctx:rectangle(0.25, 0.25, 0.5, 0.5):fill()
+	ctx:restore()
+end</code></pre>
+				</div>
+
+				<!-- Forge Save -->
+				<div class="api-section">
+				<h3 id="forge-save">Save</h3>
+				<p>Forge an atom object of type Canvas.Save. Push/save current state.</p>
+
+				<dl>
+					<dt class="func">forge:save()</dt>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-save">-- Forge Save
+
+function stash(ctx)
+  ctx:save():translate(0.5, 0.5):rotate(math.pi/4)
+  ctx:rectangle(-0.1, -0.1, 0.2, 0.2):stroke()
+  ctx:restore()
+
+  ctx:rectangle(0.4, 0.4, 0.2, 0.2):stroke()
+end</code></pre>
+				</div>
+
+				<!-- Forge Restore -->
+				<div class="api-section">
+				<h3 id="forge-restore">Restore</h3>
+				<p>Forge an atom object of type Canvas.Restore. Pop/restore previously saved state.</p>
+
+				<dl>
+					<dt class="func">forge:restore()</dt>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-restore">-- Forge Restore
+
+function stash(ctx)
+  ctx:save():translate(0.5, 0.5):rotate(math.pi/4)
+  ctx:rectangle(-0.1, -0.1, 0.2, 0.2):stroke()
+  ctx:restore()
+
+  ctx:rectangle(0.4, 0.4, 0.2, 0.2):stroke()
+end</code></pre>
+				</div>
+
+				<!-- Forge Translate -->
+				<div class="api-section">
+				<h3 id="forge-translate">Translate</h3>
+				<p>Forge an atom object of type Canvas.Translate. Translate current render matrix.</p>
+
+				<dl>
+					<dt class="func">forge:translate(tx, ty)</dt>
+					<dt>tx (number)</dt>
+						<dd>x coordinate offset of translocation</dd>
+					<dt>ty (number)</dt>
+						<dd>y coordinate offset of translocation</dd>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-translate">-- Forge Translate
+
+function stash(ctx)
+	ctx:save():translate(0.4, 0.4)
+	ctx:rectangle(0.0, 0.0, 0.2, 0.2):fill()
+	ctx:restore()
+end</code></pre>
+				</div>
+
+				<!-- Forge Scale -->
+				<div class="api-section">
+				<h3 id="forge-scale">Scale</h3>
+				<p>Forge an atom object of type Canvas.Scale. Scale current render matrix.</p>
+
+				<dl>
+					<dt class="func">forge:scale(sx, sy)</dt>
+					<dt>sx (number)</dt>
+						<dd>x coordinate scaling factor</dd>
+					<dt>sy (number)</dt>
+						<dd>y coordinate scaling factor</dd>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-scale">-- Forge Scale
+
+function stash(ctx)
+	ctx:save():scale(2.0, 2.0)
+	ctx:rectangle(0.0, 0.0, 0.5, 0.5):fill()
+	ctx:restore()
+end</code></pre>
+				</div>
+
+				<!-- Forge Rotate -->
+				<div class="api-section">
+				<h3 id="forge-rotate">Rotate</h3>
+				<p>Forge an atom object of type Canvas.Rotate. Rotate current render matrix.</p>
+
+				<dl>
+					<dt class="func">forge:rotate(a)</dt>
+					<dt>a (number)</dt>
+						<dd>angle of rotation in radians</dd>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-rotate">-- Forge Rotate
+
+function stash(ctx)
+	ctx:save():translate(0.4, 0.4):rotate(math.pi/4) -- rotate by 45 degrees
+	ctx:rectangle(-0.1, -0.1, 0.2, 0.2):fill()
+	ctx:restore()
+end</code></pre>
+				</div>
+
+				<!-- Forge Reset -->
+				<div class="api-section">
+				<h3 id="forge-reset">Reset</h3>
+				<p>Forge an atom object of type Canvas.Reset. Reset current render matrix to identity configuration.</p>
+
+				<dl>
+					<dt class="func">forge:reset()</dt>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-reset">-- Forge Reset
+
+function stash(ctx)
+	ctx:translate(0.4, 0.4)
+	ctx:rectangle(0.0, 0.0, 0.2, 0.2):fill()
+
+	ctx:reset()
+
+	ctx:rectangle(0.0, 0.0, 0.2, 0.2):fill()
+end</code></pre>
+				</div>
+
+				<!-- Forge FontSize -->
+				<div class="api-section">
+				<h3 id="forge-fontSize">FontSize</h3>
+				<p>Forge an atom object of type Canvas.FontSize. Set font size.</p>
+
+				<dl>
+					<dt class="func">forge:fontSize(size)</dt>
+					<dt>size (number)</dt>
+						<dd>size of font</dd>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-fontSize">-- Forge FontSize
+
+function stash(ctx)
+	ctx:moveTo(0.5, 0.5):fontSize(0.1):fillText('Hello')
+end</code></pre>
+				</div>
+
+				<!-- Forge FillText -->
+				<div class="api-section">
+				<h3 id="forge-fillText">FillText</h3>
+				<p>Forge an atom object of type Canvas.FillText. Fill/draw text at current position.</p>
+
+				<dl>
+					<dt class="func">forge:fillText(text)</dt>
+					<dt>text (string)</dt>
+						<dd>text to fill/draw</dd>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-fillText">-- Forge FillText
+
+function stash(ctx)
+	ctx:moveTo(0.5, 0.5):fontSize(0.1):style(0xff0000ff):fillText('Hello')
+end</code></pre>
+				</div>
 
 	<div class="api-section">
 	<h1 id="atom">Atom</h1>

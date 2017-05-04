@@ -1,9 +1,7 @@
 === Low priority
-* doc: Canvas
 * api: xpress
 * api: CanvasResponder
 
 === High priority
-* doc: Parameter
 * api: simplify forge:vector
 * api: simplify forge:set

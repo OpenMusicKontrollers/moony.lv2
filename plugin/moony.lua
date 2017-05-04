@@ -697,7 +697,7 @@ local field_func = token(T.OPERATOR, S('.:')) * token(T.FUNCTION, word_match(ord
 	'lineDash',
 	'lineCap',
 	'lineJoin',
-	'miterLimig',
+	'miterLimit',
 	'stroke',
 	'fill',
 	'clip',
