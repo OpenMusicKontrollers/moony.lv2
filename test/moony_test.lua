@@ -1828,3 +1828,195 @@ do
 	assert(#inp == #out)
 	assert(inp == out)
 end
+
+-- Canvas
+print('[test] Canvas')
+do
+	local subj = Map['http://open-music-kontrollers.ch/lv2/moony#subject']
+	local seqn = 13
+
+	local n = {0.125, 0.25, 0.375, 0.5, 0.625, 0.75}
+
+	local function producer(forge)
+		for ctx in forge:time(0):graph(subj, seqn):autopop() do
+			ctx:beginPath()
+			ctx:closePath()
+			ctx:arc(table.unpack(n, 1, 5))
+			ctx:curveTo(table.unpack(n, 1, 6))
+			ctx:lineTo(table.unpack(n, 1, 2))
+			ctx:moveTo(table.unpack(n, 1, 2))
+			ctx:rectangle(table.unpack(n, 1, 4))
+			ctx:style(0x12345678)
+			ctx:lineWidth(table.unpack(n, 1, 1))
+			ctx:lineDash(table.unpack(n, 1, 2))
+			ctx:lineCap(Canvas.lineCapRound)
+			ctx:lineJoin(Canvas.lineJoinRound)
+			ctx:miterLimit(table.unpack(n, 1, 1))
+			ctx:stroke()
+			ctx:fill()
+			ctx:clip()
+			ctx:save()
+			ctx:restore()
+			ctx:translate(table.unpack(n, 1, 2))
+			ctx:scale(table.unpack(n, 1, 2))
+			ctx:rotate(table.unpack(n, 1, 1))
+			ctx:reset()
+			ctx:fontSize(table.unpack(n, 1, 1))
+			ctx:fillText('hello')
+		end
+	end
+
+	local function check_canvas_object(obj, otype)
+		assert(obj.type == Atom.Object)
+		assert(obj.otype == otype)
+	end
+
+	local function check_canvas_vector(body, num)
+		assert(body.type == Atom.Vector)
+		assert(#body == num)
+
+		for i = 1, #body do
+			assert(body[i].body == n[i])
+		end
+	end
+
+	local function consumer(seq)
+		assert(#seq == 1)
+
+		local set = seq[1]
+		assert(set.type == Atom.Object)
+		assert(set.otype == Patch.Set)
+		assert(#set == 4)
+
+		assert(set[Patch.subject].body == subj)
+		assert(set[Patch.sequenceNumber].body == seqn)
+		assert(set[Patch.property].body == Canvas.graph)
+
+		local graph = set[Patch.value]
+		assert(graph)
+		assert(graph.type == Atom.Tuple)
+		assert(#graph == 24)
+
+		local beginPath = graph[1]
+		check_canvas_object(beginPath, Canvas.BeginPath)
+
+		local closePath = graph[2]
+		check_canvas_object(closePath, Canvas.ClosePath)
+
+		local itm, body
+
+		itm = graph[3]
+		check_canvas_object(itm, Canvas.Arc)
+		body = itm[Canvas.body]
+		check_canvas_vector(body, 5)
+
+		itm = graph[4]
+		check_canvas_object(itm, Canvas.CurveTo)
+		body = itm[Canvas.body]
+		check_canvas_vector(body, 6)
+
+		itm = graph[5]
+		check_canvas_object(itm, Canvas.LineTo)
+		body = itm[Canvas.body]
+		check_canvas_vector(body, 2)
+
+		itm = graph[6]
+		check_canvas_object(itm, Canvas.MoveTo)
+		body = itm[Canvas.body]
+		check_canvas_vector(body, 2)
+
+		itm = graph[7]
+		check_canvas_object(itm, Canvas.Rectangle)
+		body = itm[Canvas.body]
+		check_canvas_vector(body, 4)
+
+		itm = graph[8]
+		check_canvas_object(itm, Canvas.Style)
+		body = itm[Canvas.body]
+		assert(body.type == Atom.Long)
+		assert(body.body == 0x12345678)
+
+		itm = graph[9]
+		check_canvas_object(itm, Canvas.LineWidth)
+		body = itm[Canvas.body]
+		assert(body.type == Atom.Float)
+		assert(body.body == n[1])
+
+		itm = graph[10]
+		check_canvas_object(itm, Canvas.LineDash)
+		body = itm[Canvas.body]
+		check_canvas_vector(body, 2)
+
+		itm = graph[11]
+		check_canvas_object(itm, Canvas.LineCap)
+		body = itm[Canvas.body]
+		assert(body.type == Atom.URID)
+		assert(body.body == Canvas.lineCapRound)
+
+		itm = graph[12]
+		check_canvas_object(itm, Canvas.LineJoin)
+		body = itm[Canvas.body]
+		assert(body.type == Atom.URID)
+		assert(body.body == Canvas.lineJoinRound)
+
+		itm = graph[13]
+		check_canvas_object(itm, Canvas.MiterLimit)
+		body = itm[Canvas.body]
+		assert(body.type == Atom.Float)
+		assert(body.body == n[1])
+
+		itm = graph[14]
+		check_canvas_object(itm, Canvas.Stroke)
+		assert(#itm == 0)
+
+		itm = graph[15]
+		check_canvas_object(itm, Canvas.Fill)
+		assert(#itm == 0)
+
+		itm = graph[16]
+		check_canvas_object(itm, Canvas.Clip)
+		assert(#itm == 0)
+
+		itm = graph[17]
+		check_canvas_object(itm, Canvas.Save)
+		assert(#itm == 0)
+
+		itm = graph[18]
+		check_canvas_object(itm, Canvas.Restore)
+		assert(#itm == 0)
+
+		itm = graph[19]
+		check_canvas_object(itm, Canvas.Translate)
+		body = itm[Canvas.body]
+		check_canvas_vector(body, 2)
+
+		itm = graph[20]
+		check_canvas_object(itm, Canvas.Scale)
+		body = itm[Canvas.body]
+		check_canvas_vector(body, 2)
+
+		itm = graph[21]
+		check_canvas_object(itm, Canvas.Rotate)
+		body = itm[Canvas.body]
+		assert(body.type == Atom.Float)
+		assert(body.body == n[1])
+
+		itm = graph[22]
+		check_canvas_object(itm, Canvas.Reset)
+		assert(#itm == 0)
+
+		itm = graph[23]
+		check_canvas_object(itm, Canvas.FontSize)
+		body = itm[Canvas.body]
+		assert(body.type == Atom.Float)
+		assert(body.body == n[1])
+
+		itm = graph[24]
+		check_canvas_object(itm, Canvas.FillText)
+		body = itm[Canvas.body]
+		assert(body.type == Atom.String)
+		assert(body.body == 'hello')
+	end
+
+	test(producer, consumer)
+end
