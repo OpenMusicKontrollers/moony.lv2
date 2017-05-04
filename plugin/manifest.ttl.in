@@ -364,3 +364,18 @@ moony:bank-template_part-4
 	pset:bank moony:bank-template;
 	rdfs:label "Template 4: State Responder" ;
 	rdfs:seeAlso <presets.ttl> .
+
+moony:bank-template_part-5
+	a pset:Preset ;
+	lv2:appliesTo moony:a1xa1 ,
+		moony:a2xa2 ,
+		moony:a4xa4 ,
+		moony:c1a1xc1a1 ,
+		moony:c2a1xc2a1 ,
+		moony:c4a1xc4a1 ,
+		moony:c1xc1 ,
+		moony:c2xc2 ,
+		moony:c4xc4 ;
+	pset:bank moony:bank-template;
+	rdfs:label "Template 5: Code Injection" ;
+	rdfs:seeAlso <presets.ttl> .

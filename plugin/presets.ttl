@@ -1137,3 +1137,77 @@ function run(n, control, notify)
 	end
 end"""
 	] .
+
+moony:bank-template_part-5
+	a pset:Preset ;
+	doap:license lic:Artistic-2.0 ;
+	state:state [
+		moony:editorHidden false ;
+		moony:logHidden true ;
+		moony:logFollow true ;
+		moony:paramHidden false ;
+		moony:paramCols 1 ;
+		moony:paramRows 1 ;
+		moony:code """-- Template 5: Code Injection
+
+-- define URI prefix for state parameters
+local urn = HashMap('urn:moony:template-5#')
+
+-- pretty print error message from injection
+local function perr(err)
+  return string.gsub(err, '%b[]:', '')
+end
+
+-- define injection parameter
+local injection = Parameter({
+  [RDFS.label] = 'Injection',
+  [RDFS.comment] = 'enter your code for injection here',
+  [RDFS.range] = Atom.String,
+  [Moony.syntax] = Lua.lang,
+  _value = '',
+  [Patch.Get] = function(self)
+    return self._value
+  end,
+  [Patch.Set] = function(self, value)
+    self._value = value
+
+    local fn, err = load(value) -- compile injection code
+    if fn then -- compilation succeded
+      local stat, err = pcall(fn) -- run injection code
+      if not stat then -- running code failed
+        print(perr(err)) -- report error
+      end
+    else -- compilation failed
+      print(perr(err)) -- report error
+    end
+  end
+})
+
+-- define a StateResponder object
+local stateR = StateResponder({
+  [Patch.writable] = {
+    [urn.injection] = injection -- register parameter to writable group
+  }
+})
+
+-- push parameter values to disk
+function save(forge)
+  stateR:stash(forge)
+end
+
+-- pop parameter values from disk
+function restore(atom)
+  stateR:apply(atom)
+end
+
+-- register parameters to UI
+function once(n, control, notify)
+  stateR:register(0, notify)
+end
+
+function run(n, control, notify)
+  for frames, atom in control:foreach() do -- iterate over incoming events
+    local handled = stateR(frames, notify, atom)
+  end
+end"""
+	] .
