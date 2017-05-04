@@ -1172,87 +1172,105 @@ do
 	local function producer(forge)
 		forge:time(0)
 		vectorize(forge, Atom.Int, {1, 2, 3, 4})
+		forge:time(0):vector(Atom.Int, 1, 2, 3, 4)
+		forge:time(0):vector(Atom.Int, {1, 2, 3, 4})
 
 		forge:time(1)
 		vectorize(forge, Atom.Long, {5, 6, 7, 8})
+		forge:time(1):vector(Atom.Long, 5, 6, 7, 8)
+		forge:time(1):vector(Atom.Long, {5, 6, 7, 8})
 
 		forge:time(2)
 		vectorize(forge, Atom.Bool, {true, false})
+		forge:time(2):vector(Atom.Bool, true, false)
+		forge:time(2):vector(Atom.Bool, {true, false})
 
 		forge:time(3)
 		vectorize(forge, Atom.Float, {1.0, 2.0})
+		forge:time(3):vector(Atom.Float, 1.0, 2.0)
+		forge:time(3):vector(Atom.Float, {1.0, 2.0})
 
 		forge:time(4)
 		vectorize(forge, Atom.Double, {3.3, 4.4})
+		forge:time(4):vector(Atom.Double, 3.3, 4.4)
+		forge:time(4):vector(Atom.Double, {3.3, 4.4})
 
 		forge:time(5)
 		vectorize(forge, Atom.URID, {Atom.Int, Atom.Long})
+		forge:time(5):vector(Atom.URID, Atom.Int, Atom.Long)
+		forge:time(5):vector(Atom.URID, {Atom.Int, Atom.Long})
 	end
 
 	local function consumer(seq)
-		assert(#seq == 6)
+		assert(#seq == 18)
 
-		local vec = seq[1]
-		assert(vec.type == Atom.Vector)
-		assert(#vec == 4)
-		assert(vec.childType == Atom.Int)
-		assert(vec.childSize == 4)
+		for _, vec in ipairs{seq[1], seq[2], seq[3]} do
+			assert(vec.type == Atom.Vector)
+			assert(#vec == 4)
+			assert(vec.childType == Atom.Int)
+			assert(vec.childSize == 4)
 
-		for i, atom in vec:foreach() do
-			assert(atom.type == Atom.Int)
-			assert(atom.body == i)
+			for i, atom in vec:foreach() do
+				assert(atom.type == Atom.Int)
+				assert(atom.body == i)
+			end
 		end
 
-		vec = seq[2]
-		assert(vec.type == Atom.Vector)
-		assert(#vec == 4)
-		assert(vec.childType == Atom.Long)
-		assert(vec.childSize == 8)
+		for _, vec in ipairs{seq[4], seq[5], seq[6]} do
+			assert(vec.type == Atom.Vector)
+			assert(#vec == 4)
+			assert(vec.childType == Atom.Long)
+			assert(vec.childSize == 8)
 
-		for i, atom in vec:foreach() do
-			assert(atom.type == Atom.Long)
-			assert(atom.body == i + 4)
+			for i, atom in vec:foreach() do
+				assert(atom.type == Atom.Long)
+				assert(atom.body == i + 4)
+			end
 		end
 
-		vec = seq[3]
-		assert(vec.type == Atom.Vector)
-		assert(#vec == 2)
-		assert(vec.childType == Atom.Bool)
-		assert(vec.childSize == 4)
-		assert(vec[0] == nil)
-		assert(vec[1].body == true)
-		assert(vec[2].body == false)
-		assert(vec[3] == nil)
+		for _, vec in ipairs{seq[7], seq[8], seq[9]} do
+			assert(vec.type == Atom.Vector)
+			assert(#vec == 2)
+			assert(vec.childType == Atom.Bool)
+			assert(vec.childSize == 4)
+			assert(vec[0] == nil)
+			assert(vec[1].body == true)
+			assert(vec[2].body == false)
+			assert(vec[3] == nil)
+		end
 
-		vec = seq[4]
-		assert(vec.type == Atom.Vector)
-		assert(#vec == 2)
-		assert(vec.childType == Atom.Float)
-		assert(vec.childSize == 4)
-		local a, b = vec:unpack()
-		assert(a.body == 1.0)
-		assert(b.body == 2.0)
+		for _, vec in ipairs{seq[10], seq[11], seq[12]} do
+			assert(vec.type == Atom.Vector)
+			assert(#vec == 2)
+			assert(vec.childType == Atom.Float)
+			assert(vec.childSize == 4)
+			local a, b = vec:unpack()
+			assert(a.body == 1.0)
+			assert(b.body == 2.0)
+		end
 
-		vec = seq[5]
-		assert(vec.type == Atom.Vector)
-		assert(#vec == 2)
-		assert(vec.childType == Atom.Double)
-		assert(vec.childSize == 8)
-		local a, b = vec:unpack()
-		assert(a.body == 3.3)
-		assert(b.body == 4.4)
+		for _, vec in ipairs{seq[13], seq[14], seq[15]} do
+			assert(vec.type == Atom.Vector)
+			assert(#vec == 2)
+			assert(vec.childType == Atom.Double)
+			assert(vec.childSize == 8)
+			local a, b = vec:unpack()
+			assert(a.body == 3.3)
+			assert(b.body == 4.4)
+		end
 
-		vec = seq[6]
-		assert(vec.type == Atom.Vector)
-		assert(#vec == 2)
-		assert(vec.childType == Atom.URID)
-		assert(vec.childSize == 4)
-		local a, b = vec:unpack(1, 1)
-		assert(a.body == Atom.Int)
-		assert(b == nil)
-		local a, b = vec:unpack(2, 2)
-		assert(a.body == Atom.Long)
-		assert(b == nil)
+		for _, vec in ipairs{seq[16], seq[17], seq[18]} do
+			assert(vec.type == Atom.Vector)
+			assert(#vec == 2)
+			assert(vec.childType == Atom.URID)
+			assert(vec.childSize == 4)
+			local a, b = vec:unpack(1, 1)
+			assert(a.body == Atom.Int)
+			assert(b == nil)
+			local a, b = vec:unpack(2, 2)
+			assert(a.body == Atom.Long)
+			assert(b == nil)
+		end
 	end
 
 	test(producer, consumer)

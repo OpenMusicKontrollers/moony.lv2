@@ -3,5 +3,4 @@
 * api: CanvasResponder
 
 === High priority
-* api: simplify forge:vector
 * api: simplify forge:set
