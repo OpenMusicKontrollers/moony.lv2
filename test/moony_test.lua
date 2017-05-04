@@ -1294,6 +1294,7 @@ end
 print('[test] Patch')
 do
 	local subject = Map['http://open-music-kontrollers.ch/lv2/moony#subject']
+	local destination = Map['http://open-music-kontrollers.ch/lv2/moony#destination']
 	local property = Map['http://open-music-kontrollers.ch/lv2/moony#property']
 	local access = Patch.writable
 	local rtid = Blank() & 0x7fffffff
@@ -1336,10 +1337,20 @@ do
 		forge:time(7):ack(subject, rtid)
 
 		forge:time(8):error(subject, rtid)
+
+		forge:time(9):delete(subject, rtid)
+
+		forge:time(10):copy(subject, destination, rtid)
+
+		forge:time(11):move(subject, destination, rtid)
+
+		local insert = forge:time(12):insert(subject, rtid)
+		insert:key(property):string('insertion')
+		insert:pop()
 	end
 
 	local function consumer(seq)
-		assert(#seq == 9)
+		assert(#seq == 13)
 
 		local get = seq[1]
 		assert(get.type == Atom.Object)
@@ -1423,6 +1434,40 @@ do
 		assert(#err == 2)
 		assert(err[Patch.subject].body == subject)
 		assert(err[Patch.sequenceNumber].body == rtid)
+
+		local err = seq[10]
+		assert(err.type == Atom.Object)
+		assert(err.otype == Patch.Delete)
+		assert(#err == 2)
+		assert(err[Patch.subject].body == subject)
+		assert(err[Patch.sequenceNumber].body == rtid)
+
+		local err = seq[11]
+		assert(err.type == Atom.Object)
+		assert(err.otype == Patch.Copy)
+		assert(#err == 3)
+		assert(err[Patch.subject].body == subject)
+		assert(err[Patch.destination].body == destination)
+		assert(err[Patch.sequenceNumber].body == rtid)
+
+		local err = seq[12]
+		assert(err.type == Atom.Object)
+		assert(err.otype == Patch.Move)
+		assert(#err == 3)
+		assert(err[Patch.subject].body == subject)
+		assert(err[Patch.destination].body == destination)
+		assert(err[Patch.sequenceNumber].body == rtid)
+
+		local put = seq[13]
+		assert(put.type == Atom.Object)
+		assert(put.otype == Patch.Insert)
+		assert(#put == 3)
+		assert(put[Patch.subject].body == subject)
+		assert(put[Patch.sequenceNumber].body == rtid)
+		local body = put[Patch.body]
+		assert(body)
+		assert(#body == 1)
+		assert(body[property].body == 'insertion')
 	end
 
 	test(producer, consumer)

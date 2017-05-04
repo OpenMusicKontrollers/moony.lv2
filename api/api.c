@@ -44,6 +44,18 @@
 #	define LV2_PATCH__Copy LV2_PATCH_PREFIX "Copy"
 #endif
 
+#ifndef LV2_PATCH__Insert
+#	define LV2_PATCH__Insert LV2_PATCH_PREFIX "Insert"
+#endif
+
+#ifndef LV2_PATCH__accept
+#	define LV2_PATCH__accept LV2_PATCH_PREFIX "accept"
+#endif
+
+#ifndef LV2_PATCH__context
+#	define LV2_PATCH__context LV2_PATCH_PREFIX "context"
+#endif
+
 #ifndef LV2_UNITS__midiController
 #	define LV2_UNITS__midiController LV2_UNITS_PREFIX "midiController"
 #endif
@@ -1264,6 +1276,10 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->uris.patch.sequence = moony->map->map(moony->map->handle, LV2_PATCH__sequenceNumber);
 	moony->uris.patch.error = moony->map->map(moony->map->handle, LV2_PATCH__Error);
 	moony->uris.patch.ack = moony->map->map(moony->map->handle, LV2_PATCH__Ack);
+	moony->uris.patch.delete = moony->map->map(moony->map->handle, LV2_PATCH__Delete);
+	moony->uris.patch.copy = moony->map->map(moony->map->handle, LV2_PATCH__Copy);
+	moony->uris.patch.move = moony->map->map(moony->map->handle, LV2_PATCH__Move);
+	moony->uris.patch.insert = moony->map->map(moony->map->handle, LV2_PATCH__Insert);
 
 	moony->uris.rdfs_label = moony->map->map(moony->map->handle, RDFS__label);
 	moony->uris.rdfs_range = moony->map->map(moony->map->handle, RDFS__range);
@@ -1599,14 +1615,17 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 		SET_MAP(L, LV2_PATCH__, Get);
 		SET_MAP(L, LV2_PATCH__, Message);
 		SET_MAP(L, LV2_PATCH__, Move);
+		SET_MAP(L, LV2_PATCH__, Insert);
 		SET_MAP(L, LV2_PATCH__, Patch);
 		SET_MAP(L, LV2_PATCH__, Post);
 		SET_MAP(L, LV2_PATCH__, Put);
 		SET_MAP(L, LV2_PATCH__, Request);
 		SET_MAP(L, LV2_PATCH__, Response);
 		SET_MAP(L, LV2_PATCH__, Set);
+		SET_MAP(L, LV2_PATCH__, accept);
 		SET_MAP(L, LV2_PATCH__, add);
 		SET_MAP(L, LV2_PATCH__, body);
+		SET_MAP(L, LV2_PATCH__, context);
 		SET_MAP(L, LV2_PATCH__, destination);
 		SET_MAP(L, LV2_PATCH__, property);
 		SET_MAP(L, LV2_PATCH__, readable);

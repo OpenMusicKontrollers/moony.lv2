@@ -3,4 +3,4 @@
 * api: CanvasResponder
 
 === High priority
-* api: simplify forge:set
+* properly catch forge errors in 'notify'

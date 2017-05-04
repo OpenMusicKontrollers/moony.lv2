@@ -211,6 +211,10 @@ struct _patch_t {
 	LV2_URID sequence;
 	LV2_URID error;
 	LV2_URID ack;
+	LV2_URID delete;
+	LV2_URID copy;
+	LV2_URID move;
+	LV2_URID insert;
 };
 
 struct _moony_t {

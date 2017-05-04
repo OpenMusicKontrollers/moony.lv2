@@ -213,6 +213,10 @@ pre {
 						<li><a href="#forge-put">Put</a></li>
 						<li><a href="#forge-ack">Ack</a></li>
 						<li><a href="#forge-error">Error</a></li>
+						<li><a href="#forge-delete">Delete</a></li>
+						<li><a href="#forge-copy">Copy</a></li>
+						<li><a href="#forge-move">Move</a></li>
+						<li><a href="#forge-insert">Insert</a></li>
 					</ul>
 				</li>
 				<li><a href="#forge-canvas">Canvas</a>
@@ -1919,6 +1923,114 @@ local urn = HashMap('urn:moony:xzy')
 
 function stash(forge)
 	forge:error(urn.subj, 1002) -- with subject and sequence number
+end</code></pre>
+			</div>
+
+			<!-- Forge Delete -->
+			<div class="api-section">
+			<h3 id="forge-delete">Delete</h3>
+			<p>Forge a delete patch atom, e.g. an atom object of type Patch.Delete.</p>
+
+			<dl>
+				<dt class="func">forge:delete(subject, sequenceNumber=0)</dt>
+				<dt>subject (integer)</dt>
+					<dd>patch subject as integer URID</dd>
+				<dt>sequenceNumber (integer)</dt>
+					<dd>patch sequence number as integer, defaults to 0</dd>
+				<dt class="ret">(userdata)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<pre><code data-ref="forge-delete">-- Forge Delete
+
+local urn = HashMap('urn:moony:xzy')
+
+function stash(forge)
+	forge:delete(urn.subj, 1002) -- with sequence number
+end</code></pre>
+			</div>
+
+			<!-- Forge Copy -->
+			<div class="api-section">
+			<h3 id="forge-copy">Copy</h3>
+			<p>Forge a copy patch atom, e.g. an atom object of type Patch.Copy.</p>
+
+			<dl>
+				<dt class="func">forge:copy(subject, destination, sequenceNumber=0)</dt>
+				<dt>subject (integer)</dt>
+					<dd>patch subject as integer URID</dd>
+				<dt>destination (integer)</dt>
+					<dd>patch destination as integer URID</dd>
+				<dt>sequenceNumber (integer)</dt>
+					<dd>patch sequence number as integer, defaults to 0</dd>
+				<dt class="ret">(userdata)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<pre><code data-ref="forge-copy">-- Forge Copy
+
+local urn = HashMap('urn:moony:xzy')
+
+function stash(forge)
+	forge:copy(urn.subj, urn.dest, 1002) -- with sequence number
+end</code></pre>
+			</div>
+
+			<!-- Forge Move -->
+			<div class="api-section">
+			<h3 id="forge-move">Move</h3>
+			<p>Forge a move patch atom, e.g. an atom object of type Patch.Move.</p>
+
+			<dl>
+				<dt class="func">forge:move(subject, destination, sequenceNumber=0)</dt>
+				<dt>subject (integer)</dt>
+					<dd>patch subject as integer URID</dd>
+				<dt>destination (integer)</dt>
+					<dd>patch destination as integer URID</dd>
+				<dt>sequenceNumber (integer)</dt>
+					<dd>patch sequence number as integer, defaults to 0</dd>
+				<dt class="ret">(userdata)</dt>
+					<dd>self forge object</dd>
+			</dl>
+
+			<pre><code data-ref="forge-move">-- Forge Move
+
+local urn = HashMap('urn:moony:xzy')
+
+function stash(forge)
+	forge:move(urn.subj, urn.dest, 1002) -- with sequence number
+end</code></pre>
+			</div>
+
+			<!-- Forge Insert -->
+			<div class="api-section">
+			<h3 id="forge-insert">Insert</h3>
+			<p>Forge a patch insert atom, e.g. an atom object of type Patch.Insert.</p>
+
+			<dl>
+				<dt class="func">forge:insert(subject=0, sequenceNumber=0)</dt>
+				<dt>subject (integer)</dt>
+					<dd>patch subject as integer URID, defaults to 0</dd>
+				<dt>sequenceNumber (integer)</dt>
+					<dd>patch sequence number as integer, defaults to 0</dd>
+				<dt class="ret">(userdata)</dt>
+					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
+			</dl>
+
+			<pre><code data-ref="forge-insert">-- Forge Insert
+
+local urn = HashMap('urn:moony:xzy')
+
+function stash_tuple(forge)
+	local insert = forge:insert() -- without subject and sequence number
+		insert:key(urn.foo):int(12)
+		insert:key(urn.bar):float(12.5)
+	insert:pop()
+
+	insert= forge:insert(urn.subj, 1002) -- with subject and sequence number
+		insert:key(urn.foo):int(12)
+		insert:key(urn.bar):float(12.5)
+	insert:pop()
 end</code></pre>
 			</div>
 
@@ -4553,6 +4665,7 @@ assert(Patch.Error == ctx.patch.Error)
 assert(Patch.Get == ctx.patch.Get)
 assert(Patch.Message == ctx.patch.Message)
 assert(Patch.Move == ctx.patch.Move)
+assert(Patch.Insert == ctx.patch.Insert)
 assert(Patch.Patch == ctx.patch.Patch)
 assert(Patch.Post == ctx.patch.Post)
 assert(Patch.Put == ctx.patch.Put)
@@ -4560,7 +4673,9 @@ assert(Patch.Request == ctx.patch.Request)
 assert(Patch.Response == ctx.patch.Response)
 assert(Patch.Set == ctx.patch.Set)
 assert(Patch.add == ctx.patch.add)
+assert(Patch.accept == ctx.patch.accept)
 assert(Patch.body == ctx.patch.body)
+assert(Patch.context == ctx.patch.context)
 assert(Patch.destination == ctx.patch.destination)
 assert(Patch.property == ctx.patch.property)
 assert(Patch.readable == ctx.patch.readable)

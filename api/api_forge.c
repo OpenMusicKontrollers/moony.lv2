@@ -1307,6 +1307,144 @@ _lforge_error(lua_State *L)
 }
 
 __realtime static int
+_lforge_delete(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = lua_touserdata(L, 1);
+	const LV2_URID subject = luaL_checkinteger(L, 2);
+	const int32_t sequence_num = luaL_optinteger(L, 3, 0);
+
+	LV2_Atom_Forge_Frame frame;
+
+	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.patch.delete))
+		luaL_error(L, forge_buffer_overflow);
+
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.subject))
+		luaL_error(L, forge_buffer_overflow);
+	if(!lv2_atom_forge_urid(lforge->forge, subject))
+		luaL_error(L, forge_buffer_overflow);
+
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence))
+		luaL_error(L, forge_buffer_overflow);
+	if(!lv2_atom_forge_int(lforge->forge, sequence_num))
+		luaL_error(L, forge_buffer_overflow);
+
+	lv2_atom_forge_pop(lforge->forge, &frame);
+
+	lua_settop(L, 1);
+	return 1;
+}
+
+__realtime static int
+_lforge_copy(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = lua_touserdata(L, 1);
+	const LV2_URID subject = luaL_checkinteger(L, 2);
+	const LV2_URID destination = luaL_checkinteger(L, 3);
+	const int32_t sequence_num = luaL_optinteger(L, 4, 0);
+
+	LV2_Atom_Forge_Frame frame;
+
+	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.patch.copy))
+		luaL_error(L, forge_buffer_overflow);
+
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.subject))
+		luaL_error(L, forge_buffer_overflow);
+	if(!lv2_atom_forge_urid(lforge->forge, subject))
+		luaL_error(L, forge_buffer_overflow);
+
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.destination))
+		luaL_error(L, forge_buffer_overflow);
+	if(!lv2_atom_forge_urid(lforge->forge, destination))
+		luaL_error(L, forge_buffer_overflow);
+
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence))
+		luaL_error(L, forge_buffer_overflow);
+	if(!lv2_atom_forge_int(lforge->forge, sequence_num))
+		luaL_error(L, forge_buffer_overflow);
+
+	lv2_atom_forge_pop(lforge->forge, &frame);
+
+	lua_settop(L, 1);
+	return 1;
+}
+
+__realtime static int
+_lforge_move(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = lua_touserdata(L, 1);
+	const LV2_URID subject = luaL_checkinteger(L, 2);
+	const LV2_URID destination = luaL_checkinteger(L, 3);
+	const int32_t sequence_num = luaL_optinteger(L, 4, 0);
+
+	LV2_Atom_Forge_Frame frame;
+
+	if(!lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.patch.move))
+		luaL_error(L, forge_buffer_overflow);
+
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.subject))
+		luaL_error(L, forge_buffer_overflow);
+	if(!lv2_atom_forge_urid(lforge->forge, subject))
+		luaL_error(L, forge_buffer_overflow);
+
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.destination))
+		luaL_error(L, forge_buffer_overflow);
+	if(!lv2_atom_forge_urid(lforge->forge, destination))
+		luaL_error(L, forge_buffer_overflow);
+
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence))
+		luaL_error(L, forge_buffer_overflow);
+	if(!lv2_atom_forge_int(lforge->forge, sequence_num))
+		luaL_error(L, forge_buffer_overflow);
+
+	lv2_atom_forge_pop(lforge->forge, &frame);
+
+	lua_settop(L, 1);
+	return 1;
+}
+
+__realtime static int
+_lforge_insert(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = lua_touserdata(L, 1);
+	const LV2_URID subject = luaL_optinteger(L, 2, 0);
+	const LV2_URID sequence_num = luaL_optinteger(L, 3, 0);
+	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
+	lframe->depth = 2;
+	lframe->last.frames = lforge->last.frames;
+	lframe->forge = lforge->forge;
+
+	lua_pushvalue(L, 1); // lforge
+	lua_setuservalue(L, -2); // store parent as uservalue
+
+	if(!lv2_atom_forge_object(lforge->forge, &lframe->frame[0], 0, moony->uris.patch.insert))
+		luaL_error(L, forge_buffer_overflow);
+
+	if(subject) // is optional
+	{
+		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.subject))
+			luaL_error(L, forge_buffer_overflow);
+		if(!lv2_atom_forge_urid(lforge->forge, subject))
+			luaL_error(L, forge_buffer_overflow);
+	}
+
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence))
+		luaL_error(L, forge_buffer_overflow);
+	if(!lv2_atom_forge_int(lforge->forge, sequence_num))
+		luaL_error(L, forge_buffer_overflow);
+
+	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.body))
+		luaL_error(L, forge_buffer_overflow);
+	if(!lv2_atom_forge_object(lforge->forge, &lframe->frame[1], 0, 0))
+		luaL_error(L, forge_buffer_overflow);
+
+	return 1; // derived forge
+}
+
+__realtime static int
 _lforge_canvas_graph(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1824,6 +1962,10 @@ const luaL_Reg lforge_mt [] = {
 	{"add", _lforge_add},
 	{"ack", _lforge_ack},
 	{"error", _lforge_error},
+	{"delete", _lforge_delete},
+	{"copy", _lforge_copy},
+	{"move", _lforge_move},
+	{"insert", _lforge_insert},
 
 	// canvas
 	{"graph", _lforge_canvas_graph},
