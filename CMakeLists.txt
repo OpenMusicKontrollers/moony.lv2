@@ -30,14 +30,14 @@ set(CMAKE_C_FLAGS "-fdata-sections -ffunction-sections ${CMAKE_C_FLAGS}")
 set(CMAKE_C_FLAGS "-std=gnu11 -Wextra -Wno-unused-parameter -ffast-math -fvisibility=hidden ${CMAKE_C_FLAGS}")
 set(CMAKE_C_FLAGS "-Wshadow -Wimplicit-function-declaration -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes -Wno-attributes ${CMAKE_C_FLAGS}")
 
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 	set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-z,defs ${CMAKE_MODULE_LINKER_FLAGS}")
 	set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-z,nodelete ${CMAKE_MODULE_LINKER_FLAGS}")
 elseif(WIN32)
 	set(CMAKE_C_FLAGS "-mstackrealign ${CMAKE_C_FLAGS}")
 endif()
 
-if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
 	if(APPLE)
 		set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-dead_strip ${CMAKE_MODULE_LINKER_FLAGS}")
 	else()
@@ -270,7 +270,7 @@ add_library(moony MODULE
 	$<TARGET_OBJECTS:lbase64>
 	$<TARGET_OBJECTS:lascii85>
 	$<TARGET_OBJECTS:laes128>)
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 	target_compile_definitions(moony PUBLIC -DLUA_USE_LINUX)
 elseif(WIN32)
 	target_compile_definitions(moony PUBLIC)
@@ -303,7 +303,7 @@ if(BUILD_TESTING)
 		$<TARGET_OBJECTS:lbase64>
 		$<TARGET_OBJECTS:lascii85>
 		$<TARGET_OBJECTS:laes128>)
-	if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+	if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 		target_compile_definitions(moony_test PUBLIC -DLUA_USE_LINUX)
 	elseif(WIN32)
 		target_compile_definitions(moony_test PUBLIC)
