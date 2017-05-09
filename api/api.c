@@ -2421,7 +2421,7 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 	if(moony_bypass(moony)) // discard any written atoms on notify port since moony_in
 	{
 		*forge = moony->notify_snapshot;
-		notify->atom.size = forge->size - sizeof(LV2_Atom);
+		notify->atom.size = forge->offset - sizeof(LV2_Atom);
 	}
 
 	if(vm->trace_out)
