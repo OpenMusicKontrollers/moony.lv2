@@ -141,7 +141,7 @@ pre {
 			<ul>
 				<li><a href="#urid-map">Map</a></li>
 				<li><a href="#urid-unmap">Unmap</a></li>
-				<li><a href="#urid-hashmap">HashMap</a></li>
+				<li><a href="#urid-mapper">Mapper</a></li>
 				<li><a href="#urid-voicemap">Blank</a></li>
 			</ul>
 		</li>
@@ -666,7 +666,7 @@ end</code></pre>
 
 		<pre><code data-ref="callbacks-save">-- 'save' callback prototype
 
-local urn = HashMap('urn:moony:xzy')
+local urn = Mapper('urn:moony:xzy#')
 
 -- state
 local state = {
@@ -722,7 +722,7 @@ end</code></pre>
 
 		<pre><code data-ref="callbacks-restore">-- 'restore' callback prototype
 
-local urn = HashMap('urn:moony:xyz')
+local urn = Mapper('urn:moony:xyz#')
 
 -- 3D positional state
 local state = {
@@ -828,7 +828,7 @@ assert(prefix .. 'bar' == bar_uri)</code></pre>
 		</div>
 
 		<div class="api-section">
-		<h2 id="urid-hashmap">HashMap</h2>
+		<h2 id="urid-mapper">Mapper</h2>
 		<p>A convenience wrapper and syntactic sugar around <a href="#urid-map">Map</a>.
 		Simplifies creating multiple mappings which share a common URI prefix.</p>
 
@@ -839,21 +839,21 @@ assert(prefix .. 'bar' == bar_uri)</code></pre>
 		<a href="#responder-state">StateResponder</a>.</p>
 
 		<dl>
-			<dt class="func">HashMap(prefix)</dt>
+			<dt class="func">Mapper(prefix)</dt>
 			<dt>prefix (string)</dt>
 				<dd>prefix string to be appended to</dd>
 			<dt class="ret">(table)</dt>
-				<dd>HashMap table</dd>
+				<dd>Mapper table</dd>
 		</dl>
 
-		<pre><code data-ref="urid-hashmap">-- HashMap is a convenience wrapper over Map
+		<pre><code data-ref="urid-mapper">-- Mapper is a convenience wrapper over Map
 
 local prefix = 'http://example.com#'
-local hashmap = HashMap(prefix)
+local mapper = Mapper(prefix)
 
 local bar_urid = Map[prefix .. 'bar']
 
-assert(hashmap.bar == bar_urid)</code></pre>
+assert(mapper.bar == bar_urid)</code></pre>
 		</div>
 
 		<div class="api-section">
@@ -1391,7 +1391,7 @@ end</code></pre>
 			</dl>
 
 			<pre><code data-ref="forge-object">-- Forge Object
-local urn = HashMap('urn:moony:xyz')
+local urn = Mapper('urn:moony:xyz#')
 
 function stash_tuple(forge)
 	local obj = forge:object(urn.FooBar) -- create derived container forge object
@@ -1743,7 +1743,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-patch">-- Forge Patch
 
-local urn = HashMap('urn:moony:xzy')
+local urn = Mapper('urn:moony:xzy#')
 
 function stash(forge)
 	local patch= forge:patch(urn.subj, 1002) -- with subject and sequence number
@@ -1805,7 +1805,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-get">-- Forge Get
 
-local urn = HashMap('urn:moony:xzy')
+local urn = Mapper('urn:moony:xzy#')
 
 function stash_tuple(forge)
 	forge:get(urn.prop) -- without subject and sequence number
@@ -1833,7 +1833,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-set">-- Forge Set
 
-local urn = HashMap('urn:moony:xzy')
+local urn = Mapper('urn:moony:xzy#')
 
 function stash_tuple(forge)
 	local set = forge:set(urn.prop) -- without subject and sequence number
@@ -1863,7 +1863,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-put">-- Forge Put
 
-local urn = HashMap('urn:moony:xzy')
+local urn = Mapper('urn:moony:xzy#')
 
 function stash_tuple(forge)
 	local put = forge:put() -- without subject and sequence number
@@ -1895,7 +1895,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-ack">-- Forge Ack
 
-local urn = HashMap('urn:moony:xzy')
+local urn = Mapper('urn:moony:xzy#')
 
 function stash(forge)
 	forge:ack(urn.subj, 1002) -- with subject and sequence number
@@ -1919,7 +1919,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-error">-- Forge Error
 
-local urn = HashMap('urn:moony:xzy')
+local urn = Mapper('urn:moony:xzy#')
 
 function stash(forge)
 	forge:error(urn.subj, 1002) -- with subject and sequence number
@@ -1943,7 +1943,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-delete">-- Forge Delete
 
-local urn = HashMap('urn:moony:xzy')
+local urn = Mapper('urn:moony:xzy#')
 
 function stash(forge)
 	forge:delete(urn.subj, 1002) -- with sequence number
@@ -1969,7 +1969,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-copy">-- Forge Copy
 
-local urn = HashMap('urn:moony:xzy')
+local urn = Mapper('urn:moony:xzy#')
 
 function stash(forge)
 	forge:copy(urn.subj, urn.dest, 1002) -- with sequence number
@@ -1995,7 +1995,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-move">-- Forge Move
 
-local urn = HashMap('urn:moony:xzy')
+local urn = Mapper('urn:moony:xzy#')
 
 function stash(forge)
 	forge:move(urn.subj, urn.dest, 1002) -- with sequence number
@@ -2019,7 +2019,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-insert">-- Forge Insert
 
-local urn = HashMap('urn:moony:xzy')
+local urn = Mapper('urn:moony:xzy#')
 
 function stash_tuple(forge)
 	local insert = forge:insert() -- without subject and sequence number
@@ -3569,7 +3569,7 @@ end</code></pre>
 
 			<pre><code data-ref="atom-object">-- Atom Object
 
-local urn = HashMap('urn:moony:xyz#')
+local urn = Mapper('urn:moony:xyz#')
 
 -- serialize
 function stash(forge)
@@ -4171,7 +4171,7 @@ end</code></pre>
 
 		<pre><code data-ref="responder-state">-- StateResponder
 
-local urn = HashMap('urn:moony:xzy#')
+local urn = Mapper('urn:moony:xzy#')
 
 -- define read-only parameter
 local period = Parameter{
@@ -4569,19 +4569,19 @@ assert(ascii85.decode(encoded) == value)</code></pre>
 		<pre><code data-ref="constants">-- Constants
 
 local ctx = {
-	lv2   = HashMap('http://lv2plug.in/ns/lv2core#'),
-	param = HashMap('http://lv2plug.in/ns/ext/parameters#'),
-	atom  = HashMap('http://lv2plug.in/ns/ext/atom#'),
-	time  = HashMap('http://lv2plug.in/ns/ext/time#'),
-	midi  = HashMap('http://lv2plug.in/ns/ext/midi#'),
-	bufsz = HashMap('http://lv2plug.in/ns/ext/buf-size#'),
-	patch = HashMap('http://lv2plug.in/ns/ext/patch#'),
-	units = HashMap('http://lv2plug.in/ns/extensions/units#'),
-	osc   = HashMap('http://open-music-kontrollers.ch/lv2/osc#'),
-	rdf   = HashMap('http://www.w3.org/1999/02/22-rdf-syntax-ns#'),
-	rdfs  = HashMap('http://www.w3.org/2000/01/rdf-schema#'),
-	moony = HashMap('http://open-music-kontrollers.ch/lv2/moony#'),
-	lua   = HashMap('http://lua.org#'),
+	lv2   = Mapper('http://lv2plug.in/ns/lv2core#'),
+	param = Mapper('http://lv2plug.in/ns/ext/parameters#'),
+	atom  = Mapper('http://lv2plug.in/ns/ext/atom#'),
+	time  = Mapper('http://lv2plug.in/ns/ext/time#'),
+	midi  = Mapper('http://lv2plug.in/ns/ext/midi#'),
+	bufsz = Mapper('http://lv2plug.in/ns/ext/buf-size#'),
+	patch = Mapper('http://lv2plug.in/ns/ext/patch#'),
+	units = Mapper('http://lv2plug.in/ns/extensions/units#'),
+	osc   = Mapper('http://open-music-kontrollers.ch/lv2/osc#'),
+	rdf   = Mapper('http://www.w3.org/1999/02/22-rdf-syntax-ns#'),
+	rdfs  = Mapper('http://www.w3.org/2000/01/rdf-schema#'),
+	moony = Mapper('http://open-music-kontrollers.ch/lv2/moony#'),
+	lua   = Mapper('http://lua.org#'),
 }
 
 -- Atom URID constants

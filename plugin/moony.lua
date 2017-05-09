@@ -139,7 +139,7 @@ local func = token(T.FUNCTION, word_match(ord{
 	'StateResponder',
 	'Blank',
 	'Stash',
-	'HashMap',
+	'Mapper',
 	'Parameter',
 }))
 

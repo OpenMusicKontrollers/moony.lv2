@@ -324,7 +324,7 @@ moony:bank-state_state-responder
 		moony:paramHidden false ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
-		moony:code """local urn = HashMap('urn:moony:stateR#')
+		moony:code """local urn = Mapper('urn:moony:stateR#')
 local sync = false
 
 local pLong
@@ -651,7 +651,7 @@ moony:bank-tutorial_part-3
 		moony:paramRows 4 ;
 		moony:code """-- Tutorial 3: MIDI Sample & Hold
 
-local urn = HashMap('urn:moony:tutorial-3#') -- prefix of this presets URIs
+local urn = Mapper('urn:moony:tutorial-3#') -- prefix of this presets URIs
 local sample = false -- flag to tell whether we are sampling or not
 local noteOffs = {} -- table to store NoteOff events while sampling
 
@@ -891,7 +891,7 @@ moony:bank-tutorial_part-6
 		moony:paramRows 4 ;
 		moony:code """-- Tutorial 6: MIDI Sequencer
 
-local urn = HashMap('urn:moony:tutorial-6#')
+local urn = Mapper('urn:moony:tutorial-6#')
 
 -- table with MIDI notes for 8 beats
 local notes = {
@@ -1165,7 +1165,7 @@ moony:bank-template_part-4
 		moony:code """-- Template 4: State Responder
 
 -- define URI prefix for state parameters
-local urn = HashMap('urn:moony:template-4#')
+local urn = Mapper('urn:moony:template-4#')
 
 -- define single parameter
 local param = Parameter({
@@ -1223,7 +1223,7 @@ moony:bank-template_part-5
 		moony:code """-- Template 5: Code Injection
 
 -- define URI prefix for state parameters
-local urn = HashMap('urn:moony:template-5#')
+local urn = Mapper('urn:moony:template-5#')
 
 -- pretty print error message from injection
 local function perr(err)

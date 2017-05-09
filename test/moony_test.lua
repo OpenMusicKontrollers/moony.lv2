@@ -1786,15 +1786,15 @@ do
 	assert(400.0 == midi2cps(60.0, base, noct, fref))
 end
 
--- HashMap
-print('[test] HashMap')
+-- Mapper
+print('[test] Mapper')
 do
 	local prefix = 'http://open-music-kontrollers.ch/lv2/synthpod#'
-	local hashmap = HashMap(prefix)
-	assert(Map[prefix .. 'addModule'] == hashmap.addModule)
-	assert(Map[prefix .. 'addModule'] == hashmap.addModule)
-	assert(Map[prefix .. 'connectPort'] == hashmap.connectPort)
-	assert(Map[prefix .. 'connectPort'] == hashmap.connectPort)
+	local mapper = Mapper(prefix)
+	assert(Map[prefix .. 'addModule'] == mapper.addModule)
+	assert(Map[prefix .. 'addModule'] == mapper.addModule)
+	assert(Map[prefix .. 'connectPort'] == mapper.connectPort)
+	assert(Map[prefix .. 'connectPort'] == mapper.connectPort)
 end
 
 -- multiplex

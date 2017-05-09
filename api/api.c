@@ -156,7 +156,7 @@ static const luaL_Reg lunmap_mt [] = {
 };
 
 __realtime static int // map is not really realtime in most hosts
-_lhash_map__index(lua_State *L)
+_lmapper__index(lua_State *L)
 {
 	//moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 
@@ -184,13 +184,13 @@ _lhash_map__index(lua_State *L)
 }
 
 static const luaL_Reg lhash_map_mt [] = {
-	{"__index", _lhash_map__index},
-	{"__call", _lhash_map__index},
+	{"__index", _lmapper__index},
+	{"__call", _lmapper__index},
 	{NULL, NULL}
 };
 
 __realtime static int // map is not really realtime in most hosts
-_lhash_map(lua_State *L)
+_lmapper(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 
@@ -1483,8 +1483,8 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 
 	// lv2.hash
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
-	lua_pushcclosure(L, _lhash_map, 1);
-	lua_setglobal(L, "HashMap");
+	lua_pushcclosure(L, _lmapper, 1);
+	lua_setglobal(L, "Mapper");
 
 	// lv2.voiceMap
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
