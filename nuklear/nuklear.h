@@ -16198,7 +16198,7 @@ nk_clear(struct nk_context *ctx)
     ctx->style.cursor_active = ctx->style.cursors[NK_CURSOR_ARROW];
     NK_MEMSET(&ctx->overlay, 0, sizeof(ctx->overlay));
 #ifdef NK_INCLUDE_VERTEX_BUFFER_OUTPUT
-    nk_draw_list_clear(&ctx->draw_list);
+    //nk_draw_list_clear(&ctx->draw_list);
 #endif
 
     /* garbage collector */
