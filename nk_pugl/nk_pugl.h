@@ -316,74 +316,77 @@ static inline void
 _nk_pugl_render_gl2(nk_pugl_window_t *win)
 {
 	nk_pugl_config_t *cfg = &win->cfg;
+	bool has_changes = win->has_left || win->has_entered;
 
-#if !defined(_WIN32)
 	// compare current command buffer with last one to defer any changes
-	bool has_changes = false;
-	const size_t size = win->ctx.memory.allocated;
-	const void *commands = nk_buffer_memory_const(&win->ctx.memory);
-
-	if( (size != win->last.size) || memcmp(commands, win->last.buffer, size) )
+	if(!has_changes)
 	{
-		// swap last buffer with current one for next comparison
-		win->last.buffer = realloc(win->last.buffer, size);
-		if(win->last.buffer)
+		const size_t size = win->ctx.memory.allocated;
+		const void *commands = nk_buffer_memory_const(&win->ctx.memory);
+
+		if( (size != win->last.size) || memcmp(commands, win->last.buffer, size) )
 		{
-			win->last.size = size;
-			memcpy(win->last.buffer, commands, size);
+			// swap last buffer with current one for next comparison
+			win->last.buffer = realloc(win->last.buffer, size);
+			if(win->last.buffer)
+			{
+				win->last.size = size;
+				memcpy(win->last.buffer, commands, size);
+			}
+			else
+			{
+				win->last.size = 0;
+			}
+			has_changes = true;
 		}
-		else
-		{
-			win->last.size = 0;
-		}
-		has_changes = true;
 	}
 
-	// only render if there were actually any changes
-	if(has_changes || win->has_left || win->has_entered)
-#endif
+	if(has_changes)
 	{
-		// convert shapes into vertexes if there were changes
-		nk_convert(&win->ctx, &win->cmds, &win->vbuf, &win->ebuf, &win->conv);
-
-		_nk_pugl_render_gl2_push(cfg->width, cfg->height);
-
-		// setup vertex buffer pointers
-		const GLsizei vs = sizeof(nk_pugl_vertex_t);
-		const size_t vp = offsetof(nk_pugl_vertex_t, position);
-		const size_t vt = offsetof(nk_pugl_vertex_t, uv);
-		const size_t vc = offsetof(nk_pugl_vertex_t, col);
-		const nk_byte *vertices = nk_buffer_memory_const(&win->vbuf);
-		glVertexPointer(2, GL_FLOAT, vs, &vertices[vp]);
-		glTexCoordPointer(2, GL_FLOAT, vs, &vertices[vt]);
-		glColorPointer(4, GL_UNSIGNED_BYTE, vs, &vertices[vc]);
-
-		// iterate over and execute each draw command
-		const nk_draw_index *offset = nk_buffer_memory_const(&win->ebuf);
-		const struct nk_draw_command *cmd;
-		nk_draw_foreach(cmd, &win->ctx, &win->cmds)
-		{
-			if(!cmd->elem_count)
-				continue;
-
-			glBindTexture(GL_TEXTURE_2D, cmd->texture.id);
-			glScissor(
-				cmd->clip_rect.x,
-				cfg->height - (cmd->clip_rect.y + cmd->clip_rect.h),
-				cmd->clip_rect.w,
-				cmd->clip_rect.h);
-			glDrawElements(GL_TRIANGLES, cmd->elem_count, GL_UNSIGNED_SHORT, offset);
-
-			offset += cmd->elem_count;
-		}
-
-		_nk_pugl_render_gl2_pop();
-
+		// clear command/vertex buffers of last stable view
+		nk_buffer_clear(&win->cmds);
 		nk_buffer_clear(&win->vbuf);
 		nk_buffer_clear(&win->ebuf);
+		nk_draw_list_clear(&win->ctx.draw_list);
 
-		win->has_entered = false;
+		// convert shapes into vertexes if there were changes
+		nk_convert(&win->ctx, &win->cmds, &win->vbuf, &win->ebuf, &win->conv);
 	}
+
+	_nk_pugl_render_gl2_push(cfg->width, cfg->height);
+
+	// setup vertex buffer pointers
+	const GLsizei vs = sizeof(nk_pugl_vertex_t);
+	const size_t vp = offsetof(nk_pugl_vertex_t, position);
+	const size_t vt = offsetof(nk_pugl_vertex_t, uv);
+	const size_t vc = offsetof(nk_pugl_vertex_t, col);
+	const nk_byte *vertices = nk_buffer_memory_const(&win->vbuf);
+	glVertexPointer(2, GL_FLOAT, vs, &vertices[vp]);
+	glTexCoordPointer(2, GL_FLOAT, vs, &vertices[vt]);
+	glColorPointer(4, GL_UNSIGNED_BYTE, vs, &vertices[vc]);
+
+	// iterate over and execute each draw command
+	const nk_draw_index *offset = nk_buffer_memory_const(&win->ebuf);
+	const struct nk_draw_command *cmd;
+	nk_draw_foreach(cmd, &win->ctx, &win->cmds)
+	{
+		if(!cmd->elem_count)
+			continue;
+
+		glBindTexture(GL_TEXTURE_2D, cmd->texture.id);
+		glScissor(
+			cmd->clip_rect.x,
+			cfg->height - (cmd->clip_rect.y + cmd->clip_rect.h),
+			cmd->clip_rect.w,
+			cmd->clip_rect.h);
+		glDrawElements(GL_TRIANGLES, cmd->elem_count, GL_UNSIGNED_SHORT, offset);
+
+		offset += cmd->elem_count;
+	}
+
+	_nk_pugl_render_gl2_pop();
+
+	win->has_entered = false;
 
 	nk_clear(&win->ctx);
 }
@@ -949,10 +952,6 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 			const PuglEventCrossing *ev = (const PuglEventCrossing *)e;
 
 			_nk_pugl_modifiers(win, ev->state);
-			// fall-through
-		}
-		case PUGL_FOCUS_OUT:
-		{
 			win->has_left = true;
 			puglPostRedisplay(win->view);
 			break;
@@ -962,13 +961,15 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 			const PuglEventCrossing *ev = (const PuglEventCrossing *)e;
 
 			_nk_pugl_modifiers(win, ev->state);
-			// fall-through
-		}
-		case PUGL_FOCUS_IN:
-		{
 			win->has_left = false;
 			win->has_entered = true;
 			puglPostRedisplay(win->view);
+			break;
+		}
+
+		case PUGL_FOCUS_OUT:
+		case PUGL_FOCUS_IN:
+		{
 			break;
 		}
 	}
@@ -1019,14 +1020,14 @@ nk_pugl_init(nk_pugl_window_t *win)
 	const int stat = puglCreateWindow(win->view, cfg->title ? cfg->title : "Nuklear");
 	assert(stat == 0);
 
+	// init nuklear
+	nk_buffer_init_default(&win->cmds);
+	nk_buffer_init_default(&win->vbuf);
+	nk_buffer_init_default(&win->ebuf);
+	nk_init_default(&win->ctx, 0);
+
 	puglEnterContext(win->view);
 	{
-		// init nuklear
-		nk_buffer_init_default(&win->cmds);
-		nk_buffer_init_default(&win->vbuf);
-		nk_buffer_init_default(&win->ebuf);
-		nk_init_default(&win->ctx, 0);
-
 		// init font system
 		_nk_pugl_font_init(win);
 
@@ -1083,19 +1084,18 @@ nk_pugl_shutdown(nk_pugl_window_t *win)
 	if(win->last.buffer)
 		free(win->last.buffer);
 
-
 	puglEnterContext(win->view);
 	{
 		// deinit font system
 		_nk_pugl_font_deinit(win);
-
-		// shutdown nuklear
-		nk_buffer_free(&win->cmds);
-		nk_buffer_free(&win->vbuf);
-		nk_buffer_free(&win->ebuf);
-		nk_free(&win->ctx);
 	}
 	puglLeaveContext(win->view, false);
+
+	// shutdown nuklear
+	nk_buffer_free(&win->cmds);
+	nk_buffer_free(&win->vbuf);
+	nk_buffer_free(&win->ebuf);
+	nk_free(&win->ctx);
 
 	// shutdown pugl
 	puglDestroy(win->view);
