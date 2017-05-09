@@ -487,8 +487,8 @@ _sink_rt(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
 		while(new_offset > new_size)
 			new_size <<= 1;
 
-		assert(ser->moony);
-		if(!(ser->buf = moony_rt_realloc(ser->moony->vm, ser->buf, ser->size, new_size)))
+		assert(ser->vm);
+		if(!(ser->buf = moony_rt_realloc(ser->vm, ser->buf, ser->size, new_size)))
 			return 0; // realloc failed
 
 		ser->size = new_size;
@@ -550,7 +550,7 @@ _stash(lua_State *L)
 		lframe->forge = &moony->stash_forge;
 
 		atom_ser_t ser = {
-			.moony = moony,
+			.vm = moony->vm,
 			.size = 1024,
 			.offset = 0
 		};
@@ -563,8 +563,6 @@ _stash(lua_State *L)
 			lv2_atom_forge_set_sink(lframe->forge, _sink_rt, _deref, &ser);
 			lua_call(L, 1, 0);
 
-			if(moony->stash_atom)
-				moony_rt_free(moony->vm, moony->stash_atom, moony->stash_size);
 			LV2_Atom *atom = (LV2_Atom *)ser.buf;
 			moony->stash_atom = atom;
 			moony->stash_size = ser.size;
@@ -713,7 +711,7 @@ _state_save(LV2_Handle instance,
 	(void)status; //TODO check status
 
 	atom_ser_t ser = {
-		.moony = NULL,
+		.vm = NULL,
 		.size = 1024,
 		.offset = 0
 	};
@@ -1077,12 +1075,14 @@ _work_response(LV2_Handle instance, uint32_t size, const void *body)
 	{
 		case MOONY_JOB_MEM_ALLOC:
 		{
+			moony->vm->allocating = false;
+
 			if(!job->mem.ptr) // allocation failed
 				return LV2_WORKER_ERR_UNKNOWN;
 
 			// search for next free pool
 			int i;
-			for(i=0; i<MOONY_POOL_NUM; i++)
+			for(i=1; i<MOONY_POOL_NUM; i++)
 			{
 				if(!moony->vm->area[i])
 					break;
@@ -1140,9 +1140,6 @@ __realtime static LV2_Worker_Status
 _end_run(LV2_Handle instance)
 {
 	moony_t *moony = instance;
-
-	// do nothing
-	moony->working = false;
 
 	return LV2_WORKER_SUCCESS;
 }
@@ -1381,11 +1378,6 @@ moony_deinit(moony_t *moony)
 		free(state_atom_old);
 	if(moony->state_atom)
 		free(moony->state_atom);
-
-	if(moony->stash_atom)
-		moony_rt_free(moony->vm, moony->stash_atom, moony->stash_size);
-	moony->stash_atom = NULL;
-	moony->stash_size = 0;
 
 	moony_vm_t *vm_old = (moony_vm_t *)atomic_load_explicit(&moony->vm_new, memory_order_relaxed);
 	if(vm_old)
@@ -1842,7 +1834,8 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 
 	// Stash factory
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
-	lua_pushcclosure(L, _lstash, 1);
+	lua_pushlightuserdata(L, vm); // @ upvalueindex 2
+	lua_pushcclosure(L, _lstash, 2);
 	lua_setglobal(L, "Stash");
 
 	// create cclosure caches
@@ -2182,13 +2175,11 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 			lua_gc(L, LUA_GCSTEP, 0);
 #endif
 
-			if(vm_old)
-				moony_rt_free(vm_old, moony->stash_atom, moony->stash_size);
+			moony_rt_free(vm_old, moony->stash_atom, moony->stash_size);
 			moony->stash_atom = NULL;
 			moony->stash_size = 0;
 		}
 
-		if(vm_old)
 		{
 			moony_job_t *req;
 			if((req = varchunk_write_request(moony->from_dsp, sizeof(moony_job_t))))

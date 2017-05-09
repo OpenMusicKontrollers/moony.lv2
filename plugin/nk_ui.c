@@ -2874,7 +2874,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	*(intptr_t *)widget = nk_pugl_init(&handle->win);
 	nk_pugl_show(&handle->win);
 
-	handle->ser.moony = NULL;
+	handle->ser.vm = NULL;
 	handle->ser.size = 1024;
 	handle->ser.buf = malloc(1024);
 	handle->ser.offset = 0;

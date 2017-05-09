@@ -155,7 +155,6 @@ moony_vm_new(size_t mem_size, bool testing, void *data)
 	vm->area[0] = moony_vm_mem_alloc(vm->size[0]);
 	if(!vm->area[0])
 	{
-		moony_vm_mem_free(vm->area[0], vm->size[0]);
 		free(vm);
 		return NULL;
 	}
@@ -163,6 +162,7 @@ moony_vm_new(size_t mem_size, bool testing, void *data)
 	vm->tlsf = tlsf_create_with_pool(vm->area[0], vm->size[0]);
 	if(!vm->tlsf)
 	{
+		moony_vm_mem_free(vm->area[0], vm->size[0]);
 		free(vm);
 		return NULL;
 	}
@@ -298,10 +298,10 @@ moony_vm_mem_extend(moony_vm_t *vm)
 	moony_t *moony = vm->data;
 
 	// request processing or fully extended?
-	if(moony->working || moony->fully_extended)
+	if(vm->allocating || vm->fully_extended)
 		return -1;
 
-	for(int i=0; i<MOONY_POOL_NUM; i++)
+	for(int i=1; i<MOONY_POOL_NUM; i++)
 	{
 		if(vm->area[i]) // pool already allocated/in-use
 			continue;
@@ -338,14 +338,14 @@ moony_vm_mem_extend(moony_vm_t *vm)
 
 				varchunk_write_advance(moony->from_dsp, sizeof(moony_job_t));
 				if(moony_wake_worker(moony->sched) == LV2_WORKER_SUCCESS)
-					moony->working = true; // toggle working flag
+					vm->allocating = true; // toggle working flag
 			}
 		}
 
 		return 0;
 	}
 
-	moony->fully_extended = true;
+	vm->fully_extended = true;
 
 	return -1;
 }

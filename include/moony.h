@@ -277,8 +277,6 @@ struct _moony_t {
 	LV2_OSC_Schedule *osc_sched;
 
 	LV2_Worker_Schedule *sched;
-	bool working;
-	bool fully_extended;
 
 	LV2_Log_Log *log;
 	LV2_Log_Logger logger;
@@ -481,7 +479,7 @@ _deref(LV2_Atom_Forge_Sink_Handle handle, LV2_Atom_Forge_Ref ref);
 typedef struct _atom_ser_t atom_ser_t;
 
 struct _atom_ser_t {
-	moony_t *moony; // use rt-memory pool?
+	moony_vm_t *vm; // use rt-memory pool?
 	uint32_t size;
 	union {
 		uint8_t *buf;

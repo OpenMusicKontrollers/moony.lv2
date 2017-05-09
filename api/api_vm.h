@@ -43,6 +43,9 @@ struct _moony_vm_t {
 	bool nrt;
 	void *data;
 
+	bool allocating;
+	bool fully_extended;
+
 	bool trace_out;
 	bool trace_overflow;
 	char trace [MOONY_MAX_TRACE_LEN];
