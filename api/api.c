@@ -1484,6 +1484,8 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 	// lv2.hash
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	lua_pushcclosure(L, _lmapper, 1);
+	lua_pushvalue(L, -1);
+	lua_setglobal(L, "HashMap"); // FIXME deprecated
 	lua_setglobal(L, "Mapper");
 
 	// lv2.voiceMap
