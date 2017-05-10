@@ -217,6 +217,7 @@ add_library(lua OBJECT
 	lua-5.3.4/lstrlib.c
 	lua-5.3.4/ltablib.c
 	lua-5.3.4/lutf8lib.c)
+set_target_properties(lua PROPERTIES COMPILE_DEFINITIONS "strcoll=strcmp")
 set_target_properties(lua PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
 set_target_properties(lua PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 

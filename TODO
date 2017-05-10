@@ -4,3 +4,5 @@
 
 === High priority
 * properly catch forge errors in 'notify'
+* get rid of strtok, it is not thread-safe
+* get rid of sscanf
