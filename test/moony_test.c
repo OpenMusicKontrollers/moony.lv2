@@ -50,6 +50,7 @@ __non_realtime static int
 _test(lua_State *L)
 {
 	handle_t *handle = lua_touserdata(L, lua_upvalueindex(1));
+	const size_t buf_size = lua_tointeger(L, lua_upvalueindex(2));
 
 	if(!lua_isfunction(L, 1) || !lua_isfunction(L, 2))
 	{
@@ -61,7 +62,7 @@ _test(lua_State *L)
 	LV2_Atom_Forge_Frame frame;
 
 	// produce events
-	lv2_atom_forge_set_buffer(forge, handle->buf, BUF_SIZE);
+	lv2_atom_forge_set_buffer(forge, handle->buf, buf_size);
 	lv2_atom_forge_sequence_head(forge, &frame, 0);
 	{
 		lua_pushvalue(L, 1); // producer
@@ -79,7 +80,7 @@ _test(lua_State *L)
 		lv2_atom_forge_pop(forge, &frame);
 
 	// consume events
-	lv2_atom_forge_set_buffer(forge, handle->buf2, BUF_SIZE);
+	lv2_atom_forge_set_buffer(forge, handle->buf2, buf_size);
 	lv2_atom_forge_sequence_head(forge, &frame, 0);
 	{
 		lua_pushvalue(L, 2); // consumer
@@ -295,9 +296,14 @@ main(int argc, char **argv)
 
 	lv2_atom_forge_init(&handle.forge, &map);
 
+	const size_t buf_size = argc > 2
+		? atoi(argv[2])
+		: BUF_SIZE;
+
 	// register test function
 	lua_pushlightuserdata(L, &handle);
-	lua_pushcclosure(L, _test, 1);
+	lua_pushinteger(L, buf_size);
+	lua_pushcclosure(L, _test, 2);
 	lua_setglobal(L, "test");
 
 	const int ret = luaL_dofile(L, argv[1]); // wraps around lua_pcall

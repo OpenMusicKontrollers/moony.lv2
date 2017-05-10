@@ -344,6 +344,7 @@ if(BUILD_TESTING)
 	install(FILES ${PROJECT_BINARY_DIR}/manual.html DESTINATION ${PLUGIN_DEST})
 
 	add_test(NAME API-Test COMMAND ${WINE} ${QEMU} moony_test ${PROJECT_SOURCE_DIR}/test/moony_test.lua)
+	add_test(NAME Overflow-Test COMMAND ${WINE} ${QEMU} moony_test ${PROJECT_SOURCE_DIR}/test/moony_overflow.lua 0)
 	add_test(NAME Manual-Test COMMAND ${WINE} ${QEMU} moony_test ${PROJECT_SOURCE_DIR}/test/moony_manual.lua)
 	add_test(NAME Presets-Test COMMAND ${WINE} ${QEMU} moony_test ${PROJECT_SOURCE_DIR}/test/moony_presets.lua)
 endif()
