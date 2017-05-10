@@ -287,8 +287,9 @@ _ltimeresponder(lua_State *L)
 	// o = o or {}
 	if(lua_isnil(L, 1))
 	{
-		lua_pop(L, 1);
+		lua_remove(L, 1);
 		lua_newtable(L);
+		lua_insert(L, 1);
 	}
 
 	const float multiplier = luaL_optnumber(L, 2, 1.f);

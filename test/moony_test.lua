@@ -1084,6 +1084,8 @@ do
 		end,
 	}
 	local time_responder = TimeResponder(time_cb, 1.0)
+	local dummy = TimeResponder()
+	assert(type(dummy) == 'userdata')
 
 	local function producer(forge)
 		local obj = forge:frameTime(0):object(Time.Position)
@@ -1138,6 +1140,9 @@ do
 		assert(time_responder[Time.frame] == 23000 + 256)
 		assert(time_responder[Time.framesPerSecond] == 44100.0)
 		assert(time_responder[Time.speed] == 1.0)
+		assert(time_responder[Param.sampleRate] == nil)
+		assert(time_responder.foo == nil)
+		assert(time_responder[true] == nil)
 
 		-- test time:stash
 		local atom = seq[1]
