@@ -4,6 +4,5 @@ strpbrk
 longjmp
 strspn
 _setjmp
-sscanf
 strrchr
 __exp2_finite

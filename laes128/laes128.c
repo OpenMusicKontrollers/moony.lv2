@@ -18,6 +18,7 @@
 #include <stdbool.h>
 #include <inttypes.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <laes128.h>
@@ -27,6 +28,25 @@
 #define ECB 0
 #define CBC 1
 #include <aes.h>
+
+static int
+_hex2data(uint8_t *key, const char *pass)
+{
+	const char *pos = pass;
+	char *endptr;
+
+	for(unsigned count = 0; count < 16; count++, pos += 2)
+	{
+		char buf [5] = {'0', 'x', pos[0], pos[1], '\0'};
+
+		key[count] = strtol(buf, &endptr, 16);
+
+		if(endptr[0] != '\0') //non-hexadecimal character encountered
+			return -1;
+	}
+
+	return 0;
+}
 
 static bool
 _parse_key(lua_State *L, int idx, uint8_t key [16])
@@ -40,11 +60,8 @@ _parse_key(lua_State *L, int idx, uint8_t key [16])
 			memcpy(key, pass, 16);
 			break;
 		case 32: // hex-encoded key
-			for(unsigned i=0; i<16; i++)
-			{
-				if(sscanf(&pass[i*2], "%02"SCNx8, &key[i]) != 1)
-					return false; // sscanf failed
-			}
+			if(_hex2data(key, pass))
+				luaL_error(L, "invalid  hexadecimal string");
 			break;
 		default: // invalid key
 			return false;
@@ -65,10 +82,7 @@ _laes128_encode(lua_State *L)
 
 	uint8_t key [16];
 	if(!_parse_key(L, 2, key))
-	{
-		lua_pushnil(L);
-		return 1;
-	}
+		luaL_error(L, "invalid key length");
 
 	const size_t output_len = ((input_len + 15) & (~15)); // round to next 16 byte boundary
 
@@ -101,10 +115,7 @@ _laes128_decode(lua_State *L)
 
 	uint8_t key [16];
 	if(!_parse_key(L, 2, key))
-	{
-		lua_pushnil(L);
-		return 1;
-	}
+		luaL_error(L, "invalid key length");
 
 	const size_t encoded_len = luaL_optinteger(L, 3, input_len);
 

@@ -4,4 +4,4 @@
 
 === High priority
 * properly catch forge errors in 'notify'
-* get rid of sscanf
+* return matched state in MIDIResponder
