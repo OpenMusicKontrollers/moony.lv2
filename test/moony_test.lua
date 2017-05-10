@@ -1619,6 +1619,9 @@ do
 		end
 	}
 
+	local state_dummy = Parameter()
+	assert(type(state_dummy) == 'table')
+
 	local state = StateResponder({
 		[Patch.writable] = {
 			[urid.int] = state_int,
