@@ -362,12 +362,15 @@ do
 	local note_off = {MIDI.NoteOff | _chan, _note, _vel}
 	local start = {MIDI.Start, 0x1}
 	local stop = {MIDI.Stop, 0x2}
+	local ctrl  = {MIDI.Controller, MIDI.SustainPedal, 0x7f}
 
 	local function producer(forge)
 		forge:frameTime(0):midi(note_on)
 		forge:frameTime(1):midi(note_off)
 		forge:frameTime(2):midi(start)
 		forge:frameTime(3):midi(stop)
+		forge:frameTime(4):string('fooling you')
+		forge:frameTime(5):midi(ctrl)
 	end
 
 	local note_on_responder = false
@@ -402,11 +405,16 @@ do
 			assert(dat1 == 0x2)
 			note_stop_responded = true
 		end
-	})
+	}, true)
 
-	local function consumer(seq)
+	local function consumer(seq, forge)
 		for frames, atom in seq:foreach() do
-			assert(midi_responder(frames, nil, atom) == true)
+			local handled = midi_responder(frames, forge, atom)
+			if frames == 4 then
+				assert(handled == false)
+			else
+				assert(handled == true)
+			end
 		end
 
 		assert(note_on_responded)
