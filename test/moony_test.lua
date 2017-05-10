@@ -32,6 +32,8 @@ end
 print('[test] Int')
 do
 	local function producer(forge)
+		print(forge)
+
 		forge:frameTime(0)
 		forge:int(0x7fffffff)
 
@@ -283,6 +285,42 @@ do
 	test(producer, consumer)
 end
 
+-- Typed
+print('[test] Typed')
+do
+	local path = '/tmp'
+	local uri = 'http://test.org#uri'
+	local urid = Map[uri]
+
+	local function producer(forge)
+		forge:time(0):typed(Atom.Bool, true)
+		forge:time(0):typed(Atom.Int, 1)
+		forge:time(0):typed(Atom.Float, 2)
+		forge:time(0):typed(Atom.Long, 3)
+		forge:time(0):typed(Atom.Double, 4)
+		forge:time(0):typed(Atom.URI, uri)
+		forge:time(0):typed(Atom.URID, urid)
+		forge:time(0):typed(Atom.Path, path)
+		forge:time(0):typed(Atom.String, 'hello')
+		forge:time(0):typed(Atom.Literal, 'hello')
+		forge:time(0):typed(Atom.Chunk, string.char(0x1))
+		forge:time(0):typed(MIDI.MidiEvent, string.char(0x1))
+		forge:time(0):typed(Atom.Tuple):pop()
+		forge:time(0):typed(Atom.Object):pop()
+		forge:time(0):typed(Atom.Property, Param.sampleRate):pop()
+		forge:time(0):typed(Atom.Vector, Atom.Int):pop()
+		forge:time(0):typed(Atom.Sequence):pop()
+		forge:time(0):typed(OSC.Message, '/ping', '')
+		forge:time(0):typed(OSC.Bundle):pop()
+	end
+
+	local function consumer(seq)
+		--FIXME
+	end
+
+	test(producer, consumer)
+end
+
 -- Midi
 print('[test] Midi')
 do
@@ -504,8 +542,10 @@ do
 		forge:chunk(table.unpack(c))
 	end
 
-	local function consumer(seq)
+	local function consumer(seq, forge)
 		consumer_chunk(seq, c, Atom.Chunk)
+
+		forge:chunk(seq[1])
 	end
 
 	test(producer, consumer)
@@ -738,6 +778,7 @@ do
 				tup:char(string.byte('c'))
 				tup:rgba(0xbb0000ff)
 				tup:timetag(0xffeeddccaa998877)
+				tup:timetag(0.1)
 			end
 		end
 	end
@@ -876,7 +917,7 @@ do
 		assert(atom.otype == OSC.Message)
 		args = atom[OSC.messageArguments]
 		assert(args.type == Atom.Tuple)
-		assert(#args == 5)
+		assert(#args == 6)
 		assert(args[1].type == 0)
 		assert(args[2].type == Atom.Literal)
 		assert(args[2].datatype == OSC.Impulse)
@@ -890,6 +931,8 @@ do
 		assert(args[5].otype == OSC.Timetag)
 		assert(args[5][OSC.timetagIntegral].body == 0xffeeddcc)
 		assert(args[5][OSC.timetagFraction].body == 0xaa998877)
+		assert(args[6].type == Atom.Object)
+		assert(args[6].otype == OSC.Timetag)
 	end
 
 	test(producer, consumer)

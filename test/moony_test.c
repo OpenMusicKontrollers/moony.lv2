@@ -181,6 +181,18 @@ _printf(void *data, LV2_URID type, const char *fmt, ...)
 	return ret;
 }
 
+static double
+_osc2frames(LV2_OSC_Schedule_Handle handle, uint64_t timetag)
+{
+	return 0.0; // dummy for coverage
+}
+
+static uint64_t
+_frames2osc(LV2_OSC_Schedule_Handle handle, double frames)
+{
+	return 0; // dummy for coverage
+}
+
 __non_realtime int
 main(int argc, char **argv)
 {
@@ -202,6 +214,11 @@ main(int argc, char **argv)
 		.handle = &handle,
 		.printf = _printf,
 		.vprintf = _vprintf
+	};
+	LV2_OSC_Schedule osched = {
+		.handle = &handle,
+		.osc2frames = _osc2frames,
+		.frames2osc = _frames2osc
 	};
 
 	const LV2_URID param_sampleRate = map.map(map.handle, LV2_PARAMETERS__sampleRate);
@@ -241,6 +258,10 @@ main(int argc, char **argv)
 		.URI = LV2_OPTIONS__options,
 		.data = opts
 	};
+	const LV2_Feature feat_osc = {
+		.URI = LV2_OSC__schedule,
+		.data = &osched
+	};
 
 	const LV2_Feature *const features [] = {
 		&feat_map,
@@ -248,6 +269,7 @@ main(int argc, char **argv)
 		&feat_sched,
 		&feat_log,
 		&feat_opts,
+		&feat_osc,
 		NULL
 	};
 	
