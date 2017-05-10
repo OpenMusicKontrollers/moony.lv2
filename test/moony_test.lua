@@ -1585,12 +1585,9 @@ end
 -- StateResponder
 print('[test] StateResponder')
 do
-	prefix = 'http://open-music-kontrollers.ch/lv2/moony#test'
-	local urid = {
-		subject = Map[prefix],
-		int = Map[prefix .. '#int'],
-		flt = Map[prefix .. '#flt']
-	}
+	prefix = 'http://open-music-kontrollers.ch/lv2/moony#test#'
+	local urid = Mapper(prefix)
+	local subj = Map('http://open-music-kontrollers.ch/lv2/moony#test')
 
 	local flt_get_responded = false
 	local flt_set_responded = false
@@ -1598,8 +1595,10 @@ do
 	local state_int = Parameter{
 		[RDFS.label] = 'Int',
 		[RDFS.range] = Atom.Int,
+		[Atom.childType] = Atom.Bool, -- only for unit testing
 		[LV2.minimum] = 0,
 		[LV2.maximum] = 10,
+		[Units.unit] = Units.ms,
 		[RDF.value] = 2
 	}
 
@@ -1613,6 +1612,7 @@ do
 		[RDFS.range] = Atom.Float,
 		[LV2.minimum] = -0.5,
 		[LV2.maximum] = 10.0,
+		[Units.symbol] = 'flt',
 		_value = 1.0,
 		[Patch.Get] = function(self)
 			flt_get_responded = true
@@ -1624,6 +1624,16 @@ do
 		end
 	}
 
+	local state_bool = Parameter{
+		[RDFS.label] = 'Bool',
+		[RDFS.range] = Atom.Bool,
+		[Atom.childType] = Atom.Bool, -- only for unit testing
+		[Moony.color] = 0xff0000ff,
+		[Moony.syntax] = Lua.lang,
+		[LV2.scalePoint] = {},
+		[RDF.value] = false,
+	}
+
 	local state_dummy = Parameter()
 	assert(type(state_dummy) == 'table')
 
@@ -1631,32 +1641,40 @@ do
 		[Patch.writable] = {
 			[urid.int] = state_int,
 			[urid.flt] = state_flt
+		},
+		[Patch.readable] = {
+			[urid.bool] = state_bool
 		}
 	})
 
 	local function producer(forge)
-		forge:frameTime(0):get(urid.int, urid.subject)
-		forge:frameTime(1):set(urid.int, urid.subject):typed(Atom.Int, 2):pop()
+		forge:frameTime(0):get(urid.int, subj, Blank())
+		forge:frameTime(1):set(urid.int, subj, Blank()):typed(Atom.Int, 2):pop()
 
-		forge:frameTime(2):get(urid.flt, urid.subject)
-		forge:frameTime(3):set(urid.flt, urid.subject):typed(Atom.Float, 2.0):pop()
+		forge:frameTime(2):get(urid.flt, subj, Blank())
+		forge:frameTime(3):set(urid.flt, subj, Blank()):typed(Atom.Float, 2.0):pop()
+
+		forge:frameTime(4):get(nil, nil, Blank())
 
 		-- state:stash
-		forge:frameTime(4)
+		forge:frameTime(5)
 		state:stash(forge)
 
 		-- state:sync
-		state:sync(5, forge)
+		state:sync(6, forge)
 
 		--FIXME state:register()
 	end
 
 	local function consumer(seq, forge)
-		assert(#seq == 6)
+		assert(#seq == 7)
 
 		for frames, atom in seq:foreach() do
-			if frames < 4 then
-				assert(state(frames, forge, atom) == true)
+			local handled = state(frames, forge, atom)
+			if frames < 5 then
+				assert(handled == true)
+			else
+				assert(handled == false)
 			end
 		end
 
@@ -1667,8 +1685,24 @@ do
 		assert(flt_get_responded)
 		assert(flt_set_responded)
 
-		--test state:stash
+		assert(#seq == 7)
+
+		local atom = seq[4]
+		assert(atom.type == Atom.Object)
+		assert(atom.otype == Patch.Set)
+		assert(#atom == 4)
+		assert(atom[Patch.subject].body == subj)
+		assert(atom[Patch.property].body == urid.flt)
+		assert(atom[Patch.value].body == 2.0)
+		assert(atom[Patch.sequenceNumber].body ~= 0)
+
 		local atom = seq[5]
+		assert(atom.type == Atom.Object)
+		assert(atom.otype == Patch.Get)
+		assert(atom[Patch.sequenceNumber].body ~= 0)
+
+		--test state:stash
+		local atom = seq[6]
 		assert(atom.type == Atom.Object)
 		assert(#atom == 2)
 		assert(atom[urid.int].type == Atom.Int)
@@ -1681,8 +1715,10 @@ do
 		assert(state_int() == 1)
 		assert(state_flt() == 1.0)
 
+		assert(state:apply(Stash():int(1):read()) == false)
+
 		-- test state:sync
-		atom = seq[6]
+		atom = seq[7]
 		assert(atom.type == Atom.Object)
 		assert(#atom == 3)
 		assert(atom[Patch.subject].type == Atom.URID)
@@ -1690,11 +1726,13 @@ do
 		assert(atom[Patch.sequenceNumber].body == 0)
 		local body = atom[Patch.body]
 		assert(body.type == Atom.Object)
-		assert(#body == 2)
+		assert(#body == 3)
 		assert(body[urid.int].type == Atom.Int)
 		assert(body[urid.int].body == 1)
 		assert(body[urid.flt].type == Atom.Float)
 		assert(body[urid.flt].body == 1.0)
+		assert(body[urid.bool].type == Atom.Bool)
+		assert(body[urid.bool].body == false)
 	end
 
 	test(producer, consumer)
