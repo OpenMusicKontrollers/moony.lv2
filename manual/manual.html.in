@@ -1625,7 +1625,7 @@ function stash(forge)
 	local bndl = forge:bundle() -- create derived container forge object
 		bndl:message('/hello', 'ifs', 2016, 12.5, 'hello')
 		bndl:message('/hello', 'b', string.char(0x1, 0x2, 0x3))
-		bndl:message('/hello', 'hdS', 2017, 13.5, 'world')
+		bndl:message('/hello', 'hdS', 2017, 13.5, Param.sampleRate)
 		bndl:message('/hello', 't', 0xdb89c74c040c3199)
 		bndl:message('/hello', 'TFNI')
 		bndl:message('/hello', 'm', string.char(MIDI.NoteOn, 69, 0x7f))
@@ -3903,6 +3903,8 @@ end</code></pre>
 				<dd>atom body of event</dd>
 			<dt class="ret">(boolean)</dt>
 				<dd>flag whether the event was handled, e.g. whether is was any OSC at all</dd>
+			<dt class="ret">(boolean)</dt>
+				<dd>flag whether any path could be matched</dd>
 		</dl>
 
 		<pre><code data-ref="responder-osc">-- OSCResponder
@@ -3933,8 +3935,9 @@ function apply_sequence(n, seq, forge)
 		assert(atom.otype == OSC.Message)
 		assert(atom[OSC.messagePath].body == '/ping')
 
-		local handled = oscR(frames, forge, atom)
+		local handled, matched = oscR(frames, forge, atom)
 		assert(handled == true)
+		assert(matched == true)
 	end
 end
 

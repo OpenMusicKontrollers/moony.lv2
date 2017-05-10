@@ -706,7 +706,7 @@ do
 		forge:message('/hello', 'sif', 'world', 12, 13.0)
 
 		forge:frameTime(1)
-		forge:message('/hallo', 'Shdt', 'velo', 12, 13.0, 1)
+		forge:message('/hallo', 'Shdt', Atom.Int, 12, 13.0, 1)
 
 		forge:frameTime(2)
 		forge:message('/yup', 'c', string.byte('a'))
@@ -774,7 +774,7 @@ do
 		assert(#args == 4)
 		assert(args[0] == nil)
 		assert(args[1].type == Atom.URID)
-		assert(args[1].body == Map['velo'])
+		assert(args[1].body == Atom.Int)
 		assert(args[2].type == Atom.Long)
 		assert(args[2].body == 12)
 		assert(args[3].type == Atom.Double)
@@ -898,8 +898,30 @@ end
 -- OSCResponder
 print('[test] OSCResponder')
 do
+	local vals = {
+		i = 13,
+		f = 0.5,
+		h = 14,
+		d = 0.1,
+		c = string.byte('c'),
+		r = 0xff0000ff,
+		b = string.char(0x1, 0x2, 0x3),
+		m = string.char(MIDI.NoteOn, 0x20, 0x7f),
+		S = Atom.Int,
+		s = 'hello world',
+		t = 0x0111111122222222,
+		T = true,
+		F = false,
+		I = math.huge
+	}
+	local nvals = 15
+
 	local function producer(forge)
-		forge:frameTime(0):message('/ping', 'i', 13)
+		for k, v in pairs(vals) do
+			forge:frameTime(0):message('/types', k, v)
+		end
+		forge:frameTime(0):message('/types', 'N')
+
 		forge:frameTime(1):bundle(0):message('/pong', 's', 'world'):pop()
 
 		forge:frameTime(2):message('/one/two/three', 'd', 12.3)
@@ -909,18 +931,25 @@ do
 		forge:frameTime(2):message('/?ne/*/[tT]hree', 'd', 12.3)
 		forge:frameTime(2):message('/?ne/*/[!T]hree', 'd', 12.3)
 		forge:frameTime(2):message('/{one,eins}/*/{three,drei}', 'd', 12.3)
+
+		forge:frameTime(3):message('/foo', 'd', 12.3)
+		forge:frameTime(4):string('just fooling you')
 	end
 
-	local ping_responded = false
+	local types_responded = 0
 	local pong_responded = false
 	local complex_responded = 0
 
 	local osc_responder = OSCResponder({
-		['/ping'] = function(self, frames, forge, fmt, i)
+		['/types'] = function(self, frames, forge, fmt, val)
 			assert(frames == 0)
-			assert(fmt == 'i')
-			assert(i == 13)
-			ping_responded = true
+			if fmt == 'N' then
+				assert(vals[fmt] == nil)
+			else
+				assert(vals[fmt] ~= nil)
+			end
+			assert(vals[fmt] == val)
+			types_responded = types_responded + 1
 		end,
 		['/pong'] = function(self, frames, forge, fmt, s)
 			assert(frames == 1)
@@ -934,14 +963,26 @@ do
 			assert(d == 12.3)
 			complex_responded = complex_responded + 1
 		end
-	})
+	}, true)
 
-	local function consumer(seq)
+	local function consumer(seq, forge)
 		for frames, atom in seq:foreach() do
-			assert(osc_responder(frames, nil, atom) == true)
+			local handled, matched = osc_responder(frames, forge, atom)
+
+			if frames == 4 then
+				assert(handled == false)
+			else
+				assert(handled == true)
+
+				if frames == 3 then
+					assert(matched == false)
+				else
+					assert(matched == true)
+				end
+			end
 		end
 
-		assert(ping_responded)
+		assert(types_responded == nvals)
 		assert(pong_responded)
 		assert(complex_responded == 7)
 	end

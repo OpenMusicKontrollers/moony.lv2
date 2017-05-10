@@ -27,7 +27,7 @@ typedef struct _osc_responder_data_t osc_responder_data_t;
 
 struct _osc_responder_data_t {
 	moony_t *moony;
-	bool handled;
+	bool matched;
 };
 
 __realtime static inline bool
@@ -58,7 +58,7 @@ const char *loscresponder_match =
 	"end\n"
 	"\n"
 	"function __match(v, o, ...)\n"
-	"	local handled = false\n"
+	"	local matched = false\n"
 	"	v = string.gsub(v, '%?', '.')\n"
 	"	v = string.gsub(v, '%*', '.*')\n"
 	"	v = string.gsub(v, '%[%!', '[^')\n"
@@ -67,11 +67,11 @@ const char *loscresponder_match =
 	"		for k, x in pairs(o) do\n"
 	"			if string.match(k, w) then\n"
 	"				x(o, ...)\n"
-	"				handled = handled or true\n"
+	"				matched = matched or true\n"
 	"			end\n"
 	"		end\n"
 	"	end\n"
-	"	return handled\n"
+	"	return matched\n"
 	"end";
 
 __realtime static inline void
@@ -88,17 +88,17 @@ _loscresponder_method(const char *path, const LV2_Atom_Tuple *arguments, void *d
 	// 2: frames
 	// 3: data
 
-	int matching = 0;
+	int has_wildcard = 0;
 	if(_osc_path_has_wildcards(path))
 	{
-		lua_getglobal(L, "__match"); // push pattern matching function
+		lua_getglobal(L, "__match"); // push pattern has_wildcard function
 		lua_pushstring(L, path); // path
-		matching = 1;
+		has_wildcard = 1;
 	}
 	else if(lua_getfield(L, 1, path) == LUA_TNIL) // raw string match
 	{
 		lua_pop(L, 1); // nil
-		ord->handled = ord->handled || false;
+		ord->matched = ord->matched || false;
 		return;
 	}
 
@@ -200,9 +200,9 @@ _loscresponder_method(const char *path, const LV2_Atom_Tuple *arguments, void *d
 
 			case LV2_OSC_SYMBOL:
 			{
-				const char *S;
+				LV2_URID S;
 				if(lv2_osc_symbol_get(&moony->osc_urid, atom, &S))
-					lua_pushstring(L, S);
+					lua_pushinteger(L, S);
 				break;
 			}
 			case LV2_OSC_MIDI:
@@ -224,22 +224,22 @@ _loscresponder_method(const char *path, const LV2_Atom_Tuple *arguments, void *d
 			{
 				uint8_t r, g, b, a;
 				if(lv2_osc_rgba_get(&moony->osc_urid, atom, &r, &g, &b, &a))
-					lua_pushinteger(L, (r << 24) | (g << 16) | (b << 8) | a);
+					lua_pushinteger(L, ((int64_t)r << 24) | (g << 16) | (b << 8) | a);
 				break;
 			}
 		}
 	}
 
-	lua_call(L, 4 + matching + lua_gettop(L) - oldtop, matching);
+	lua_call(L, 4 + has_wildcard + lua_gettop(L) - oldtop, has_wildcard);
 
-	if(matching)
+	if(has_wildcard)
 	{
-		ord->handled = ord->handled || lua_toboolean(L, -1);
+		ord->matched = ord->matched || lua_toboolean(L, -1);
 		lua_pop(L, 1);
 	}
-	else
+	else // raw string
 	{
-		ord->handled = ord->handled || true;
+		ord->matched = ord->matched || true;
 	}
 }
 
@@ -277,13 +277,13 @@ _loscresponder__call(lua_State *L)
 
 	osc_responder_data_t ord = {
 		.moony = moony,
-		.handled = false
+		.matched = false
 	};
 
 	lv2_osc_body_unroll(&moony->osc_urid, latom->atom->size, latom->body.obj,
 		_loscresponder_method, &ord);
 
-	if(!ord.handled && *through) // not handled and through mode
+	if(!ord.matched && *through) // not handled and through mode
 	{
 		const int64_t frames = luaL_checkinteger(L, 2);
 		lforge_t *lforge = luaL_checkudata(L, 3, "lforge");
@@ -299,7 +299,8 @@ _loscresponder__call(lua_State *L)
 	}
 
 	lua_pushboolean(L, 1); // handled
-	return 1;
+	lua_pushboolean(L, ord.matched); // matched a registered path
+	return 2;
 }
 
 __realtime int

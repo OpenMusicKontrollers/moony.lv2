@@ -719,10 +719,10 @@ _lforge_osc_message(lua_State *L)
 
 			case LV2_OSC_SYMBOL:
 			{
-				const char *s = luaL_checkstring(L, pos++);
-				const LV2_URID sym = moony->map->map(moony->map->handle, s);
-				if(!lv2_osc_forge_symbol(forge, osc_urid, sym))
+				const LV2_URID S = luaL_checkinteger(L, pos++);
+				if(!lv2_osc_forge_symbol(forge, osc_urid, S))
 					luaL_error(L, forge_buffer_overflow);
+				break;
 				break;
 			}
 			case LV2_OSC_MIDI:
