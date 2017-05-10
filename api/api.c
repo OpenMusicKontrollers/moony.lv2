@@ -450,24 +450,15 @@ _log(lua_State *L)
 	// feedback to UI
 	if(!vm->trace_overflow)
 	{
-		char *end = strrchr(vm->trace, '\0'); // search end of string
-		if(end)
+		const size_t sz = strlen(vm->trace);
+		if(sz + len + 2 < MOONY_MAX_TRACE_LEN)
 		{
-			const size_t sz = end - vm->trace + 1;
-			if(MOONY_MAX_TRACE_LEN - sz > len)
-			{
-				if(end != vm->trace)
-				{
-					*end++ = '\n'; // append to
-					*end = '\0';
-				}
-
-				snprintf(end, len + 1, "%s", res);
-				vm->trace_out = true; // set flag
-			}
-			else
-				vm->trace_overflow = true;
+			char *end = vm->trace + sz; // end of string
+			snprintf(end, len + 2, "%s\n", res);
+			vm->trace_out = true; // set flag
 		}
+		else
+			vm->trace_overflow = true;
 	}
 
 	return 0;
@@ -2426,16 +2417,14 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 
 	if(vm->trace_out)
 	{
-		char *pch = strtok(vm->trace, "\n");
-		while(pch)
+		for(const char *from = vm->trace, *to = strchr(from, '\n');
+			from && to;
+			from = to + 1, to = strchr(from, '\n'))
 		{
-			uint32_t len = strlen(pch);
 			if(ref)
 				ref = lv2_atom_forge_frame_time(forge, frames);
 			if(ref)
-				ref = _moony_patch(&moony->uris.patch, forge, moony->uris.moony_trace, pch, len);
-
-			pch = strtok(NULL, "\n");
+				ref = _moony_patch(&moony->uris.patch, forge, moony->uris.moony_trace, from, to - from);
 		}
 
 		vm->trace[0] = '\0';
