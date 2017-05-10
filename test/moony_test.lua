@@ -142,17 +142,21 @@ do
 	local function consumer(seq)
 		assert(#seq == 2)
 		local atom = seq[1]
+		print(tostring(atom))
 		assert(atom.type == Atom.Bool)
 		assert(#atom == 4)
 		assert(type(atom.body) == 'boolean')
 		assert(atom.body == true)
 
 		local atom = seq[2]
+		print(tostring(atom))
 		assert(atom.type == Atom.Bool)
 		assert(#atom == 4)
 		assert(type(atom.body) == 'boolean')
 		assert(type(atom.body) == 'boolean')
 		assert(atom.body == false)
+
+		assert(atom.foo == nil)
 	end
 
 	test(producer, consumer)
@@ -205,6 +209,8 @@ do
 		assert(str2 == str)
 		assert(datatype2 == datatype)
 		assert(lang2 == lang)
+
+		assert(atom.foo == nil)
 	end
 
 	test(producer, consumer)
@@ -465,6 +471,13 @@ local function consumer_chunk(seq, c, atype)
 	assert(atom.type == atype)
 	assert(atom.raw == string.char(table.unpack(c)))
 	assert(atom.body == string.char(table.unpack(c)))
+
+	c7, c8 = atom:unpack(7, 8)
+	assert(c7 == c[6])
+	assert(c8 == nil)
+	cm1, c0 = atom:unpack(-2, -1)
+	assert(cm1 == c[1])
+	assert(c0 == nil)
 end
 
 -- Chunk
@@ -621,6 +634,7 @@ do
 		assert(atom.type == Atom.Object)
 		assert(atom.id == id)
 		assert(atom.otype == otype)
+		assert(atom.foo == nil)
 		assert(#atom == 2)
 
 		local sub = atom[key1]
@@ -1127,31 +1141,37 @@ do
 
 	local function consumer(seq)
 		assert(#seq == 2)
-		local subseq = seq[1]
-		assert(subseq.type == Atom.Sequence)
-		assert(subseq.unit == Atom.beatTime)
-		assert(#subseq == 2)
+		local subseq1 = seq[1]
+		assert(subseq1.type == Atom.Sequence)
+		assert(subseq1.unit == Atom.beatTime)
+		assert(subseq1.foo == nil)
+		assert(#subseq1 == 2)
 
-		for frames, atom in subseq:foreach() do
+		for frames, atom in subseq1:foreach() do
 			assert(not math.tointeger(frames)) -- beatTime is double
 			assert(atom.type == Atom.Int)
 			assert(atom.body == 1)
 		end
 
 		-- consume autopop
-		subseq = seq[2]
-		assert(subseq.type == Atom.Sequence)
-		assert(subseq.unit == 0)
-		assert(#subseq == 1)
+		local subseq2 = seq[2]
+		assert(subseq2.type == Atom.Sequence)
+		assert(subseq2.unit == 0)
+		assert(#subseq2 == 1)
 
-		for frames, atom in subseq:foreach() do
+		for frames, atom in subseq2:foreach() do
 			assert(frames == 10)
 			assert(atom.type == Atom.Bool)
 			assert(atom.body == true)
 		end
 
-		assert(subseq[0] == nil)
-		assert(subseq[2] == nil)
+		assert(subseq2[0] == nil)
+		assert(subseq2[2] == nil)
+
+		for time, atom in subseq1:foreach(subseq1) do
+			assert(not math.tointeger(frames)) -- beatTime is double
+			assert(atom.body == 1)
+		end
 	end
 
 	test(producer, consumer)
@@ -1209,10 +1229,16 @@ do
 			assert(#vec == 4)
 			assert(vec.childType == Atom.Int)
 			assert(vec.childSize == 4)
+			assert(vec.foo == nil)
 
 			for i, atom in vec:foreach() do
 				assert(atom.type == Atom.Int)
 				assert(atom.body == i)
+			end
+
+			local c = vec.body
+			for i, v in ipairs(c) do
+				assert(i == v)
 			end
 		end
 
@@ -1226,6 +1252,11 @@ do
 				assert(atom.type == Atom.Long)
 				assert(atom.body == i + 4)
 			end
+
+			local c = vec.body
+			for i, v in ipairs(c) do
+				assert(i + 4 == v)
+			end
 		end
 
 		for _, vec in ipairs{seq[7], seq[8], seq[9]} do
@@ -1237,6 +1268,17 @@ do
 			assert(vec[1].body == true)
 			assert(vec[2].body == false)
 			assert(vec[3] == nil)
+
+			local a, b = vec:unpack(0, 0)
+			assert(a.body == true)
+			assert(b == nil)
+			a, b = vec:unpack(3, 3)
+			assert(a.body == false)
+			assert(b == nil)
+
+			local c = vec.body
+			assert(c[1] == true)
+			assert(c[2] == false)
 		end
 
 		for _, vec in ipairs{seq[10], seq[11], seq[12]} do
@@ -1247,6 +1289,11 @@ do
 			local a, b = vec:unpack()
 			assert(a.body == 1.0)
 			assert(b.body == 2.0)
+
+			local c = vec.body
+			for i, v in ipairs(c) do
+				assert(i == v)
+			end
 		end
 
 		for _, vec in ipairs{seq[13], seq[14], seq[15]} do
@@ -1257,6 +1304,10 @@ do
 			local a, b = vec:unpack()
 			assert(a.body == 3.3)
 			assert(b.body == 4.4)
+
+			local c = vec.body
+			assert(c[1] == 3.3)
+			assert(c[2] == 4.4)
 		end
 
 		for _, vec in ipairs{seq[16], seq[17], seq[18]} do
@@ -1270,6 +1321,10 @@ do
 			local a, b = vec:unpack(2, 2)
 			assert(a.body == Atom.Long)
 			assert(b == nil)
+
+			local c = vec.body
+			assert(c[1] == Atom.Int)
+			assert(c[2] == Atom.Long)
 		end
 	end
 

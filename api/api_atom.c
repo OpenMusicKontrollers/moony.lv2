@@ -242,7 +242,10 @@ _latom_bool__len(lua_State *L, latom_t *latom)
 __realtime static int
 _latom_bool__tostring(lua_State *L, latom_t *latom)
 {
-	lua_pushfstring(L, "(bool: %p, %s)", latom, *latom->body.i32 ? "true" : "false");
+	if(*latom->body.i32 == 0)
+		lua_pushfstring(L, "(bool: %p, false)", latom);
+	else
+		lua_pushfstring(L, "(bool: %p, true)", latom);
 	return 1;
 }
 

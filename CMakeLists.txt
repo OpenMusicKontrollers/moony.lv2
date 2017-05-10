@@ -72,6 +72,7 @@ set(LIBS ${LIBS} ${LV2_LDFLAGS})
 include(CMakeDependentOption)
 option(BUILD_UI "Build UI" ON)
 option(USE_MANUAL_GC "Use manual garbage collection" OFF)
+option(USE_CODE_COVERAGE "Use code coverage" OFF)
 
 if(USE_MANUAL_GC)
 	add_definitions("-DUSE_MANUAL_GC")
@@ -244,6 +245,11 @@ add_library(laes128 OBJECT
 set_target_properties(laes128 PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
 set_target_properties(laes128 PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 
+add_library(tlsf OBJECT
+	tlsf-3.0/tlsf.c)
+set_target_properties(tlsf PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
+set_target_properties(tlsf PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
+
 add_library(api OBJECT
 	api/api.c
 	api/api_atom.c
@@ -254,8 +260,11 @@ add_library(api OBJECT
 	api/api_time.c
 	api/api_state.c
 	api/api_parameter.c
-	api/api_vm.c
-	tlsf-3.0/tlsf.c)
+	api/api_vm.c)
+if(${USE_CODE_COVERAGE})
+	set_target_properties(api PROPERTIES COMPILE_FLAGS "-fprofile-instr-generate -fcoverage-mapping")
+	set_target_properties(api PROPERTIES LINK_FLAGS "-fprofile-instr-generate -fcoverage-mapping")
+endif()
 set_target_properties(api PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
 set_target_properties(api PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 
@@ -265,6 +274,7 @@ add_library(moony MODULE
 	plugin/axa.c
 	plugin/caxca.c
 	$<TARGET_OBJECTS:api>
+	$<TARGET_OBJECTS:tlsf>
 	$<TARGET_OBJECTS:lua>
 	$<TARGET_OBJECTS:lpeg>
 	$<TARGET_OBJECTS:lbase64>
@@ -298,6 +308,7 @@ if(BUILD_TESTING)
 	add_executable(moony_test
 		test/moony_test.c
 		$<TARGET_OBJECTS:api>
+		$<TARGET_OBJECTS:tlsf>
 		$<TARGET_OBJECTS:lua>
 		$<TARGET_OBJECTS:lpeg>
 		$<TARGET_OBJECTS:lbase64>
@@ -309,6 +320,10 @@ if(BUILD_TESTING)
 		target_compile_definitions(moony_test PUBLIC)
 	elseif(APPLE)
 		target_compile_definitions(moony_test PUBLIC -DLUA_USE_MACOSX)
+	endif()
+	if(${USE_CODE_COVERAGE})
+		set_target_properties(moony_test PROPERTIES COMPILE_FLAGS "-fprofile-instr-generate -fcoverage-mapping")
+		set_target_properties(moony_test PROPERTIES LINK_FLAGS "-fprofile-instr-generate -fcoverage-mapping")
 	endif()
 	set_target_properties(moony_test PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 	target_link_libraries(moony_test ${LIBS})
