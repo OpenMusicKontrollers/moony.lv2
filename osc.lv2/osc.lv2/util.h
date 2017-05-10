@@ -22,6 +22,7 @@
 #include <ctype.h>
 #include <inttypes.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <osc.lv2/osc.h>
 
@@ -347,7 +348,20 @@ lv2_osc_rgba_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom,
 {
 	assert(r && g && b && a);
 	const char *str = LV2_ATOM_CONTENTS_CONST(LV2_Atom_Literal, atom);
-	sscanf(str, "%02"SCNx8"%02"SCNx8"%02"SCNx8"%02"SCNx8, r, g, b, a);
+
+	uint8_t *key [4] = {
+		r, g, b, a
+	};
+
+	const char *pos = str;
+	char *endptr;
+
+	for(unsigned count = 0; count < 4; count++, pos += 2)
+	{
+		char buf [5] = {'0', 'x', pos[0], pos[1], '\0'};
+
+		*key[count] = strtol(buf, &endptr, 16);
+	}
 
 	return lv2_atom_tuple_next(atom);
 }
