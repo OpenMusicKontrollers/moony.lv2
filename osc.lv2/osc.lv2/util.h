@@ -312,10 +312,10 @@ lv2_osc_impulse_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom)
 }
 
 static inline const LV2_Atom *
-lv2_osc_symbol_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, const char **s)
+lv2_osc_symbol_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, LV2_URID *S)
 {
-	assert(s);
-	*s = LV2_ATOM_BODY_CONST(atom);
+	assert(S);
+	*S = ((const LV2_Atom_URID *)atom)->body;
 
 	return lv2_atom_tuple_next(atom);
 }
