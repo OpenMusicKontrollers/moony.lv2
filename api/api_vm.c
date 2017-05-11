@@ -34,6 +34,9 @@
 extern int luaopen_lpeg(lua_State *L);
 extern int luaopen_base64(lua_State *L);
 extern int luaopen_ascii85(lua_State *L);
+extern int luaopen_mathx(lua_State *L);
+extern int luaopen_complex(lua_State *L);
+extern int luaopen_random(lua_State *L);
 
 //#define MOONY_LOG_MEM
 #ifdef MOONY_LOG_MEM
@@ -194,6 +197,9 @@ moony_vm_new(size_t mem_size, bool testing, void *data)
 	luaL_requiref(L, "base64", luaopen_base64, 1);
 	luaL_requiref(L, "ascii85", luaopen_ascii85, 1);
 	luaL_requiref(L, "aes128", luaopen_aes128, 1);
+	luaL_requiref(L, "mathx", luaopen_mathx, 1);
+	luaL_requiref(L, "complex", luaopen_complex, 1);
+	luaL_requiref(L, "random", luaopen_random, 1);
 
 	if(testing)
 	{

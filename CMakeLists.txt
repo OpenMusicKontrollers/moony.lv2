@@ -246,6 +246,22 @@ add_library(laes128 OBJECT
 set_target_properties(laes128 PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
 set_target_properties(laes128 PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
 
+add_library(lmathx OBJECT
+	lmathx/lmathx.c)
+set_target_properties(lmathx PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
+set_target_properties(lmathx PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
+
+add_library(lcomplex OBJECT
+	lcomplex/lcomplex.c)
+set_target_properties(lcomplex PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
+set_target_properties(lcomplex PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
+
+add_library(lrandom OBJECT
+	lrandom/lrandom.c
+	lrandom/random.c)
+set_target_properties(lrandom PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
+set_target_properties(lrandom PROPERTIES INTERPROCEDURAL_OPTIMIZATION true) # -flto
+
 add_library(tlsf OBJECT
 	tlsf-3.0/tlsf.c)
 set_target_properties(tlsf PROPERTIES POSITION_INDEPENDENT_CODE true) # -fPIC
@@ -280,7 +296,10 @@ add_library(moony MODULE
 	$<TARGET_OBJECTS:lpeg>
 	$<TARGET_OBJECTS:lbase64>
 	$<TARGET_OBJECTS:lascii85>
-	$<TARGET_OBJECTS:laes128>)
+	$<TARGET_OBJECTS:laes128>
+	$<TARGET_OBJECTS:lmathx>
+	$<TARGET_OBJECTS:lcomplex>
+	$<TARGET_OBJECTS:lrandom>)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 	target_compile_definitions(moony PUBLIC -DLUA_USE_LINUX)
 elseif(WIN32)
@@ -314,7 +333,10 @@ if(BUILD_TESTING)
 		$<TARGET_OBJECTS:lpeg>
 		$<TARGET_OBJECTS:lbase64>
 		$<TARGET_OBJECTS:lascii85>
-		$<TARGET_OBJECTS:laes128>)
+		$<TARGET_OBJECTS:laes128>
+		$<TARGET_OBJECTS:lmathx>
+		$<TARGET_OBJECTS:lcomplex>
+		$<TARGET_OBJECTS:lrandom>)
 	if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 		target_compile_definitions(moony_test PUBLIC -DLUA_USE_LINUX)
 	elseif(WIN32)

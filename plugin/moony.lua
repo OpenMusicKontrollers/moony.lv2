@@ -295,6 +295,106 @@ local math_lib = lib_mixed('math', {
 	'huge'
 })
 
+local mathx_lib = lib_mixed('mathx', {
+	'fabs',
+	'acos',
+	'acosh',
+	'asin',
+	'asinh',
+	'atan',
+	'atan2',
+	'atanh',
+	'cbrt',
+	'ceil',
+	'copysign',
+	'cos',
+	'cosh',
+	'deg',
+	'erf',
+	'erfc',
+	'exp',
+	'exp2',
+	'expm1',
+	'fdim',
+	'floor',
+	'fma',
+	'fmax',
+	'fmin',
+	'fmod',
+	'frexp',
+	'gamma',
+	'hypot',
+	'isfinite',
+	'isinf',
+	'isnan',
+	'isnormal',
+	'ldexp',
+	'lgamma',
+	'log',
+	'log10',
+	'log1p',
+	'log2',
+	'logb',
+	'modf',
+	'nearbyint',
+	'nextafter',
+	'pow',
+	'rad',
+	'remainder',
+	'round',
+	'scalbn',
+	'sin',
+	'sinh',
+	'sqrt',
+	'tan',
+	'tanh',
+	'trunc'
+}, {
+	'version',
+	'inf',
+	'nan',
+	'pi'
+})
+
+local complex_lib = lib_mixed('complex', {
+	'abs',
+	'acos',
+	'acosh',
+	'arg',
+	'asin',
+	'asinh',
+	'atan',
+	'atanh',
+	'conj',
+	'cos',
+	'cosh',
+	'exp',
+	'imag',
+	'log',
+	'new',
+	'pow',
+	'proj',
+	'real',
+	'sin',
+	'sinh',
+	'sqrt',
+	'tan',
+	'tanh',
+	'tostring'
+}, {
+	'version',
+	'I'
+})
+
+local random_lib = lib_mixed('random', {
+	'clone',
+	'new',
+	'seed',
+	'value'
+}, {
+	'version'
+})
+
 local debug_lib_func = lib_func('debug', {
 	'traceback',
 	'setupvalue',
@@ -784,7 +884,9 @@ M._rules = {
   {'constant', constant + field_constant},
   {'function', func + field_func},
   {'binops', binops},
-  {'library', tabs + lpeg_lib + string_lib + coroutine_lib + utf8_lib + table_lib + math_lib + debug_lib + base64_lib + ascii85_lib + aes128_lib + api_lib},
+  {'library', tabs + lpeg_lib + string_lib + coroutine_lib + utf8_lib + table_lib
+		+ mathx_lib + math_lib + complex_lib + random_lib + debug_lib
+		+ base64_lib + ascii85_lib + aes128_lib + api_lib},
   {'label', label + self},
   {'identifier', identifier},
   {'string', string},
