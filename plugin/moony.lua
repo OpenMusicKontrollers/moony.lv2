@@ -169,6 +169,22 @@ local function lib_const(name, keys)
 	return token(T.LIBRARY, P(name)) * (token(T.OPERATOR, S('.')) * token(T.CONSTANT, post))^-1
 end
 
+local function lib_mixed(name, func, const)
+	local post_func = nil
+	for i, v in ipairs(ord(func)) do
+		local pat = P(v)
+		post_func = post_func and (post_func + pat) or pat
+	end
+
+	local post_const = nil
+	for i, v in ipairs(ord(const)) do
+		local pat = P(v)
+		post_const = post_const and (post_const + pat) or pat
+	end
+
+	return token(T.LIBRARY, P(name)) * (token(T.OPERATOR, S('.')) * (token(T.FUNCTION, post_func) + token(T.CONSTANT, post_const)))^-1
+end
+
 local lpeg_lib_func = lib_func('lpeg', {
 	'R',
 	'Cf',
@@ -227,17 +243,15 @@ local coroutine_lib_func = lib_func('coroutine', {
 })
 local coroutine_lib = coroutine_lib_func
 
-local utf8_lib_func = lib_func('utf8', {
+local utf8_lib = lib_mixed('utf8', {
 	'len',
 	'codes',
 	'codepoint',
 	'char',
 	'offset'
-})
-local utf8_lib_const = lib_const('utf8', {
+}, {
 	'charpattern'
 })
-local utf8_lib = utf8_lib_func + utf8_lib_const
 
 local table_lib_func = lib_func('table', {
 	'pack',
@@ -250,7 +264,7 @@ local table_lib_func = lib_func('table', {
 })
 local table_lib = table_lib_func
 
-local math_lib_func = lib_func('math', {
+local math_lib = lib_mixed('math', {
 	'exp',
 	'type',
 	'randomseed',
@@ -274,14 +288,12 @@ local math_lib_func = lib_func('math', {
 	'abs',
 	'modf',
 	'ceil'
-})
-local math_lib_const = lib_const('math', {
+}, {
 	'mininteger',
 	'pi',
 	'maxinteger',
 	'huge'
 })
-local math_lib = math_lib_func + math_lib_const
 
 local debug_lib_func = lib_func('debug', {
 	'traceback',
@@ -303,23 +315,19 @@ local debug_lib_func = lib_func('debug', {
 })
 local debug_lib = debug_lib_func
 
-local base64_lib_func = lib_func('base64', {
+local base64_lib = lib_mixed('base64', {
 	'encode',
 	'decode'
-})
-local base64_lib_const = lib_const('base64', {
+}, {
 	'version'
 })
-local base64_lib = base64_lib_func + base64_lib_const
 
-local ascii85_lib_func = lib_func('ascii85', {
+local ascii85_lib = lib_mixed('ascii85', {
 	'encode',
 	'decode'
-})
-local ascii85_lib_const = lib_const('ascii85', {
+}, {
 	'version'
 })
-local ascii85_lib = ascii85_lib_func + ascii85_lib_const
 
 local aes128_lib_func = lib_func('aes128', {
 	'encode',
