@@ -303,6 +303,32 @@ static const char *default_script =
 static void
 _patch_set_code(plughandle_t *handle, uint32_t size, const char *body, bool user);
 
+
+//tools.ietf.org/html/rfc4122 version 4
+static void
+_uuid_random(plughandle_t *handle)
+{
+	uint8_t bytes [0x10];
+
+	for(unsigned i=0x0; i<0x10; i++)
+		bytes[i] = random() & 0xff;
+
+	bytes[6] = (bytes[6] & 0b00001111) | 0b01000000; // set four most significant bits of 7th byte to 0b0100
+	bytes[8] = (bytes[8] & 0b00111111) | 0b10000000; // set two most significant bits of 9th byte to 0b10
+
+
+	const size_t sz = 16*2 + 4 + 1;
+	char uuid [sz];
+	snprintf(uuid, sz, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+		bytes[0x0], bytes[0x1], bytes[0x2], bytes[0x3],
+		bytes[0x4], bytes[0x5],
+		bytes[0x6], bytes[0x7],
+		bytes[0x8], bytes[0x9],
+		bytes[0xa], bytes[0xb], bytes[0xc], bytes[0xd], bytes[0xe], bytes[0xf]);
+
+	nk_pugl_copy_to_clipboard(&handle->win, uuid, sz);
+}
+
 static uint8_t *
 file_load(const char *path, size_t *siz)
 {
@@ -2135,8 +2161,12 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 		const bool has_control_n = nk_pugl_is_shortcut_pressed(in, 'n', true);
 		const bool has_control_t = nk_pugl_is_shortcut_pressed(in, 't', true);
 		const bool has_control_k = nk_pugl_is_shortcut_pressed(in, 'k', true);
+		const bool has_control_u = nk_pugl_is_shortcut_pressed(in, 'u', true);
 		handle->has_control_a = nk_pugl_is_shortcut_pressed(in, 'a', true);
 		bool has_commited = false;
+
+		if(has_control_u)
+			_uuid_random(handle); // copy UUIDv4 into clipboard
 
 		nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 3);
 		{
@@ -2692,6 +2722,8 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		return NULL;
 
 	handle->bundle_path = bundle_path;
+
+	srand(time(NULL));
 
 	void *parent = NULL;
 	LV2UI_Resize *host_resize = NULL;
