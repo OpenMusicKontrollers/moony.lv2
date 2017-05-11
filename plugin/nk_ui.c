@@ -311,7 +311,7 @@ _uuid_random(plughandle_t *handle)
 	uint8_t bytes [0x10];
 
 	for(unsigned i=0x0; i<0x10; i++)
-		bytes[i] = random() & 0xff;
+		bytes[i] = rand() & 0xff;
 
 	bytes[6] = (bytes[6] & 0b00001111) | 0b01000000; // set four most significant bits of 7th byte to 0b0100
 	bytes[8] = (bytes[8] & 0b00111111) | 0b10000000; // set two most significant bits of 9th byte to 0b10
