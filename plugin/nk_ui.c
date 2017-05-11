@@ -2890,6 +2890,8 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	nk_pugl_config_t *cfg = &handle->win.cfg;
 	cfg->width = 1280;
 	cfg->height = 720;
+	cfg->min_width = cfg->width / 4;
+	cfg->min_height = cfg->height / 4;
 	cfg->resizable = true;
 	cfg->ignore = false;
 	cfg->class = "moony";

@@ -62,4 +62,4 @@ moony:moony_ui
 	] ;
 	lv2:requiredFeature ui:portMap, urid:map, urid:unmap ;
 	lv2:optionalFeature ui:resize ;
-	lv2:extensionData ui:idleInterface, ui:resize .
+	lv2:extensionData ui:idleInterface .
