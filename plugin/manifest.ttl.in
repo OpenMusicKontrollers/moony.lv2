@@ -198,7 +198,7 @@ moony:bank-midi_midi-responder
 		moony:c2a1xc2a1 ,
 		moony:c4a1xc4a1 ;
 	pset:bank moony:bank-midi ;
-	rdfs:label "MIDI responder" ;
+	rdfs:label "MIDI: Responder" ;
 	rdfs:seeAlso <presets.ttl> .
 
 # Bank time
@@ -211,7 +211,7 @@ moony:bank-time_midi-sequencer
 		moony:c2a1xc2a1 ,
 		moony:c4a1xc4a1 ;
 	pset:bank moony:bank-time ;
-	rdfs:label "MIDI sequencer" ;
+	rdfs:label "Time: Sequencer" ;
 	rdfs:seeAlso <presets.ttl> .
 
 # Bank OSC
@@ -224,7 +224,7 @@ moony:bank-osc_osc-responder
 		moony:c2a1xc2a1 ,
 		moony:c4a1xc4a1 ;
 	pset:bank moony:bank-osc ;
-	rdfs:label "OSC responder" ;
+	rdfs:label "OSC: Responder" ;
 	rdfs:seeAlso <presets.ttl> .
 
 # Bank state
@@ -240,7 +240,7 @@ moony:bank-state_state-responder
 		moony:c2xc2 ,
 		moony:c4xc4 ;
 	pset:bank moony:bank-state ;
-	rdfs:label "State responder" ;
+	rdfs:label "State: Responder" ;
 	rdfs:seeAlso <presets.ttl> .
 
 # Bank canvas
@@ -256,7 +256,7 @@ moony:bank-canvas_lv2-logo
 		moony:c2xc2 ,
 		moony:c4xc4 ;
 	pset:bank moony:bank-canvas ;
-	rdfs:label "LV2 Logo" ;
+	rdfs:label "Canvas: LV2 Logo" ;
 	rdfs:seeAlso <presets.ttl> .
 
 # Bank tutorials
@@ -396,5 +396,5 @@ moony:bank-template_part-5
 		moony:c2xc2 ,
 		moony:c4xc4 ;
 	pset:bank moony:bank-template;
-	rdfs:label "Template 5: Code Injection" ;
+	rdfs:label "Template 5: Code Injector" ;
 	rdfs:seeAlso <presets.ttl> .

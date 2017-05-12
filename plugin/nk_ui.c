@@ -302,9 +302,10 @@ static void
 _patch_set_code(plughandle_t *handle, uint32_t size, const char *body, bool user);
 
 
+#define URN_UUID_SIZE 49
 //tools.ietf.org/html/rfc4122 version 4
 static void
-_uuid_random(plughandle_t *handle)
+_urn_uuid_random(plughandle_t *handle)
 {
 	uint8_t bytes [0x10];
 
@@ -314,17 +315,15 @@ _uuid_random(plughandle_t *handle)
 	bytes[6] = (bytes[6] & 0b00001111) | 0b01000000; // set four most significant bits of 7th byte to 0b0100
 	bytes[8] = (bytes[8] & 0b00111111) | 0b10000000; // set two most significant bits of 9th byte to 0b10
 
-
-	const size_t sz = 16*2 + 4 + 1;
-	char uuid [sz];
-	snprintf(uuid, sz, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+	char uuid [URN_UUID_SIZE];
+	snprintf(uuid, URN_UUID_SIZE, "'urn:uuid:%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x#'",
 		bytes[0x0], bytes[0x1], bytes[0x2], bytes[0x3],
 		bytes[0x4], bytes[0x5],
 		bytes[0x6], bytes[0x7],
 		bytes[0x8], bytes[0x9],
 		bytes[0xa], bytes[0xb], bytes[0xc], bytes[0xd], bytes[0xe], bytes[0xf]);
 
-	nk_pugl_copy_to_clipboard(&handle->win, uuid, sz);
+	nk_pugl_copy_to_clipboard(&handle->win, uuid, URN_UUID_SIZE);
 }
 
 static uint8_t *
@@ -2077,7 +2076,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 		bool has_commited = false;
 
 		if(has_control_u)
-			_uuid_random(handle); // copy UUIDv4 into clipboard
+			_urn_uuid_random(handle); // copy UUIDv4 into clipboard
 
 		nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 3);
 		{
