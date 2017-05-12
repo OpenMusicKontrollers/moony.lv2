@@ -76,7 +76,6 @@
 #define MOONY_PREFIX					MOONY_URI"#"
 
 #define MOONY_CODE_URI				MOONY_URI"#code"
-#define MOONY_SELECTION_URI		MOONY_URI"#selection"
 #define MOONY_ERROR_URI				MOONY_URI"#error"
 #define MOONY_TRACE_URI				MOONY_URI"#trace"
 #define MOONY_STATE_URI				MOONY_URI"#state"
@@ -235,7 +234,6 @@ struct _moony_t {
 
 	struct {
 		LV2_URID moony_code;
-		LV2_URID moony_selection;
 		LV2_URID moony_error;
 		LV2_URID moony_trace;
 		LV2_URID moony_panic;

@@ -1229,7 +1229,6 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 		moony->voice_map = &voice_map_fallback;
 
 	moony->uris.moony_code = moony->map->map(moony->map->handle, MOONY_CODE_URI);
-	moony->uris.moony_selection = moony->map->map(moony->map->handle, MOONY_SELECTION_URI);
 	moony->uris.moony_error = moony->map->map(moony->map->handle, MOONY_ERROR_URI);
 	moony->uris.moony_trace = moony->map->map(moony->map->handle, MOONY_TRACE_URI);
 	moony->uris.moony_panic = moony->map->map(moony->map->handle, MOONY_PANIC_URI);
@@ -2333,22 +2332,6 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 						varchunk_write_advance(moony->from_dsp, sz);
 						if(moony_wake_worker(moony->sched) != LV2_WORKER_SUCCESS)
 							moony_trace(moony, "waking worker failed");
-					}
-				}
-				else if( (property->body == moony->uris.moony_selection) && (value->type == forge->String) )
-				{
-					// we do not do any stash, apply and restore for selections
-
-					// load chunk
-					const char *str = LV2_ATOM_BODY_CONST(value);
-					if(luaL_dostring(L, str)) // failed loading chunk
-					{
-						moony_error(moony);
-					}
-					else // succeeded loading chunk
-					{
-						moony->error[0] = 0x0; // reset error flag
-						moony->error_out = true;
 					}
 				}
 				else if( (property->body == moony->uris.moony_editorHidden) && (value->type == forge->Bool) )

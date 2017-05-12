@@ -157,7 +157,6 @@ struct _browser_t {
 		struct nk_image default_file;
 		struct nk_image checked;
 		struct nk_image run_all;
-		struct nk_image run_selection;
 		struct nk_image import_from;
 		struct nk_image export_to;
 		struct nk_image refresh;
@@ -210,7 +209,6 @@ struct _plughandle_t {
 	LV2_URID patch_subject;
 	LV2_URID patch_sequenceNumber;
 	LV2_URID moony_code;
-	LV2_URID moony_selection;
 	LV2_URID moony_error;
 	LV2_URID moony_trace;
 	LV2_URID moony_panic;
@@ -488,7 +486,6 @@ file_browser_init(browser_t *browser, int return_hidden, int return_lua_only,
 		browser->icons.default_file = icon_load(data, "envelope.png");
 		browser->icons.checked = icon_load(data, "checked.png");
 		browser->icons.run_all = icon_load(data, "next.png");
-		browser->icons.run_selection = icon_load(data, "sort.png");
 		browser->icons.import_from = icon_load(data, "upload.png");
 		browser->icons.export_to = icon_load(data, "download.png");
 		browser->icons.refresh = icon_load(data, "reload.png");
@@ -517,7 +514,6 @@ file_browser_free(browser_t *browser,
 		icon_unload(data, browser->icons.default_file);
 		icon_unload(data, browser->icons.checked);
 		icon_unload(data, browser->icons.run_all);
-		icon_unload(data, browser->icons.run_selection);
 		icon_unload(data, browser->icons.import_from);
 		icon_unload(data, browser->icons.export_to);
 		icon_unload(data, browser->icons.refresh);
@@ -982,15 +978,6 @@ _clear_error(plughandle_t *handle)
 }
 
 static void
-_submit_selection(plughandle_t *handle, const char *sel, uint32_t sz)
-{
-	_clear_error(handle);
-
-	_patch_set(handle, handle->moony_selection,
-		sz, handle->forge.String, sel);
-}
-
-static void
 _submit_all(plughandle_t *handle)
 {
 	_clear_error(handle);
@@ -1000,82 +987,6 @@ _submit_all(plughandle_t *handle)
 		nk_str_len_char(str), handle->forge.String, nk_str_get_const(str));
 
 	handle->dirty = false;
-}
-
-static void
-_submit_line(plughandle_t *handle)
-{
-	uint32_t newlines = 0;
-	uint32_t from = 0;
-	for(int i = 0; i < handle->editor.cursor; i++) // count newlines
-	{
-		if(handle->code[i] == '\n')
-		{
-			newlines += 1;
-			from = i + 1;
-		}
-	}
-
-	// create selection with prefixed newlines
-	struct nk_str *str = &handle->editor.string;
-	const char *code = nk_str_get_const(str);
-	const int code_sz  = nk_str_len_char(str);
-	char *end = memchr(code + from, '\n', code_sz);
-	const uint32_t to = end ? end - code : code_sz;
-	const uint32_t len = to - from;
-	if(len > 0)
-	{
-		const uint32_t sz = newlines + len + 1;
-		char *sel = calloc(sz, sizeof(char));
-		if(sel)
-		{
-			memset(sel, '\n', newlines);
-			memcpy(sel + newlines, code + from, len);
-
-			_submit_selection(handle, sel, sz);
-
-			free(sel);
-		}
-	}
-}
-
-static void
-_submit_sel(plughandle_t *handle)
-{
-	struct nk_str *str = &handle->editor.string;
-	const char *code = nk_str_get_const(str);
-
-	const uint32_t len = handle->editor.select_end - handle->editor.select_start;
-	if(len > 0)
-	{
-		uint32_t newlines = 0;
-		for(int i = 0; i < handle->editor.select_start; i++) // count newlines
-		{
-			if(code[i] == '\n')
-				newlines += 1;
-		}
-
-		const uint32_t sz = newlines + len + 1;
-		char *sel = calloc(sz, sizeof(char));
-		if(sel)
-		{
-			memset(sel, '\n', newlines);
-			memcpy(sel + newlines, code + handle->editor.select_start, len);
-
-			_submit_selection(handle, sel, sz);
-
-			free(sel);
-		}
-	}
-}
-
-static void
-_submit_line_or_sel(plughandle_t *handle)
-{
-	if(handle->editor.select_end == handle->editor.select_start)
-		_submit_line(handle);
-	else
-		_submit_sel(handle);
 }
 
 static void
@@ -2273,9 +2184,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						&handle->editor, nk_filter_default);
 					if(state & NK_EDIT_COMMITED)
 					{
-						if(has_control_down)
-							_submit_line_or_sel(handle);
-						else if(has_shift_down)
+						if(has_shift_down)
 							_submit_all(handle);
 
 						has_commited = true;
@@ -2319,7 +2228,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						nk_push_scissor(canv, old_clip);
 					}
 
-					nk_layout_row_dynamic(ctx, dy, 5);
+					nk_layout_row_dynamic(ctx, dy, 4);
 
 					if(_tooltip_visible(ctx))
 						nk_tooltip(ctx, "Shift-Enter");
@@ -2332,15 +2241,6 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					if(nk_button_image_label(ctx, handle->browser.icons.run_all, "Send", NK_TEXT_RIGHT))
 						_submit_all(handle);
 					nk_style_pop_color(ctx);
-					nk_style_pop_style_item(ctx);
-
-					if(_tooltip_visible(ctx))
-						nk_tooltip(ctx, "Ctrl-Enter");
-					nk_style_push_style_item(ctx, &ctx->style.button.normal, has_control_enter && has_commited
-						? nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON_ACTIVE])
-						: nk_style_item_color(nk_default_color_style[NK_COLOR_BUTTON]));
-					if(nk_button_image_label(ctx, handle->browser.icons.run_selection, "Line/sel.", NK_TEXT_RIGHT))
-						_submit_line_or_sel(handle);
 					nk_style_pop_style_item(ctx);
 
 					if(_tooltip_visible(ctx))
@@ -2792,7 +2692,6 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	handle->patch_subject = handle->map->map(handle->map->handle, LV2_PATCH__subject);
 	handle->patch_sequenceNumber = handle->map->map(handle->map->handle, LV2_PATCH__sequenceNumber);
 	handle->moony_code = handle->map->map(handle->map->handle, MOONY_CODE_URI);
-	handle->moony_selection = handle->map->map(handle->map->handle, MOONY_SELECTION_URI);
 	handle->moony_error = handle->map->map(handle->map->handle, MOONY_ERROR_URI);
 	handle->moony_trace = handle->map->map(handle->map->handle, MOONY_TRACE_URI);
 	handle->moony_panic = handle->map->map(handle->map->handle, MOONY_PANIC_URI);
