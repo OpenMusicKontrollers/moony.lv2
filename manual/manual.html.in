@@ -666,7 +666,7 @@ end</code></pre>
 
 		<pre><code data-ref="callbacks-save">-- 'save' callback prototype
 
-local urn = Mapper('urn:moony:xzy#')
+local urn = Mapper('urn:uuid:6f7e2445-ae5f-4e2e-ae11-9a5cfb1b5d1e#')
 
 -- state
 local state = {
@@ -722,7 +722,7 @@ end</code></pre>
 
 		<pre><code data-ref="callbacks-restore">-- 'restore' callback prototype
 
-local urn = Mapper('urn:moony:xyz#')
+local urn = Mapper('urn:uuid:8fdd61cd-9c12-4366-b208-8306b37cb981#')
 
 -- 3D positional state
 local state = {
@@ -848,7 +848,7 @@ assert(prefix .. 'bar' == bar_uri)</code></pre>
 
 		<pre><code data-ref="urid-mapper">-- Mapper is a convenience wrapper over Map
 
-local prefix = 'http://example.com#'
+local prefix = 'urn:uuid:d178f397-3179-4c38-9d25-31d60ffc5788#'
 local mapper = Mapper(prefix)
 
 local bar_urid = Map[prefix .. 'bar']
@@ -1011,11 +1011,11 @@ end</code></pre>
 
 			<pre><code data-ref="forge-urid">-- Forge URID
 
-local uri = 'urn:moony:xzy'
-local urn = Map[uri]
+local uri = 'urn:uuid:887c5b2e-89f9-4f1d-aa7c-0ac240ea11b5#foo'
+local urid = Map[uri]
 
 function stash(forge)
-	forge:urid(urn)
+	forge:urid(urid)
 end</code></pre>
 			</div>
 
@@ -1034,7 +1034,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-uri">-- Forge URI
 
-local uri = 'urn:moony:xzy'
+local uri = 'urn:uuid:1f2eb75a-29dc-446b-a8eb-c22d20144a85#foo'
 
 function stash(forge)
 	forge:uri(uri)
@@ -1391,7 +1391,8 @@ end</code></pre>
 			</dl>
 
 			<pre><code data-ref="forge-object">-- Forge Object
-local urn = Mapper('urn:moony:xyz#')
+
+local urn = Mapper('urn:uuid:efc85bf7-0246-486f-948b-0cfbcae4e1053#')
 
 function stash_tuple(forge)
 	local obj = forge:object(urn.FooBar) -- create derived container forge object
@@ -1743,7 +1744,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-patch">-- Forge Patch
 
-local urn = Mapper('urn:moony:xzy#')
+local urn = Mapper('urn:uuid:29f87e4f-fa45-4f91-aa88-767053006a0d#')
 
 function stash(forge)
 	local patch= forge:patch(urn.subj, 1002) -- with subject and sequence number
@@ -1805,7 +1806,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-get">-- Forge Get
 
-local urn = Mapper('urn:moony:xzy#')
+local urn = Mapper('urn:uuid:5b172c1f-9152-4d4e-ad68-84965792b931#')
 
 function stash_tuple(forge)
 	forge:get(urn.prop) -- without subject and sequence number
@@ -1833,7 +1834,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-set">-- Forge Set
 
-local urn = Mapper('urn:moony:xzy#')
+local urn = Mapper('urn:uuid:29c714c1-0c7b-4434-81d6-82ee8a4d64b8#')
 
 function stash_tuple(forge)
 	local set = forge:set(urn.prop) -- without subject and sequence number
@@ -1863,7 +1864,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-put">-- Forge Put
 
-local urn = Mapper('urn:moony:xzy#')
+local urn = Mapper('urn:uuid:dabe2235-2405-46e6-a26c-90dbe34d9bf3#')
 
 function stash_tuple(forge)
 	local put = forge:put() -- without subject and sequence number
@@ -1895,7 +1896,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-ack">-- Forge Ack
 
-local urn = Mapper('urn:moony:xzy#')
+local urn = Mapper('urn:uuid:f35c0f85-5b7f-4434-912d-8bf982711b30#')
 
 function stash(forge)
 	forge:ack(urn.subj, 1002) -- with subject and sequence number
@@ -1919,7 +1920,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-error">-- Forge Error
 
-local urn = Mapper('urn:moony:xzy#')
+local urn = Mapper('urn:uuid:93ea103c-75ff-47e2-b89b-fc79173bedee#')
 
 function stash(forge)
 	forge:error(urn.subj, 1002) -- with subject and sequence number
@@ -1943,7 +1944,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-delete">-- Forge Delete
 
-local urn = Mapper('urn:moony:xzy#')
+local urn = Mapper('urn:uuid:cea077fc-b822-4143-b5c5-34c0f7d9f016#')
 
 function stash(forge)
 	forge:delete(urn.subj, 1002) -- with sequence number
@@ -1969,7 +1970,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-copy">-- Forge Copy
 
-local urn = Mapper('urn:moony:xzy#')
+local urn = Mapper('urn:uuid:3d4de1a6-a5fa-463d-a59c-c7778a6b18e9#')
 
 function stash(forge)
 	forge:copy(urn.subj, urn.dest, 1002) -- with sequence number
@@ -1995,7 +1996,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-move">-- Forge Move
 
-local urn = Mapper('urn:moony:xzy#')
+local urn = Mapper('urn:uuid:6370dea9-a41a-4347-80f0-75d9fcccc28a#')
 
 function stash(forge)
 	forge:move(urn.subj, urn.dest, 1002) -- with sequence number
@@ -2019,7 +2020,7 @@ end</code></pre>
 
 			<pre><code data-ref="forge-insert">-- Forge Insert
 
-local urn = Mapper('urn:moony:xzy#')
+local urn = Mapper('urn:uuid:16e7ed0d-20ee-45ef-8268-ed931a998a4f#')
 
 function stash_tuple(forge)
 	local insert = forge:insert() -- without subject and sequence number
@@ -2956,11 +2957,11 @@ end</code></pre>
 
 			<pre><code data-ref="atom-urid">-- Atom URID
 
-local urn = Map['urn:moony:xyz']
+local urid = Map['urn:uuid:6d82e244-ee66-403f-aea1-26b3d9823820#foo']
 
 -- serialize
 function stash(forge)
-	forge:urid(urn)
+	forge:urid(urid)
 end
 
 function apply(atom)
@@ -2968,7 +2969,7 @@ function apply(atom)
 	assert(#atom == 4) -- query size of atom body
 	print(tostring(atom)) -- convert to string
 	assert(atom.type == Atom.URID) -- query type of atom
-	assert(atom.body == urn) -- get atom body
+	assert(atom.body == urid) -- get atom body
 end</code></pre>
 			</div>
 
@@ -3004,19 +3005,19 @@ end</code></pre>
 
 			<pre><code data-ref="atom-uri">-- Atom URI
 
-local urn = 'urn:moony:xyz'
+local uri = 'urn:uuid:022ec18a-0a02-4a19-ad7a-a10403a0c4c3#foo'
 
 -- serialize
 function stash(forge)
-	forge:uri(urn)
+	forge:uri(uri)
 end
 
 function apply(atom)
 	-- attributes
-	assert(#atom == #urn + 1) -- query size of atom body
+	assert(#atom == #uri + 1) -- query size of atom body
 	print(tostring(atom)) -- convert to string
 	assert(atom.type == Atom.URI) -- query type of atom
-	assert(atom.body == urn) -- get atom body
+	assert(atom.body == uri) -- get atom body
 end</code></pre>
 			</div>
 
@@ -3168,8 +3169,9 @@ end</code></pre>
 			<pre><code data-ref="atom-literal">-- Atom  Literal
 
 local lit = 'Hallo Welt'
-local datatype = Map['urn:moony:xyz']
-local lang = Map['urn:moony:de']
+local urn = Mapper('urn:uuid:c2f619db-3eef-411c-82c9-ffe0df1c10fc3')
+local datatype = urn.datatype
+local lang = urn.lang
 
 -- serialize
 function stash(forge)
@@ -3569,7 +3571,7 @@ end</code></pre>
 
 			<pre><code data-ref="atom-object">-- Atom Object
 
-local urn = Mapper('urn:moony:xyz#')
+local urn = Mapper('urn:uuid:b110d31d-98c6-48bc-93d1-e326c9829be9#')
 
 -- serialize
 function stash(forge)
@@ -4174,7 +4176,7 @@ end</code></pre>
 
 		<pre><code data-ref="responder-state">-- StateResponder
 
-local urn = Mapper('urn:moony:xzy#')
+local urn = Mapper('urn:uuid:e359d24c-e1fe-4b3b-bbda-b58f4b04234d#')
 
 -- define read-only parameter
 local period = Parameter{
