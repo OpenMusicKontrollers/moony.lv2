@@ -123,6 +123,9 @@ pre {
 			</ul>
 		</li>
 
+		<li><a href="#lua-libraries">Lua libraries</a>
+		</li>
+
 		<li><a href="#log-and-debug">Log &amp; Debug</a>
 		</li>
 
@@ -462,6 +465,50 @@ function run(n, control, notify, seq, forge, c1, c2, c3, c4)
 	return c1, c2, c3, c4
 end</code></pre>
 		</div>
+
+	<div class="api-section">
+		<h1 id="lua-libraries">Lua libraries</h1>
+		<p><i>Moony</i> runs its Lua interpreter in sandboxed mode, e.g. because of its
+		real-time requirements, <i>Moony</i> cannot provide any access to blocking functions
+		like file I/O and pipes. Only the following standard Lua libraries are enabled:</p>
+
+		<ul>
+			<li><a href="https://www.lua.org/manual/5.3/manual.html#6.1">base</a></li>
+			<li><a href="https://www.lua.org/manual/5.3/manual.html#6.2">coroutine</a></li>
+			<li><a href="https://www.lua.org/manual/5.3/manual.html#6.6">table</a></li>
+			<li><a href="https://www.lua.org/manual/5.3/manual.html#6.4">string</a></li>
+			<li><a href="https://www.lua.org/manual/5.3/manual.html#6.7">math</a></li>
+			<li><a href="https://www.lua.org/manual/5.3/manual.html#6.5">utf8</a></li>
+			<li><a href="https://www.lua.org/manual/5.3/manual.html#6.10">debug</a></li>
+		</ul>
+
+		<p>The following standard Lua libraries are disabled:</p>
+
+		<ul>
+			<li><a href="https://www.lua.org/manual/5.3/manual.html#6.8">io</a></li>
+			<li><a href="https://www.lua.org/manual/5.3/manual.html#6.3">package</a></li>
+			<li><a href="https://www.lua.org/manual/5.3/manual.html#6.9">os</a></li>
+		</ul>
+
+		<p>The following <a href="https://www.lua.org/manual/5.3/manual.html#6.1">base</a> functions are disabled:</p>
+
+		<ul>
+			<li><a href="https://www.lua.org/manual/5.3/manual.html#pdf-loadfile">loadfile</a></li>
+			<li><a href="https://www.lua.org/manual/5.3/manual.html#pdf-dofile">dofile</a></li>
+		</ul>
+
+		<p>Additionally to the standard libraries, <i>Moony</i> ships the
+		following commonly used utility libraries:</p>
+
+		<ul>
+			<li><a href="http://www.inf.puc-rio.br/~roberto/lpeg/">lpeg</a></li>
+			<li><a href="http://webserver2.tecgraf.puc-rio.br/~lhf/ftp/lua/#lbase64">base64</a></li>
+			<li><a href="http://webserver2.tecgraf.puc-rio.br/~lhf/ftp/lua/#lascii85">ascii85</a></li>
+			<li><a href="http://webserver2.tecgraf.puc-rio.br/~lhf/ftp/lua/#lmathx">mathx</a></li>
+			<li><a href="http://webserver2.tecgraf.puc-rio.br/~lhf/ftp/lua/#lcomplex">complex</a></li>
+			<li><a href="http://webserver2.tecgraf.puc-rio.br/~lhf/ftp/lua/#lrandom">random</a></li>
+		</ul>
+	</div>
 
 	<div class="api-section">
 	<h1 id="log-and-debug">Log &amp; Debug</h1>
