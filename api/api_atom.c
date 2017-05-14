@@ -440,10 +440,23 @@ _latom_tuple_unpack(lua_State *L)
 	return count;
 }
 
+static const LV2_Atom nil_atom = {
+	.size = 0,
+	.type = 0
+};
+
+__realtime static void
+_latom_clear(latom_t *litem)
+{
+	litem->atom = &nil_atom;
+	litem->body.raw = NULL;
+}
+
 __realtime int
 _latom_tuple_foreach_itr(lua_State *L)
 {
 	latom_t *latom = lua_touserdata(L, 1);
+	latom_t *litem = lua_touserdata(L, lua_upvalueindex(2));
 
 	if(!lv2_atom_tuple_is_end(latom->body.tuple, latom->atom->size, latom->iter.tuple.item))
 	{
@@ -451,7 +464,6 @@ _latom_tuple_foreach_itr(lua_State *L)
 		lua_pushinteger(L, latom->iter.tuple.pos);
 		// push atom
 		lua_pushvalue(L, lua_upvalueindex(2));
-		latom_t *litem = lua_touserdata(L, lua_upvalueindex(2));
 		litem->atom = latom->iter.tuple.item;
 		litem->body.raw = LV2_ATOM_BODY_CONST(litem->atom);
 
@@ -463,6 +475,7 @@ _latom_tuple_foreach_itr(lua_State *L)
 	}
 
 	// end of tuple reached
+	_latom_clear(litem);
 	lua_pushnil(L);
 	return 1;
 }
@@ -541,6 +554,7 @@ __realtime int
 _latom_obj_foreach_itr(lua_State *L)
 {
 	latom_t *latom = lua_touserdata(L, 1);
+	latom_t *litem = lua_touserdata(L, lua_upvalueindex(2));
 
 	if(!lv2_atom_object_is_end(latom->body.obj, latom->atom->size, latom->iter.obj.prop))
 	{
@@ -549,7 +563,6 @@ _latom_obj_foreach_itr(lua_State *L)
 		// push atom
 
 		lua_pushvalue(L, lua_upvalueindex(2));
-		latom_t *litem = lua_touserdata(L, lua_upvalueindex(2));
 		litem->atom = &latom->iter.obj.prop->value;
 		litem->body.raw = LV2_ATOM_BODY_CONST(litem->atom);
 
@@ -563,6 +576,7 @@ _latom_obj_foreach_itr(lua_State *L)
 	}
 
 	// end of object reached
+	_latom_clear(litem);
 	lua_pushnil(L);
 	return 1;
 }
@@ -643,6 +657,7 @@ _latom_seq_multiplex_itr(lua_State *L)
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	const unsigned n = lua_rawlen(L, 1);
 	latom_t *latom [n];
+	latom_t *litem = lua_touserdata(L, lua_upvalueindex(2));
 
 	// fill latom* array
 	for(unsigned i=0; i<n; i++)
@@ -686,7 +701,6 @@ _latom_seq_multiplex_itr(lua_State *L)
 
 		// push atom
 		lua_pushvalue(L, lua_upvalueindex(2));
-		latom_t *litem = lua_touserdata(L, lua_upvalueindex(2));
 		litem->atom = &latom[nxt]->iter.seq.ev->body;
 		litem->body.raw = LV2_ATOM_BODY_CONST(litem->atom);
 		lua_rawgeti(L, 1, 1+nxt);
@@ -698,6 +712,7 @@ _latom_seq_multiplex_itr(lua_State *L)
 	}
 
 	// end of sequence reached
+	_latom_clear(litem);
 	lua_pushnil(L);
 	return 1;
 }
@@ -733,6 +748,7 @@ _latom_seq_foreach_itr(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	latom_t *latom = lua_touserdata(L, 1);
+	latom_t *litem = lua_touserdata(L, lua_upvalueindex(2));
 
 	if(!lv2_atom_sequence_is_end(latom->body.seq, latom->atom->size, latom->iter.seq.ev))
 	{
@@ -743,7 +759,6 @@ _latom_seq_foreach_itr(lua_State *L)
 
 		// push atom
 		lua_pushvalue(L, lua_upvalueindex(2));
-		latom_t *litem = lua_touserdata(L, lua_upvalueindex(2));
 		litem->atom = &latom->iter.seq.ev->body;
 		litem->body.raw = LV2_ATOM_BODY_CONST(litem->atom);
 
@@ -754,6 +769,7 @@ _latom_seq_foreach_itr(lua_State *L)
 	}
 
 	// end of sequence reached
+	_latom_clear(litem);
 	lua_pushnil(L);
 	return 1;
 }
@@ -949,6 +965,7 @@ __realtime int
 _latom_vec_foreach_itr(lua_State *L)
 {
 	latom_t *latom = lua_touserdata(L, 1);
+	latom_t *litem = lua_touserdata(L, lua_upvalueindex(2));
 
 	if(latom->iter.vec.pos < latom->iter.vec.count)
 	{
@@ -956,7 +973,6 @@ _latom_vec_foreach_itr(lua_State *L)
 		lua_pushinteger(L, latom->iter.vec.pos + 1);
 		// push atom
 		lua_pushvalue(L, lua_upvalueindex(2));
-		latom_t *litem = lua_touserdata(L, lua_upvalueindex(2));
 		litem->atom = (const LV2_Atom *)latom->body.vec;
 		litem->body.raw = LV2_ATOM_VECTOR_BODY_ITEM_CONST(latom->body.vec, latom->iter.vec.pos);
 
@@ -967,6 +983,7 @@ _latom_vec_foreach_itr(lua_State *L)
 	}
 
 	// end of vector reached
+	_latom_clear(litem);
 	lua_pushnil(L);
 	return 1;
 }

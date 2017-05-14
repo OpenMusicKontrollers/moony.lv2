@@ -1854,13 +1854,11 @@ do
 	assert(clones[2].type == Atom.Long)
 	assert(clones[2].body == 2)
 
-	assert(#references[1] == 8) -- latoms in :foreach are recycled
-	assert(references[1].type == Atom.Long)
-	assert(references[1].body == 2)
+	assert(#references[1] == 0) -- latoms in :foreach are recycled, and reset
+	assert(references[1].type == 0)
 
-	assert(#references[2] == 8)
-	assert(references[2].type == Atom.Long)
-	assert(references[2].body == 2)
+	assert(#references[2] == 0)
+	assert(references[2].type == 0)
 end
 
 -- Stash

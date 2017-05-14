@@ -355,6 +355,7 @@ _lopts_itr(lua_State *L)
 		return 2;
 	}
 
+	//FIXME invalidate atom after use?
 	lua_pushnil(L);
 	return 1;
 }
