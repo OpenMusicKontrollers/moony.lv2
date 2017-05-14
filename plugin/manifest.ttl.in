@@ -213,6 +213,17 @@ moony:bank-time_midi-sequencer
 	pset:bank moony:bank-time ;
 	rdfs:label "Time: Sequencer" ;
 	rdfs:seeAlso <presets.ttl> .
+moony:bank-time_lindenmayer-system
+	a pset:Preset ;
+	lv2:appliesTo moony:a1xa1 ,
+		moony:a2xa2 ,
+		moony:a4xa4 ,
+		moony:c1a1xc1a1 ,
+		moony:c2a1xc2a1 ,
+		moony:c4a1xc4a1 ;
+	pset:bank moony:bank-time ;
+	rdfs:label "Time: Lindenmayer" ;
+	rdfs:seeAlso <presets.ttl> .
 
 # Bank OSC
 moony:bank-osc_osc-responder

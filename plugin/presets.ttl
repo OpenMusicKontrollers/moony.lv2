@@ -288,6 +288,106 @@ function run(n, control, notify, seq, forge)
 end"""
 	] .
 
+moony:bank-time_lindenmayer-system
+	a pset:Preset ;
+	doap:license lic:Artistic-2.0 ;
+	state:state [
+		moony:editorHidden false ;
+		moony:logHidden false ;
+		moony:logFollow true ;
+		moony:paramHidden true ;
+		moony:paramCols 3 ;
+		moony:paramRows 4 ;
+		moony:code """local mtointeger = math.tointeger -- reference locally
+
+local rolling = false -- transport state
+local oldNote = nil -- currently palying note
+local velocity = 0x7f -- default note-on velocity value
+
+-- Lindenmayer pattern-rule iterator
+local function iterate(pattern, rules, n)
+  for i = 1, n do -- iterate n-times
+    pattern = string.gsub(pattern, '.', function(c) -- replace every single character with ...
+      return rules[c] or c -- ... matching rule or itself
+    end)
+  end
+  return pattern -- resulting iterated over pattern
+end
+
+local rules = {
+  ['n'] = 'n.[.n..]', -- replacement string for character 'n'
+  ['.'] = '[[..n]]' -- replacement string for character '.'
+}
+
+local start = 'n' -- initial pattern
+local pattern = iterate(start, rules, 4) -- pattern after 4 iterations
+
+local refNote = Note['C#+4'] -- initial reference note
+local incNote = 3 -- reference note increment in MIDI semitones
+
+local actions = {
+  ['n'] = function() -- action for character 'n'
+    coroutine.yield(refNote) -- return current reference note
+  end,
+  ['.'] = function() -- action for character '.'
+    coroutine.yield(nil) -- return nil, e.g. this note is a pause
+  end,
+  ['['] = function() -- action for character '['
+    refNote = (refNote + incNote) & 0x7f -- increase reference note by increment
+  end,
+  [']'] = function() -- action for character ']'
+    refNote = (refNote - incNote) & 0x7f -- decrease reference note by increment
+  end
+}
+
+local nextNote = coroutine.wrap(function() -- create iterator to get action from pattern
+	while true do -- enter infinite loop
+    for c in string.gmatch(pattern, '.') do -- iteratore over each single character in pattern
+      local action = actions[c] -- look up action for character
+      if action then
+        action() -- execute action if defined
+      end
+    end
+  end
+end)
+
+local timeR = TimeResponder({
+  [Time.speed] = function(self, frames, forge, speed)
+    rolling = speed ~= 0.0 -- update transport state
+
+    if not rolling and oldNote then -- if at transport stop and currently playing a note
+      forge:time(frames):midi(MIDI.NoteOff, oldNote, 0x0) -- send note-off
+      oldNote = nil -- invalidate oldNote
+    end
+  end,
+  [Time.barBeat] = function(self, frames, forge, barBeat)
+    if rolling and mtointeger(barBeat) then -- if transport is rolling and barBeat being a whole integer
+      if oldNote then -- if currently playing a note
+        forge:time(frames):midi(MIDI.NoteOff, oldNote, 0x0) -- send note-off
+        oldNote = nil -- invalidate oldNote
+      end
+
+      local newNote = nextNote() -- get new note or nil from pattern iterator
+      if newNote then -- if not a pause
+        forge:time(frames):midi(MIDI.NoteOn, newNote, velocity) -- send note-on
+        oldNote = newNote -- update currently playing note
+      end
+    end
+  end
+}, 16) -- run 16x faster than host time
+
+function run(n, control, notify, seq, forge)
+  local from = 0 -- initialize reference frame time
+
+  for frames, atom in seq:foreach() do -- iterate over input event sequence
+    timeR(from, frames, forge, atom) -- let time responder handle the event
+    from = frames -- advance reference frame time
+  end
+
+  timeR(from, n, forge) -- tell time responder about remaining frames of cycle
+end"""
+	] .
+
 moony:bank-osc_osc-responder
 	a pset:Preset ;
 	doap:license lic:Artistic-2.0 ;
