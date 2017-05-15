@@ -135,21 +135,23 @@ _ltimeresponder_stash(lua_State *L)
 	timely_t *timely = lua_touserdata(L, 1);
 	lforge_t *lforge = luaL_checkudata(L, 2, "lforge");
 
+	const float multiplier_1 = 1.f / timely->multiplier;
+
 	// serialize full time state to stash
 	LV2_Atom_Forge_Frame frame;
 	if(  !lv2_atom_forge_object(lforge->forge, &frame, 0, timely->urid.time_position)
 
 		|| !lv2_atom_forge_key(lforge->forge, timely->urid.time_barBeat)
-		|| !lv2_atom_forge_float(lforge->forge, TIMELY_BAR_BEAT(timely))
+		|| !lv2_atom_forge_float(lforge->forge, TIMELY_BAR_BEAT(timely) * multiplier_1)
 
 		|| !lv2_atom_forge_key(lforge->forge, timely->urid.time_bar)
 		|| !lv2_atom_forge_long(lforge->forge, TIMELY_BAR(timely))
 
 		|| !lv2_atom_forge_key(lforge->forge, timely->urid.time_beatUnit)
-		|| !lv2_atom_forge_int(lforge->forge, TIMELY_BEAT_UNIT(timely))
+		|| !lv2_atom_forge_int(lforge->forge, TIMELY_BEAT_UNIT(timely) * multiplier_1)
 
 		|| !lv2_atom_forge_key(lforge->forge, timely->urid.time_beatsPerBar)
-		|| !lv2_atom_forge_float(lforge->forge, TIMELY_BEATS_PER_BAR(timely))
+		|| !lv2_atom_forge_float(lforge->forge, TIMELY_BEATS_PER_BAR(timely) * multiplier_1)
 
 		|| !lv2_atom_forge_key(lforge->forge, timely->urid.time_beatsPerMinute)
 		|| !lv2_atom_forge_float(lforge->forge, TIMELY_BEATS_PER_MINUTE(timely))
@@ -259,6 +261,8 @@ _ltimeresponder__newindex(lua_State *L)
 		if(!strcmp(lua_tostring(L, 2), "multiplier"))
 		{
 			const float multiplier = luaL_checknumber(L, 3);
+			if(multiplier <= 0.f)
+				luaL_error(L, "multiplier not > 0.0");
 			timely_set_multiplier(timely, multiplier);
 		}
 	}
@@ -294,6 +298,9 @@ _ltimeresponder(lua_State *L)
 
 	const float multiplier = luaL_optnumber(L, 2, 1.f);
 	lua_pop(L, 1); // multiplier
+
+	if(multiplier <= 0.f)
+		luaL_error(L, "multiplier not > 0.0");
 
 	// TODO do we want to cache/reuse this, too?
 	timely_t *timely = lua_newuserdata(L, sizeof(timely_t)); // userdata
