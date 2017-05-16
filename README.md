@@ -33,11 +33,10 @@ Get more information at: [http://open-music-kontrollers.ch/lv2/moony](http://ope
 ### Dependencies
 
 * [LV2](http://lv2plug.in) (LV2 Plugin Standard)
-* [cairo](http://cairographics.org) (Cairo Vector Graphics Library)
 
 ### Build / install
 
-	git clone https://github.com/OpenMusicKontrollers/moony.lv2.git
+	git clone https://gitlab.com/OpenMusicKontrollers/moony.lv2.git
 	cd moony.lv2
 	mkdir build
 	cd build
@@ -57,7 +56,7 @@ If you want to run the unit test, do instead:
 
 ### License
 
-Copyright (c) 2015-2016 Hanspeter Portner (dev@open-music-kontrollers.ch)
+Copyright (c) 2015-2017 Hanspeter Portner (dev@open-music-kontrollers.ch)
 
 This is free software: you can redistribute it and/or modify
 it under the terms of the Artistic License 2.0 as published by
