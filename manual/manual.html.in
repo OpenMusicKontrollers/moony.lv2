@@ -353,9 +353,9 @@ pre {
 
 		<p>A scripting language seems to be ideal for these cases, where the user can write an event filter on a higher level of abstraction on-the-fly. The scripting language needs to be realtime safe, though, which restricts the choices dramatically.</p>
 
-		<p>One such scripting language is Lua. It is small, fast, easily embeddable and realtime-safe if coupled to a realtime-safe memory allocator like TLSF.</p>
+		<p>One such scripting language is <a href="https://lua.org">Lua</a>. It is small, fast, easily embeddable and realtime-safe if coupled to a realtime-safe memory allocator like TLSF.</p>
 
-		<p>The Moony plugins can handle LV2 control and atom event ports, only. They do not handle LV2 audio ports. They may eventually handle LV2 control-voltage ports in the future, though. Control port values are internally handled as simple floating point numbers, whereas the atom event ports build on top of the LV2 atom and atom forge C headers.</p>
+		<p>The Moony plugins can handle LV2 control and atom event ports, only. They do not handle LV2 audio ports. Control port values are internally handled as simple floating point numbers, whereas the atom event ports build on top of the LV2 <a href="http://lv2plug.in/doc/html/group__atom.html">atom</a> and <a href="http://lv2plug.in/doc/html/group__forge.html">atom forge</a> C headers.</p>
 	</div>
 
 	<div class="api-section">
@@ -617,8 +617,8 @@ end</code></pre>
 		Such a temporary serialized state can later be deserialized via
 		<a href="#callbacks-apply">apply</a>.</p>
 
-		<p>The <b>stash</b> function is directly called before parsing and loading
-		the new script code.</p>
+		<p>The <b>stash</b> function is directly called before switching to the new
+		script code.</p>
 
 		<dl>
 			<dt class="func">function stash(forge)</dt>
@@ -652,8 +652,8 @@ end</code></pre>
 		arbitrary state previously serialized by <a href="#callbacks-stash">stash</a>
 		can be deserialized from temporary memory.</p>
 
-		<p>The <b>apply</b> function is directly called after parsing and loading
-		the new script code.</p>
+		<p>The <b>apply</b> function is directly called after switching to the new 
+		script code.</p>
 
 		<dl>
 			<dt class="func">function apply(atom)</dt>
@@ -761,6 +761,9 @@ end</code></pre>
 		but instead of deserializing from temporary memory after a script code reload,
 		<b>restore</b> deserializes from disk upon a state reload request issued by the host.</p>
 
+		<p>If defined, the function is called upon each code reload with the most recently
+		saved state directly after <b>apply</b> and before <b>once</b> or <b>run</b>.</p>
+
 		<dl>
 			<dt class="func">function restore(atom)</dt>
 			<dt>atom (userdata)</dt>
@@ -820,8 +823,8 @@ end</code></pre>
 
 		<p>Moony directly mirrors mapping and unmapping of the underlying low-level
 		implementation, but additionally caches every newly queried URI or URID
-		for faster lookup inside script code. Cached URIs and URIDs are preserved
-		across script code updates.</p>
+		for faster lookup inside script code. Cached URIs and URIDs are not preserved
+		across script code updates, though.</p>
 		</div>
 
 		<div class="api-section">
@@ -2679,12 +2682,6 @@ end</code></pre>
 	</dl>
 
 	<dl>
-		<dt class="attr">atom.__tostring | tostring(atom)</dt>
-		<dt class="ret">(string)</dt>
-			<dd>string representation of atom</dd>
-	</dl>
-
-	<dl>
 		<dt class="attr">atom.type</dt>
 		<dt class="ret">(integer)</dt>
 			<dd>URID of atom type</dd>
@@ -2694,6 +2691,12 @@ end</code></pre>
 		<dt class="attr">atom.raw</dt>
 		<dt class="ret">(string)</dt>
 			<dd>raw byte string of atom body</dd>
+	</dl>
+
+	<dl>
+		<dt class="func">atom.__tostring | tostring(atom)</dt>
+		<dt class="ret">(string)</dt>
+			<dd>string representation of atom</dd>
 	</dl>
 	</div>
 
@@ -2716,12 +2719,6 @@ end</code></pre>
 			</dl>
 
 			<dl>
-				<dt class="attr">nil.__tostring | tostring(nil)</dt>
-				<dt class="ret">(string)</dt>
-					<dd>string representation of atom</dd>
-			</dl>
-
-			<dl>
 				<dt class="attr">nil.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
@@ -2731,6 +2728,12 @@ end</code></pre>
 				<dt class="attr">nil.body</dt>
 				<dt class="ret">(nil)</dt>
 					<dd>atom body as Lua nil</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">nil.__tostring | tostring(nil)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
 			</dl>
 
 			<pre><code data-ref="atom-nil">-- Atom Nil
@@ -2760,12 +2763,6 @@ end</code></pre>
 			</dl>
 
 			<dl>
-				<dt class="attr">bool.__tostring | tostring(bool)</dt>
-				<dt class="ret">(string)</dt>
-					<dd>string representation of atom</dd>
-			</dl>
-
-			<dl>
 				<dt class="attr">bool.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
@@ -2775,6 +2772,12 @@ end</code></pre>
 				<dt class="attr">bool.body</dt>
 				<dt class="ret">(boolean)</dt>
 					<dd>atom body as Lua boolean</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">bool.__tostring | tostring(bool)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
 			</dl>
 
 			<pre><code data-ref="atom-bool">-- Atom Bool
@@ -2805,12 +2808,6 @@ end</code></pre>
 			</dl>
 
 			<dl>
-				<dt class="attr">int.__tostring | tostring(int)</dt>
-				<dt class="ret">(string)</dt>
-					<dd>string representation of atom</dd>
-			</dl>
-
-			<dl>
 				<dt class="attr">int.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
@@ -2820,6 +2817,12 @@ end</code></pre>
 				<dt class="attr">int.body</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>atom body as Lua integer</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">int.__tostring | tostring(int)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
 			</dl>
 
 			<pre><code data-ref="atom-int">-- Atom Int
@@ -2850,12 +2853,6 @@ end</code></pre>
 			</dl>
 
 			<dl>
-				<dt class="attr">long.__tostring | tostring(long)</dt>
-				<dt class="ret">(string)</dt>
-					<dd>string representation of atom</dd>
-			</dl>
-
-			<dl>
 				<dt class="attr">long.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
@@ -2865,6 +2862,12 @@ end</code></pre>
 				<dt class="attr">long.body</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>atom body as Lua integer</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">long.__tostring | tostring(long)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
 			</dl>
 
 			<pre><code data-ref="atom-long">-- Atom Long
@@ -2895,12 +2898,6 @@ end</code></pre>
 			</dl>
 
 			<dl>
-				<dt class="attr">float.__tostring | tostring(float)</dt>
-				<dt class="ret">(string)</dt>
-					<dd>string representation of atom</dd>
-			</dl>
-
-			<dl>
 				<dt class="attr">float.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
@@ -2910,6 +2907,12 @@ end</code></pre>
 				<dt class="attr">float.body</dt>
 				<dt class="ret">(number)</dt>
 					<dd>atom body as Lua number</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">float.__tostring | tostring(float)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
 			</dl>
 
 			<pre><code data-ref="atom-float">-- Atom Float
@@ -2940,12 +2943,6 @@ end</code></pre>
 			</dl>
 
 			<dl>
-				<dt class="attr">double.__tostring | tostring(double)</dt>
-				<dt class="ret">(string)</dt>
-					<dd>string representation of atom</dd>
-			</dl>
-
-			<dl>
 				<dt class="attr">double.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
@@ -2955,6 +2952,12 @@ end</code></pre>
 				<dt class="attr">double.body</dt>
 				<dt class="ret">(number)</dt>
 					<dd>atom body as Lua number</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">double.__tostring | tostring(double)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
 			</dl>
 
 			<pre><code data-ref="atom-double">-- Atom Double
@@ -2985,12 +2988,6 @@ end</code></pre>
 			</dl>
 
 			<dl>
-				<dt class="attr">urid.__tostring | tostring(urid)</dt>
-				<dt class="ret">(string)</dt>
-					<dd>string representation of atom</dd>
-			</dl>
-
-			<dl>
 				<dt class="attr">urid.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
@@ -3000,6 +2997,12 @@ end</code></pre>
 				<dt class="attr">urid.body</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>atom body as Lua integer</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">urid.__tostring | tostring(urid)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
 			</dl>
 
 			<pre><code data-ref="atom-urid">-- Atom URID
@@ -3033,12 +3036,6 @@ end</code></pre>
 			</dl>
 
 			<dl>
-				<dt class="attr">uri.__tostring | tostring(uri)</dt>
-				<dt class="ret">(string)</dt>
-					<dd>string representation of atom</dd>
-			</dl>
-
-			<dl>
 				<dt class="attr">uri.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
@@ -3048,6 +3045,12 @@ end</code></pre>
 				<dt class="attr">uri.body</dt>
 				<dt class="ret">(string)</dt>
 					<dd>atom body as Lua string</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">uri.__tostring | tostring(uri)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
 			</dl>
 
 			<pre><code data-ref="atom-uri">-- Atom URI
@@ -3081,12 +3084,6 @@ end</code></pre>
 			</dl>
 
 			<dl>
-				<dt class="attr">string.__tostring | tostring(string)</dt>
-				<dt class="ret">(string)</dt>
-					<dd>string representation of atom</dd>
-			</dl>
-
-			<dl>
 				<dt class="attr">string.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
@@ -3096,6 +3093,12 @@ end</code></pre>
 				<dt class="attr">string.body</dt>
 				<dt class="ret">(string)</dt>
 					<dd>atom body as Lua string</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">string.__tostring | tostring(string)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
 			</dl>
 
 			<pre><code data-ref="atom-string">-- Atom String
@@ -3129,12 +3132,6 @@ end</code></pre>
 			</dl>
 
 			<dl>
-				<dt class="attr">path.__tostring | tostring(path)</dt>
-				<dt class="ret">(string)</dt>
-					<dd>string representation of atom</dd>
-			</dl>
-
-			<dl>
 				<dt class="attr">path.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
@@ -3144,6 +3141,12 @@ end</code></pre>
 				<dt class="attr">path.body</dt>
 				<dt class="ret">(string)</dt>
 					<dd>atom body as Lua string</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">path.__tostring | tostring(path)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
 			</dl>
 
 			<pre><code data-ref="atom-path">-- Atom Path
@@ -3178,12 +3181,6 @@ end</code></pre>
 			</dl>
 
 			<dl>
-				<dt class="attr">literal.__tostring | tostring(literal)</dt>
-				<dt class="ret">(string)</dt>
-					<dd>string representation of atom</dd>
-			</dl>
-
-			<dl>
 				<dt class="attr">literal.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
@@ -3205,6 +3202,12 @@ end</code></pre>
 				<dt class="attr">literal.body</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of language</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">literal.__tostring | tostring(literal)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
 			</dl>
 
 			<dl>
@@ -3255,12 +3258,6 @@ end</code></pre>
 			</dl>
 
 			<dl>
-				<dt class="attr">chunk.__tostring | tostring(chunk)</dt>
-				<dt class="ret">(string)</dt>
-					<dd>string representation of atom</dd>
-			</dl>
-
-			<dl>
 				<dt class="attr">chunk.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
@@ -3270,6 +3267,12 @@ end</code></pre>
 				<dt class="attr">chunk.body</dt>
 				<dt class="ret">(string)</dt>
 					<dd>atom body as Lua byte string</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">chunk.__tostring | tostring(chunk)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
 			</dl>
 
 			<dl>
@@ -3333,12 +3336,6 @@ end</code></pre>
 			</dl>
 
 			<dl>
-				<dt class="attr">midi.__tostring | tostring(midi)</dt>
-				<dt class="ret">(string)</dt>
-					<dd>string representation of atom</dd>
-			</dl>
-
-			<dl>
 				<dt class="attr">midi.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
@@ -3348,6 +3345,12 @@ end</code></pre>
 				<dt class="attr">midi.body</dt>
 				<dt class="ret">(string)</dt>
 					<dd>atom body as Lua byte string</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">midi.__tostring | tostring(midi)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
 			</dl>
 
 			<dl>
@@ -3418,12 +3421,6 @@ end</code></pre>
 			</dl>
 
 			<dl>
-				<dt class="attr">seq.__tostring | tostring(seq)</dt>
-				<dt class="ret">(string)</dt>
-					<dd>string representation of atom</dd>
-			</dl>
-
-			<dl>
 				<dt class="attr">seq.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
@@ -3433,6 +3430,12 @@ end</code></pre>
 				<dt class="attr">seq.unit</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of event time unit</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">seq.__tostring | tostring(seq)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
 			</dl>
 
 			<dl>
@@ -3499,15 +3502,15 @@ end</code></pre>
 			</dl>
 
 			<dl>
-				<dt class="attr">tup.__tostring | tostring(tup)</dt>
-				<dt class="ret">(string)</dt>
-					<dd>string representation of atom</dd>
-			</dl>
-
-			<dl>
 				<dt class="attr">tup.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">tup.__tostring | tostring(tup)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
 			</dl>
 
 			<dl>
@@ -3579,12 +3582,6 @@ end</code></pre>
 			</dl>
 
 			<dl>
-				<dt class="attr">obj.__tostring | tostring(obj)</dt>
-				<dt class="ret">(string)</dt>
-					<dd>string representation of atom</dd>
-			</dl>
-
-			<dl>
 				<dt class="attr">obj.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
@@ -3600,6 +3597,12 @@ end</code></pre>
 				<dt class="attr">obj.otype</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom object type</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">obj.__tostring | tostring(obj)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
 			</dl>
 
 			<dl>
@@ -3662,12 +3665,6 @@ end</code></pre>
 			</dl>
 
 			<dl>
-				<dt class="attr">vec.__tostring | tostring(vec)</dt>
-				<dt class="ret">(string)</dt>
-					<dd>string representation of atom</dd>
-			</dl>
-
-			<dl>
 				<dt class="attr">vec.type</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom type</dd>
@@ -3683,6 +3680,12 @@ end</code></pre>
 				<dt class="attr">vec.childType</dt>
 				<dt class="ret">(integer)</dt>
 					<dd>URID of atom vector child type</dd>
+			</dl>
+
+			<dl>
+				<dt class="func">vec.__tostring | tostring(vec)</dt>
+				<dt class="ret">(string)</dt>
+					<dd>string representation of atom</dd>
 			</dl>
 
 			<dl>
@@ -4793,7 +4796,7 @@ assert(Lua.lang == ctx.lua.lang)</code></pre>
 
 	<div class="api-section">
 	<h1 id="license">License</h1>
-		<p>Copyright &copy; 2015-2016 Hanspeter Portner
+		<p>Copyright &copy; 2015-2017 Hanspeter Portner
 		(<a href="mailto:dev@open-music-kontrollers.ch">dev@open-music-kontrollers.ch</a>)</p>
 
 		<p>This is free software: you can redistribute it and/or modify
