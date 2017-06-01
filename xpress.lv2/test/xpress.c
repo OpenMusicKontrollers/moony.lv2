@@ -49,12 +49,12 @@ struct _plughandle_t {
 	target_t target [MAX_NVOICES];
 };
 
-static _Atomic(xpress_uuid_t) voice_uuid = ATOMIC_VAR_INIT(0);
+static atomic_long voice_uuid = ATOMIC_VAR_INIT(0);
 
 static xpress_uuid_t
 _voice_map_new_uuid(void *handle)
 {
-	_Atomic(xpress_uuid_t) *uuid = handle;
+	atomic_long *uuid = handle;
 	return atomic_fetch_add_explicit(uuid, 1, memory_order_relaxed);
 }
 
