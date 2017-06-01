@@ -60,6 +60,6 @@ moony:moony_ui
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 	] ;
-	lv2:requiredFeature ui:portMap, urid:map, urid:unmap ;
+	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map, urid:unmap ;
 	lv2:optionalFeature ui:resize ;
 	lv2:extensionData ui:idleInterface .
