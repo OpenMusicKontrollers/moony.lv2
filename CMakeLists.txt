@@ -71,7 +71,7 @@ set(LIBS ${LIBS} ${LV2_LDFLAGS})
 # options
 include(CMakeDependentOption)
 option(BUILD_UI "Build UI" ON)
-option(USE_MANUAL_GC "Use manual garbage collection" OFF)
+option(USE_MANUAL_GC "Use manual garbage collection" ON)
 option(USE_CODE_COVERAGE "Use code coverage" OFF)
 
 if(USE_MANUAL_GC)
