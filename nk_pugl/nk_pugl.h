@@ -413,6 +413,8 @@ _nk_pugl_font_init(nk_pugl_window_t *win)
 		0
 	};
 	fcfg.range = range;
+	fcfg.oversample_h = 8;
+	fcfg.oversample_v = 8;
 
 	struct nk_font_atlas *atlas = &win->atlas;
 	nk_font_atlas_init_default(atlas);
