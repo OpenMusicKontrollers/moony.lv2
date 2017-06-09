@@ -15,7 +15,7 @@ include(CTest)
 if(${BUILD_TESTING})
 	add_executable(test_varchunk
 		test_varchunk.c)
-	target_link_libraries(test_varchunk ${CMAKE_THREAD_LIBS_INIT})
+	target_link_libraries(test_varchunk ${CMAKE_THREAD_LIBS_INIT} rt)
 	
 	add_test(API-Test test_varchunk)
 endif()
