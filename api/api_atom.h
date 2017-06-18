@@ -37,8 +37,8 @@ struct _latom_driver_t {
 	latom_driver_function_t __call;
 
 	latom_driver_function_t value;
-	int unpack;
-	int foreach;
+	lua_CFunction unpack;
+	lua_CFunction foreach;
 };
 
 struct _latom_t {
@@ -103,6 +103,8 @@ extern const latom_driver_t latom_sequence_driver;
 extern const latom_driver_t latom_chunk_driver;
 
 extern const luaL_Reg latom_mt [];
+
+extern const lua_CFunction upclosures [];
 
 int
 _latom_clone(lua_State *L);

@@ -24,7 +24,7 @@
 #define LV2_ATOM_VECTOR_BODY_ITEM_CONST(body, i) \
 	(LV2_ATOM_CONTENTS_CONST(LV2_Atom_Vector_Body, (body)) + (i)*(body)->child_size)
 
-static const lua_CFunction upclosures [MOONY_UPCLOSURE_COUNT] = {
+const lua_CFunction upclosures [MOONY_UPCLOSURE_COUNT] = {
 	[MOONY_UPCLOSURE_TUPLE_FOREACH] = _latom_tuple_foreach_itr,
 	[MOONY_UPCLOSURE_VECTOR_FOREACH] = _latom_vec_foreach_itr,
 	[MOONY_UPCLOSURE_OBJECT_FOREACH] = _latom_obj_foreach_itr,
@@ -35,11 +35,9 @@ static const lua_CFunction upclosures [MOONY_UPCLOSURE_COUNT] = {
 __realtime static inline void
 _pushupclosure(lua_State *L, moony_t *moony, moony_upclosure_t type, bool cache)
 {
-	assert( (type >= MOONY_UPCLOSURE_TUPLE_FOREACH) && (type < MOONY_UPCLOSURE_COUNT) );
-
 	int *upc = &moony->upc[type];
 
-	lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_COUNT + type); // ref
+	lua_rawgetp(L, LUA_REGISTRYINDEX, &upclosures[type]); // ref
 	if(lua_rawgeti(L, -1, *upc) == LUA_TNIL) // no cached udata, create one!
 	{
 #if 0
@@ -366,7 +364,7 @@ const latom_driver_t latom_literal_driver = {
 	.__len = _latom_string__len,
 	.__tostring = _latom_literal__tostring,
 	.value = _latom_literal_value,
-	.unpack = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_LIT_UNPACK
+	.unpack = _latom_literal_unpack
 };
 
 __realtime static int
@@ -500,8 +498,8 @@ const latom_driver_t latom_tuple_driver = {
 	.__indexi = _latom_tuple__indexi,
 	.__len = _latom_tuple__len,
 	.__tostring = _latom_tuple__tostring,
-	.unpack = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_TUPLE_UNPACK,
-	.foreach = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_TUPLE_FOREACH
+	.unpack = _latom_tuple_unpack,
+	.foreach = _latom_tuple_foreach
 };
 
 __realtime static int
@@ -601,7 +599,7 @@ const latom_driver_t latom_object_driver = {
 	.__indexk = _latom_obj__indexk,
 	.__len = _latom_obj__len,
 	.__tostring = _latom_obj__tostring,
-	.foreach = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_OBJECT_FOREACH
+	.foreach = _latom_obj_foreach
 };
 
 __realtime static int
@@ -798,7 +796,7 @@ const latom_driver_t latom_sequence_driver = {
 	.__indexi = _latom_seq__indexi,
 	.__len = _latom_seq__len,
 	.__tostring = _latom_seq__tostring,
-	.foreach = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_SEQUENCE_FOREACH
+	.foreach = _latom_seq_foreach
 };
 
 __realtime static int
@@ -1011,8 +1009,8 @@ const latom_driver_t latom_vector_driver = {
 	.__len = _latom_vec__len,
 	.__tostring = _latom_vec__tostring,
 	.value = _latom_vec_value,
-	.unpack = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_VECTOR_UNPACK,
-	.foreach = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_VECTOR_FOREACH
+	.unpack = _latom_vec_unpack,
+	.foreach = _latom_vec_foreach
 };
 
 __realtime static int
@@ -1092,7 +1090,7 @@ const latom_driver_t latom_chunk_driver = {
 	.__len = _latom_chunk__len,
 	.__tostring = _latom_chunk__tostring,
 	.value = _latom_chunk_value,
-	.unpack = UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_CHUNK_UNPACK,
+	.unpack = _latom_chunk_unpack
 };
 
 __realtime static int
@@ -1119,17 +1117,17 @@ _latom__index(lua_State *L)
 			}
 			else if(driver->foreach && !strcmp(key, "foreach"))
 			{
-				lua_rawgeti(L, LUA_REGISTRYINDEX, driver->foreach);
+				lua_rawgetp(L, LUA_REGISTRYINDEX, driver->foreach);
 				return 1;
 			}
 			else if(driver->unpack && !strcmp(key, "unpack"))
 			{
-				lua_rawgeti(L, LUA_REGISTRYINDEX, driver->unpack);
+				lua_rawgetp(L, LUA_REGISTRYINDEX, driver->unpack);
 				return 1;
 			}
 			else if(!strcmp(key, "clone"))
 			{
-				lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_CLONE);
+				lua_rawgetp(L, LUA_REGISTRYINDEX, _latom_clone);
 				return 1;
 			}
 			else if(!strcmp(key, "raw"))
@@ -1139,12 +1137,12 @@ _latom__index(lua_State *L)
 			}
 			else if( (latom->lheader.type == MOONY_UDATA_STASH) && !strcmp(key, "write") )
 			{
-				lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_WRITE);
+				lua_rawgetp(L, LUA_REGISTRYINDEX, _lstash_write);
 				return 1;
 			}
 			else if( (latom->lheader.type == MOONY_UDATA_STASH) && !strcmp(key, "read") )
 			{
-				lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_READ);
+				lua_rawgetp(L, LUA_REGISTRYINDEX, _lstash_read);
 				return 1;
 			}
 			else if(driver->__indexk)

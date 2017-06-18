@@ -1870,7 +1870,7 @@ _lforge_autopop_itr(lua_State *L)
 __realtime static int
 _lforge_autopop(lua_State *L)
 {
-	lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_FORGE_AUTOPOP_ITR); // _lforge_autopop_itr
+	lua_rawgetp(L, LUA_REGISTRYINDEX, _lforge_autopop_itr);
 	lua_pushvalue(L, 1); // lforge
 
 	return 2;

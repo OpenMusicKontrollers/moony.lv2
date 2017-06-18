@@ -188,9 +188,9 @@ _ltimeresponder__index(lua_State *L)
 		{
 			const char *key = lua_tostring(L, 2);
 			if(!strcmp(key, "stash"))
-				lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_TIME_STASH);
+				lua_rawgetp(L, LUA_REGISTRYINDEX, _ltimeresponder_stash);
 			else if(!strcmp(key, "apply"))
-				lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_TIME_APPLY);
+				lua_rawgetp(L, LUA_REGISTRYINDEX, _ltimeresponder_apply);
 			else if(!strcmp(key, "multiplier"))
 				lua_pushnumber(L, timely->multiplier);
 			else

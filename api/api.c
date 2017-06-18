@@ -601,6 +601,20 @@ _save(lua_State *L)
 	return 0;
 }
 
+__non_realtime static int
+_restore(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+
+	if(lua_getglobal(L, "restore") == LUA_TFUNCTION)
+	{
+		_latom_new(L, moony->state_atom, false);
+		lua_call(L, 1, 0);
+	}
+
+	return 0;
+}
+
 __non_realtime static LV2_State_Status
 _state_save(LV2_Handle instance,
 	LV2_State_Store_Function store, LV2_State_Handle state,
@@ -720,7 +734,7 @@ _state_save(LV2_Handle instance,
 		{
 			// restore Lua defined properties
 			lua_State *L = moony_current(moony);
-			lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_SAVE);
+			lua_rawgetp(L, LUA_REGISTRYINDEX, _save);
 			if(lua_pcall(L, 0, 0, 0))
 			{
 				moony_err_async(moony, lua_tostring(L, -1));
@@ -750,20 +764,6 @@ _state_save(LV2_Handle instance,
 	}
 
 	return status;
-}
-
-__non_realtime static int
-_restore(lua_State *L)
-{
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-
-	if(lua_getglobal(L, "restore") == LUA_TFUNCTION)
-	{
-		_latom_new(L, moony->state_atom, false);
-		lua_call(L, 1, 0);
-	}
-
-	return 0;
 }
 
 __non_realtime static moony_vm_t *
@@ -1749,11 +1749,13 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 
 	// create userdata caches
 	lua_newtable(L);
-		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_ATOM);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, &moony_ref[MOONY_UDATA_ATOM]);
+
 	lua_newtable(L);
-		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_FORGE);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, &moony_ref[MOONY_UDATA_FORGE]);
+
 	lua_newtable(L);
-		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_STASH);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, &moony_ref[MOONY_UDATA_STASH]);
 
 	// MIDIResponder metatable
 	luaL_newmetatable(L, "lmidiresponder");
@@ -1832,86 +1834,90 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 	// create cclosure caches
 	lua_pushlightuserdata(L, moony);
 	lua_pushcclosure(L, _save, 1);
-	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_SAVE);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, _save);
 
 	lua_pushlightuserdata(L, moony);
 	lua_pushcclosure(L, _restore, 1);
-	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_RESTORE);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, _restore);
 
 	lua_pushlightuserdata(L, moony);
 	lua_pushcclosure(L, _stash, 1);
-	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_STASH);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, _stash);
 
 	lua_pushlightuserdata(L, moony);
 	lua_pushcclosure(L, _apply, 1);
-	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_APPLY);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, _apply);
 
 	lua_pushlightuserdata(L, moony);
 	lua_pushcclosure(L, _ltimeresponder_stash, 1);
-	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_TIME_STASH);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, _ltimeresponder_stash);
 
 	lua_pushlightuserdata(L, moony);
 	lua_pushcclosure(L, _ltimeresponder_apply, 1);
-	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_TIME_APPLY);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, _ltimeresponder_apply);
 
 	lua_pushlightuserdata(L, moony);
 	lua_pushcclosure(L, _latom_clone, 1);
-	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_CLONE);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, _latom_clone);
 
 	lua_pushlightuserdata(L, moony);
 	lua_pushcclosure(L, _lstash_write, 1);
-	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_WRITE);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, _lstash_write);
 
 	lua_pushlightuserdata(L, moony);
 	lua_pushcclosure(L, _lstash_read, 1);
-	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_READ);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, _lstash_read);
 
 	lua_pushlightuserdata(L, moony);
 	lua_pushcclosure(L, _latom_literal_unpack, 1);
-	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_LIT_UNPACK);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, _latom_literal_unpack);
 
 	lua_pushlightuserdata(L, moony);
 	lua_pushcclosure(L, _latom_tuple_unpack, 1);
-	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_TUPLE_UNPACK);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, _latom_tuple_unpack);
 
 	lua_pushlightuserdata(L, moony);
 	lua_pushcclosure(L, _latom_vec_unpack, 1);
-	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_VECTOR_UNPACK);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, _latom_vec_unpack);
 
 	lua_pushlightuserdata(L, moony);
 	lua_pushcclosure(L, _latom_chunk_unpack, 1);
-	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_CHUNK_UNPACK);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, _latom_chunk_unpack);
 
 	lua_pushlightuserdata(L, moony);
 	lua_pushcclosure(L, _latom_tuple_foreach, 1);
-	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_TUPLE_FOREACH);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, _latom_tuple_foreach);
 
 	lua_pushlightuserdata(L, moony);
 	lua_pushcclosure(L, _latom_vec_foreach, 1);
-	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_VECTOR_FOREACH);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, _latom_vec_foreach);
 
 	lua_pushlightuserdata(L, moony);
 	lua_pushcclosure(L, _latom_obj_foreach, 1);
-	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_OBJECT_FOREACH);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, _latom_obj_foreach);
 
 	lua_pushlightuserdata(L, moony);
 	lua_pushcclosure(L, _latom_seq_foreach, 1);
-	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_SEQUENCE_FOREACH);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, _latom_seq_foreach);
 
 	lua_pushlightuserdata(L, moony);
 	lua_pushcclosure(L, _lforge_autopop_itr, 1);
-	lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_FORGE_AUTOPOP_ITR);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, _lforge_autopop_itr);
 
 	lua_newtable(L);
-		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_COUNT + MOONY_UPCLOSURE_TUPLE_FOREACH);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, &upclosures[MOONY_UPCLOSURE_TUPLE_FOREACH]);
+
 	lua_newtable(L);
-		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_COUNT + MOONY_UPCLOSURE_VECTOR_FOREACH);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, &upclosures[MOONY_UPCLOSURE_VECTOR_FOREACH]);
+
 	lua_newtable(L);
-		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_COUNT + MOONY_UPCLOSURE_OBJECT_FOREACH);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, &upclosures[MOONY_UPCLOSURE_OBJECT_FOREACH]);
+
 	lua_newtable(L);
-		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_COUNT + MOONY_UPCLOSURE_SEQUENCE_FOREACH);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, &upclosures[MOONY_UPCLOSURE_SEQUENCE_FOREACH]);
+
 	lua_newtable(L);
-		lua_rawseti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_COUNT + MOONY_UPCLOSURE_SEQUENCE_MULTIPLEX);
+	lua_rawsetp(L, LUA_REGISTRYINDEX, &upclosures[MOONY_UPCLOSURE_SEQUENCE_MULTIPLEX]);
 
 #undef SET_MAP
 }
@@ -1926,7 +1932,7 @@ moony_newuserdata(lua_State *L, moony_t *moony, moony_udata_t type, bool cache)
 
 	if(cache) // do cash this!
 	{
-		lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + type); // ref
+		lua_rawgetp(L, LUA_REGISTRYINDEX, &moony_ref[type]); // ref
 		if(lua_rawgeti(L, -1, *itr) == LUA_TNIL) // no cached udata, create one!
 		{
 #if 0
@@ -2133,7 +2139,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 		moony->error_out = true;
 
 		// stash
-		lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_STASH);
+		lua_rawgetp(L, LUA_REGISTRYINDEX, _stash);
 		if(lua_pcall(L, 0, 0, 0))
 			moony_error(moony);
 #ifdef USE_MANUAL_GC
@@ -2148,7 +2154,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 		if(moony->state_atom)
 		{
 			// restore Lua defined properties
-			lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_RESTORE);
+			lua_rawgetp(L, LUA_REGISTRYINDEX, _restore);
 			if(lua_pcall(L, 0, 0, 0))
 				moony_error(moony);
 #ifdef USE_MANUAL_GC
@@ -2159,7 +2165,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 		// apply stash
 		if(moony->stash_atom) // something has been stashed previously
 		{
-			lua_rawgeti(L, LUA_REGISTRYINDEX, UDATA_OFFSET + MOONY_UDATA_COUNT + MOONY_CCLOSURE_APPLY);
+			lua_rawgetp(L, LUA_REGISTRYINDEX, _apply);
 			if(lua_pcall(L, 0, 0, 0))
 				moony_error(moony);
 #ifdef USE_MANUAL_GC
