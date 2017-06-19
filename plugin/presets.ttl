@@ -1331,6 +1331,14 @@ local function perr(err)
   return string.gsub(err, '%b[]:', '')
 end
 
+-- define injection environment
+local env = {}
+
+-- define injection environment metatable
+local mt = {
+	__index = _ENV
+}
+
 -- define injection parameter
 local injection = Parameter({
   [RDFS.label] = 'Injection',
@@ -1344,7 +1352,9 @@ local injection = Parameter({
   [Patch.Set] = function(self, value)
     self._value = value
 
-    local fn, err = load(value) -- compile injection code
+		env = {} -- create new environment
+		setmetatable(env, mt)
+    local fn, err = load(value, 'inj', 't', env) -- compile injection code
     if fn then -- compilation succeded
       local stat, err = pcall(fn) -- run injection code
       if not stat then -- running code failed
