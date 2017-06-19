@@ -60,6 +60,13 @@ proj:moony
 	doap:developer omk:me ;
 	doap:name "Moony Bundle" .
 
+# Parameters
+moony:error
+	a lv2:Parameter ;
+	rdfs:label "Error" ;
+	rdfs:comment "shows current error message" ;
+	rdfs:range atom:String .
+
 # C1XC1 Plugin
 moony:c1xc1
 	a lv2:Plugin ,
@@ -114,6 +121,9 @@ moony:c1xc1
 		rsz:minimumSize 131072 ;
 		lv2:designation lv2:control ;
 	] ;
+
+	patch:readable
+		moony:error ;
 	
 	state:state [
 		moony:editorHidden false ;
@@ -196,6 +206,9 @@ moony:c2xc2
 		rsz:minimumSize 131072 ;
 		lv2:designation lv2:control ;
 	] ;
+
+	patch:readable
+		moony:error ;
 	
 	state:state [
 		moony:editorHidden false ;
@@ -308,6 +321,9 @@ moony:c4xc4
 		rsz:minimumSize 131072 ;
 		lv2:designation lv2:control ;
 	] ;
+
+	patch:readable
+		moony:error ;
 	
 	state:state [
 		moony:editorHidden false ;
@@ -380,6 +396,9 @@ moony:a1xa1
 		rsz:minimumSize 131072 ;
 		lv2:designation lv2:control ;
 	] ;
+
+	patch:readable
+		moony:error ;
 
 	state:state [
 		moony:editorHidden false ;
@@ -474,6 +493,9 @@ moony:a2xa2
 		rsz:minimumSize 131072 ;
 		lv2:designation lv2:control ;
 	] ;
+
+	patch:readable
+		moony:error ;
 
 	state:state [
 		moony:editorHidden false ;
@@ -613,6 +635,9 @@ moony:a4xa4
 		lv2:designation lv2:control ;
 	] ;
 
+	patch:readable
+		moony:error ;
+
 	state:state [
 		moony:editorHidden false ;
 		moony:logHidden true ;
@@ -715,6 +740,9 @@ moony:c1a1xc1a1
 		rsz:minimumSize 131072 ;
 		lv2:designation lv2:control ;
 	] ;
+
+	patch:readable
+		moony:error ;
 
 	state:state [
 		moony:editorHidden false ;
@@ -823,6 +851,9 @@ moony:c2a1xc2a1
 		rsz:minimumSize 131072 ;
 		lv2:designation lv2:control ;
 	] ;
+
+	patch:readable
+		moony:error ;
 
 	state:state [
 		moony:editorHidden false ;
@@ -961,6 +992,9 @@ moony:c4a1xc4a1
 		rsz:minimumSize 131072 ;
 		lv2:designation lv2:control ;
 	] ;
+
+	patch:readable
+		moony:error ;
 
 	state:state [
 		moony:editorHidden false ;
