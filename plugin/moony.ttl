@@ -67,6 +67,52 @@ moony:error
 	rdfs:comment "shows current error message" ;
 	rdfs:range atom:String .
 
+moony:editorHidden
+	a lv2:Parameter ;
+	rdfs:label "Editor hidden" ;
+	rdfs:comment "hidden state of editor tab" ;
+	rdfs:range atom:Bool .
+
+moony:logHidden
+	a lv2:Parameter ;
+	rdfs:label "Log hidden" ;
+	rdfs:comment "hidden state of log tab" ;
+	rdfs:range atom:Bool .
+
+moony:logFollow
+	a lv2:Parameter ;
+	rdfs:label "Log follow" ;
+	rdfs:comment "follow state of log tab" ;
+	rdfs:range atom:Bool .
+
+moony:paramHidden
+	a lv2:Parameter ;
+	rdfs:label "Parameter hidden" ;
+	rdfs:comment "hidden state of parameter tab" ;
+	rdfs:range atom:Bool .
+
+moony:paramCols
+	a lv2:Parameter ;
+	rdfs:label "Parameter columns" ;
+	rdfs:comment "number of columns in parameter tab" ;
+	rdfs:range atom:Int ;
+	lv2:minimum 1 ;
+	lv2:maximum 16 .
+
+moony:paramRows
+	a lv2:Parameter ;
+	rdfs:label "Parameter rows" ;
+	rdfs:comment "number of rows in parameter tab" ;
+	rdfs:range atom:Int ;
+	lv2:minimum 1 ;
+	lv2:maximum 16 .
+
+moony:code
+	a lv2:Parameter ;
+	rdfs:label "Code" ;
+	rdfs:comment "shows script code" ;
+	rdfs:range atom:String .
+
 # C1XC1 Plugin
 moony:c1xc1
 	a lv2:Plugin ,
@@ -124,6 +170,9 @@ moony:c1xc1
 
 	patch:readable
 		moony:error ;
+
+	patch:writable
+		moony:code ;
 	
 	state:state [
 		moony:editorHidden false ;
@@ -209,6 +258,9 @@ moony:c2xc2
 
 	patch:readable
 		moony:error ;
+
+	patch:writable
+		moony:code ;
 	
 	state:state [
 		moony:editorHidden false ;
@@ -324,6 +376,9 @@ moony:c4xc4
 
 	patch:readable
 		moony:error ;
+
+	patch:writable
+		moony:code ;
 	
 	state:state [
 		moony:editorHidden false ;
@@ -399,6 +454,9 @@ moony:a1xa1
 
 	patch:readable
 		moony:error ;
+
+	patch:writable
+		moony:code ;
 
 	state:state [
 		moony:editorHidden false ;
@@ -496,6 +554,9 @@ moony:a2xa2
 
 	patch:readable
 		moony:error ;
+
+	patch:writable
+		moony:code ;
 
 	state:state [
 		moony:editorHidden false ;
@@ -638,6 +699,9 @@ moony:a4xa4
 	patch:readable
 		moony:error ;
 
+	patch:writable
+		moony:code ;
+
 	state:state [
 		moony:editorHidden false ;
 		moony:logHidden true ;
@@ -743,6 +807,9 @@ moony:c1a1xc1a1
 
 	patch:readable
 		moony:error ;
+
+	patch:writable
+		moony:code ;
 
 	state:state [
 		moony:editorHidden false ;
@@ -854,6 +921,9 @@ moony:c2a1xc2a1
 
 	patch:readable
 		moony:error ;
+
+	patch:writable
+		moony:code ;
 
 	state:state [
 		moony:editorHidden false ;
@@ -995,6 +1065,9 @@ moony:c4a1xc4a1
 
 	patch:readable
 		moony:error ;
+
+	patch:writable
+		moony:code ;
 
 	state:state [
 		moony:editorHidden false ;
