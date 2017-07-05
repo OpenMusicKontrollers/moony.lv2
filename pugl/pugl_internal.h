@@ -40,6 +40,7 @@ struct PuglViewImpl {
 	PuglEventFunc    eventFunc;
 
 	PuglInternals* impl;
+	char*          selection;
 
 	char*            windowClass;
 	PuglNativeWindow parent;
@@ -238,4 +239,35 @@ puglDispatchEvent(PuglView* view, const PuglEvent* event)
 	default:
 		view->eventFunc(view, event);
 	}
+}
+
+static void
+puglClearSelection(PuglView* view)
+{
+	if(view->selection) {
+		free(view->selection);
+		view->selection = NULL;
+	}
+}
+
+static void
+puglSetSelection(PuglView* view, const char *selection, size_t len)
+{
+	puglClearSelection(view);
+
+	if(selection) {
+		view->selection = (char*)malloc(len + 1);
+		if(view->selection) {
+			memcpy(view->selection, selection, len);
+			view->selection[len] = 0;
+		}
+	}
+}
+
+static const char*
+puglGetSelection(PuglView* view, size_t* len)
+{
+	if(len)
+		*len = view->selection ? strlen(view->selection) : 0;
+	return view->selection;
 }

@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
@@ -100,6 +101,8 @@ struct PuglInternalsImpl {
 #if defined(PUGL_HAVE_CAIRO) && defined(PUGL_HAVE_GL)
 	PuglCairoGL      cairo_gl;
 #endif
+	Atom             clipboard;
+	Atom             utf8_string;
 };
 
 PuglInternals*
@@ -268,6 +271,9 @@ puglCreateWindow(PuglView* view, const char* title)
 	Colormap cmap = XCreateColormap(
 		impl->display, xParent, vi->visual, AllocNone);
 
+	impl->clipboard = XInternAtom(impl->display, "CLIPBOARD", 0);
+	impl->utf8_string = XInternAtom(impl->display, "UTF8_STRING", 0);
+
 	XSetWindowAttributes attr;
 	memset(&attr, 0, sizeof(XSetWindowAttributes));
 	attr.colormap         = cmap;
@@ -283,6 +289,7 @@ puglCreateWindow(PuglView* view, const char* title)
 		CWColormap | CWEventMask, &attr);
 
 	if (!createContext(view, vi)) {
+		XFree(vi);
 		return 2;
 	}
 
@@ -369,6 +376,7 @@ puglDestroy(PuglView* view)
 		destroyContext(view);
 		XDestroyWindow(view->impl->display, view->impl->win);
 		XCloseDisplay(view->impl->display);
+		puglClearSelection(view);
 		free(view->windowClass);
 		free(view->impl);
 		free(view);
@@ -572,11 +580,93 @@ translateEvent(PuglView* view, XEvent xevent)
 		event.focus.grab = (xevent.xfocus.mode != NotifyNormal);
 		break;
 
+	case SelectionClear:
+		puglClearSelection(view);
+		break;
+	case SelectionRequest:
+	{
+		XSelectionEvent xev = {
+		 .type = SelectionNotify,
+		 .requestor = xevent.xselectionrequest.requestor,
+		 .selection = xevent.xselectionrequest.selection,
+		 .target = xevent.xselectionrequest.target,
+		 .time = xevent.xselectionrequest.time,
+		};
+
+		size_t len;
+		const char *selection = puglGetSelection(view, &len);
+		if(selection
+			&& (xevent.xselectionrequest.selection == view->impl->clipboard)
+			&& (xevent.xselectionrequest.target == view->impl->utf8_string) )
+		{
+			xev.property = xevent.xselectionrequest.property;
+			XChangeProperty(view->impl->display, xev.requestor,
+				xev.property, xev.target, 8, PropModeReplace,
+				(const uint8_t*)selection, len);
+		}
+		else // conversion failed
+		{
+			xev.property = None;
+		}
+		XSendEvent(view->impl->display, xev.requestor, True, 0, (XEvent*)&xev);
+
+		break;
+	}
+
 	default:
 		break;
 	}
 
 	return event;
+}
+
+void
+puglCopyToClipboard(PuglView* view, const char* selection, size_t len)
+{
+	PuglInternals* const impl = view->impl;
+
+	puglSetSelection(view, selection, len);
+
+	XSetSelectionOwner(impl->display, impl->clipboard, impl->win, CurrentTime);
+}
+
+const char*
+puglPasteFromClipboard(PuglView* view, size_t* len)
+{
+	PuglInternals* const impl = view->impl;
+
+	if(XGetSelectionOwner(impl->display, impl->clipboard) != impl->win) {
+		XConvertSelection(impl->display, impl->clipboard, impl->utf8_string,
+			XA_PRIMARY, impl->win, CurrentTime);
+
+		XEvent xevent;
+		while(!XCheckTypedWindowEvent(impl->display, impl->win, SelectionNotify,
+			&xevent)) {
+			// wait for answer
+		}
+
+		if(  (xevent.xselection.selection == impl->clipboard)
+			&& (xevent.xselection.target == impl->utf8_string)
+			&& (xevent.xselection.property == XA_PRIMARY) ) {
+			ulong nitems, rem;
+			int format;
+			uint8_t* data;
+			Atom type;
+
+			XGetWindowProperty(impl->display, impl->win, XA_PRIMARY,
+				0, LONG_MAX/4, False, AnyPropertyType, // request 32*32=1024 bytes
+				&type, &format, &nitems, &rem, &data);
+			if(data) {
+				if( (format == 8) && (type == impl->utf8_string) && (rem == 0) ) {
+					puglSetSelection(view, (const char*)data, nitems);
+				}
+
+				XFree(data);
+			}
+		}
+	}
+
+	return puglGetSelection(view, len);
 }
 
 void
