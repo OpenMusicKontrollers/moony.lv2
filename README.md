@@ -4,7 +4,7 @@
 
 ### License
 
-Copyright (c) 2016 Hanspeter Portner (dev@open-music-kontrollers.ch)
+Copyright (c) 2016-2017 Hanspeter Portner (dev@open-music-kontrollers.ch)
 
 This is free software: you can redistribute it and/or modify
 it under the terms of the Artistic License 2.0 as published by
