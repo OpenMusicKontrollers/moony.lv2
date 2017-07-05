@@ -19,6 +19,7 @@
 #define _NK_PUGL_H
 
 #include <stdatomic.h>
+#include <ctype.h> // isalpha
 
 #ifdef __cplusplus
 extern C {
@@ -53,6 +54,10 @@ extern C {
 #include "nuklear/nuklear.h"
 #include "nuklear/example/stb_image.h"
 
+#ifndef NK_PUGL_API
+#	define NK_PUGL_API static
+#endif
+
 typedef struct _nk_pugl_config_t nk_pugl_config_t;
 typedef struct _nk_pugl_window_t nk_pugl_window_t;
 typedef void (*nkglGenerateMipmap)(GLenum target);
@@ -62,18 +67,23 @@ typedef void (*nk_pugl_expose_t)(struct nk_context *ctx,
 struct _nk_pugl_config_t {
 	unsigned width;
 	unsigned height;
+	unsigned min_width;
+	unsigned min_height;
 
 	bool resizable;
+	bool fixed_aspect;
 	bool ignore;
 	const char *class;
 	const char *title;
 
 	struct {
-		const char *face;
+		char *face;
 		int size;
 	} font;
 
 	intptr_t parent;
+
+	LV2UI_Resize *host_resize;
 
 	void *data;
 	nk_pugl_expose_t expose;
@@ -81,12 +91,14 @@ struct _nk_pugl_config_t {
 
 struct _nk_pugl_window_t {
 	nk_pugl_config_t cfg;
+	float scale;
 
 	PuglView *view;
 	int quit;
-	bool input_active;
 
 	struct nk_buffer cmds;
+	struct nk_buffer vbuf;
+	struct nk_buffer ebuf;
 	struct nk_draw_null_texture null;
 	struct nk_context ctx;
 	struct nk_font_atlas atlas;
@@ -95,49 +107,64 @@ struct _nk_pugl_window_t {
 		void *buffer;
 		size_t size;
 	} last;
+	bool has_left;
+	bool has_entered;
 
 	GLuint font_tex;
 	nkglGenerateMipmap glGenerateMipmap;
 
 	intptr_t widget;
+	PuglMod state;
 #if !defined(__APPLE__) && !defined(_WIN32)
 	atomic_flag async;
 	Display *disp;
 #endif
 };
 
-static inline intptr_t
+NK_PUGL_API intptr_t
 nk_pugl_init(nk_pugl_window_t *win);
 
-static inline void
+NK_PUGL_API void
 nk_pugl_show(nk_pugl_window_t *win);
 
-static inline void
+NK_PUGL_API void
 nk_pugl_hide(nk_pugl_window_t *win);
 
-static inline void
+NK_PUGL_API void
 nk_pugl_shutdown(nk_pugl_window_t *win);
 
-static inline void
+NK_PUGL_API void
 nk_pugl_wait_for_event(nk_pugl_window_t *win);
 
-static inline int
+NK_PUGL_API int
 nk_pugl_process_events(nk_pugl_window_t *win);
 
-static inline void
+NK_PUGL_API void
 nk_pugl_post_redisplay(nk_pugl_window_t *win);
 
-static inline void
+NK_PUGL_API void
 nk_pugl_async_redisplay(nk_pugl_window_t *win);
 
-static inline void
+NK_PUGL_API void
 nk_pugl_quit(nk_pugl_window_t *win);
 
-static struct nk_image
+NK_PUGL_API struct nk_image
 nk_pugl_icon_load(nk_pugl_window_t *win, const char *filename);
 
-static void
+NK_PUGL_API void
 nk_pugl_icon_unload(nk_pugl_window_t *win, struct nk_image img);
+
+NK_PUGL_API bool
+nk_pugl_is_shortcut_pressed(struct nk_input *in, char letter, bool clear);
+
+NK_PUGL_API void
+nk_pugl_copy_to_clipboard(nk_pugl_window_t *win, const char *selection, size_t len);
+
+NK_PUGL_API const char *
+nk_pugl_paste_from_clipboard(nk_pugl_window_t *win, size_t *len);
+
+NK_PUGL_API float
+nk_pugl_get_scale(nk_pugl_window_t *win);
 
 #ifdef __cplusplus
 }
@@ -186,9 +213,8 @@ static const struct nk_draw_vertex_layout_element vertex_layout [] = {
 
 #if defined(__APPLE__)
 #	define GL_EXT(name) name
-#endif
 
-#if defined(_WIN32)
+#elif defined(_WIN32)
 static void *
 _nk_pugl_gl_ext(const char *name)
 {
@@ -207,9 +233,8 @@ _nk_pugl_gl_ext(const char *name)
   return p;
 }
 #	define GL_EXT(name) (nk##name)_nk_pugl_gl_ext(#name)
-#endif
 
-#if !defined(__APPLE__) && !defined(_WIN32)
+#else
 static void *
 _nk_pugl_gl_ext(const char *name)
 {
@@ -291,104 +316,194 @@ static inline void
 _nk_pugl_render_gl2(nk_pugl_window_t *win)
 {
 	nk_pugl_config_t *cfg = &win->cfg;
+	bool has_changes = win->has_left || win->has_entered;
 
 	// compare current command buffer with last one to defer any changes
-	bool has_changes = false;
-	const size_t size = win->ctx.memory.allocated;
-	const void *commands = nk_buffer_memory_const(&win->ctx.memory);
-
-	if( (size != win->last.size) || memcmp(commands, win->last.buffer, size))
+	if(!has_changes)
 	{
-		// swap last buffer with current one for next comparison
-		win->last.buffer = realloc(win->last.buffer, size);
-		if(win->last.buffer)
+		const size_t size = win->ctx.memory.allocated;
+		const void *commands = nk_buffer_memory_const(&win->ctx.memory);
+
+		if( (size != win->last.size) || memcmp(commands, win->last.buffer, size) )
 		{
-			win->last.size = size;
-			memcpy(win->last.buffer, commands, size);
+			// swap last buffer with current one for next comparison
+			win->last.buffer = realloc(win->last.buffer, size);
+			if(win->last.buffer)
+			{
+				win->last.size = size;
+				memcpy(win->last.buffer, commands, size);
+			}
+			else
+			{
+				win->last.size = 0;
+			}
+			has_changes = true;
 		}
-		else
-		{
-			win->last.size = 0;
-		}
-		has_changes = true;
 	}
 
-	// only render if there were actually any changes
 	if(has_changes)
 	{
-		// convert shapes into vertexes
-		struct nk_buffer vbuf, ebuf;
-		nk_buffer_init_default(&vbuf);
-		nk_buffer_init_default(&ebuf);
-		nk_convert(&win->ctx, &win->cmds, &vbuf, &ebuf, &win->conv);
+		// clear command/vertex buffers of last stable view
+		nk_buffer_clear(&win->cmds);
+		nk_buffer_clear(&win->vbuf);
+		nk_buffer_clear(&win->ebuf);
+		nk_draw_list_clear(&win->ctx.draw_list);
 
-		_nk_pugl_render_gl2_push(cfg->width, cfg->height);
-
-		// setup vertex buffer pointers
-		const GLsizei vs = sizeof(nk_pugl_vertex_t);
-		const size_t vp = offsetof(nk_pugl_vertex_t, position);
-		const size_t vt = offsetof(nk_pugl_vertex_t, uv);
-		const size_t vc = offsetof(nk_pugl_vertex_t, col);
-		const nk_byte *vertices = nk_buffer_memory_const(&vbuf);
-		glVertexPointer(2, GL_FLOAT, vs, &vertices[vp]);
-		glTexCoordPointer(2, GL_FLOAT, vs, &vertices[vt]);
-		glColorPointer(4, GL_UNSIGNED_BYTE, vs, &vertices[vc]);
-
-		// iterate over and execute each draw command
-		const nk_draw_index *offset = nk_buffer_memory_const(&ebuf);
-		const struct nk_draw_command *cmd;
-		nk_draw_foreach(cmd, &win->ctx, &win->cmds)
-		{
-			if(!cmd->elem_count)
-				continue;
-
-			glBindTexture(GL_TEXTURE_2D, cmd->texture.id);
-			glScissor(
-				cmd->clip_rect.x,
-				cfg->height - (cmd->clip_rect.y + cmd->clip_rect.h),
-				cmd->clip_rect.w,
-				cmd->clip_rect.h);
-			glDrawElements(GL_TRIANGLES, cmd->elem_count, GL_UNSIGNED_SHORT, offset);
-
-			offset += cmd->elem_count;
-		}
-
-		_nk_pugl_render_gl2_pop();
-
-		nk_buffer_free(&vbuf);
-		nk_buffer_free(&ebuf);
+		// convert shapes into vertexes if there were changes
+		nk_convert(&win->ctx, &win->cmds, &win->vbuf, &win->ebuf, &win->conv);
 	}
+
+	_nk_pugl_render_gl2_push(cfg->width, cfg->height);
+
+	// setup vertex buffer pointers
+	const GLsizei vs = sizeof(nk_pugl_vertex_t);
+	const size_t vp = offsetof(nk_pugl_vertex_t, position);
+	const size_t vt = offsetof(nk_pugl_vertex_t, uv);
+	const size_t vc = offsetof(nk_pugl_vertex_t, col);
+	const nk_byte *vertices = nk_buffer_memory_const(&win->vbuf);
+	glVertexPointer(2, GL_FLOAT, vs, &vertices[vp]);
+	glTexCoordPointer(2, GL_FLOAT, vs, &vertices[vt]);
+	glColorPointer(4, GL_UNSIGNED_BYTE, vs, &vertices[vc]);
+
+	// iterate over and execute each draw command
+	const nk_draw_index *offset = nk_buffer_memory_const(&win->ebuf);
+	const struct nk_draw_command *cmd;
+	nk_draw_foreach(cmd, &win->ctx, &win->cmds)
+	{
+		if(!cmd->elem_count)
+			continue;
+
+		glBindTexture(GL_TEXTURE_2D, cmd->texture.id);
+		glScissor(
+			cmd->clip_rect.x,
+			cfg->height - (cmd->clip_rect.y + cmd->clip_rect.h),
+			cmd->clip_rect.w,
+			cmd->clip_rect.h);
+		glDrawElements(GL_TRIANGLES, cmd->elem_count, GL_UNSIGNED_SHORT, offset);
+
+		offset += cmd->elem_count;
+	}
+
+	_nk_pugl_render_gl2_pop();
+
+	win->has_entered = false;
 
 	nk_clear(&win->ctx);
 }
 
-static inline void
-_nk_pugl_font_stash_begin(nk_pugl_window_t *win)
+static void
+_nk_pugl_font_init(nk_pugl_window_t *win)
 {
-	struct nk_font_atlas *atlas = &win->atlas;
+	nk_pugl_config_t *cfg = &win->cfg;
 
+	const int font_size = cfg->font.size * win->scale;
+
+	// init nuklear font
+	struct nk_font *ttf = NULL;
+	struct nk_font_config fcfg = nk_font_config(font_size);
+	static const nk_rune range [] = {
+		0x0020, 0x007F, // Basic Latin
+		0x00A0, 0x00FF, // Latin-1 Supplement
+		0x0100, 0x017F, // Latin Extended-A
+		0x0180, 0x024F, // Latin Extended-B
+		0x0300, 0x036F, // Combining Diacritical Marks
+		0x0370, 0x03FF, // Greek and Coptic
+		0x0400, 0x04FF, // Cyrillic
+		0x0500, 0x052F, // Cyrillic Supplementary
+		0
+	};
+	fcfg.range = range;
+	fcfg.oversample_h = 8;
+	fcfg.oversample_v = 8;
+
+	struct nk_font_atlas *atlas = &win->atlas;
 	nk_font_atlas_init_default(atlas);
 	nk_font_atlas_begin(atlas);
-}
 
-static inline void
-_nk_pugl_font_stash_end(nk_pugl_window_t *win)
-{
-	struct nk_font_atlas *atlas = &win->atlas;
+	if(cfg->font.face && font_size)
+		ttf = nk_font_atlas_add_from_file(&win->atlas, cfg->font.face, font_size, &fcfg);
+
 	int w = 0;
 	int h = 0;
-
+	struct nk_draw_null_texture null;
 	const void *image = nk_font_atlas_bake(atlas, &w, &h, NK_FONT_ATLAS_RGBA32);
 	_nk_pugl_device_upload_atlas(win, image, w, h);
-	nk_font_atlas_end(atlas, nk_handle_id(win->font_tex), &win->null);
+	nk_font_atlas_end(atlas, nk_handle_id(win->font_tex), &null);
 
 	if(atlas->default_font)
 		nk_style_set_font(&win->ctx, &atlas->default_font->handle);
+
+	if(ttf)
+		nk_style_set_font(&win->ctx, &ttf->handle);
 }
 
 static void
-_nk_pugl_special_key(struct nk_context *ctx, const PuglEventKey *ev, int down)
+_nk_pugl_font_deinit(nk_pugl_window_t *win)
 {
+	nk_font_atlas_clear(&win->atlas);
+
+	if(win->font_tex)
+		glDeleteTextures(1, (const GLuint *)&win->font_tex);
+}
+
+static void
+_nk_pugl_resize(nk_pugl_window_t *win)
+{
+	nk_pugl_config_t *cfg = &win->cfg;
+
+	if(cfg->host_resize)
+	{
+		cfg->host_resize->ui_resize(cfg->host_resize->handle,
+			cfg->width*win->scale, cfg->height*win->scale);
+	}
+}
+
+static void
+_nk_pugl_reconfigure(nk_pugl_window_t *win)
+{
+	puglEnterContext(win->view);
+	{
+		_nk_pugl_font_deinit(win);
+		_nk_pugl_font_init(win);
+	}
+	puglLeaveContext(win->view, false);
+
+#if 0
+	if(!win->cfg->resizable)
+		_nk_pugl_resize(win);
+#endif
+}
+
+static void
+_nk_pugl_zoom_in(nk_pugl_window_t *win)
+{
+	win->scale += 0.1;
+
+	_nk_pugl_reconfigure(win);
+}
+
+static void
+_nk_pugl_zoom_out(nk_pugl_window_t *win)
+{
+	if(win->scale >= 0.6)
+	{
+		win->scale -= 0.1;
+
+		_nk_pugl_reconfigure(win);
+	}
+}
+
+static void
+_nk_pugl_key_press(struct nk_context *ctx, enum nk_keys key)
+{
+	nk_input_key(ctx, key, nk_true);
+	nk_input_key(ctx, key, nk_false);
+}
+
+static bool
+_nk_pugl_special_key_down(nk_pugl_window_t *win, const PuglEventKey *ev)
+{
+	struct nk_context *ctx = &win->ctx;
 	const bool control = ev->state & PUGL_MOD_CTRL;
 
 	switch(ev->special)
@@ -411,150 +526,285 @@ _nk_pugl_special_key(struct nk_context *ctx, const PuglEventKey *ev, int down)
 		case PUGL_KEY_LEFT:
 		{
 			if(control)
-				nk_input_key(ctx, NK_KEY_TEXT_WORD_LEFT, down);
+				_nk_pugl_key_press(ctx, NK_KEY_TEXT_WORD_LEFT);
 			else
-				nk_input_key(ctx, NK_KEY_LEFT, down);
+				_nk_pugl_key_press(ctx, NK_KEY_LEFT);
 		}	break;
 		case PUGL_KEY_RIGHT:
 		{
 			if(control)
-				nk_input_key(ctx, NK_KEY_TEXT_WORD_RIGHT, down);
+				_nk_pugl_key_press(ctx, NK_KEY_TEXT_WORD_RIGHT);
 			else
-				nk_input_key(ctx, NK_KEY_RIGHT, down);
+				_nk_pugl_key_press(ctx, NK_KEY_RIGHT);
 		}	break;
 		case PUGL_KEY_UP:
 		{
-			nk_input_key(ctx, NK_KEY_UP, down);
+			_nk_pugl_key_press(ctx, NK_KEY_UP);
 		}	break;
 		case PUGL_KEY_DOWN:
 		{
-			nk_input_key(ctx, NK_KEY_DOWN, down);
+			_nk_pugl_key_press(ctx, NK_KEY_DOWN);
 		}	break;
 		case PUGL_KEY_PAGE_UP:
 		{
-			nk_input_key(ctx, NK_KEY_SCROLL_UP, down);
+			_nk_pugl_key_press(ctx, NK_KEY_SCROLL_UP);
 		}	break;
 		case PUGL_KEY_PAGE_DOWN:
 		{
-			nk_input_key(ctx, NK_KEY_SCROLL_DOWN, down);
+			_nk_pugl_key_press(ctx, NK_KEY_SCROLL_DOWN);
 		}	break;
 		case PUGL_KEY_HOME:
 		{
-			nk_input_key(ctx, NK_KEY_TEXT_START, down);
-			nk_input_key(ctx, NK_KEY_SCROLL_START, down);
+			if(control)
+			{
+				_nk_pugl_key_press(ctx, NK_KEY_TEXT_START);
+				_nk_pugl_key_press(ctx, NK_KEY_SCROLL_START);
+			}
+			else
+			{
+				_nk_pugl_key_press(ctx, NK_KEY_TEXT_LINE_START);
+			}
 		}	break;
 		case PUGL_KEY_END:
 		{
-			nk_input_key(ctx, NK_KEY_TEXT_END, down);
-			nk_input_key(ctx, NK_KEY_SCROLL_END, down);
-		}	break;
-		case PUGL_KEY_SHIFT:
-		{
-			nk_input_key(ctx, NK_KEY_SHIFT, down);
-		}	break;
-		case PUGL_KEY_CTRL:
-		{
-			nk_input_key(ctx, NK_KEY_CTRL, down);
+			if(control)
+			{
+				_nk_pugl_key_press(ctx, NK_KEY_TEXT_END);
+				_nk_pugl_key_press(ctx, NK_KEY_SCROLL_END);
+			}
+			else
+			{
+				_nk_pugl_key_press(ctx, NK_KEY_TEXT_LINE_END);
+			}
 		}	break;
 		case PUGL_KEY_INSERT:
 		{
-			//TODO
+			_nk_pugl_key_press(ctx, NK_KEY_TEXT_INSERT_MODE);
 		}	break;
+		case PUGL_KEY_SHIFT:
+		{
+			win->state |= PUGL_MOD_SHIFT;
+			nk_input_key(ctx, NK_KEY_SHIFT, nk_true);
+		}	return true;
+		case PUGL_KEY_CTRL:
+		{
+			win->state |= PUGL_MOD_CTRL;
+			nk_input_key(ctx, NK_KEY_CTRL, nk_true);
+		}	return true;
 		case PUGL_KEY_ALT:
 		{
-			//TODO
+			// TODO
 		}	break;
 		case PUGL_KEY_SUPER:
 		{
-			//TODO
+			// TODO
 		}	break;
 	}
+
+	return false;
 }
 
-static void
-_nk_pugl_other_key(struct nk_context *ctx, const PuglEventKey *ev, int down)
+static bool
+_nk_pugl_special_key_up(nk_pugl_window_t *win, const PuglEventKey *ev)
 {
-	const bool control = ev->state & PUGL_MOD_CTRL;
+	struct nk_context *ctx = &win->ctx;
 
-	if(control)
+	switch(ev->special)
 	{
-		switch(ev->character + 96) //FIXME why +96?
+		case PUGL_KEY_F1:
+		case PUGL_KEY_F2:
+		case PUGL_KEY_F3:
+		case PUGL_KEY_F4:
+		case PUGL_KEY_F5:
+		case PUGL_KEY_F6:
+		case PUGL_KEY_F7:
+		case PUGL_KEY_F8:
+		case PUGL_KEY_F9:
+		case PUGL_KEY_F10:
+		case PUGL_KEY_F11:
+		case PUGL_KEY_F12:
+		case PUGL_KEY_LEFT:
+		case PUGL_KEY_RIGHT:
+		case PUGL_KEY_UP:
+		case PUGL_KEY_DOWN:
+		case PUGL_KEY_PAGE_UP:
+		case PUGL_KEY_PAGE_DOWN:
+		case PUGL_KEY_HOME:
+		case PUGL_KEY_END:
+		case PUGL_KEY_INSERT:
 		{
-			case 'c':
-			{
-				nk_input_key(ctx, NK_KEY_COPY, down);
-			}	break;
-			case 'v':
-			{
-				nk_input_key(ctx, NK_KEY_PASTE, down);
-			}	break;
-			case 'x':
-			{
-				nk_input_key(ctx, NK_KEY_CUT, down);
-			}	break;
-			case 'z':
-			{
-				nk_input_key(ctx, NK_KEY_TEXT_UNDO, down);
-			}	break;
-			case 'r':
-			{
-				nk_input_key(ctx, NK_KEY_TEXT_REDO, down);
-			}	break;
-			case 'b':
-			{
-				nk_input_key(ctx, NK_KEY_TEXT_LINE_START, down);
-			}	break;
-			case 'e':
-			{
-				nk_input_key(ctx, NK_KEY_TEXT_LINE_END, down);
-			}	break;
-		}
-
-		if(down)
-			nk_input_char(ctx, ev->character + 96);
+			// ignore
+		}	break;
+		case PUGL_KEY_SHIFT:
+		{
+			nk_input_key(ctx, NK_KEY_SHIFT, nk_false);
+			win->state &= ~PUGL_MOD_SHIFT;
+		}	return true;
+		case PUGL_KEY_CTRL:
+		{
+			nk_input_key(ctx, NK_KEY_CTRL, nk_false);
+			win->state &= ~PUGL_MOD_CTRL;
+		}	return true;
+		case PUGL_KEY_ALT:
+		{
+			// TODO
+		}	break;
+		case PUGL_KEY_SUPER:
+		{
+			// TODO
+		}	break;
 	}
-	else // !control
+
+	return false;
+}
+
+static bool
+_nk_pugl_other_key_down(nk_pugl_window_t *win, const PuglEventKey *ev)
+{
+	struct nk_context *ctx = &win->ctx;
+#if defined(__APPLE__)
+	const bool modifier = ev->state & PUGL_MOD_SUPER;
+#else
+	const bool modifier = ev->state & PUGL_MOD_CTRL;
+#endif
+	const bool shift = ev->state & PUGL_MOD_SHIFT;
+
+	// automatically enter insert mode upon non-special key press
+	_nk_pugl_key_press(ctx, NK_KEY_TEXT_INSERT_MODE);
+
+	switch(ev->character)
 	{
-		switch(ev->character)
+		case '\n':
+		case '\r':
 		{
-			case '\r':
-			{
-				nk_input_key(ctx, NK_KEY_ENTER, down);
-			}	break;
-			case '\t':
-			{
-				nk_input_key(ctx, NK_KEY_TAB, down);
-			}	break;
-			case 127: // Delete
-			{
-				nk_input_key(ctx, NK_KEY_DEL, down);
-			}	break;
-			case '\b':
-			{
-				nk_input_key(ctx, NK_KEY_BACKSPACE, down);
-			}	break;
+			_nk_pugl_key_press(ctx, NK_KEY_ENTER);
+		}	break;
+		case '\t':
+		{
+			_nk_pugl_key_press(ctx, NK_KEY_TAB);
+		}	break;
+		case PUGL_CHAR_DELETE:
+		{
+#if defined(__APPLE__) // quirk around Apple's Delete key strangeness
+			_nk_pugl_key_press(ctx, NK_KEY_BACKSPACE);
+#else
+			_nk_pugl_key_press(ctx, NK_KEY_DEL);
+#endif
+		}	break;
+		case PUGL_CHAR_BACKSPACE:
+		{
+#if defined(__APPLE__) // quirk around Apple's Delete key strangeness
+			_nk_pugl_key_press(ctx, NK_KEY_DEL);
+#else
+			_nk_pugl_key_press(ctx, NK_KEY_BACKSPACE);
+#endif
+		}	break;
+		case PUGL_CHAR_ESCAPE:
+		{
+			_nk_pugl_key_press(ctx, NK_KEY_TEXT_RESET_MODE);
+		} break;
 
-			default:
+		default:
+		{
+			if(modifier)
 			{
-				if(ev->character == 'i')
-					nk_input_key(ctx, NK_KEY_TEXT_INSERT_MODE, down);
-				else if(ev->character == 'r')
-					nk_input_key(ctx, NK_KEY_TEXT_REPLACE_MODE, down);
+				if(ev->character == '+')
+				{
+					_nk_pugl_zoom_in(win);
+					break;
+				}
+				else if(ev->character == '-')
+				{
+					_nk_pugl_zoom_out(win);
+					break;
+				}
 
-				if(down)
-					nk_input_glyph(ctx, (const char *)ev->utf8);
-			}	break;
-		}
+				// unescape ASCII control chars + Control
+				const uint32_t character = ev->character | 0x60;
+
+				switch(character)
+				{
+					case 'c':
+					{
+						_nk_pugl_key_press(ctx, NK_KEY_COPY);
+					}	break;
+					case 'v':
+					{
+						_nk_pugl_key_press(ctx, NK_KEY_PASTE);
+					}	break;
+					case 'x':
+					{
+						_nk_pugl_key_press(ctx, NK_KEY_CUT);
+					}	break;
+					case 'z':
+					{
+						if(shift)
+							_nk_pugl_key_press(ctx, NK_KEY_TEXT_REDO);
+						else
+							_nk_pugl_key_press(ctx, NK_KEY_TEXT_UNDO);
+					}	break;
+
+					default:
+					{
+						nk_input_glyph(ctx, (const char *)ev->utf8);
+					} break;
+				}
+			}
+			else
+			{
+				nk_input_glyph(ctx, (const char *)ev->utf8);
+			}
+		} break;
 	}
+
+	return false;
 }
 
 static void
-_nk_pugl_key(struct nk_context *ctx, const PuglEventKey *ev, int down)
+_nk_pugl_modifiers(nk_pugl_window_t *win, PuglMod state)
+{
+	struct nk_context *ctx = &win->ctx;
+
+	if(win->state != state) // modifiers changed
+	{
+		if( (win->state & PUGL_MOD_SHIFT) != (state & PUGL_MOD_SHIFT))
+			nk_input_key(ctx, NK_KEY_SHIFT, (state & PUGL_MOD_SHIFT) == PUGL_MOD_SHIFT);
+
+		if( (win->state & PUGL_MOD_CTRL) != (state & PUGL_MOD_CTRL))
+			nk_input_key(ctx, NK_KEY_CTRL, (state & PUGL_MOD_CTRL) == PUGL_MOD_CTRL);
+
+		if( (win->state & PUGL_MOD_ALT) != (state & PUGL_MOD_ALT))
+		{
+			// not yet supported in nuklear
+		}
+
+		if( (win->state & PUGL_MOD_SUPER) != (state & PUGL_MOD_SUPER))
+		{
+			// not yet supported in nuklear
+		}
+
+		win->state = state; // switch old and new modifier states
+	}
+}
+
+static bool
+_nk_pugl_key_down(nk_pugl_window_t *win, const PuglEventKey *ev)
 {
 	if(ev->special)
-		_nk_pugl_special_key(ctx, ev, down);
+		return _nk_pugl_special_key_down(win, ev);
 	else if(ev->character && !ev->filter)
-		_nk_pugl_other_key(ctx, ev, down);
+		return _nk_pugl_other_key_down(win, ev);
+
+	return false;
+}
+
+static bool
+_nk_pugl_key_up(nk_pugl_window_t *win, const PuglEventKey *ev)
+{
+	if(ev->special)
+		return _nk_pugl_special_key_up(win, ev);
+
+	return false;
 }
 
 static inline void
@@ -611,6 +861,7 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 		{
 			const PuglEventButton *ev = (const PuglEventButton *)e;
 
+			_nk_pugl_modifiers(win, ev->state);
 			nk_input_button(ctx, ev->button - 1, ev->x, ev->y, 1);
 
 			puglPostRedisplay(win->view);
@@ -620,6 +871,7 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 		{
 			const PuglEventButton *ev = (const PuglEventButton *)e;
 
+			_nk_pugl_modifiers(win, ev->state);
 			nk_input_button(ctx, ev->button - 1, ev->x, ev->y, 0);
 
 			puglPostRedisplay(win->view);
@@ -637,13 +889,10 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 		}
 		case PUGL_EXPOSE:
 		{
-			if(win->input_active)
-			{
-				win->input_active = false;
-				nk_input_end(ctx);
-			}
-
+			nk_input_end(ctx);
 			_nk_pugl_expose(win->view);
+			nk_input_begin(ctx);
+
 			break;
 		}
 		case PUGL_CLOSE:
@@ -656,7 +905,8 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 		{
 			const PuglEventKey *ev = (const PuglEventKey *)e;
 
-			_nk_pugl_key(ctx, ev, 1);
+			if(!_nk_pugl_key_down(win, ev)) // no modifier change
+				_nk_pugl_modifiers(win, ev->state);
 
 			puglPostRedisplay(win->view);
 			break;
@@ -665,7 +915,8 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 		{
 			const PuglEventKey *ev = (const PuglEventKey *)e;
 
-			_nk_pugl_key(ctx, ev, 0);
+			if(!_nk_pugl_key_up(win, ev)) // no modifier change
+				_nk_pugl_modifiers(win, ev->state);
 
 			puglPostRedisplay(win->view);
 			break;
@@ -674,6 +925,7 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 		{
 			const PuglEventMotion *ev = (const PuglEventMotion *)e;
 
+			_nk_pugl_modifiers(win, ev->state);
 			nk_input_motion(ctx, ev->x, ev->y);
 
 			puglPostRedisplay(win->view);
@@ -683,42 +935,84 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 		{
 			const PuglEventScroll *ev = (const PuglEventScroll *)e;
 
-			nk_input_scroll(ctx, ev->dy);
+			_nk_pugl_modifiers(win, ev->state);
+			if(win->state & PUGL_MOD_CTRL)
+			{
+				if(ev->dy > 0)
+					_nk_pugl_zoom_in(win);
+				else
+					_nk_pugl_zoom_out(win);
+			}
+			else
+				nk_input_scroll(ctx, ev->dy);
 
 			puglPostRedisplay(win->view);
 			break;
 		}
-		case PUGL_ENTER_NOTIFY:
-			// fall-through
 		case PUGL_LEAVE_NOTIFY:
-			// fall-through
-		case PUGL_FOCUS_IN:
-			// fall-through
-		case PUGL_FOCUS_OUT:
 		{
+			const PuglEventCrossing *ev = (const PuglEventCrossing *)e;
+
+			_nk_pugl_modifiers(win, ev->state);
+			win->has_left = true;
 			puglPostRedisplay(win->view);
+			break;
+		}
+		case PUGL_ENTER_NOTIFY:
+		{
+			const PuglEventCrossing *ev = (const PuglEventCrossing *)e;
+
+			_nk_pugl_modifiers(win, ev->state);
+			win->has_left = false;
+			win->has_entered = true;
+			puglPostRedisplay(win->view);
+			break;
+		}
+
+		case PUGL_FOCUS_OUT:
+		case PUGL_FOCUS_IN:
+		{
 			break;
 		}
 	}
 }
 
-static inline intptr_t
+NK_PUGL_API intptr_t
 nk_pugl_init(nk_pugl_window_t *win)
 {
 	nk_pugl_config_t *cfg = &win->cfg;
 	struct nk_convert_config *conv = &win->conv;
 
-#if !defined(__APPLE__) && !defined(_WIN32)
+	const char *NK_SCALE = getenv("NK_SCALE");
+	const float scale = NK_SCALE ? atof(NK_SCALE) : 1.f;
+	const float dpi0 = 96.f; // reference DPI we're designing for
+
+#if defined(__APPLE__)
+	const float dpi1 = dpi0; //TODO implement this
+#elif defined(_WIN32)
+	// GetDpiForSystem/Monitor/Window is Win10 only
+	HDC screen = GetDC(NULL);
+	const float dpi1 = GetDeviceCaps(screen, LOGPIXELSX);
+	ReleaseDC(NULL, screen);
+#else
 	win->async = (atomic_flag)ATOMIC_FLAG_INIT;
 	win->disp = XOpenDisplay(0);
+	const float dpi1 = XDisplayWidth(win->disp, 0) * 25.4f / XDisplayWidthMM(win->disp, 0);
 #endif
+
+	win->scale = scale * dpi1 / dpi0;
+	if(win->scale < 0.5)
+		win->scale = 0.5;
+	win->has_left = true;
 
 	// init pugl
 	win->view = puglInit(NULL, NULL);
 	puglInitWindowClass(win->view, cfg->class ? cfg->class : "nuklear");
-	puglInitWindowSize(win->view, cfg->width, cfg->height);
-	puglInitWindowMinSize(win->view, cfg->width, cfg->height);
+	puglInitWindowSize(win->view, cfg->width*win->scale, cfg->height*win->scale);
+	puglInitWindowMinSize(win->view, cfg->min_width*win->scale, cfg->min_height*win->scale);
 	puglInitResizable(win->view, cfg->resizable);
+	if(cfg->fixed_aspect)
+		puglInitWindowAspectRatio(win->view, cfg->width, cfg->height, cfg->width, cfg->height);
 	puglInitWindowParent(win->view, cfg->parent);
 	puglInitTransientFor(win->view, cfg->parent);
 	puglSetHandle(win->view, win);
@@ -728,23 +1022,16 @@ nk_pugl_init(nk_pugl_window_t *win)
 	const int stat = puglCreateWindow(win->view, cfg->title ? cfg->title : "Nuklear");
 	assert(stat == 0);
 
+	// init nuklear
+	nk_buffer_init_default(&win->cmds);
+	nk_buffer_init_default(&win->vbuf);
+	nk_buffer_init_default(&win->ebuf);
+	nk_init_default(&win->ctx, 0);
+
 	puglEnterContext(win->view);
 	{
-		// init nuklear
-		nk_buffer_init_default(&win->cmds);
-		nk_init_default(&win->ctx, 0);
-
-		// init nuklear font
-		struct nk_font *ttf = NULL;
-		struct nk_font_config fcfg = nk_font_config(cfg->font.size);
-		fcfg.range = nk_font_cyrillic_glyph_ranges();
-
-		_nk_pugl_font_stash_begin(win);
-		if(cfg->font.face && cfg->font.size)
-			ttf = nk_font_atlas_add_from_file(&win->atlas, cfg->font.face, cfg->font.size, &fcfg);
-		_nk_pugl_font_stash_end(win);
-		if(ttf)
-			nk_style_set_font(&win->ctx, &ttf->handle);
+		// init font system
+		_nk_pugl_font_init(win);
 
 		win->glGenerateMipmap = GL_EXT(glGenerateMipmap);
 	}
@@ -763,21 +1050,23 @@ nk_pugl_init(nk_pugl_window_t *win)
 	conv->line_AA = NK_ANTI_ALIASING_ON;
 
 	puglSetEventFunc(win->view, _nk_pugl_event_func);
+	nk_input_begin(&win->ctx);
 
 	win->widget = puglGetNativeWindow(win->view);
 	return win->widget;
 }
 
-static inline void
+NK_PUGL_API void
 nk_pugl_show(nk_pugl_window_t *win)
 {
 	if(!win->view)
 		return;
 
 	puglShowWindow(win->view);
+	_nk_pugl_resize(win);
 }
 
-static inline void
+NK_PUGL_API void
 nk_pugl_hide(nk_pugl_window_t *win)
 {
 	if(!win->view)
@@ -786,27 +1075,29 @@ nk_pugl_hide(nk_pugl_window_t *win)
 	puglHideWindow(win->view);
 }
 
-static inline void
+NK_PUGL_API void
 nk_pugl_shutdown(nk_pugl_window_t *win)
 {
 	if(!win->view)
 		return;
+
+	nk_input_end(&win->ctx);
 
 	if(win->last.buffer)
 		free(win->last.buffer);
 
 	puglEnterContext(win->view);
 	{
-		// shutdown nuklear font
-		nk_font_atlas_clear(&win->atlas);
-		if(win->font_tex)
-			glDeleteTextures(1, &win->font_tex);
-
-		// shutdown nuklear
-		nk_free(&win->ctx);
-		nk_buffer_free(&win->cmds);
+		// deinit font system
+		_nk_pugl_font_deinit(win);
 	}
 	puglLeaveContext(win->view, false);
+
+	// shutdown nuklear
+	nk_buffer_free(&win->cmds);
+	nk_buffer_free(&win->vbuf);
+	nk_buffer_free(&win->ebuf);
+	nk_free(&win->ctx);
 
 	// shutdown pugl
 	puglDestroy(win->view);
@@ -817,7 +1108,7 @@ nk_pugl_shutdown(nk_pugl_window_t *win)
 #endif
 }
 
-static inline void
+NK_PUGL_API void
 nk_pugl_wait_for_event(nk_pugl_window_t *win)
 {
 	if(!win->view)
@@ -826,7 +1117,7 @@ nk_pugl_wait_for_event(nk_pugl_window_t *win)
 	puglWaitForEvent(win->view);
 }
 
-static inline int
+NK_PUGL_API int
 nk_pugl_process_events(nk_pugl_window_t *win)
 {
 	if(!win->view)
@@ -834,19 +1125,13 @@ nk_pugl_process_events(nk_pugl_window_t *win)
 
 	struct nk_context *ctx = &win->ctx;
 
-	if(!win->input_active)
-	{
-		win->input_active = true;
-		nk_input_begin(ctx);
-	}
-
 	PuglStatus stat = puglProcessEvents(win->view);
 	(void)stat;
 
 	return win->quit;
 }
 
-static inline void
+NK_PUGL_API void
 nk_pugl_post_redisplay(nk_pugl_window_t *win)
 {
 	if(!win->view)
@@ -855,7 +1140,7 @@ nk_pugl_post_redisplay(nk_pugl_window_t *win)
 	puglPostRedisplay(win->view);
 }
 
-static inline void
+NK_PUGL_API void
 nk_pugl_async_redisplay(nk_pugl_window_t *win)
 {
 	if(!win->view)
@@ -863,15 +1148,11 @@ nk_pugl_async_redisplay(nk_pugl_window_t *win)
 
 #if defined(__APPLE__)
 // TODO
-#endif
-
-#if defined(_WIN32)
+#elif defined(_WIN32)
 	const HWND widget = (HWND)win->widget;
 	const int status = SendNotifyMessage(widget, WM_PAINT, 0, 0);
 	(void)status;
-#endif
-
-#if !defined(__APPLE__) && !defined(_WIN32)
+#else
 	const Window widget = (Window)win->widget;
 	XExposeEvent xevent = {
 		.type = Expose,
@@ -893,13 +1174,13 @@ nk_pugl_async_redisplay(nk_pugl_window_t *win)
 #endif
 }
 
-static inline void
+NK_PUGL_API void
 nk_pugl_quit(nk_pugl_window_t *win)
 {
 	win->quit = 1;
 }
 
-static struct nk_image
+NK_PUGL_API struct nk_image
 nk_pugl_icon_load(nk_pugl_window_t *win, const char *filename)
 {
 	GLuint tex = 0;
@@ -908,19 +1189,22 @@ nk_pugl_icon_load(nk_pugl_window_t *win, const char *filename)
 		return nk_image_id(tex);
 
 	int w, h, n;
-	uint8_t *data = stbi_load(filename, &w, &h, &n, 0);
-	if(data && win->glGenerateMipmap)
+	uint8_t *data = stbi_load(filename, &w, &h, &n, 4);
+	if(data)
 	{
 		puglEnterContext(win->view);
 		{
 			glGenTextures(1, &tex);
 			glBindTexture(GL_TEXTURE_2D, tex);
-			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			if(!win->glGenerateMipmap) // for GL >= 1.4 && < 3.1
+				glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-			win->glGenerateMipmap(GL_TEXTURE_2D);
+			if(win->glGenerateMipmap) // for GL >= 3.1
+				win->glGenerateMipmap(GL_TEXTURE_2D);
 		}
 		puglLeaveContext(win->view, false);
 
@@ -930,7 +1214,7 @@ nk_pugl_icon_load(nk_pugl_window_t *win, const char *filename)
 	return nk_image_id(tex);
 }
 
-static void
+NK_PUGL_API void
 nk_pugl_icon_unload(nk_pugl_window_t *win, struct nk_image img)
 {
 	if(!win->view)
@@ -944,6 +1228,46 @@ nk_pugl_icon_unload(nk_pugl_window_t *win, struct nk_image img)
 		}
 		puglLeaveContext(win->view, false);
 	}
+}
+
+NK_PUGL_API bool
+nk_pugl_is_shortcut_pressed(struct nk_input *in, char letter, bool clear)
+{
+	const bool control = nk_input_is_key_down(in, NK_KEY_CTRL);
+
+	if(control && (in->keyboard.text_len == 1) )
+	{
+		// unescape ASCII control chars + Control
+		const char ch = in->keyboard.text[0] | 0x60;
+
+		if(isalpha(ch) && (ch == letter) ) // pass non-alpha characters through
+		{
+			if(clear)
+				in->keyboard.text_len = 0;
+
+			return true; // matching shortcut
+		}
+	}
+
+	return false;
+}
+
+NK_PUGL_API void
+nk_pugl_copy_to_clipboard(nk_pugl_window_t *win, const char *selection, size_t len)
+{
+	puglCopyToClipboard(win->view, selection, len);
+}
+
+NK_PUGL_API const char *
+nk_pugl_paste_from_clipboard(nk_pugl_window_t *win, size_t *len)
+{
+	return puglPasteFromClipboard(win->view, len);
+}
+
+NK_PUGL_API float
+nk_pugl_get_scale(nk_pugl_window_t *win)
+{
+	return win->scale;
 }
 
 #ifdef __cplusplus
