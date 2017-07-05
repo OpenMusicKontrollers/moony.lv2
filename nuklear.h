@@ -678,7 +678,6 @@ enum nk_edit_events {
     NK_EDIT_DEACTIVATED = NK_FLAG(3), /* edit widget went from state active to state inactive */
     NK_EDIT_COMMITED    = NK_FLAG(4) /* edit widget has received an enter and lost focus */
 };
-
 enum nk_panel_flags {
     NK_WINDOW_BORDER            = NK_FLAG(0), /* Draws a border around the window to visually separate the window from the background */
     NK_WINDOW_MOVABLE           = NK_FLAG(1), /* The movable flag indicates that a window can be moved by user input or by dragging the window header */
@@ -1157,20 +1156,20 @@ NK_API const char*              nk_utf_at(const char *buffer, int length, int in
     over the complete life time! I know this sucks but it is currently the only
     way to switch between fonts.
 
-            float your_text_width_calculation(nk_handle handle, float height, const char *text, int len)
-            {
-                your_font_type *type = handle.ptr;
-                float text_width = ...;
-                return text_width;
-            }
+        float your_text_width_calculation(nk_handle handle, float height, const char *text, int len)
+        {
+            your_font_type *type = handle.ptr;
+            float text_width = ...;
+            return text_width;
+        }
 
-            struct nk_user_font font;
-            font.userdata.ptr = &your_font_class_or_struct;
-            font.height = your_font_height;
-            font.width = your_text_width_calculation;
+        struct nk_user_font font;
+        font.userdata.ptr = &your_font_class_or_struct;
+        font.height = your_font_height;
+        font.width = your_text_width_calculation;
 
-            struct nk_context ctx;
-            nk_init_default(&ctx, &font);
+        struct nk_context ctx;
+        nk_init_default(&ctx, &font);
 
     2.) Using your own implementation with vertex buffer output
     --------------------------------------------------------------
@@ -1182,35 +1181,35 @@ NK_API const char*              nk_utf_at(const char *buffer, int length, int in
     information (offset, size, ...). So it is still possible to provide your own
     font and use the vertex buffer output.
 
-            float your_text_width_calculation(nk_handle handle, float height, const char *text, int len)
-            {
-                your_font_type *type = handle.ptr;
-                float text_width = ...;
-                return text_width;
-            }
-            void query_your_font_glyph(nk_handle handle, float font_height, struct nk_user_font_glyph *glyph, nk_rune codepoint, nk_rune next_codepoint)
-            {
-                your_font_type *type = handle.ptr;
-                glyph.width = ...;
-                glyph.height = ...;
-                glyph.xadvance = ...;
-                glyph.uv[0].x = ...;
-                glyph.uv[0].y = ...;
-                glyph.uv[1].x = ...;
-                glyph.uv[1].y = ...;
-                glyph.offset.x = ...;
-                glyph.offset.y = ...;
-            }
+        float your_text_width_calculation(nk_handle handle, float height, const char *text, int len)
+        {
+            your_font_type *type = handle.ptr;
+            float text_width = ...;
+            return text_width;
+        }
+        void query_your_font_glyph(nk_handle handle, float font_height, struct nk_user_font_glyph *glyph, nk_rune codepoint, nk_rune next_codepoint)
+        {
+            your_font_type *type = handle.ptr;
+            glyph.width = ...;
+            glyph.height = ...;
+            glyph.xadvance = ...;
+            glyph.uv[0].x = ...;
+            glyph.uv[0].y = ...;
+            glyph.uv[1].x = ...;
+            glyph.uv[1].y = ...;
+            glyph.offset.x = ...;
+            glyph.offset.y = ...;
+        }
 
-            struct nk_user_font font;
-            font.userdata.ptr = &your_font_class_or_struct;
-            font.height = your_font_height;
-            font.width = your_text_width_calculation;
-            font.query = query_your_font_glyph;
-            font.texture.id = your_font_texture;
+        struct nk_user_font font;
+        font.userdata.ptr = &your_font_class_or_struct;
+        font.height = your_font_height;
+        font.width = your_text_width_calculation;
+        font.query = query_your_font_glyph;
+        font.texture.id = your_font_texture;
 
-            struct nk_context ctx;
-            nk_init_default(&ctx, &font);
+        struct nk_context ctx;
+        nk_init_default(&ctx, &font);
 
     3.) Nuklear font baker
     ------------------------------------
@@ -1664,6 +1663,18 @@ enum nk_text_edit_mode {
     NK_TEXT_EDIT_MODE_REPLACE
 };
 
+struct nk_token {
+	struct nk_color color;
+	int offset;
+};
+
+struct nk_lexer {
+	struct nk_token *tokens;
+	struct nk_token *(*lex)(void *data, const char *buf, int size);
+	void *data;
+	int needs_refresh;
+};
+
 struct nk_text_edit {
     struct nk_clipboard clip;
     struct nk_str string;
@@ -1682,6 +1693,7 @@ struct nk_text_edit {
     unsigned char padding1;
     float preferred_x;
     struct nk_text_undo_state undo;
+		struct nk_lexer lexer;
 };
 
 /* filter function */
@@ -3243,8 +3255,8 @@ NK_API struct nk_rect
 nk_rect(float x, float y, float w, float h)
 {
     struct nk_rect r;
-    r.x = x, r.y = y;
-    r.w = w, r.h = h;
+    r.x = x; r.y = y;
+    r.w = w; r.h = h;
     return r;
 }
 
@@ -5014,30 +5026,51 @@ nk_triangle_from_direction(struct nk_vec2 *result, struct nk_rect r,
 
 NK_INTERN int
 nk_text_clamp(const struct nk_user_font *font, const char *text,
-    int text_len, float space, int *glyphs, float *text_width)
+    int text_len, float space, int *glyphs, float *text_width,
+    nk_rune *sep_list, int sep_count)
 {
+    int i = 0;
     int glyph_len = 0;
     float last_width = 0;
     nk_rune unicode = 0;
     float width = 0;
     int len = 0;
     int g = 0;
+    float s;
+
+    int sep_len = 0;
+    int sep_g = 0;
+    float sep_width = 0;
+    sep_count = NK_MAX(sep_count,0);
 
     glyph_len = nk_utf_decode(text, &unicode, text_len);
     while (glyph_len && (width < space) && (len < text_len)) {
-        float s;
         len += glyph_len;
         s = font->width(font->userdata, font->height, text, len);
-
-        last_width = width;
+        for (i = 0; i < sep_count; ++i) {
+            if (unicode != sep_list[i]) continue;
+            sep_width = last_width = width;
+            sep_g = g+1;
+            sep_len = len;
+            break;
+        }
+        if (i == NK_MAX(sep_count,0)){
+            last_width = sep_width = width;
+            sep_g = g+1;
+        }
         width = s;
         glyph_len = nk_utf_decode(&text[len], &unicode, text_len - len);
         g++;
     }
-
-    *glyphs = g;
-    *text_width = last_width;
-    return len;
+    if (len >= text_len) {
+        *glyphs = g;
+        *text_width = last_width;
+        return len;
+    } else {
+        *glyphs = sep_g;
+        *text_width = sep_width;
+        return (!sep_len) ? len: sep_len;
+    }
 }
 
 enum {NK_DO_NOT_STOP_ON_NEW_LINE, NK_STOP_ON_NEW_LINE};
@@ -6464,7 +6497,7 @@ nk_draw_text(struct nk_command_buffer *b, struct nk_rect r,
     if (text_width > r.w){
         int glyphs = 0;
         float txt_width = (float)text_width;
-        length = nk_text_clamp(font, string, length, r.w, &glyphs, &txt_width);
+        length = nk_text_clamp(font, string, length, r.w, &glyphs, &txt_width, 0,0);
     }
 
     if (!length) return;
@@ -9038,11 +9071,11 @@ nk_tt__fill_active_edges_new(float *scanline, float *scanline_fill, int len,
                         float t;
                         y0 = y_bottom - (y0 - y_top);
                         y1 = y_bottom - (y1 - y_top);
-                        t = y0, y0 = y1, y1 = t;
-                        t = x_bottom, x_bottom = x_top, x_top = t;
+                        t = y0; y0 = y1; y1 = t;
+                        t = x_bottom; x_bottom = x_top; x_top = t;
                         dx = -dx;
                         dy = -dy;
-                        t = x0, x0 = xb, xb = t;
+                        t = x0; x0 = xb; xb = t;
                     }
 
                     x1 = (int) x_top;
@@ -10629,20 +10662,21 @@ nk_adler32(unsigned int adler32, unsigned char *buffer, unsigned int buflen)
     blocklen = buflen % 5552;
     while (buflen) {
         for (i=0; i + 7 < blocklen; i += 8) {
-            s1 += buffer[0], s2 += s1;
-            s1 += buffer[1], s2 += s1;
-            s1 += buffer[2], s2 += s1;
-            s1 += buffer[3], s2 += s1;
-            s1 += buffer[4], s2 += s1;
-            s1 += buffer[5], s2 += s1;
-            s1 += buffer[6], s2 += s1;
-            s1 += buffer[7], s2 += s1;
+            s1 += buffer[0]; s2 += s1;
+            s1 += buffer[1]; s2 += s1;
+            s1 += buffer[2]; s2 += s1;
+            s1 += buffer[3]; s2 += s1;
+            s1 += buffer[4]; s2 += s1;
+            s1 += buffer[5]; s2 += s1;
+            s1 += buffer[6]; s2 += s1;
+            s1 += buffer[7]; s2 += s1;
             buffer += 8;
         }
-        for (; i < blocklen; ++i)
-            s1 += *buffer++, s2 += s1;
+        for (; i < blocklen; ++i) {
+            s1 += *buffer++; s2 += s1;
+        }
 
-        s1 %= ADLER_MOD, s2 %= ADLER_MOD;
+        s1 %= ADLER_MOD; s2 %= ADLER_MOD;
         buflen -= (unsigned int)blocklen;
         blocklen = 5552;
     }
@@ -11142,7 +11176,7 @@ nk_font_atlas_end(struct nk_font_atlas *atlas, nk_handle texture,
     }
     if (null) {
         null->texture = texture;
-        null->uv.x = (atlas->custom.x + 0.5f)/(float)atlas->tex_width,
+        null->uv.x = (atlas->custom.x + 0.5f)/(float)atlas->tex_width;
         null->uv.y = (atlas->custom.y + 0.5f)/(float)atlas->tex_height;
     }
     for (font_iter = atlas->fonts; font_iter; font_iter = font_iter->next) {
@@ -11908,6 +11942,8 @@ nk_textedit_text(struct nk_text_edit *state, const char *text, int total_len)
         glyph_len = nk_utf_decode(text + text_len, &unicode, total_len-text_len);
         text_len += glyph_len;
     }
+
+		state->lexer.needs_refresh = 1;
 }
 
 NK_INTERN void
@@ -12214,6 +12250,8 @@ retry:
                 --state->cursor;
         }} break;
     }
+
+		state->lexer.needs_refresh = 1;
 }
 
 NK_INTERN void
@@ -12606,6 +12644,79 @@ nk_widget_text(struct nk_command_buffer *o, struct nk_rect b,
 }
 
 NK_INTERN void
+nk_widget_text_lexed(struct nk_command_buffer *o, struct nk_rect b,
+    const char *string, int len, const struct nk_text *t,
+    nk_flags a, const struct nk_user_font *f, struct nk_token *tokens,
+		int offset)
+{
+    struct nk_rect label;
+    float text_width;
+		struct nk_token *token = tokens;
+
+    NK_ASSERT(o);
+    NK_ASSERT(t);
+    if (!o || !t) return;
+
+    b.h = NK_MAX(b.h, 2 * t->padding.y);
+    label.x = 0; label.w = 0;
+    label.y = b.y + t->padding.y;
+    label.h = NK_MIN(f->height, b.h - 2 * t->padding.y);
+
+    text_width = f->width(f->userdata, f->height, (const char*)string, len);
+    text_width += (2.0f * t->padding.x);
+
+    /* align in x-axis */
+    if (a & NK_TEXT_ALIGN_LEFT) {
+        label.x = b.x + t->padding.x;
+        label.w = NK_MAX(0, b.w - 2 * t->padding.x);
+    } else if (a & NK_TEXT_ALIGN_CENTERED) {
+        label.w = NK_MAX(1, 2 * t->padding.x + (float)text_width);
+        label.x = (b.x + t->padding.x + ((b.w - 2 * t->padding.x) - label.w) / 2);
+        label.x = NK_MAX(b.x + t->padding.x, label.x);
+        label.w = NK_MIN(b.x + b.w, label.x + label.w);
+        if (label.w >= label.x) label.w -= label.x;
+    } else if (a & NK_TEXT_ALIGN_RIGHT) {
+        label.x = NK_MAX(b.x + t->padding.x, (b.x + b.w) - (2 * t->padding.x + (float)text_width));
+        label.w = (float)text_width + 2 * t->padding.x;
+    } else return;
+
+    /* align in y-axis */
+    if (a & NK_TEXT_ALIGN_MIDDLE) {
+        label.y = b.y + b.h/2.0f - (float)f->height/2.0f;
+        label.h = NK_MAX(b.h/2.0f, b.h - (b.h/2.0f + f->height/2.0f));
+    } else if (a & NK_TEXT_ALIGN_BOTTOM) {
+        label.y = b.y + b.h - f->height;
+        label.h = f->height;
+    }
+
+		//FIXME do this chunk-wise instead of character-wise
+		const int glyph_max = nk_utf_len(string, len);
+		const float dd = text_width/glyph_max;
+		for(int i = 0, u = 0; i < len; u++)
+		{
+			nk_rune unicode;
+			const int glyph_len = nk_utf_decode(string + i, &unicode, len - i);
+
+			const struct nk_rect dst = {
+				.x = label.x + u*dd,
+				.y = label.y,
+				.w = text_width,
+				.h = label.h
+			};
+
+			struct nk_color bg = t->background;
+			struct nk_color fg = t->text;
+
+			while(offset + i >= token->offset)
+				token++;
+
+			fg = token->color;
+			nk_draw_text(o, dst, string + i, glyph_len, f, bg, fg);
+			i += glyph_len;
+		}
+}
+
+NK_INTERN void
 nk_widget_text_wrap(struct nk_command_buffer *o, struct nk_rect b,
     const char *string, int len, const struct nk_text *t,
     const struct nk_user_font *f)
@@ -12616,6 +12727,7 @@ nk_widget_text_wrap(struct nk_command_buffer *o, struct nk_rect b,
     int done = 0;
     struct nk_rect line;
     struct nk_text text;
+    NK_INTERN nk_rune seperator[] = {' '};
 
     NK_ASSERT(o);
     NK_ASSERT(t);
@@ -12634,14 +12746,13 @@ nk_widget_text_wrap(struct nk_command_buffer *o, struct nk_rect b,
     line.w = b.w - 2 * t->padding.x;
     line.h = 2 * t->padding.y + f->height;
 
-    fitting = nk_text_clamp(f, string, len, line.w, &glyphs, &width);
+    fitting = nk_text_clamp(f, string, len, line.w, &glyphs, &width, seperator,NK_LEN(seperator));
     while (done < len) {
         if (!fitting || line.y + line.h >= (b.y + b.h)) break;
         nk_widget_text(o, line, &string[done], fitting, &text, NK_TEXT_LEFT, f);
         done += fitting;
         line.y += f->height + 2 * t->padding.y;
-        fitting = nk_text_clamp(f, &string[done], len - done,
-                                line.w, &glyphs, &width);
+        fitting = nk_text_clamp(f, &string[done], len - done, line.w, &glyphs, &width, seperator,NK_LEN(seperator));
     }
 }
 
@@ -14022,7 +14133,8 @@ nk_edit_draw_text(struct nk_command_buffer *out,
     const struct nk_style_edit *style, float pos_x, float pos_y,
     float x_offset, const char *text, int byte_len, float row_height,
     const struct nk_user_font *font, struct nk_color background,
-    struct nk_color foreground, int is_selected)
+    struct nk_color foreground, int is_selected, struct nk_lexer *lexer,
+		int offset)
 {
     NK_ASSERT(out);
     NK_ASSERT(font);
@@ -14059,8 +14171,16 @@ nk_edit_draw_text(struct nk_command_buffer *out,
 
             if (is_selected) /* selection needs to draw different background color */
                 nk_fill_rect(out, label, 0, background);
-            nk_widget_text(out, label, line, (int)((text + text_len) - line),
-                &txt, NK_TEXT_CENTERED, font);
+						if(lexer->tokens && !is_selected)
+						{
+							nk_widget_text_lexed(out, label, line, (int)((text + text_len) - line),
+									&txt, NK_TEXT_CENTERED, font, lexer->tokens, line - text + offset);
+						}
+						else
+						{
+							nk_widget_text(out, label, line, (int)((text + text_len) - line),
+									&txt, NK_TEXT_CENTERED, font);
+						}
 
             text_len++;
             line_count++;
@@ -14093,9 +14213,32 @@ nk_edit_draw_text(struct nk_command_buffer *out,
 
         if (is_selected)
             nk_fill_rect(out, label, 0, background);
-        nk_widget_text(out, label, line, (int)((text + text_len) - line),
-            &txt, NK_TEXT_LEFT, font);
+				if(lexer->tokens && !is_selected)
+				{
+					nk_widget_text_lexed(out, label, line, (int)((text + text_len) - line),
+							&txt, NK_TEXT_LEFT, font, lexer->tokens, line - text + offset);
+				}
+				else
+				{
+					nk_widget_text(out, label, line, (int)((text + text_len) - line),
+							&txt, NK_TEXT_LEFT, font);
+				}
     }}
+}
+
+NK_INTERN void
+nk_edit_refresh_lex(struct nk_text_edit *edit)
+{
+	if(edit->lexer.needs_refresh || !edit->lexer.tokens)
+	{
+		if(edit->lexer.tokens)
+			free(edit->lexer.tokens);
+
+		edit->lexer.tokens = edit->lexer.lex(edit->lexer.data,
+			nk_str_get_const(&edit->string), nk_str_len_char(&edit->string));
+
+		edit->lexer.needs_refresh = 0;
+	}
 }
 
 NK_INTERN nk_flags
@@ -14113,6 +14256,7 @@ nk_do_edit(nk_flags *state, struct nk_command_buffer *out,
     char cursor_follow = 0;
     struct nk_rect old_clip;
     struct nk_rect clip;
+		int has_changes = 0;
 
     NK_ASSERT(state);
     NK_ASSERT(out);
@@ -14145,7 +14289,11 @@ nk_do_edit(nk_flags *state, struct nk_command_buffer *out,
     if (!prev_state && edit->active) {
         const enum nk_text_edit_type type = (flags & NK_EDIT_MULTILINE) ?
             NK_TEXT_EDIT_MULTI_LINE: NK_TEXT_EDIT_SINGLE_LINE;
+        const int cursor = edit->cursor;
+        const struct nk_vec2 scrollbar = edit->scrollbar;
         nk_textedit_clear_state(edit, type, filter);
+        edit->cursor = cursor;
+        edit->scrollbar = scrollbar;
         if (flags & NK_EDIT_ALWAYS_INSERT_MODE)
             edit->mode = NK_TEXT_EDIT_MODE_INSERT;
         if (flags & NK_EDIT_AUTO_SELECT)
@@ -14250,7 +14398,7 @@ nk_do_edit(nk_flags *state, struct nk_command_buffer *out,
         /* tab handler */
         {int tab = nk_input_is_key_pressed(in, NK_KEY_TAB);
         if (tab && (flags & NK_EDIT_ALLOW_TAB)) {
-            nk_textedit_text(edit, "    ", 4);
+            nk_textedit_text(edit, "  ", 2);
             cursor_follow = nk_true;
         }}
     }
@@ -14346,7 +14494,7 @@ nk_do_edit(nk_flags *state, struct nk_command_buffer *out,
                     const char *remaining;
 
                     /* calculate 2d position */
-                    selection_offset_start.y = (float)(total_lines-1) * row_height;
+                    selection_offset_start.y = (float)(NK_MAX(total_lines-1,0)) * row_height;
                     row_size = nk_text_calculate_text_bounds(font, text+row_begin,
                                 text_len-row_begin, row_height, &remaining,
                                 &out_offset, &glyph_offset, NK_STOP_ON_NEW_LINE);
@@ -14441,7 +14589,7 @@ nk_do_edit(nk_flags *state, struct nk_command_buffer *out,
                 scroll_step = scroll.h * 0.10f;
                 scroll_inc = scroll.h * 0.01f;
                 scroll_target = text_size.y;
-                edit->scrollbar.y = nk_do_scrollbarv(&ws, out, scroll, 0,
+                edit->scrollbar.y = nk_do_scrollbarv(&ws, out, scroll, nk_true,
                         scroll_offset, scroll_target, scroll_step, scroll_inc,
                         &style->scrollbar, in, font);
             }
@@ -14484,6 +14632,13 @@ nk_do_edit(nk_flags *state, struct nk_command_buffer *out,
             background_color = nk_rgba(0,0,0,0);
         else background_color = background->data.color;
 
+				if(edit->lexer.lex)
+				{
+					if(has_changes)
+						edit->lexer.needs_refresh = 1;
+
+					nk_edit_refresh_lex(edit);
+				}
 
         if (edit->select_start == edit->select_end) {
             /* no selection so just draw the complete text */
@@ -14491,7 +14646,7 @@ nk_do_edit(nk_flags *state, struct nk_command_buffer *out,
             int l = nk_str_len_char(&edit->string);
             nk_edit_draw_text(out, style, area.x - edit->scrollbar.x,
                 area.y - edit->scrollbar.y, 0, begin, l, row_height, font, 
-                background_color, text_color, nk_false);
+                background_color, text_color, nk_false, &edit->lexer, 0);
         } else {
             /* edit has selection so draw 1-3 text chunks */
             if (edit->select_start != edit->select_end && selection_begin > 0){
@@ -14500,9 +14655,14 @@ nk_do_edit(nk_flags *state, struct nk_command_buffer *out,
                 NK_ASSERT(select_begin_ptr);
                 nk_edit_draw_text(out, style, area.x - edit->scrollbar.x,
                     area.y - edit->scrollbar.y, 0, begin, (int)(select_begin_ptr - begin),
-                    row_height, font, background_color, text_color, nk_false);
+                    row_height, font, background_color, text_color, nk_false, &edit->lexer, 0);
             }
             if (edit->select_start != edit->select_end) {
+								const int offset = edit->select_start < edit->select_end ? edit->select_start : edit->select_end;
+								int glyph_offset;
+								nk_rune unicode;
+								const char *ptr = nk_str_at_const(&edit->string, offset, &unicode, &glyph_offset);
+								const int offset2 = ptr - nk_str_get_const(&edit->string);
                 /* draw selected text */
                 NK_ASSERT(select_begin_ptr);
                 if (!select_end_ptr) {
@@ -14514,7 +14674,8 @@ nk_do_edit(nk_flags *state, struct nk_command_buffer *out,
                     area.y + selection_offset_start.y - edit->scrollbar.y,
                     selection_offset_start.x,
                     select_begin_ptr, (int)(select_end_ptr - select_begin_ptr),
-                    row_height, font, sel_background_color, sel_text_color, nk_true);
+                    row_height, font, sel_background_color, sel_text_color, nk_true,
+										&edit->lexer, offset2);
             }
             if ((edit->select_start != edit->select_end &&
                 selection_end < edit->string.len))
@@ -14523,13 +14684,19 @@ nk_do_edit(nk_flags *state, struct nk_command_buffer *out,
                 const char *begin = select_end_ptr;
                 const char *end = nk_str_get_const(&edit->string) +
                                     nk_str_len_char(&edit->string);
+								const int offset = edit->select_start < edit->select_end ? edit->select_end : edit->select_start;
+								int glyph_offset;
+								nk_rune unicode;
+								const char *ptr = nk_str_at_const(&edit->string, offset, &unicode, &glyph_offset);
+								const int offset2 = ptr - nk_str_get_const(&edit->string);
                 NK_ASSERT(select_end_ptr);
                 nk_edit_draw_text(out, style,
                     area.x - edit->scrollbar.x,
                     area.y + selection_offset_end.y - edit->scrollbar.y,
                     selection_offset_end.x,
                     begin, (int)(end - begin), row_height, font,
-                    background_color, text_color, nk_true);
+                    background_color, text_color, nk_false,
+										&edit->lexer, offset2);
             }
         }
 
@@ -14573,6 +14740,9 @@ nk_do_edit(nk_flags *state, struct nk_command_buffer *out,
         int l = nk_str_len_char(&edit->string);
         const char *begin = nk_str_get_const(&edit->string);
 
+				if(edit->lexer.lex)
+					nk_edit_refresh_lex(edit);
+
         const struct nk_style_item *background;
         struct nk_color background_color;
         struct nk_color text_color;
@@ -14592,7 +14762,7 @@ nk_do_edit(nk_flags *state, struct nk_command_buffer *out,
         else background_color = background->data.color;
         nk_edit_draw_text(out, style, area.x - edit->scrollbar.x,
             area.y - edit->scrollbar.y, 0, begin, l, row_height, font,
-            background_color, text_color, nk_false);
+            background_color, text_color, nk_false, &edit->lexer, 0);
     }
     nk_push_scissor(out, old_clip);}
     return ret;
@@ -15646,6 +15816,7 @@ nk_style_from_table(struct nk_context *ctx, const struct nk_color *table)
     win->background = table[NK_COLOR_WINDOW];
     win->fixed_background = nk_style_item_color(table[NK_COLOR_WINDOW]);
     win->border_color = table[NK_COLOR_BORDER];
+    win->popup_border_color = table[NK_COLOR_BORDER];
     win->combo_border_color = table[NK_COLOR_BORDER];
     win->contextual_border_color = table[NK_COLOR_BORDER];
     win->menu_border_color = table[NK_COLOR_BORDER];
@@ -15663,6 +15834,7 @@ nk_style_from_table(struct nk_context *ctx, const struct nk_color *table)
     win->menu_border = 1.0f;
     win->group_border = 1.0f;
     win->tooltip_border = 1.0f;
+    win->popup_border = 1.0f;
     win->border = 2.0f;
 
     win->padding = nk_vec2(4,4);
@@ -16026,7 +16198,7 @@ nk_clear(struct nk_context *ctx)
     ctx->style.cursor_active = ctx->style.cursors[NK_CURSOR_ARROW];
     NK_MEMSET(&ctx->overlay, 0, sizeof(ctx->overlay));
 #ifdef NK_INCLUDE_VERTEX_BUFFER_OUTPUT
-    nk_draw_list_clear(&ctx->draw_list);
+    //nk_draw_list_clear(&ctx->draw_list);
 #endif
 
     /* garbage collector */
@@ -16497,6 +16669,7 @@ nk_panel_begin(struct nk_context *ctx, const char *title, enum nk_panel_type pan
             {
                 layout->flags |= NK_WINDOW_HIDDEN;
                 layout->flags |= NK_WINDOW_CLOSED;
+                layout->flags &= (nk_flags)~NK_WINDOW_MINIMIZED;
             }
         }
 
@@ -16741,24 +16914,9 @@ nk_panel_end(struct nk_context *ctx)
             layout->bounds.y + layout->bounds.h + layout->footer_height:
             window->bounds.y + window->bounds.h;
 
-        /* draw border top */
-        nk_stroke_line(out,window->bounds.x,window->bounds.y,
-            window->bounds.x + window->bounds.w, window->bounds.y,
-            layout->border, border_color);
-
-        /* draw bottom border */
-        nk_stroke_line(out, window->bounds.x, padding_y,
-            window->bounds.x + window->bounds.w, padding_y, layout->border, border_color);
-
-        /* draw left border */
-        nk_stroke_line(out, window->bounds.x + layout->border*0.5f,
-            window->bounds.y, window->bounds.x + layout->border*0.5f,
-            padding_y, layout->border, border_color);
-
-        /* draw right border */
-        nk_stroke_line(out, window->bounds.x + window->bounds.w - layout->border*0.5f,
-            window->bounds.y, window->bounds.x + window->bounds.w - layout->border*0.5f,
-            padding_y, layout->border, border_color);
+        /* draw border rectangle */
+        nk_stroke_rect(out, nk_rect(window->bounds.x, window->bounds.y,
+          window->bounds.w - 2.f, padding_y - window->bounds.y), 0.f, layout->border, border_color);
     }
 
     /* scaler */
@@ -16898,7 +17056,7 @@ nk_link_page_element_into_freelist(struct nk_context *ctx,
 NK_INTERN void
 nk_free_page_element(struct nk_context *ctx, struct nk_page_element *elem)
 {
-    /* fixed size pool so just add to free list */
+    /* we have a pool so just add to free list */
     if (ctx->use_pool) {
         nk_link_page_element_into_freelist(ctx, elem);
         return;
@@ -17869,7 +18027,6 @@ nk_layout_row_begin(struct nk_context *ctx, enum nk_layout_format fmt,
 
     win = ctx->current;
     layout = win->layout;
-
     nk_panel_layout(ctx, win, row_height, cols);
     if (fmt == NK_DYNAMIC)
         layout->row.type = NK_LAYOUT_DYNAMIC_ROW;
@@ -17896,7 +18053,6 @@ nk_layout_row_push(struct nk_context *ctx, float ratio_or_width)
 
     win = ctx->current;
     layout = win->layout;
-
     if (layout->row.type == NK_LAYOUT_DYNAMIC_ROW) {
         float ratio = ratio_or_width;
         if ((ratio + layout->row.filled) > 1.0f) return;
@@ -20427,7 +20583,6 @@ nk_list_view_begin(struct nk_context *ctx, struct nk_list_view *view,
     if (!ctx || !view || !title) return 0;
 
     win = ctx->current;
-    layout = win->layout;
     style = &ctx->style;
     item_spacing = style->window.spacing;
     row_height += NK_MAX(0, (int)item_spacing.y);
@@ -20746,8 +20901,8 @@ nk_tooltip_end(struct nk_context *ctx)
 {
     NK_ASSERT(ctx);
     NK_ASSERT(ctx->current);
-    if (!ctx || !ctx->current)
-        return;
+    if (!ctx || !ctx->current) return;
+    ctx->current->seq--;
     nk_popup_close(ctx);
     nk_popup_end(ctx);
 }
@@ -20978,14 +21133,14 @@ nk_contextual_end(struct nk_context *ctx)
     if (panel->flags & NK_WINDOW_DYNAMIC) {
         /* Close behavior
         This is a bit hack solution since we do not now before we end our popup
-        how big it will be. We therefore do not directly now when a
+        how big it will be. We therefore do not directly know when a
         click outside the non-blocking popup must close it at that direct frame.
         Instead it will be closed in the next frame.*/
         struct nk_rect body = {0,0,0,0};
         if (panel->at_y < (panel->bounds.y + panel->bounds.h)) {
             struct nk_vec2 padding = nk_panel_get_padding(&ctx->style, panel->type);
             body = panel->bounds;
-            body.y = (panel->at_y + panel->footer_height + panel->border + padding.y);
+            body.y = (panel->at_y + panel->footer_height + panel->border + padding.y + panel->row.height);
             body.h = (panel->bounds.y + panel->bounds.h) - body.y;
         }
 
