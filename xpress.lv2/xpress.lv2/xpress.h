@@ -37,23 +37,23 @@ extern "C" {
 #define XPRESS_PREFIX				XPRESS_URI"#"
 
 // Features
-#define XPRESS_VOICE_MAP		XPRESS_PREFIX"voiceMap"
+#define XPRESS__voiceMap		XPRESS_PREFIX"voiceMap"
 
 // Message types
-#define XPRESS_TOKEN				XPRESS_PREFIX"Token"
-#define XPRESS_ALIVE				XPRESS_PREFIX"Alive"
+#define XPRESS__Token				XPRESS_PREFIX"Token"
+#define XPRESS__Alive				XPRESS_PREFIX"Alive"
 
 // Properties
-#define XPRESS_SOURCE				XPRESS_PREFIX"source"
-#define XPRESS_UUID					XPRESS_PREFIX"uuid"
-#define XPRESS_ZONE					XPRESS_PREFIX"zone"
-#define XPRESS_BODY   			XPRESS_PREFIX"body"
-#define XPRESS_PITCH				XPRESS_PREFIX"pitch"
-#define XPRESS_PRESSURE			XPRESS_PREFIX"pressure"
-#define XPRESS_TIMBRE				XPRESS_PREFIX"timbre"
-#define XPRESS_DPITCH				XPRESS_PREFIX"dPitch"
-#define XPRESS_DPRESSURE		XPRESS_PREFIX"dPressure"
-#define XPRESS_DTIMBRE			XPRESS_PREFIX"dTimbre"
+#define XPRESS__source			XPRESS_PREFIX"source"
+#define XPRESS__uuid				XPRESS_PREFIX"uuid"
+#define XPRESS__zone				XPRESS_PREFIX"zone"
+#define XPRESS__body   			XPRESS_PREFIX"body"
+#define XPRESS__pitch				XPRESS_PREFIX"pitch"
+#define XPRESS__pressure		XPRESS_PREFIX"pressure"
+#define XPRESS__timbre			XPRESS_PREFIX"timbre"
+#define XPRESS__dPitch			XPRESS_PREFIX"dPitch"
+#define XPRESS__dPressure		XPRESS_PREFIX"dPressure"
+#define XPRESS__dTimbre			XPRESS_PREFIX"dTimbre"
 
 // types
 typedef int64_t xpress_uuid_t;
@@ -71,8 +71,12 @@ typedef struct _xpress_t xpress_t;
 // function callbacks
 typedef xpress_uuid_t (*xpress_map_new_uuid_t)(void *handle);
 
-typedef void (*xpress_state_cb_t)(void *data,
-	int64_t frames, const xpress_state_t *state,
+typedef void (*xpress_add_cb_t)(void *data, int64_t frames,
+	const xpress_state_t *state, xpress_uuid_t uuid, void *target);
+
+typedef xpress_add_cb_t xpress_set_cb_t;
+
+typedef void (*xpress_del_cb_t)(void *data, int64_t frames,
 	xpress_uuid_t uuid, void *target);
 
 enum _xpress_event_t {
@@ -99,9 +103,9 @@ struct _xpress_state_t {
 struct _xpress_iface_t {
 	size_t size;
 
-	xpress_state_cb_t add;
-	xpress_state_cb_t set;
-	xpress_state_cb_t del;
+	xpress_add_cb_t add;
+	xpress_set_cb_t set;
+	xpress_del_cb_t del;
 };
 
 struct _xpress_voice_t {
@@ -331,22 +335,22 @@ xpress_init(xpress_t *xpress, const size_t max_nvoices, LV2_URID_Map *map,
 	xpress->iface = iface;
 	xpress->data = data;
 	
-	xpress->urid.xpress_Token = map->map(map->handle, XPRESS_TOKEN);
-	xpress->urid.xpress_Alive = map->map(map->handle, XPRESS_ALIVE);
+	xpress->urid.xpress_Token = map->map(map->handle, XPRESS__Token);
+	xpress->urid.xpress_Alive = map->map(map->handle, XPRESS__Alive);
 
-	xpress->urid.xpress_source = map->map(map->handle, XPRESS_SOURCE);
-	xpress->urid.xpress_uuid = map->map(map->handle, XPRESS_UUID);
-	xpress->urid.xpress_zone = map->map(map->handle, XPRESS_ZONE);
+	xpress->urid.xpress_source = map->map(map->handle, XPRESS__source);
+	xpress->urid.xpress_uuid = map->map(map->handle, XPRESS__uuid);
+	xpress->urid.xpress_zone = map->map(map->handle, XPRESS__zone);
 
-	xpress->urid.xpress_body = map->map(map->handle, XPRESS_BODY);
+	xpress->urid.xpress_body = map->map(map->handle, XPRESS__body);
 
-	xpress->urid.xpress_pitch = map->map(map->handle, XPRESS_PITCH);
-	xpress->urid.xpress_pressure = map->map(map->handle, XPRESS_PRESSURE);
-	xpress->urid.xpress_timbre = map->map(map->handle, XPRESS_TIMBRE);
+	xpress->urid.xpress_pitch = map->map(map->handle, XPRESS__pitch);
+	xpress->urid.xpress_pressure = map->map(map->handle, XPRESS__pressure);
+	xpress->urid.xpress_timbre = map->map(map->handle, XPRESS__timbre);
 
-	xpress->urid.xpress_dPitch = map->map(map->handle, XPRESS_DPITCH);
-	xpress->urid.xpress_dPressure = map->map(map->handle, XPRESS_DPRESSURE);
-	xpress->urid.xpress_dTimbre = map->map(map->handle, XPRESS_DTIMBRE);
+	xpress->urid.xpress_dPitch = map->map(map->handle, XPRESS__dPitch);
+	xpress->urid.xpress_dPressure = map->map(map->handle, XPRESS__dPressure);
+	xpress->urid.xpress_dTimbre = map->map(map->handle, XPRESS__dTimbre);
 
 	for(unsigned i = 0; i < xpress->max_nvoices; i++)
 	{
@@ -508,7 +512,7 @@ xpress_advance(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
 				&& !voice->alive )
 			{
 				if( (xpress->event_mask & XPRESS_EVENT_DEL) && xpress->iface->del)
-					xpress->iface->del(xpress->data, frames, NULL, voice->uuid, voice->target);
+					xpress->iface->del(xpress->data, frames, voice->uuid, voice->target);
 
 				freed += 1;
 				voice->uuid = 0; // invalidate
@@ -558,7 +562,7 @@ xpress_post(xpress_t *xpress, int64_t frames)
 		if(!voice->alive)
 		{
 			if( (xpress->event_mask & XPRESS_EVENT_DEL) && xpress->iface->del)
-				xpress->iface->del(xpress->data, frames, NULL, voice->uuid, voice->target);
+				xpress->iface->del(xpress->data, frames, voice->uuid, voice->target);
 
 			freed += 1;
 			voice->uuid = 0; // invalidate
