@@ -21,6 +21,7 @@
 #include <stdatomic.h>
 
 #include <osc.lv2/endian.h>
+#include <xpress.lv2/xpress.h>
 
 #include <api_atom.h>
 #include <api_forge.h>
@@ -1725,6 +1726,23 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 		SET_MAP(L, CANVAS__, mouseFocus);
 	}
 	lua_setglobal(L, "Canvas");
+
+	lua_newtable(L);
+	{
+		SET_MAP(L, XPRESS__, Token);
+		SET_MAP(L, XPRESS__, Alive);
+		SET_MAP(L, XPRESS__, source);
+		SET_MAP(L, XPRESS__, zone);
+		SET_MAP(L, XPRESS__, uuid);
+		SET_MAP(L, XPRESS__, body);
+		SET_MAP(L, XPRESS__, pitch);
+		SET_MAP(L, XPRESS__, pressure);
+		SET_MAP(L, XPRESS__, timbre);
+		SET_MAP(L, XPRESS__, dPitch);
+		SET_MAP(L, XPRESS__, dPressue);
+		SET_MAP(L, XPRESS__, dTimbre);
+	}
+	lua_setglobal(L, "Xpress");
 
 	lua_newtable(L);
 	{
