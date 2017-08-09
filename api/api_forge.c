@@ -1854,26 +1854,34 @@ _lforge_xpress_token(lua_State *L)
 	const float dy = luaL_optnumber(L, 9, 0.f);
 	const float dz = luaL_optnumber(L, 10, 0.f);
 
-	//FIXME
 	LV2_Atom_Forge_Frame frame;
-	if(  !lv2_atom_forge_object(lforge->forge, &frame, 0, 0)
-		|| !lv2_atom_forge_key(lforge->forge, 0)
+	if(  !lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.xpress_Token)
+
+		|| !lv2_atom_forge_key(lforge->forge, moony->uris.xpress_source)
 		|| !lv2_atom_forge_long(lforge->forge, source)
-		|| !lv2_atom_forge_key(lforge->forge, 0)
+
+		|| !lv2_atom_forge_key(lforge->forge, moony->uris.xpress_zone)
 		|| !lv2_atom_forge_int(lforge->forge, zone)
-		|| !lv2_atom_forge_key(lforge->forge, 0)
+
+		|| !lv2_atom_forge_key(lforge->forge, moony->uris.xpress_uuid)
 		|| !lv2_atom_forge_long(lforge->forge, uuid)
-		|| !lv2_atom_forge_key(lforge->forge, 0)
+
+		|| !lv2_atom_forge_key(lforge->forge, moony->uris.xpress_pitch)
 		|| !lv2_atom_forge_float(lforge->forge, x)
-		|| !lv2_atom_forge_key(lforge->forge, 0)
+
+		|| !lv2_atom_forge_key(lforge->forge, moony->uris.xpress_pressure)
 		|| !lv2_atom_forge_float(lforge->forge, y)
-		|| !lv2_atom_forge_key(lforge->forge, 0)
+
+		|| !lv2_atom_forge_key(lforge->forge, moony->uris.xpress_timbre)
 		|| !lv2_atom_forge_float(lforge->forge, z)
-		|| !lv2_atom_forge_key(lforge->forge, 0)
+
+		|| !lv2_atom_forge_key(lforge->forge, moony->uris.xpress_dPitch)
 		|| !lv2_atom_forge_float(lforge->forge, dx)
-		|| !lv2_atom_forge_key(lforge->forge, 0)
+
+		|| !lv2_atom_forge_key(lforge->forge, moony->uris.xpress_dPressure)
 		|| !lv2_atom_forge_float(lforge->forge, dy)
-		|| !lv2_atom_forge_key(lforge->forge, 0)
+
+		|| !lv2_atom_forge_key(lforge->forge, moony->uris.xpress_dTimbre)
 		|| !lv2_atom_forge_float(lforge->forge, dz) )
 	{
 		luaL_error(L, forge_buffer_overflow);
@@ -1893,20 +1901,50 @@ _lforge_xpress_alive(lua_State *L)
 
 	const int64_t source = luaL_checkinteger(L, 2);
 
-	//FIXME
 	LV2_Atom_Forge_Frame frame [2];
-	if(  !lv2_atom_forge_object(lforge->forge, &frame[0], 0, 0)
-		|| !lv2_atom_forge_key(lforge->forge, 0)
+	if(  !lv2_atom_forge_object(lforge->forge, &frame[0], 0, moony->uris.xpress_Alive)
+
+		|| !lv2_atom_forge_key(lforge->forge, moony->uris.xpress_source)
 		|| !lv2_atom_forge_long(lforge->forge, source)
-		|| !lv2_atom_forge_key(lforge->forge, 0)
+
+		|| !lv2_atom_forge_key(lforge->forge, moony->uris.xpress_body)
 		|| !lv2_atom_forge_tuple(lforge->forge, &frame[1]) )
 	{
 		luaL_error(L, forge_buffer_overflow);
 	}
 
 
-	//FIXME
-	//!lv2_atom_forge_long(lforge->forge, dz) )
+	switch(lua_type(L, 3))
+	{
+		case LUA_TTABLE:
+		{
+			lua_pushnil(L);
+			while(lua_next(L, 3))
+			{
+				const int64_t uuid = luaL_checkinteger(L, -1);
+
+				if(!lv2_atom_forge_long(lforge->forge, uuid))
+					luaL_error(L, forge_buffer_overflow);
+
+				lua_pop(L, 1); // pop value, leave key from stack
+			}
+
+			break;
+		}
+		case LUA_TNUMBER:
+		{
+			const int top = lua_gettop(L);
+			for(int i=3; i<=top; i++)
+			{
+				const int64_t uuid = luaL_checkinteger(L, i);
+
+				if(!lv2_atom_forge_long(lforge->forge, uuid))
+					luaL_error(L, forge_buffer_overflow);
+			}
+
+			break;
+		}
+	}
 
 	lv2_atom_forge_pop(lforge->forge, &frame[1]);
 	lv2_atom_forge_pop(lforge->forge, &frame[0]);
