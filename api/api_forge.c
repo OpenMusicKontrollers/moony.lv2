@@ -1838,6 +1838,122 @@ _lforge_canvas_fill_text(lua_State *L)
 }
 
 __realtime static int
+_lforge_xpress_token(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = lua_touserdata(L, 1);
+
+	const int64_t source = luaL_checkinteger(L, 2);
+	const int32_t zone = luaL_checkinteger(L, 3);
+	const int64_t uuid = luaL_checkinteger(L, 4);
+
+	const float x = luaL_optnumber(L, 5, 0.f);
+	const float y = luaL_optnumber(L, 6, 0.f);
+	const float z = luaL_optnumber(L, 7, 0.f);
+	const float dx = luaL_optnumber(L, 8, 0.f);
+	const float dy = luaL_optnumber(L, 9, 0.f);
+	const float dz = luaL_optnumber(L, 10, 0.f);
+
+	LV2_Atom_Forge_Frame frame;
+	if(  !lv2_atom_forge_object(lforge->forge, &frame, 0, moony->uris.xpress_Token)
+
+		|| !lv2_atom_forge_key(lforge->forge, moony->uris.xpress_source)
+		|| !lv2_atom_forge_long(lforge->forge, source)
+
+		|| !lv2_atom_forge_key(lforge->forge, moony->uris.xpress_zone)
+		|| !lv2_atom_forge_int(lforge->forge, zone)
+
+		|| !lv2_atom_forge_key(lforge->forge, moony->uris.xpress_uuid)
+		|| !lv2_atom_forge_long(lforge->forge, uuid)
+
+		|| !lv2_atom_forge_key(lforge->forge, moony->uris.xpress_pitch)
+		|| !lv2_atom_forge_float(lforge->forge, x)
+
+		|| !lv2_atom_forge_key(lforge->forge, moony->uris.xpress_pressure)
+		|| !lv2_atom_forge_float(lforge->forge, y)
+
+		|| !lv2_atom_forge_key(lforge->forge, moony->uris.xpress_timbre)
+		|| !lv2_atom_forge_float(lforge->forge, z)
+
+		|| !lv2_atom_forge_key(lforge->forge, moony->uris.xpress_dPitch)
+		|| !lv2_atom_forge_float(lforge->forge, dx)
+
+		|| !lv2_atom_forge_key(lforge->forge, moony->uris.xpress_dPressure)
+		|| !lv2_atom_forge_float(lforge->forge, dy)
+
+		|| !lv2_atom_forge_key(lforge->forge, moony->uris.xpress_dTimbre)
+		|| !lv2_atom_forge_float(lforge->forge, dz) )
+	{
+		luaL_error(L, forge_buffer_overflow);
+	}
+
+	lv2_atom_forge_pop(lforge->forge, &frame);
+
+	lua_settop(L, 1);
+	return 1;
+}
+
+__realtime static int
+_lforge_xpress_alive(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = lua_touserdata(L, 1);
+
+	const int64_t source = luaL_checkinteger(L, 2);
+
+	LV2_Atom_Forge_Frame frame [2];
+	if(  !lv2_atom_forge_object(lforge->forge, &frame[0], 0, moony->uris.xpress_Alive)
+
+		|| !lv2_atom_forge_key(lforge->forge, moony->uris.xpress_source)
+		|| !lv2_atom_forge_long(lforge->forge, source)
+
+		|| !lv2_atom_forge_key(lforge->forge, moony->uris.xpress_body)
+		|| !lv2_atom_forge_tuple(lforge->forge, &frame[1]) )
+	{
+		luaL_error(L, forge_buffer_overflow);
+	}
+
+
+	switch(lua_type(L, 3))
+	{
+		case LUA_TTABLE:
+		{
+			lua_pushnil(L);
+			while(lua_next(L, 3))
+			{
+				const int64_t uuid = luaL_checkinteger(L, -1);
+
+				if(!lv2_atom_forge_long(lforge->forge, uuid))
+					luaL_error(L, forge_buffer_overflow);
+
+				lua_pop(L, 1); // pop value, leave key from stack
+			}
+
+			break;
+		}
+		case LUA_TNUMBER:
+		{
+			const int top = lua_gettop(L);
+			for(int i=3; i<=top; i++)
+			{
+				const int64_t uuid = luaL_checkinteger(L, i);
+
+				if(!lv2_atom_forge_long(lforge->forge, uuid))
+					luaL_error(L, forge_buffer_overflow);
+			}
+
+			break;
+		}
+	}
+
+	lv2_atom_forge_pop(lforge->forge, &frame[1]);
+	lv2_atom_forge_pop(lforge->forge, &frame[0]);
+
+	lua_settop(L, 1);
+	return 1;
+}
+
+__realtime static int
 _lforge_pop(lua_State *L)
 {
 	lforge_t *lforge = lua_touserdata(L, 1);
@@ -1996,6 +2112,10 @@ const luaL_Reg lforge_mt [] = {
 	{"reset", _lforge_canvas_reset},
 	{"fontSize", _lforge_canvas_font_size},
 	{"fillText", _lforge_canvas_fill_text},
+
+	// xpress
+	{"token", _lforge_xpress_token},
+	{"alive", _lforge_xpress_alive},
 
 	{"pop", _lforge_pop},
 	{"autopop", _lforge_autopop},

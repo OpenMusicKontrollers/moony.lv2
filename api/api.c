@@ -21,6 +21,7 @@
 #include <stdatomic.h>
 
 #include <osc.lv2/endian.h>
+#include <xpress.lv2/xpress.h>
 
 #include <api_atom.h>
 #include <api_forge.h>
@@ -1199,7 +1200,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 			moony->osc_sched = features[i]->data;
 		else if(!strcmp(features[i]->URI, LV2_STATE__loadDefaultState))
 			load_default_state = true;
-		else if(!strcmp(features[i]->URI, XPRESS_VOICE_MAP))
+		else if(!strcmp(features[i]->URI, XPRESS__voiceMap))
 			moony->voice_map = features[i]->data;
 	}
 
@@ -1287,6 +1288,19 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->uris.atom_frame_time = moony->map->map(moony->map->handle, LV2_ATOM__frameTime);
 	moony->uris.atom_beat_time = moony->map->map(moony->map->handle, LV2_ATOM__beatTime);
 	moony->uris.atom_child_type = moony->map->map(moony->map->handle, LV2_ATOM__childType);
+
+	moony->uris.xpress_Token = moony->map->map(moony->map->handle, XPRESS__Token);
+	moony->uris.xpress_Alive = moony->map->map(moony->map->handle, XPRESS__Alive);
+	moony->uris.xpress_source = moony->map->map(moony->map->handle, XPRESS__source);
+	moony->uris.xpress_uuid = moony->map->map(moony->map->handle, XPRESS__uuid);
+	moony->uris.xpress_zone = moony->map->map(moony->map->handle, XPRESS__zone);
+	moony->uris.xpress_body = moony->map->map(moony->map->handle, XPRESS__body);
+	moony->uris.xpress_pitch = moony->map->map(moony->map->handle, XPRESS__pitch);
+	moony->uris.xpress_pressure = moony->map->map(moony->map->handle, XPRESS__pressure);
+	moony->uris.xpress_timbre = moony->map->map(moony->map->handle, XPRESS__timbre);
+	moony->uris.xpress_dPitch = moony->map->map(moony->map->handle, XPRESS__dPitch);
+	moony->uris.xpress_dPressure = moony->map->map(moony->map->handle, XPRESS__dPressure);
+	moony->uris.xpress_dTimbre = moony->map->map(moony->map->handle, XPRESS__dTimbre);
 
 	lv2_canvas_urid_init(&moony->canvas_urid, moony->map);
 
@@ -1725,6 +1739,23 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 		SET_MAP(L, CANVAS__, mouseFocus);
 	}
 	lua_setglobal(L, "Canvas");
+
+	lua_newtable(L);
+	{
+		SET_MAP(L, XPRESS__, Token);
+		SET_MAP(L, XPRESS__, Alive);
+		SET_MAP(L, XPRESS__, source);
+		SET_MAP(L, XPRESS__, zone);
+		SET_MAP(L, XPRESS__, uuid);
+		SET_MAP(L, XPRESS__, body);
+		SET_MAP(L, XPRESS__, pitch);
+		SET_MAP(L, XPRESS__, pressure);
+		SET_MAP(L, XPRESS__, timbre);
+		SET_MAP(L, XPRESS__, dPitch);
+		SET_MAP(L, XPRESS__, dPressure);
+		SET_MAP(L, XPRESS__, dTimbre);
+	}
+	lua_setglobal(L, "Xpress");
 
 	lua_newtable(L);
 	{

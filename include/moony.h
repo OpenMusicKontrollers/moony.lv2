@@ -240,6 +240,19 @@ struct _moony_t {
 		LV2_URID atom_beat_time;
 		LV2_URID atom_frame_time;
 		LV2_URID atom_child_type;
+
+		LV2_URID xpress_Token;
+		LV2_URID xpress_Alive;
+		LV2_URID xpress_source;
+		LV2_URID xpress_uuid;
+		LV2_URID xpress_zone;
+		LV2_URID xpress_body;
+		LV2_URID xpress_pitch;
+		LV2_URID xpress_pressure;
+		LV2_URID xpress_timbre;
+		LV2_URID xpress_dPitch;
+		LV2_URID xpress_dPressure;
+		LV2_URID xpress_dTimbre;
 	} uris;
 
 	LV2_OSC_URID osc_urid;
