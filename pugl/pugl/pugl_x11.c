@@ -648,7 +648,7 @@ puglPasteFromClipboard(PuglView* view, size_t* len)
 		if(  (xevent.xselection.selection == impl->clipboard)
 			&& (xevent.xselection.target == impl->utf8_string)
 			&& (xevent.xselection.property == XA_PRIMARY) ) {
-			ulong nitems, rem;
+			unsigned long nitems, rem;
 			int format;
 			uint8_t* data;
 			Atom type;
