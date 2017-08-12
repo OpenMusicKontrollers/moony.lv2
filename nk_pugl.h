@@ -454,7 +454,7 @@ _nk_pugl_resize(nk_pugl_window_t *win)
 	if(cfg->host_resize)
 	{
 		cfg->host_resize->ui_resize(cfg->host_resize->handle,
-			cfg->width*win->scale, cfg->height*win->scale);
+			cfg->width, cfg->height);
 	}
 }
 
@@ -469,7 +469,7 @@ _nk_pugl_reconfigure(nk_pugl_window_t *win)
 	puglLeaveContext(win->view, false);
 
 #if 0
-	if(!win->cfg->resizable)
+	if(win->cfg.resizable)
 		_nk_pugl_resize(win);
 #endif
 }
@@ -1005,11 +1005,16 @@ nk_pugl_init(nk_pugl_window_t *win)
 		win->scale = 0.5;
 	win->has_left = true;
 
+	cfg->width *= win->scale;
+	cfg->height *= win->scale;
+	cfg->min_width *= win->scale;
+	cfg->min_height *= win->scale;
+
 	// init pugl
 	win->view = puglInit(NULL, NULL);
 	puglInitWindowClass(win->view, cfg->class ? cfg->class : "nuklear");
-	puglInitWindowSize(win->view, cfg->width*win->scale, cfg->height*win->scale);
-	puglInitWindowMinSize(win->view, cfg->min_width*win->scale, cfg->min_height*win->scale);
+	puglInitWindowSize(win->view, cfg->width, cfg->height);
+	puglInitWindowMinSize(win->view, cfg->min_width, cfg->min_height);
 	puglInitResizable(win->view, cfg->resizable);
 	if(cfg->fixed_aspect)
 		puglInitWindowAspectRatio(win->view, cfg->width, cfg->height, cfg->width, cfg->height);
