@@ -1113,10 +1113,9 @@ _dial_bool(struct nk_context *ctx, int32_t *val, struct nk_color color, bool edi
 		const float cx = bounds.x + w2;
 		const float cy = bounds.y + h2;
 
-		nk_fill_arc(canv, cx, cy, r2, 0.f, 2*M_PI, fg_color);
-		nk_fill_arc(canv, cx, cy, r2 - 2, 0.f, 2*M_PI, ctx->style.window.background);
-		nk_fill_arc(canv, cx, cy, r2 - 4, 0.f, 2*M_PI,
-			*val ? fg_color : bg_color);
+		nk_stroke_arc(canv, cx, cy, r2 - 1, 0.f, 2*M_PI, 2.f, fg_color);
+		if(*val)
+			nk_fill_arc(canv, cx, cy, r2 - 4, 0.f, 2*M_PI, fg_color);
 	}
 
 	return tmp != *val;
@@ -1205,9 +1204,8 @@ _dial_numeric_draw(struct nk_context *ctx, struct nk_rect bounds,
 	const float a2 = 2*M_PI + M_PI/2 - aa;
 	const float a3 = a1 + (a2 - a1)*perc;
 
-	nk_fill_arc(canv, cx, cy, r1, a1, a2, bg_color);
-	nk_fill_arc(canv, cx, cy, r1, a1, a3, fg_color);
-	nk_fill_arc(canv, cx, cy, r2, 0.f, 2*M_PI, ctx->style.window.background);
+	nk_stroke_arc(canv, cx, cy, (r1+r2)/2, a1, a2, r1-r2, bg_color);
+	nk_stroke_arc(canv, cx, cy, (r1+r2)/2, a1, a3, r1-r2, fg_color);
 }
 
 static int
