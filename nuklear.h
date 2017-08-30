@@ -7743,14 +7743,15 @@ nk_convert(struct nk_context *ctx, struct nk_buffer *cmds,
         } break;
         case NK_COMMAND_ARC: {
             const struct nk_command_arc *c = (const struct nk_command_arc*)cmd;
-            nk_draw_list_path_line_to(&ctx->draw_list, nk_vec2(c->cx, c->cy));
+            //nk_draw_list_path_line_to(&ctx->draw_list, nk_vec2(c->cx, c->cy));
             nk_draw_list_path_arc_to(&ctx->draw_list, nk_vec2(c->cx, c->cy), c->r,
                 c->a[0], c->a[1], config->arc_segment_count);
-            nk_draw_list_path_stroke(&ctx->draw_list, c->color, NK_STROKE_CLOSED, c->line_thickness);
+            //nk_draw_list_path_stroke(&ctx->draw_list, c->color, NK_STROKE_CLOSED, c->line_thickness);
+            nk_draw_list_path_stroke(&ctx->draw_list, c->color, NK_STROKE_OPEN, c->line_thickness);
         } break;
         case NK_COMMAND_ARC_FILLED: {
             const struct nk_command_arc_filled *c = (const struct nk_command_arc_filled*)cmd;
-            nk_draw_list_path_line_to(&ctx->draw_list, nk_vec2(c->cx, c->cy));
+            //nk_draw_list_path_line_to(&ctx->draw_list, nk_vec2(c->cx, c->cy));
             nk_draw_list_path_arc_to(&ctx->draw_list, nk_vec2(c->cx, c->cy), c->r,
                 c->a[0], c->a[1], config->arc_segment_count);
             nk_draw_list_path_fill(&ctx->draw_list, c->color);
