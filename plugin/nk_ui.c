@@ -3580,11 +3580,25 @@ static const LV2UI_Idle_Interface idle_ext = {
 	.idle = _idle
 };
 
+static int
+_resize(LV2UI_Handle instance, int width, int height)
+{
+	plughandle_t *handle = instance;
+
+	return nk_pugl_resize(&handle->win, width, height);
+}
+
+static const LV2UI_Resize resize_ext = {
+	.ui_resize = _resize
+};
+
 static const void *
 ext_data(const char *uri)
 {
 	if(!strcmp(uri, LV2_UI__idleInterface))
 		return &idle_ext;
+	else if(!strcmp(uri, LV2_UI__resize))
+		return &resize_ext;
 		
 	return NULL;
 }
