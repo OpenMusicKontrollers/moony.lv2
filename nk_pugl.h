@@ -139,6 +139,9 @@ nk_pugl_wait_for_event(nk_pugl_window_t *win);
 NK_PUGL_API int
 nk_pugl_process_events(nk_pugl_window_t *win);
 
+NK_PUGL_API int
+nk_pugl_resize(nk_pugl_window_t *win, int width, int height);
+
 NK_PUGL_API void
 nk_pugl_post_redisplay(nk_pugl_window_t *win);
 
@@ -447,7 +450,7 @@ _nk_pugl_font_deinit(nk_pugl_window_t *win)
 }
 
 static void
-_nk_pugl_resize(nk_pugl_window_t *win)
+_nk_pugl_host_resize(nk_pugl_window_t *win)
 {
 	nk_pugl_config_t *cfg = &win->cfg;
 
@@ -470,7 +473,7 @@ _nk_pugl_reconfigure(nk_pugl_window_t *win)
 
 #if 0
 	if(win->cfg.resizable)
-		_nk_pugl_resize(win);
+		_nk_pugl_host_resize(win);
 #endif
 }
 
@@ -1068,7 +1071,7 @@ nk_pugl_show(nk_pugl_window_t *win)
 		return;
 
 	puglShowWindow(win->view);
-	_nk_pugl_resize(win);
+	_nk_pugl_host_resize(win);
 }
 
 NK_PUGL_API void
@@ -1134,6 +1137,20 @@ nk_pugl_process_events(nk_pugl_window_t *win)
 	(void)stat;
 
 	return win->quit;
+}
+
+NK_PUGL_API int
+nk_pugl_resize(nk_pugl_window_t *win, int width, int height)
+{
+	if(!win->view)
+		return 1; // quit
+
+	win->cfg.width = width;
+	win->cfg.height = height;
+
+	puglPostRedisplay(win->view);
+
+	return 0;
 }
 
 NK_PUGL_API void
