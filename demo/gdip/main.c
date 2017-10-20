@@ -1,4 +1,4 @@
-/* nuklear - v1.17 - public domain */
+/* nuklear - 1.32.0 - public domain */
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <stdio.h>
@@ -69,6 +69,7 @@ int main(void)
 
     /* Win32 */
     memset(&wc, 0, sizeof(wc));
+    wc.style = CS_DBLCLKS;
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = GetModuleHandleW(0);
     wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
@@ -136,7 +137,6 @@ int main(void)
             nk_property_int(ctx, "Compression:", 0, &property, 100, 10, 1);
         }
         nk_end(ctx);
-        if (nk_window_is_closed(ctx, "Demo")) break;
 
         /* -------------- EXAMPLES ---------------- */
         /*calculator(ctx);*/
