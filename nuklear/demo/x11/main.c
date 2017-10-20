@@ -1,4 +1,4 @@
-/* nuklear - v1.17 - public domain */
+/* nuklear - v1.32.0 - public domain */
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,6 +41,7 @@ struct XWindow {
     XFont *font;
     unsigned int width;
     unsigned int height;
+    Atom wm_delete_window;
 };
 
 static void
@@ -86,13 +87,13 @@ sleep_for(long t)
  *                          EXAMPLE
  *
  * ===============================================================*/
-/* This are some code examples to provide a small overview of what can be
+/* These are some code examples to provide a small overview of what can be
  * done with this library. To try out an example uncomment the include
  * and the corresponding function. */
 /*#include "../style.c"*/
 /*#include "../calculator.c"*/
-#include "../overview.c"
-#include "../node_editor.c"
+/*#include "../overview.c"*/
+/*#include "../node_editor.c"*/
 
 /* ===============================================================
  *
@@ -112,11 +113,11 @@ main(void)
     memset(&xw, 0, sizeof xw);
     xw.dpy = XOpenDisplay(NULL);
     if (!xw.dpy) die("Could not open a display; perhaps $DISPLAY is not set?");
-
     xw.root = DefaultRootWindow(xw.dpy);
     xw.screen = XDefaultScreen(xw.dpy);
     xw.vis = XDefaultVisual(xw.dpy, xw.screen);
     xw.cmap = XCreateColormap(xw.dpy,xw.root,xw.vis,AllocNone);
+
     xw.swa.colormap = xw.cmap;
     xw.swa.event_mask =
         ExposureMask | KeyPressMask | KeyReleaseMask |
@@ -126,8 +127,11 @@ main(void)
     xw.win = XCreateWindow(xw.dpy, xw.root, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0,
         XDefaultDepth(xw.dpy, xw.screen), InputOutput,
         xw.vis, CWEventMask | CWColormap, &xw.swa);
+
     XStoreName(xw.dpy, xw.win, "X11");
     XMapWindow(xw.dpy, xw.win);
+    xw.wm_delete_window = XInternAtom(xw.dpy, "WM_DELETE_WINDOW", False);
+    XSetWMProtocols(xw.dpy, xw.win, &xw.wm_delete_window, 1);
     XGetWindowAttributes(xw.dpy, xw.win, &xw.attr);
     xw.width = (unsigned int)xw.attr.width;
     xw.height = (unsigned int)xw.attr.height;
@@ -148,7 +152,9 @@ main(void)
         XEvent evt;
         started = timestamp();
         nk_input_begin(ctx);
-        while (XCheckWindowEvent(xw.dpy, xw.win, xw.swa.event_mask, &evt)){
+        while (XPending(xw.dpy)) {
+            XNextEvent(xw.dpy, &evt);
+            if (evt.type == ClientMessage) goto cleanup;
             if (XFilterEvent(&evt, xw.win)) continue;
             nk_xlib_handle_event(xw.dpy, xw.screen, xw.win, &evt);
         }
@@ -173,12 +179,12 @@ main(void)
             nk_property_int(ctx, "Compression:", 0, &property, 100, 10, 1);
         }
         nk_end(ctx);
-        if (nk_window_is_closed(ctx, "Demo")) break;
+        if (nk_window_is_hidden(ctx, "Demo")) break;
 
         /* -------------- EXAMPLES ---------------- */
         /*calculator(ctx);*/
-        overview(ctx);
-        node_editor(ctx);
+        /*overview(ctx);*/
+        /*node_editor(ctx);*/
         /* ----------------------------------------- */
 
         /* Draw */
@@ -192,6 +198,7 @@ main(void)
             sleep_for(DTIME - dt);
     }
 
+cleanup:
     nk_xfont_del(xw.dpy, xw.font);
     nk_xlib_shutdown();
     XUnmapWindow(xw.dpy, xw.win);
