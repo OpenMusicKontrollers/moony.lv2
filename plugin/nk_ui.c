@@ -2815,6 +2815,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	handle->ser.offset = 0;
 
 	nk_textedit_init_fixed(&handle->editor, handle->code, MOONY_MAX_CHUNK_LEN);
+	handle->editor.single_line = nk_false;
 
 	_patch_get(handle, handle->moony_code);
 	_patch_get(handle, handle->moony_error);
@@ -3079,6 +3080,7 @@ _patch_set_parameter_property(plughandle_t *handle, LV2_URID subject, LV2_URID p
 				|| (prop->range == handle->forge.URID) )
 			{
 				nk_textedit_init_default(&prop->value.editor);
+				prop->value.editor.single_line = nk_false;
 			}
 
 			_patch_get(handle, subject); // rdfs:range is mandatory, so will always be sent
