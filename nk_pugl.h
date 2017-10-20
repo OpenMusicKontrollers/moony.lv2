@@ -827,7 +827,7 @@ _nk_pugl_expose(PuglView *view)
 			|| (obounds.w != wbounds.w) || (obounds.h != wbounds.h) )
 		{
 			// size has changed
-			nk_window_set_bounds(ctx, wbounds);
+			nk_window_set_bounds(ctx, "__bg__", wbounds);
 			puglPostRedisplay(view);
 		}
 
@@ -947,7 +947,7 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 					_nk_pugl_zoom_out(win);
 			}
 			else
-				nk_input_scroll(ctx, ev->dy);
+				nk_input_scroll(ctx, nk_vec2(0.f, ev->dy));
 
 			puglPostRedisplay(win->view);
 			break;
