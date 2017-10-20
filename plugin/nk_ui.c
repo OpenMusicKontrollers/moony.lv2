@@ -1060,10 +1060,10 @@ _dial_bool(struct nk_context *ctx, int32_t *val, struct nk_color color, bool edi
 			}
 			else if(nk_input_is_mouse_hovering_rect(in, bounds))
 			{
-				if(in->mouse.scroll_delta != 0.f) // has scrolling
+				if(in->mouse.scroll_delta.y != 0.f) // has scrolling
 				{
 					mouse_has_scrolled = true;
-					in->mouse.scroll_delta = 0.f;
+					in->mouse.scroll_delta.y = 0.f;
 				}
 
 				states = NK_WIDGET_STATE_HOVER;
@@ -1141,10 +1141,10 @@ _dial_numeric_behavior(struct nk_context *ctx, struct nk_rect bounds,
 	}
 	else if(nk_input_is_mouse_hovering_rect(in, bounds))
 	{
-		if(in->mouse.scroll_delta != 0.f) // has scrolling
+		if(in->mouse.scroll_delta.y != 0.f) // has scrolling
 		{
-			dd = in->mouse.scroll_delta;
-			in->mouse.scroll_delta = 0.f;
+			dd = in->mouse.scroll_delta.y;
+			in->mouse.scroll_delta.y = 0.f;
 		}
 
 		*states = NK_WIDGET_STATE_HOVER;
@@ -2052,9 +2052,10 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 	const float header_height = ctx->style.font->height + 2*ctx->style.window.header.padding.y
 		+ 2*ctx->style.window.header.label_padding.y;
 
-	if(nk_begin(ctx, "Moony", wbounds, NK_WINDOW_NO_SCROLLBAR))
+	const char *window_name = "Moony";
+	if(nk_begin(ctx, window_name, wbounds, NK_WINDOW_NO_SCROLLBAR))
 	{
-		nk_window_set_bounds(ctx, wbounds);
+		nk_window_set_bounds(ctx, window_name, wbounds);
 
 		const bool has_control_down = nk_input_is_key_down(in, NK_KEY_CTRL);
 		const bool has_shift_down = nk_input_is_key_down(in, NK_KEY_SHIFT);
