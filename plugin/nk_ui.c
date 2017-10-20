@@ -292,6 +292,8 @@ struct _plughandle_t {
 	int32_t param_hidden;
 	int32_t param_rows;
 	int32_t param_cols;
+
+	bool has_initial_focus;
 };
 
 static const char *default_script =
@@ -2175,6 +2177,11 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					nk_flags flags = NK_EDIT_BOX;
 					if(has_shift_enter || has_control_enter)
 						flags |= NK_EDIT_SIG_ENTER;
+					if(!handle->has_initial_focus)
+					{
+						nk_edit_focus(ctx, flags);
+						handle->has_initial_focus = true;
+					}
 					const nk_flags state = nk_edit_buffer(ctx, flags,
 						&handle->editor, nk_filter_default);
 					if(state & NK_EDIT_COMMITED)
