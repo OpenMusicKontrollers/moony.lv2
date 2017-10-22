@@ -93,6 +93,8 @@
 #define MOONY_PARAM_ROWS_URI	MOONY_URI"#paramRows"
 
 #define MOONY_NK_URI					MOONY_URI"#moony_ui"
+#define MOONY_SIMPLE_UI_URI		MOONY_URI"#moony_zimple_ui"
+#define MOONY_SIMPLE_KX_URI		MOONY_URI"#moony_zimple_kx"
 
 #define MOONY_C1XC1_URI				MOONY_URI"#c1xc1"
 #define MOONY_C2XC2_URI				MOONY_URI"#c2xc2"
@@ -121,6 +123,8 @@ extern const LV2_Descriptor c2a1xc2a1;
 extern const LV2_Descriptor c4a1xc4a1;
 
 extern const LV2UI_Descriptor nk_ui;
+extern const LV2UI_Descriptor simple_ui;
+extern const LV2UI_Descriptor simple_kx;
 
 typedef enum _moony_udata_t {
 	MOONY_UDATA_ATOM,

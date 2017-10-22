@@ -29,6 +29,10 @@ lv2ui_descriptor(uint32_t index)
 	{
 		case 0:
 			return &nk_ui;
+		case 1:
+			return &simple_ui;
+		case 2:
+			return &simple_kx;
 		default:
 			return NULL;
 	}

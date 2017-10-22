@@ -7,6 +7,7 @@ include_directories(${PROJECT_SOURCE_DIR}/tlsf-3.0)
 include_directories(${PROJECT_SOURCE_DIR}/osc.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/timely.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/xpress.lv2)
+include_directories(${PROJECT_SOURCE_DIR}/ext_ui.lv2)
 include_directories(${PROJECT_SOURCE_DIR}/lua-5.3.4)
 include_directories(${PROJECT_SOURCE_DIR}/tiny-AES128-C)
 include_directories(${PROJECT_SOURCE_DIR}/laes128)
@@ -74,8 +75,17 @@ option(BUILD_UI "Build UI" ON)
 option(USE_MANUAL_GC "Use manual garbage collection" ON)
 option(USE_CODE_COVERAGE "Use code coverage" OFF)
 
+include(CMakeDependentOption)
+cmake_dependent_option(ENABLE_EXTERNAL_EDITOR "Enable external editor" OFF "BUILD_UI" OFF)
+
 if(USE_MANUAL_GC)
 	add_definitions("-DUSE_MANUAL_GC")
+endif()
+
+if(ENABLE_EXTERNAL_EDITOR)
+	# nothing
+else()
+	set(UI_EXT "#")
 endif()
 
 if(BUILD_UI)
@@ -142,8 +152,9 @@ if(BUILD_UI)
 	endif()
 
 	add_library(moony_ui MODULE
-		plugin/moony_nk.c
+		plugin/moony_ui.c
 		plugin/nk_ui.c
+		plugin/simple_ui.c
 		${TAR_UI}
 		$<TARGET_OBJECTS:lua>
 		$<TARGET_OBJECTS:lpeg>)
