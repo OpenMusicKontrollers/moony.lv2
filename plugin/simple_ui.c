@@ -52,7 +52,6 @@ struct _ui_t {
 
 	struct stat stat;
 	int done;
-	int ignore;
 
 	spawn_t spawn;
 
@@ -200,9 +199,12 @@ _idle_cb(LV2UI_Handle instance)
 		memset(&stat1, 0x0, sizeof(struct stat));
 
 		if(stat(ui->path, &stat1) < 0)
-			ui->done = 1; // no file or other error
+		{
+			lv2_log_error(&ui->logger, "simple_ui: stat failed\n");
 
-		if(stat1.st_mtime != ui->stat.st_mtime)
+			ui->done = 1; // no file or other error
+		}
+		else if(stat1.st_mtime != ui->stat.st_mtime)
 		{
 			_load_chosen(ui, ui->path);
 
@@ -363,6 +365,9 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	if(ui->log)
 		lv2_log_note(&ui->logger, "simple_ui: opening %s\n", ui->path);
 
+	if(stat(ui->path, &ui->stat) < 0) // update modification timestamp
+		lv2_log_error(&ui->logger, "simple_ui: stat failed\n");
+
 	free(tmp_template);
 
 	_moony_message_send(ui, ui->uris.moony_code, NULL, 0);
@@ -428,7 +433,8 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 
 						fclose(f);
 
-						ui->ignore = 1; // ignore next fs change event
+						if(stat(ui->path, &ui->stat) < 0) // update modification timestamp
+							lv2_log_error(&ui->logger, "simple_ui: stat failed\n");
 					}
 					else if(ui->log)
 					{
