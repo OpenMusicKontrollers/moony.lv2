@@ -827,7 +827,6 @@ _nk_pugl_expose(PuglView *view)
 			|| (obounds.w != wbounds.w) || (obounds.h != wbounds.h) )
 		{
 			// size has changed
-			nk_window_set_bounds(ctx, "__bg__", wbounds);
 			puglPostRedisplay(view);
 		}
 
