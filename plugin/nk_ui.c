@@ -2054,8 +2054,6 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 	const char *window_name = "Moony";
 	if(nk_begin(ctx, window_name, wbounds, NK_WINDOW_NO_SCROLLBAR))
 	{
-		nk_window_set_bounds(ctx, window_name, wbounds);
-
 		const bool has_control_down = nk_input_is_key_down(in, NK_KEY_CTRL);
 		const bool has_shift_down = nk_input_is_key_down(in, NK_KEY_SHIFT);
 		const bool has_enter_pressed = nk_input_is_key_pressed(in, NK_KEY_ENTER);
