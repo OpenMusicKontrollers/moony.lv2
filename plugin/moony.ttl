@@ -26,6 +26,9 @@
 @prefix rsz:  <http://lv2plug.in/ns/ext/resize-port#> .
 @prefix bufsz: <http://lv2plug.in/ns/ext/buf-size#> .
 @prefix urid: <http://lv2plug.in/ns/ext/urid#> .
+@prefix opts: <http://lv2plug.in/ns/ext/options#> .
+@prefix param: <http://lv2plug.in/ns/ext/parameters#> .
+@prefix ui: <http://lv2plug.in/ns/extensions/ui#> .
 @prefix kx:		<http://kxstudio.sf.net/ns/lv2ext/external-ui#> .
 
 @prefix xpress: <http://open-music-kontrollers.ch/lv2/xpress#> .
@@ -121,9 +124,10 @@ moony:c1xc1
 	doap:license lic:Artistic-2.0 ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
+	opts:supportedOption bufsz:minBlockLength, bufsz:maxBlockLength, bufsz:nominalBlockLength, bufsz:sequenceSize, ui:updateRate, param:sampleRate ;
 
 	lv2:port [
 	# input control ports
@@ -194,9 +198,10 @@ moony:c2xc2
 	doap:license lic:Artistic-2.0 ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
+	opts:supportedOption bufsz:minBlockLength, bufsz:maxBlockLength, bufsz:nominalBlockLength, bufsz:sequenceSize, ui:updateRate, param:sampleRate ;
 
 	lv2:port [
 	# input control ports
@@ -282,9 +287,10 @@ moony:c4xc4
 	doap:license lic:Artistic-2.0 ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
+	opts:supportedOption bufsz:minBlockLength, bufsz:maxBlockLength, bufsz:nominalBlockLength, bufsz:sequenceSize, ui:updateRate, param:sampleRate ;
 
 	lv2:port [
 	# input control ports
@@ -400,9 +406,10 @@ moony:a1xa1
 	doap:license lic:Artistic-2.0 ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
+	opts:supportedOption bufsz:minBlockLength, bufsz:maxBlockLength, bufsz:nominalBlockLength, bufsz:sequenceSize, ui:updateRate, param:sampleRate ;
 
 	lv2:port [
 	# input event port
@@ -480,9 +487,10 @@ moony:a2xa2
 	doap:license lic:Artistic-2.0 ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
+	opts:supportedOption bufsz:minBlockLength, bufsz:maxBlockLength, bufsz:nominalBlockLength, bufsz:sequenceSize, ui:updateRate, param:sampleRate ;
 
 	lv2:port [
 	# input event port
@@ -584,9 +592,10 @@ moony:a4xa4
 	doap:license lic:Artistic-2.0 ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
+	opts:supportedOption bufsz:minBlockLength, bufsz:maxBlockLength, bufsz:nominalBlockLength, bufsz:sequenceSize, ui:updateRate, param:sampleRate ;
 
 	lv2:port [
 	# input event port
@@ -736,9 +745,10 @@ moony:c1a1xc1a1
 	doap:license lic:Artistic-2.0 ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
+	opts:supportedOption bufsz:minBlockLength, bufsz:maxBlockLength, bufsz:nominalBlockLength, bufsz:sequenceSize, ui:updateRate, param:sampleRate ;
 
 	lv2:port [
 	# input event port
@@ -835,9 +845,10 @@ moony:c2a1xc2a1
 	doap:license lic:Artistic-2.0 ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
+	opts:supportedOption bufsz:minBlockLength, bufsz:maxBlockLength, bufsz:nominalBlockLength, bufsz:sequenceSize, ui:updateRate, param:sampleRate ;
 
 	lv2:port [
 	# input event port
@@ -949,9 +960,10 @@ moony:c4a1xc4a1
 	doap:license lic:Artistic-2.0 ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
 	lv2:extensionData work:interface, state:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
+	opts:supportedOption bufsz:minBlockLength, bufsz:maxBlockLength, bufsz:nominalBlockLength, bufsz:sequenceSize, ui:updateRate, param:sampleRate ;
 
 	lv2:port [
 	# input event port
