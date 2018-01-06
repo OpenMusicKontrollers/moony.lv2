@@ -401,7 +401,6 @@ _nk_pugl_font_init(nk_pugl_window_t *win)
 	nk_pugl_config_t *cfg = &win->cfg;
 
 	const int font_size = cfg->font.size * win->scale;
-	fprintf(stderr, ":: %f %i\n", win->scale, font_size);
 
 	// init nuklear font
 	struct nk_font *ttf = NULL;
@@ -1022,8 +1021,6 @@ nk_pugl_init(nk_pugl_window_t *win)
 			}
 		}
 	}
-
-	fprintf(stderr, ":: %f\n", dpi1);
 #endif
 
 	win->scale = scale * dpi1 / dpi0;
