@@ -37,6 +37,7 @@ extern C {
 #if !defined(__APPLE__) && !defined(_WIN32)
 #	include "GL/glx.h"
 #	include "GL/glext.h"
+# include <X11/Xresource.h>
 #endif
 
 #define NK_ZERO_COMMAND_MEMORY
@@ -400,6 +401,7 @@ _nk_pugl_font_init(nk_pugl_window_t *win)
 	nk_pugl_config_t *cfg = &win->cfg;
 
 	const int font_size = cfg->font.size * win->scale;
+	fprintf(stderr, ":: %f %i\n", win->scale, font_size);
 
 	// init nuklear font
 	struct nk_font *ttf = NULL;
@@ -999,7 +1001,29 @@ nk_pugl_init(nk_pugl_window_t *win)
 #else
 	win->async = (atomic_flag)ATOMIC_FLAG_INIT;
 	win->disp = XOpenDisplay(0);
-	const float dpi1 = XDisplayWidth(win->disp, 0) * 25.4f / XDisplayWidthMM(win->disp, 0);
+	// modern X actually lies here, but proprietary nvidia
+	float dpi1 = XDisplayWidth(win->disp, 0) * 25.4f / XDisplayWidthMM(win->disp, 0);
+
+	// read DPI from users's ~/.Xresources
+	char *resource_string = XResourceManagerString(win->disp);
+	XrmInitialize();
+	if(resource_string)
+	{
+		XrmDatabase db = XrmGetStringDatabase(resource_string);
+		if(db)
+		{
+			char *type = NULL;
+			XrmValue value;
+
+			XrmGetResource(db, "Xft.dpi", "String", &type, &value);
+			if(value.addr)
+			{
+				dpi1 = atof(value.addr);
+			}
+		}
+	}
+
+	fprintf(stderr, ":: %f\n", dpi1);
 #endif
 
 	win->scale = scale * dpi1 / dpi0;
