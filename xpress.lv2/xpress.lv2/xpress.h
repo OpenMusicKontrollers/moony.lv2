@@ -396,19 +396,17 @@ xpress_advance(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
 		const LV2_Atom_Float *dPressure = NULL;
 		const LV2_Atom_Float *dTimbre = NULL;
 
-		LV2_Atom_Object_Query q [] = {
-			{ xpress->urid.xpress_source, (const LV2_Atom **)&source },
-			{ xpress->urid.xpress_uuid, (const LV2_Atom **)&uuid },
-			{ xpress->urid.xpress_zone, (const LV2_Atom **)&zone },
-			{ xpress->urid.xpress_pitch, (const LV2_Atom **)&pitch },
-			{ xpress->urid.xpress_pressure, (const LV2_Atom **)&pressure},
-			{ xpress->urid.xpress_timbre, (const LV2_Atom **)&timbre},
-			{ xpress->urid.xpress_dPitch, (const LV2_Atom **)&dPitch },
-			{ xpress->urid.xpress_dPressure, (const LV2_Atom **)&dPressure},
-			{ xpress->urid.xpress_dTimbre, (const LV2_Atom **)&dTimbre},
-			{ 0, NULL}
-		};
-		lv2_atom_object_query(obj, q);
+		lv2_atom_object_get(obj,
+			xpress->urid.xpress_source, &source,
+			xpress->urid.xpress_uuid, &uuid,
+			xpress->urid.xpress_zone, &zone,
+			xpress->urid.xpress_pitch, &pitch,
+			xpress->urid.xpress_pressure, &pressure,
+			xpress->urid.xpress_timbre, &timbre,
+			xpress->urid.xpress_dPitch, &dPitch,
+			xpress->urid.xpress_dPressure, &dPressure,
+			xpress->urid.xpress_dTimbre, &dTimbre,
+			0);
 
 		if(  !source || (source->atom.type != forge->Long)
 			|| !uuid || (uuid->atom.type != forge->Long) )
@@ -467,12 +465,10 @@ xpress_advance(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
 		const LV2_Atom_Long *source = NULL;
 		const LV2_Atom_Tuple *body = NULL;
 
-		LV2_Atom_Object_Query q [] = {
-			{ xpress->urid.xpress_source, (const LV2_Atom **)&source },
-			{ xpress->urid.xpress_body, (const LV2_Atom **)&body },
-			{ 0, NULL }
-		};
-		lv2_atom_object_query(obj, q);
+		lv2_atom_object_get(obj,
+			xpress->urid.xpress_source, &source,
+			xpress->urid.xpress_body, &body,
+			0);
 
 		if(  !source || (source->atom.type != forge->Long) )
 			return 0;
