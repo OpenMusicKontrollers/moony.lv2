@@ -403,14 +403,12 @@ port_event(LV2UI_Handle handle, uint32_t port_index, uint32_t buffer_size,
 			const LV2_Atom_URID *subject = NULL;
 			const LV2_Atom_URID *property = NULL;
 			const LV2_Atom_String *value = NULL;
-			
-			LV2_Atom_Object_Query q[] = {
-				{ ui->uris.patch.subject, (const LV2_Atom **)&subject },
-				{ ui->uris.patch.property, (const LV2_Atom **)&property },
-				{ ui->uris.patch.value, (const LV2_Atom **)&value },
-				{ 0, NULL }
-			};
-			lv2_atom_object_query(obj, q);
+
+			lv2_atom_object_get(obj,
+				ui->uris.patch.subject, &subject,
+				ui->uris.patch.property, &property,
+				ui->uris.patch.value, &value,
+				0);
 
 			//FIXME check subject
 

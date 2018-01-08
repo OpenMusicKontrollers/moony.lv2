@@ -2243,13 +2243,11 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 			const LV2_Atom_URID *property = NULL;
 			const LV2_Atom_Int *sequence= NULL;
 
-			LV2_Atom_Object_Query q[] = {
-				{ moony->uris.patch.subject, (const LV2_Atom **)&subject },
-				{ moony->uris.patch.property, (const LV2_Atom **)&property },
-				{ moony->uris.patch.sequence, (const LV2_Atom **)&sequence},
-				{ 0, NULL }
-			};
-			lv2_atom_object_query(obj, q);
+			lv2_atom_object_get(obj,
+				moony->uris.patch.subject, &subject,
+				moony->uris.patch.property, &property,
+				moony->uris.patch.sequence, &sequence,
+				0);
 
 			int32_t sequence_num = 0;
 			if(sequence && (sequence->atom.type == moony->forge.Int))
@@ -2335,14 +2333,12 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 			const LV2_Atom_Int *sequence = NULL;
 			const LV2_Atom *value = NULL;
 
-			LV2_Atom_Object_Query q[] = {
-				{ moony->uris.patch.subject, (const LV2_Atom **)&subject },
-				{ moony->uris.patch.property, (const LV2_Atom **)&property },
-				{ moony->uris.patch.sequence, (const LV2_Atom **)&sequence },
-				{ moony->uris.patch.value, &value },
-				{ 0, NULL }
-			};
-			lv2_atom_object_query(obj, q);
+			lv2_atom_object_get(obj,
+				moony->uris.patch.subject, &subject,
+				moony->uris.patch.property, &property,
+				moony->uris.patch.sequence, &sequence,
+				moony->uris.patch.value, &value,
+				0);
 
 			int32_t sequence_num = 0;
 			if(sequence && (sequence->atom.type == moony->forge.Int))
