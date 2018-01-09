@@ -980,6 +980,25 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 	}
 }
 
+static void
+_nk_pugl_editor_paste(nk_handle userdata, struct nk_text_edit* editor)
+{
+	nk_pugl_window_t *win = userdata.ptr;
+
+	size_t len;
+	const char *selection = nk_pugl_paste_from_clipboard(win, &len);
+	if(selection)
+		nk_textedit_paste(editor, selection, len);
+}
+
+static void
+_nk_pugl_editor_copy(nk_handle userdata, const char *buf, int len)
+{
+	nk_pugl_window_t *win = userdata.ptr;
+
+	nk_pugl_copy_to_clipboard(win, buf, len);
+}
+
 NK_PUGL_API intptr_t
 nk_pugl_init(nk_pugl_window_t *win)
 {
@@ -1079,6 +1098,10 @@ nk_pugl_init(nk_pugl_window_t *win)
 
 	puglSetEventFunc(win->view, _nk_pugl_event_func);
 	nk_input_begin(&win->ctx);
+
+	win->ctx.clip.paste = _nk_pugl_editor_paste;
+	win->ctx.clip.copy = _nk_pugl_editor_copy;
+	win->ctx.clip.userdata.ptr = win;
 
 	win->widget = puglGetNativeWindow(win->view);
 	return win->widget;
