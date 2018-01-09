@@ -1375,25 +1375,6 @@ _lex(void *data, const char *code, int code_sz)
 	return tokens;
 }
 
-static void
-_paste(nk_handle userdata, struct nk_text_edit* editor)
-{
-	plughandle_t *handle = userdata.ptr;
-
-	size_t len;
-	const char *selection = nk_pugl_paste_from_clipboard(&handle->win, &len);
-	if(selection)
-		nk_textedit_paste(editor, selection, len);
-}
-
-static void
-_copy(nk_handle userdata, const char *buf, int len)
-{
-	plughandle_t *handle = userdata.ptr;
-
-	nk_pugl_copy_to_clipboard(&handle->win, buf, len);
-}
-
 static bool
 _tooltip_visible(struct nk_context *ctx)
 {
@@ -2033,10 +2014,6 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 	plughandle_t *handle = data;
 
 	const float dy = 20.f * nk_pugl_get_scale(&handle->win);
-
-	ctx->clip.paste = _paste;
-	ctx->clip.copy = _copy;
-	ctx->clip.userdata.ptr = handle;
 
 	// modify default button style
 	struct nk_style_button *bst = &handle->win.ctx.style.button;
