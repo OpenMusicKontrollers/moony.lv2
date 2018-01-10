@@ -92,6 +92,7 @@ struct _nk_pugl_config_t {
 
 struct _nk_pugl_window_t {
 	nk_pugl_config_t cfg;
+	char urn [46];
 	float scale;
 
 	PuglView *view;
@@ -1054,7 +1055,29 @@ nk_pugl_init(nk_pugl_window_t *win)
 
 	// init pugl
 	win->view = puglInit(NULL, NULL);
+
+#if defined(__APPLE__) || defined(_WIN32)
+	uint8_t bytes [0x10];
+
+	srand(time(NULL));
+	for(unsigned i=0x0; i<0x10; i++)
+		bytes[i] = rand() & 0xff;
+
+	bytes[6] = (bytes[6] & 0b00001111) | 0b01000000; // set four most significant bits of 7th byte to 0b0100
+	bytes[8] = (bytes[8] & 0b00111111) | 0b10000000; // set two most significant bits of 9th byte to 0b10
+
+	snprintf(win->urn, sizeof(win->urn),
+		"urn:uuid:%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+		bytes[0x0], bytes[0x1], bytes[0x2], bytes[0x3],
+		bytes[0x4], bytes[0x5],
+		bytes[0x6], bytes[0x7],
+		bytes[0x8], bytes[0x9],
+		bytes[0xa], bytes[0xb], bytes[0xc], bytes[0xd], bytes[0xe], bytes[0xf]);
+	fprintf(stderr, "%s\n", win->urn);
+	puglInitWindowClass(win->view, win->urn);
+#else
 	puglInitWindowClass(win->view, cfg->class ? cfg->class : "nuklear");
+#endif
 	puglInitWindowSize(win->view, cfg->width, cfg->height);
 	puglInitWindowMinSize(win->view, cfg->min_width, cfg->min_height);
 	puglInitResizable(win->view, cfg->resizable);
