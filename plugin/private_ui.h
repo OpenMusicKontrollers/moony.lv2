@@ -44,6 +44,22 @@ struct _spawn_t {
 	LV2_Log_Logger *logger;
 };
 
+#if defined(_WIN32)
+static inline char *
+strsep(char **sp, char *sep)
+{
+	char *p, *s;
+	if(sp == NULL || *sp == NULL || **sp == '\0')
+		return(NULL);
+	s = *sp;
+	p = s + strcspn(s, sep);
+	if(*p != '\0')
+		*p++ = '\0';
+	*sp = p;
+	return(s);
+}
+#endif
+
 static inline char **
 _spawn_parse_env(char *env, char *path)
 {
@@ -54,8 +70,10 @@ _spawn_parse_env(char *env, char *path)
 		goto fail;
 	args[n] = NULL;
 
-	char *pch = strtok(env," \t");
-	while(pch)
+	const char *sep = " \t";
+	for(char *bufp = env, *pch = strsep(&bufp, sep);
+		pch;
+		pch = strsep(&bufp, sep) )
 	{
 		args[n++] = pch;
 		oldargs = args;
@@ -64,17 +82,7 @@ _spawn_parse_env(char *env, char *path)
 			goto fail;
 		oldargs = NULL;
 		args[n] = NULL;
-
-		pch = strtok(NULL, " \t");
 	}
-
-	args[n++] = path;
-	oldargs = args;
-	args = realloc(args, (n+1) * sizeof(char *));
-	if(!args)
-		goto fail;
-	oldargs = NULL;
-	args[n] = NULL;
 
 	return args;
 
