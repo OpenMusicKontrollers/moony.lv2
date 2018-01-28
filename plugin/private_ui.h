@@ -84,6 +84,14 @@ _spawn_parse_env(char *env, char *path)
 		args[n] = NULL;
 	}
 
+	args[n++] = path;
+	oldargs = args;
+	args = realloc(args, (n+1) * sizeof(char *));
+	if(!args)
+		goto fail;
+	oldargs = NULL;
+	args[n] = NULL;
+
 	return args;
 
 fail:
