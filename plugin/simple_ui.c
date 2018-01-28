@@ -381,6 +381,8 @@ cleanup(LV2UI_Handle handle)
 {
 	ui_t *ui = handle;
 
+	unlink(ui->path);
+
 	if(ui->log)
 		lv2_log_note(&ui->logger, "simple_ui: closing %s\n", ui->path);
 
