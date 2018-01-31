@@ -2394,11 +2394,11 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 			{
 				char *cmd;
 #if defined(_WIN32)
-				if(asprintf(&cmd, "cmd /c start %s", handle->manual) == -1)
+				if(asprintf(&cmd, "cmd /c start %s", handle->manual) != -1)
 #elif defined(__APPLE__)
-				if(asprintf(&cmd, "open %s", handle->manual) == -1)
+				if(asprintf(&cmd, "open %s", handle->manual) != -1)
 #else
-				if(asprintf(&cmd, "xdg-open %s &", handle->manual) == -1)
+				if(asprintf(&cmd, "xdg-open %s &", handle->manual) != -1)
 #endif
 				{
 					system(cmd);
