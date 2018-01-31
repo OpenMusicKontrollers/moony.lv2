@@ -283,6 +283,7 @@ struct _plughandle_t {
 	
 	browser_t browser;
 	const char *bundle_path;
+	char *manual;
 
 	bool show_about;
 
@@ -2367,7 +2368,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 		}
 		nk_layout_row_end(ctx);
 
-		nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 3);
+		nk_layout_row_begin(ctx, NK_DYNAMIC, dy, 4);
 		{
 			nk_layout_row_push(ctx, 0.15);
 			if(_tooltip_visible(ctx))
@@ -2382,11 +2383,28 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 			}
 			nk_style_pop_style_item(ctx);
 
-			nk_layout_row_push(ctx, 0.7);
+			nk_layout_row_push(ctx, 0.55);
 			if(handle->error[0] == 0)
 				nk_spacing(ctx, 1);
 			else
 				_text_image_colored(ctx, &handle->browser.icons.bell, handle->error, NK_TEXT_LEFT, nk_yellow);
+
+			nk_layout_row_push(ctx, 0.15);
+			if(nk_button_image_label(ctx, handle->browser.icons.about, "Manual", NK_TEXT_RIGHT))
+			{
+				char *cmd;
+#if defined(_WIN32)
+				if(asprintf(&cmd, "cmd /c start %s", handle->manual) == -1)
+#elif defined(__APPLE__)
+				if(asprintf(&cmd, "open %s", handle->manual) == -1)
+#else
+				if(asprintf(&cmd, "xdg-open %s &", handle->manual) == -1)
+#endif
+				{
+					system(cmd);
+					free(cmd);
+				}
+			}
 
 			nk_layout_row_push(ctx, 0.15);
 			if(nk_button_image_label(ctx, handle->browser.icons.about, "About", NK_TEXT_RIGHT))
@@ -2780,6 +2798,9 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	if(asprintf(&cfg->font.face, "%sCousine-Regular.ttf", bundle_path) == -1)
 		cfg->font.face = NULL;
 	cfg->font.size = 13;
+
+	if(asprintf(&handle->manual, "%smanual.html", bundle_path) == -1)
+		handle->manual = NULL;
 	
 	*(intptr_t *)widget = nk_pugl_init(&handle->win);
 	nk_pugl_show(&handle->win);
@@ -2929,6 +2950,9 @@ cleanup(LV2UI_Handle instance)
 
 	if(handle->ser.buf)
 		free(handle->ser.buf);
+
+	if(handle->manual)
+		free(handle->manual);
 
 	nk_pugl_hide(&handle->win);
 	nk_pugl_shutdown(&handle->win);
