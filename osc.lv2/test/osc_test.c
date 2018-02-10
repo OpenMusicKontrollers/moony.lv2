@@ -1,11 +1,13 @@
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
+#include <pthread.h>
 
 #include <osc.lv2/osc.h>
 #include <osc.lv2/reader.h>
 #include <osc.lv2/writer.h>
 #include <osc.lv2/forge.h>
+#include <osc.lv2/stream.h>
 
 #define BUF_SIZE 8192
 #define MAX_URIDS 512
@@ -117,6 +119,17 @@ const uint8_t raw_7 [] = {
 		',', 0x0, 0x0, 0x0
 };
 
+const uint8_t raw_8 [] = {
+	'/', 'p', 'i', 'n',
+	'g', 0x0, 0x0, 0x0,
+	',', 't', 'c', 'r',
+	0x0, 0x0, 0x0, 0x0,
+	0x0, 0x0, 0x0, 0x0,
+	0x0, 0x0, 0x0, 0x1,
+	0x0, 0x0, 0x0, 'o',
+	0x1, 0x2, 0x3, 0x4
+};
+
 static LV2_URID
 _map(LV2_URID_Map_Handle instance, const char *uri)
 {
@@ -164,6 +177,8 @@ static LV2_URID_Unmap unmap = {
 	.unmap = _unmap
 };
 
+//#define DUMP
+#if defined(DUMP)
 static void
 _dump(const uint8_t *src, const uint8_t *dst, size_t size)
 {
@@ -171,6 +186,7 @@ _dump(const uint8_t *src, const uint8_t *dst, size_t size)
 		printf("%zu %02x %02x\n", i, src[i], dst[i]);
 	printf("\n");
 }
+#endif
 
 static void
 _clone(LV2_OSC_Reader *reader, LV2_OSC_Writer *writer, size_t size)
@@ -264,6 +280,10 @@ _test_a(LV2_OSC_Writer *writer, const uint8_t *raw, size_t size)
 	size_t len;
 	assert(lv2_osc_writer_finalize(writer, &len) == buf0);
 	assert(len == size);
+#if defined(DUMP)
+	if(memcmp(raw, buf0, size) != 0)
+		_dump(raw, buf0, size);
+#endif
 	assert(memcmp(raw, buf0, size) == 0);
 
 	// check reader & writer
@@ -275,6 +295,10 @@ _test_a(LV2_OSC_Writer *writer, const uint8_t *raw, size_t size)
 	// check cloned against raw bytes
 	assert(lv2_osc_writer_finalize(writer, &len) == buf1);
 	assert(len == size);
+#if defined(DUMP)
+	if(memcmp(raw, buf1, size) != 0)
+		_dump(raw, buf1, size);
+#endif
 	assert(memcmp(raw, buf1, size) == 0);
 
 	// check forge 
@@ -290,6 +314,10 @@ _test_a(LV2_OSC_Writer *writer, const uint8_t *raw, size_t size)
 	// check deforged against raw bytes
 	assert(lv2_osc_writer_finalize(writer, &len) == buf1);
 	assert(len == size);
+#if defined(DUMP)
+	if(memcmp(raw, buf1, size) != 0)
+		_dump(raw, buf1, size);
+#endif
 	assert(memcmp(raw, buf1, size) == 0);
 }
 
@@ -326,16 +354,18 @@ test_3_a(LV2_OSC_Writer *writer)
 static void
 test_4_a(LV2_OSC_Writer *writer)
 {
-	uint8_t m [] = {0x00, 0x90, 24, 0x7f};
-	assert(lv2_osc_writer_message_vararg(writer, "/midi", "m", 4, m));
+	const uint8_t m [] = {0x00, 0x90, 24, 0x7f};
+	const int32_t len = sizeof(m);
+	assert(lv2_osc_writer_message_vararg(writer, "/midi", "m", len, m));
 	_test_a(writer, raw_4, sizeof(raw_4));
 }
 
 static void
 test_5_a(LV2_OSC_Writer *writer)
 {
-	uint8_t b [] = {0x1, 0x2, 0x3, 0x4, 0x5, 0x6};
-	assert(lv2_osc_writer_message_vararg(writer, "/blob", "b", 6, b));
+	const uint8_t b [] = {0x1, 0x2, 0x3, 0x4, 0x5, 0x6};
+	const int32_t len = sizeof(b);
+	assert(lv2_osc_writer_message_vararg(writer, "/blob", "b", len, b));
 	_test_a(writer, raw_5, sizeof(raw_5));
 }
 
@@ -389,6 +419,16 @@ test_7_a(LV2_OSC_Writer *writer)
 	_test_a(writer, raw_7, sizeof(raw_7));
 }
 
+static void
+test_8_a(LV2_OSC_Writer *writer)
+{
+	assert(lv2_osc_writer_message_vararg(writer, "/ping", "tcr",
+		1ULL,
+		'o',
+		0x1, 0x2, 0x3, 0x4));
+	_test_a(writer, raw_8, sizeof(raw_8));
+}
+
 static test_t tests [] = {
 	test_0_a,
 	test_1_a,
@@ -398,12 +438,13 @@ static test_t tests [] = {
 	test_5_a,
 	test_6_a,
 	test_7_a,
+	test_8_a,
 
 	NULL
-};
-
-int
-main(int argc, char **argv)
+}
+;
+static int
+_run_tests()
 {
 	LV2_OSC_Writer writer;
 
@@ -417,6 +458,429 @@ main(int argc, char **argv)
 		lv2_osc_writer_initialize(&writer, buf0, BUF_SIZE);
 
 		cb(&writer);
+	}
+
+	assert(unmap.unmap(unmap.handle, 0)== NULL);
+
+	return 0;
+}
+
+typedef struct _item_t item_t;
+typedef struct _stash_t stash_t;
+
+struct _item_t {
+	size_t size;
+	uint8_t buf [];
+};
+
+struct _stash_t {
+	size_t size;
+	item_t **items;
+	item_t *rsvd;
+};
+
+static uint8_t *
+_stash_write_req(stash_t *stash, size_t minimum, size_t *maximum)
+{
+	if(!stash->rsvd || (stash->rsvd->size < minimum))
+	{
+		const size_t sz = sizeof(item_t) + minimum;
+		stash->rsvd = realloc(stash->rsvd, sz);
+		assert(stash->rsvd);
+		stash->rsvd->size = minimum;
+	}
+
+	if(maximum)
+	{
+		*maximum = stash->rsvd->size;
+	}
+
+	return stash->rsvd->buf;
+}
+
+static void
+_stash_write_adv(stash_t *stash, size_t written)
+{
+	assert(stash->rsvd);
+	assert(stash->rsvd->size >= written);
+	stash->rsvd->size = written;
+	stash->size += 1;
+	stash->items = realloc(stash->items, sizeof(item_t *) * stash->size);
+	stash->items[stash->size - 1] = stash->rsvd;
+	stash->rsvd = NULL;
+}
+
+static const uint8_t *
+_stash_read_req(stash_t *stash, size_t *size)
+{
+	if(stash->size == 0)
+	{
+		if(size)
+		{
+			*size = 0;
+		}
+
+		return NULL;
+	}
+
+	item_t *item = stash->items[0];
+
+	if(size)
+	{
+		*size = item->size;
+	}
+
+	return item->buf;
+}
+
+static void
+_stash_read_adv(stash_t *stash)
+{
+	assert(stash->size);
+
+	free(stash->items[0]);
+	stash->size -= 1;
+
+	for(unsigned i = 0; i < stash->size; i++)
+	{
+		stash->items[i] = stash->items[i+1];
+	}
+
+	stash->items = realloc(stash->items, sizeof(item_t *) * stash->size);
+}
+
+static void *
+_write_req(void *data, size_t minimum, size_t *maximum)
+{
+	stash_t *stash = data;
+
+	return _stash_write_req(&stash[0], minimum, maximum);
+}
+
+static void
+_write_adv(void *data, size_t written)
+{
+	stash_t *stash = data;
+
+	_stash_write_adv(&stash[0], written);
+}
+
+static const void *
+_read_req(void *data, size_t *toread)
+{
+	stash_t *stash = data;
+
+	return _stash_read_req(&stash[1], toread);
+}
+
+static void
+_read_adv(void *data)
+{
+	stash_t *stash = data;
+
+	_stash_read_adv(&stash[1]);
+}
+
+static const LV2_OSC_Driver driv = {
+	.write_req = _write_req,
+	.write_adv = _write_adv,
+	.read_req = _read_req,
+	.read_adv = _read_adv
+};
+
+#define COUNT 1024
+
+static void *
+_thread_1(void *data)
+{
+	const char *uri = data;
+
+	LV2_OSC_Stream stream;
+	stash_t stash [2];
+	uint8_t check [COUNT];
+
+	memset(&stream, 0x0, sizeof(stream));
+	memset(stash, 0x0, sizeof(stash));
+	memset(check, 0x0, sizeof(check));
+
+	assert(lv2_osc_stream_init(&stream, uri, &driv, stash) == 0);
+
+	unsigned count = 0;
+	while(true)
+	{
+		const LV2_OSC_Enum ev = lv2_osc_stream_run(&stream);
+
+		if(ev & LV2_OSC_RECV)
+		{
+			const uint8_t *buf_rx;
+			size_t reat;
+
+			while( (buf_rx = _stash_read_req(&stash[0], &reat)) )
+			{
+				LV2_OSC_Reader reader;
+
+				lv2_osc_reader_initialize(&reader, buf_rx, reat);
+				assert(lv2_osc_reader_is_message(&reader));
+
+				OSC_READER_MESSAGE_FOREACH(&reader, arg, reat)
+				{
+					assert(strcmp(arg->path, "/trip") == 0);
+					assert(*arg->type == 'i');
+					assert(arg->size == sizeof(int32_t));
+					assert(check[arg->i] == 0);
+					check[arg->i] = 1;
+				}
+
+				count++;
+
+				while(true)
+				{
+					// send back
+					uint8_t *buf_tx;
+					if( (buf_tx = _stash_write_req(&stash[1], reat, NULL)) )
+					{
+						memcpy(buf_tx, buf_rx, reat);
+
+						_stash_write_adv(&stash[1], reat);
+						break;
+					}
+				}
+
+				_stash_read_adv(&stash[0]);
+			}
+		}
+
+		if(count >= COUNT)
+		{
+			break;
+		}
+	}
+
+	LV2_OSC_Enum ev;
+	do
+	{
+		ev = lv2_osc_stream_run(&stream);
+	} while( (ev & LV2_OSC_SEND) || (stream.fd > 0) );
+
+	sleep(1);
+
+	assert(lv2_osc_stream_deinit(&stream) == 0);
+
+	if(stash[0].rsvd)
+	{
+		free(stash[0].rsvd);
+		stash[0].rsvd = NULL;
+	}
+
+	assert(stash[1].rsvd == 0);
+
+	return NULL;
+}
+
+static void *
+_thread_2(void *data)
+{
+	const char *uri = data;
+
+	LV2_OSC_Stream stream;
+	stash_t stash [2];
+	uint8_t check [COUNT];
+
+	memset(&stream, 0x0, sizeof(stream));
+	memset(stash, 0x0, sizeof(stash));
+	memset(check, 0x0, sizeof(check));
+
+	assert(lv2_osc_stream_init(&stream, uri, &driv, stash) == 0);
+
+	unsigned count = 0;
+	for(int32_t i = 0; i < COUNT; i++)
+	{
+		LV2_OSC_Writer writer;
+
+		while(true)
+		{
+			uint8_t *buf_tx;
+			size_t max;
+			if( (buf_tx = _stash_write_req(&stash[1], 1024, &max)) )
+			{
+				size_t writ;
+				lv2_osc_writer_initialize(&writer, buf_tx, max);
+				assert(lv2_osc_writer_message_vararg(&writer, "/trip", "i", i));
+				assert(lv2_osc_writer_finalize(&writer, &writ) == buf_tx);
+				assert(writ == 16);
+				assert(check[i] == 0);
+				check[i] = 1;
+
+				_stash_write_adv(&stash[1], writ);
+				break;
+			}
+		}
+
+		const LV2_OSC_Enum ev = lv2_osc_stream_run(&stream);
+
+		if(ev & LV2_OSC_RECV)
+		{
+			const uint8_t *buf_rx;
+			size_t reat;
+
+			while( (buf_rx = _stash_read_req(&stash[0], &reat)) )
+			{
+				LV2_OSC_Reader reader;
+
+				lv2_osc_reader_initialize(&reader, buf_rx, reat);
+				assert(lv2_osc_reader_is_message(&reader));
+
+				OSC_READER_MESSAGE_FOREACH(&reader, arg, reat)
+				{
+					assert(strcmp(arg->path, "/trip") == 0);
+					assert(*arg->type == 'i');
+					assert(arg->size == sizeof(int32_t));
+					assert(check[arg->i] == 1);
+					check[arg->i] = 2;
+				}
+
+				count++;
+
+				_stash_read_adv(&stash[0]);
+			}
+		}
+	}
+
+	while(count <= (COUNT - 1))
+	{
+		const LV2_OSC_Enum ev = lv2_osc_stream_run(&stream);
+
+		if(ev & LV2_OSC_RECV)
+		{
+			const uint8_t *buf_rx;
+			size_t reat;
+
+			while( (buf_rx = _stash_read_req(&stash[0], &reat)) )
+			{
+				LV2_OSC_Reader reader;
+
+				lv2_osc_reader_initialize(&reader, buf_rx, reat);
+				assert(lv2_osc_reader_is_message(&reader));
+
+				OSC_READER_MESSAGE_FOREACH(&reader, arg, reat)
+				{
+					assert(strcmp(arg->path, "/trip") == 0);
+					assert(*arg->type == 'i');
+					assert(arg->size == sizeof(int32_t));
+					assert(check[arg->i] == 1);
+					check[arg->i] = 2;
+				}
+
+				count++;
+
+				_stash_read_adv(&stash[0]);
+			}
+		}
+	}
+
+	assert(count == COUNT);
+
+	sleep(1);
+
+	assert(lv2_osc_stream_deinit(&stream) == 0);
+
+	if(stash[0].rsvd)
+	{
+		free(stash[0].rsvd);
+		stash[0].rsvd = NULL;
+	}
+
+	assert(stash[1].rsvd == NULL);
+
+	return NULL;
+}
+
+typedef struct _pair_t pair_t;
+
+struct _pair_t {
+	const char *server;
+	const char *client;
+};
+
+static const pair_t pairs [] = {
+	{
+		.server = "osc.udp://:2222",
+		.client = "osc.udp://localhost:2222"
+	},
+	{
+		.server = "osc.udp://[]:3333",
+		.client = "osc.udp://[::1]:3333"
+	},
+
+	{
+		.server = "osc.udp://:3344",
+		.client = "osc.udp://255.255.255.255:3344"
+	},
+
+	{
+		.server = "osc.tcp://:4444",
+		.client = "osc.tcp://localhost:4444"
+	},
+	{
+		.server = "osc.tcp://[]:5555",
+		.client = "osc.tcp://[::1]:5555"
+	},
+
+	{
+		.server = "osc.slip.tcp://:6666",
+		.client = "osc.slip.tcp://localhost:6666"
+	},
+	{
+		.server = "osc.slip.tcp://[]:7777",
+		.client = "osc.slip.tcp://[::1]:7777"
+	},
+
+	{
+		.server = "osc.prefix.tcp://:8888",
+		.client = "osc.prefix.tcp://localhost:8888"
+	},
+	{
+		.server = "osc.prefix.tcp://[%lo]:9999",
+		.client = "osc.prefix.tcp://[::1%lo]:9999"
+	},
+
+	{
+		.server = NULL,
+		.client = NULL
+	}
+};
+
+int
+main(int argc, char **argv)
+{
+	(void)argc;
+	(void)argv;
+
+	fprintf(stdout, "running main tests:\n");
+	assert(_run_tests() == 0);
+
+	for(const pair_t *pair = pairs; pair->server; pair++)
+	{
+		pthread_t thread_1;
+		pthread_t thread_2;
+
+		const char *uri_1 = pair->server;
+		const char *uri_2 = pair->client;
+
+		fprintf(stdout, "running stream test: <%s> <%s>\n", uri_1, uri_2);
+
+		assert(pthread_create(&thread_1, NULL, _thread_1, (void *)uri_1) == 0);
+		assert(pthread_create(&thread_2, NULL, _thread_2, (void *)uri_2) == 0);
+
+		assert(pthread_join(thread_1, NULL) == 0);
+		assert(pthread_join(thread_2, NULL) == 0);
+	}
+
+	for(unsigned i=0; i<__handle.urid; i++)
+	{
+		urid_t *itm = &__handle.urids[i];
+
+		free(itm->uri);
 	}
 
 	return 0;

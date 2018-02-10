@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include <osc.lv2/osc.h>
 #include <osc.lv2/endian.h>
