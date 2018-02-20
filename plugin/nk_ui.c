@@ -403,7 +403,7 @@ dir_list(const char *dir, int return_subdirs, int return_hidden,
 
 			if(return_lua_only)
 			{
-				char *point = strchr(data->d_name, '.');
+				char *point = strrchr(data->d_name, '.');
 				if(!point) // no suffix
 					continue;
 
