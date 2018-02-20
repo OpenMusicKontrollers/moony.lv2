@@ -497,6 +497,13 @@ end</code></pre>
 			<li><a href="https://www.lua.org/manual/5.3/manual.html#pdf-dofile">dofile</a></li>
 		</ul>
 
+		<p>The following <a href="https://www.lua.org/manual/5.3/manual.html#6.7">math</a> functions are disabled (use the dedicated random utility library instead):</p>
+
+		<ul>
+			<li><a href="https://www.lua.org/manual/5.3/manual.html#pdf-math.random">math.random</a></li>
+			<li><a href="https://www.lua.org/manual/5.3/manual.html#pdf-math.randomseed">math.randomseed</a></li>
+		</ul>
+
 		<p>Additionally to the standard libraries, <i>Moony</i> ships the
 		following commonly used utility libraries:</p>
 

@@ -2057,9 +2057,10 @@ end
 
 print('[test] base64')
 do
+	local R = random.new(12345678)
   local inp = ''
 	for i = 1, 64 do
-		inp = inp .. string.char(math.random(127))
+		inp = inp .. string.char(R(255))
 	end
 
 	local enc = base64.encode(inp)
@@ -2071,9 +2072,10 @@ end
 
 print('[test] ascii85')
 do
+	local R = random.new(12345678)
   local inp = ''
 	for i = 1, 64 do
-		inp = inp .. string.char(math.random(127))
+		inp = inp .. string.char(R(255))
 	end
 
 	local enc = ascii85.encode(inp)
@@ -2273,4 +2275,14 @@ do
 	end
 
 	test(producer, consumer)
+end
+
+-- disabled routines
+print('[test] Disabled routines')
+do
+	assert(os == nil)
+	assert(bit32 == nil)
+
+	assert(math.random == nil)
+	assert(math.randomseed == nil)
 end

@@ -222,6 +222,17 @@ moony_vm_new(size_t mem_size, bool testing, void *data)
 		lua_setglobal(L, "loadfile");
 	}
 
+	// clear math.random[seed]
+	lua_getglobal(L, "math");
+
+	lua_pushnil(L);
+	lua_setfield(L, -2, "random");
+
+	lua_pushnil(L);
+	lua_setfield(L, -2, "randomseed");
+
+	lua_pop(L, 1); // math
+
 #ifdef USE_MANUAL_GC
 	// manual garbage collector
 	lua_gc(L, LUA_GCSTOP, 0); // disable automatic garbage collection
