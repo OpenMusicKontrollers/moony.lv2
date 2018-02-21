@@ -295,6 +295,8 @@ struct _plughandle_t {
 	int32_t param_cols;
 
 	bool has_initial_focus;
+	bool refocus_after_filedialog;
+	struct nk_text_edit *last_edit_focus;
 };
 
 static const char *default_script =
@@ -1654,9 +1656,16 @@ _parameter_widget_urid(plughandle_t *handle, struct nk_context *ctx, prop_t *pro
 		flags |= NK_EDIT_SIG_ENTER;
 	if(!editable)
 		flags |= NK_EDIT_READ_ONLY;
+	if(handle->refocus_after_filedialog && (handle->last_edit_focus == &prop->value.editor) )
+	{
+		nk_edit_focus(ctx, flags);
+		handle->refocus_after_filedialog = false;
+	}
 	const nk_flags state = nk_edit_buffer(ctx, flags, &prop->value.editor, nk_filter_default);
 	if(state & NK_EDIT_COMMITED)
 		prop_commited = true;
+	if(state & NK_EDIT_ACTIVE)
+		handle->last_edit_focus = &prop->value.editor;
 	if( (state & NK_EDIT_ACTIVE) && (old_len != nk_str_len_char(&prop->value.editor.string)) )
 		prop->dirty = true;
 	if( (state & NK_EDIT_ACTIVE) && handle->has_control_a)
@@ -1704,10 +1713,17 @@ _parameter_widget_string(plughandle_t *handle, struct nk_context *ctx, prop_t *p
 		flags |= NK_EDIT_READ_ONLY;
 	if(has_shift_enter)
 		flags |= NK_EDIT_SIG_ENTER;
+	if(handle->refocus_after_filedialog && (handle->last_edit_focus == &prop->value.editor) )
+	{
+		nk_edit_focus(ctx, flags);
+		handle->refocus_after_filedialog = false;
+	}
 	const nk_flags state = nk_edit_buffer(ctx, flags,
 		&prop->value.editor, nk_filter_default);
 	if(state & NK_EDIT_COMMITED)
 		prop_commited = true;
+	if(state & NK_EDIT_ACTIVE)
+		handle->last_edit_focus = &prop->value.editor;
 	if( (state & NK_EDIT_ACTIVE) && (old_len != nk_str_len_char(&prop->value.editor.string)) )
 		prop->dirty = true;
 	if( (state & NK_EDIT_ACTIVE) && handle->has_control_a)
@@ -2158,8 +2174,15 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						nk_edit_focus(ctx, flags);
 						handle->has_initial_focus = true;
 					}
+					if(handle->refocus_after_filedialog && (handle->last_edit_focus == &handle->editor) )
+					{
+						nk_edit_focus(ctx, flags);
+						handle->refocus_after_filedialog = false;
+					}
 					const nk_flags state = nk_edit_buffer(ctx, flags,
 						&handle->editor, nk_filter_default);
+					if(state & NK_EDIT_ACTIVE)
+						handle->last_edit_focus = &handle->editor;
 					if(state & NK_EDIT_COMMITED)
 					{
 						if(has_shift_down)
@@ -2515,6 +2538,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 			|| nk_input_is_key_pressed(in, NK_KEY_TEXT_RESET_MODE)) // or escape
 		{
 			nk_window_close(ctx, "File browser");
+			handle->refocus_after_filedialog = true;
 		}
 
 		if(nk_window_is_closed(ctx, "File browser"))
