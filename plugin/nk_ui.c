@@ -2000,7 +2000,7 @@ _set_string(struct nk_str *str, uint32_t size, const char *body)
 	nk_str_clear(str);
 
 	// replace tab with 2 spaces
-	const char *end = (size > 0) && (body[size - 1] == '\n')
+	const char *end = (size > 0) && ( (body[size - 1] == '\n') || (body[size - 1] == '\0') )
 		? body + size - 1 // ignore newline in sane files
 		: body + size; // handle non-sane files without a newline
 	const char *from = body;
