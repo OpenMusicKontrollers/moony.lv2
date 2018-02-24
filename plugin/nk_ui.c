@@ -549,6 +549,10 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, float dy,
 	const char *title, browser_type_t browser_type, struct nk_rect bounds)
 {
 	int ret = 0;
+	bool commited = false;
+	const bool is_export = (browser_type == BROWSER_EXPORT_CODE)
+		|| (browser_type == BROWSER_EXPORT_PROPERTY);
+	const struct nk_input *in = &ctx->input;
 
 	// delayed initial loading
 	if(!browser->files)
@@ -587,17 +591,15 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, float dy,
 
 			nk_layout_row_dynamic(ctx, dy, 1);
 			nk_label(ctx, browser->directory, NK_TEXT_LEFT);
-			if( (browser_type == BROWSER_EXPORT_CODE) || (browser_type == BROWSER_EXPORT_PROPERTY))
+
+			if(is_export)
 			{
 				nk_flags flags = NK_EDIT_FIELD | NK_EDIT_SIG_ENTER;
 				const nk_flags state = nk_edit_string_zero_terminated(ctx, flags,
 					browser->export, MAX_PATH_LEN, nk_filter_ascii);
 				if( (state & NK_EDIT_COMMITED) && (strlen(browser->export) > 0) )
 				{
-					strncpy(browser->file, browser->directory, MAX_PATH_LEN);
-					const size_t n = strlen(browser->file);
-					strncpy(browser->file + n, browser->export, MAX_PATH_LEN - n);
-					ret = 1;
+					commited = true;
 				}
 			}
 		}
@@ -623,8 +625,7 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, float dy,
 						nk_style_item_color(nk_rgb(0x37, 0x37, 0x37)));
 				if(j < (ssize_t)browser->dir_count)
 				{
-					const int selected = (browser->selected == j);
-					if(nk_select_image_label(ctx, browser->icons.directory, browser->directories[j], NK_TEXT_LEFT, selected) != selected)
+					if(nk_select_image_label(ctx, browser->icons.directory, browser->directories[j], NK_TEXT_LEFT, nk_false))
 					{
 						browser->selected = j;
 					}
@@ -632,9 +633,11 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, float dy,
 				else
 				{
 					const int k = j - browser->dir_count;
-					const int selected = (browser->selected == j);
-					if(nk_select_image_label(ctx, browser->icons.default_file, browser->files[k], NK_TEXT_LEFT, selected) != selected)
+					if(nk_select_image_label(ctx, browser->icons.default_file, browser->files[k], NK_TEXT_LEFT, nk_false))
 					{
+						if(browser->selected == j)
+							commited = true; // poor-man's double-click
+
 						browser->selected = j;
 						strncpy(browser->export, browser->files[k], MAX_PATH_LEN);
 					}
@@ -667,41 +670,29 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, float dy,
 			if(nk_checkbox_label(ctx, "Show *.lua only", &browser->return_lua_only))
 				file_browser_reload_directory_content(browser, browser->directory);
 
-			nk_spacing(ctx, 2);
-
-			//FIXME tooltip
-			if(nk_button_image_label(ctx, browser->icons.checked, "OK", NK_TEXT_RIGHT)
-				|| nk_input_is_key_pressed(&ctx->input, NK_KEY_ENTER))
+			// change directory
+			if( (browser->selected >= 0) && (browser->selected < (ssize_t)browser->dir_count) )
 			{
-				if( (browser->selected >= 0) && (browser->selected < (ssize_t)browser->dir_count) )
+				const int j = browser->selected;
+				size_t n = strlen(browser->directory);
+				strncpy(browser->directory + n, browser->directories[j], MAX_PATH_LEN - n);
+				n = strlen(browser->directory);
+				if(n < MAX_PATH_LEN - 1)
 				{
-					const int j = browser->selected;
-					size_t n = strlen(browser->directory);
-					strncpy(browser->directory + n, browser->directories[j], MAX_PATH_LEN - n);
-					n = strlen(browser->directory);
-					if(n < MAX_PATH_LEN - 1)
-					{
-						browser->directory[n] = SLASH_CHAR;
-						browser->directory[n+1] = '\0';
-					}
-					file_browser_reload_directory_content(browser, browser->directory);
+					browser->directory[n] = SLASH_CHAR;
+					browser->directory[n+1] = '\0';
 				}
-				else if( ( (browser_type == BROWSER_EXPORT_CODE) || (browser_type == BROWSER_EXPORT_PROPERTY) )
-					&& (strlen(browser->export) > 0) )
+				file_browser_reload_directory_content(browser, browser->directory);
+			}
+
+			if(is_export)
+			{
+				nk_spacing(ctx, 2);
+
+				//FIXME tooltip
+				if(nk_button_image_label(ctx, browser->icons.checked, "OK", NK_TEXT_RIGHT))
 				{
-					//FIXME remove duplicate code
-					strncpy(browser->file, browser->directory, MAX_PATH_LEN);
-					const size_t n = strlen(browser->file);
-					strncpy(browser->file + n, browser->export, MAX_PATH_LEN - n);
-					ret = 1;
-				}
-				else if(browser->selected >= (ssize_t)browser->dir_count)
-				{
-					const int k = browser->selected - browser->dir_count;
-					strncpy(browser->file, browser->directory, MAX_PATH_LEN);
-					const size_t n = strlen(browser->file);
-					strncpy(browser->file + n, browser->files[k], MAX_PATH_LEN - n);
-					ret = 1;
+					commited = true;
 				}
 			}
 
@@ -709,6 +700,34 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, float dy,
 		}
 	}
 	nk_end(ctx);
+
+	if(is_export)
+	{
+		if(  commited
+			|| nk_input_is_key_pressed(in, NK_KEY_ENTER) )
+		{
+			if(strlen(browser->export) > 0)
+			{
+				strncpy(browser->file, browser->directory, MAX_PATH_LEN);
+				const size_t n = strlen(browser->file);
+				strncpy(browser->file + n, browser->export, MAX_PATH_LEN - n);
+				ret = 1;
+			}
+		}
+	}
+	else // !is_export
+	{
+		// load selected file directly
+		if(browser->selected >= (ssize_t)browser->dir_count)
+		{
+			const int k = browser->selected - browser->dir_count;
+			strncpy(browser->file, browser->directory, MAX_PATH_LEN);
+			const size_t n = strlen(browser->file);
+			strncpy(browser->file + n, browser->files[k], MAX_PATH_LEN - n);
+			ret = 1;
+			browser->selected = -1;
+		}
+	}
 
 	return ret;
 }
@@ -2464,11 +2483,20 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					FILE *f = fopen(handle->browser.file, "wb");
 					if(f)
 					{
+						// write text
 						struct nk_str *str = &handle->editor.string;
 						if(fwrite(nk_str_get_const(str), nk_str_len_char(str), 1, f) != 1)
 						{
 							//TODO handle error
 						}
+
+						// write end-of-file line break
+						const char lb = '\n';
+						if(fwrite(&lb, sizeof(lb), 1, f) != 1)
+						{
+							//TODO handle error
+						}
+
 						fclose(f);
 					}
 				} break;
@@ -2514,8 +2542,16 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						{
 							if(prop->range == handle->forge.String)
 							{
+								// write text
 								struct nk_str *str = &prop->value.editor.string;
 								if(fwrite(nk_str_get_const(str), nk_str_len_char(str), 1, f) != 1)
+								{
+									//TODO handle error
+								}
+
+								// write end-of-file line break
+								const char lb = '\n';
+								if(fwrite(&lb, sizeof(lb), 1, f) != 1)
 								{
 									//TODO handle error
 								}
@@ -2527,6 +2563,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 									//TODO handle error
 								}
 							}
+
 							fclose(f);
 						}
 					}
