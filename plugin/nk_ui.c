@@ -215,6 +215,7 @@ struct _plughandle_t {
 	LV2_URID moony_editorHidden;
 	LV2_URID moony_logHidden;
 	LV2_URID moony_logFollow;
+	LV2_URID moony_logReset;
 	LV2_URID moony_paramHidden;
 	LV2_URID moony_paramCols;
 	LV2_URID moony_paramRows;
@@ -290,6 +291,7 @@ struct _plughandle_t {
 	int32_t editor_hidden;
 	int32_t log_hidden;
 	int32_t log_follow;
+	int32_t log_reset;
 	int32_t param_hidden;
 	int32_t param_rows;
 	int32_t param_cols;
@@ -1001,18 +1003,6 @@ _clear_error(plughandle_t *handle)
 }
 
 static void
-_submit_all(plughandle_t *handle)
-{
-	_clear_error(handle);
-
-	struct nk_str *str = &handle->editor.string;
-	_patch_set(handle, handle->moony_code,
-		nk_str_len_char(str), handle->forge.String, nk_str_get_const(str));
-
-	handle->dirty = false;
-}
-
-static void
 _clear_log(plughandle_t *handle)
 {
 	for(int i = 0; i < handle->n_trace; i++)
@@ -1023,6 +1013,21 @@ _clear_log(plughandle_t *handle)
 	handle->traces = NULL;
 
 	nk_pugl_post_redisplay(&handle->win);
+}
+
+static void
+_submit_all(plughandle_t *handle)
+{
+	_clear_error(handle);
+
+	struct nk_str *str = &handle->editor.string;
+	_patch_set(handle, handle->moony_code,
+		nk_str_len_char(str), handle->forge.String, nk_str_get_const(str));
+
+	handle->dirty = false;
+
+	if(handle->log_reset)
+		_clear_log(handle);
 }
 
 static void
@@ -2329,7 +2334,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						nk_list_view_end(&lview);
 					}
 
-					nk_layout_row_dynamic(ctx, dy, 2);
+					nk_layout_row_dynamic(ctx, dy, 3);
 					if(_tooltip_visible(ctx))
 						nk_tooltip(ctx, "Ctrl-D");
 					nk_style_push_style_item(ctx, &ctx->style.button.normal, has_control_d
@@ -2343,6 +2348,11 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					handle->log_follow = nk_check_label(ctx, "Follow", handle->log_follow);
 					if(log_follow != handle->log_follow)
 						_patch_set(handle, handle->moony_logFollow, sizeof(int32_t), handle->forge.Bool, &handle->log_follow);
+
+					const int log_reset = handle->log_reset;
+					handle->log_reset = nk_check_label(ctx, "Reset", handle->log_reset);
+					if(log_reset != handle->log_reset)
+						_patch_set(handle, handle->moony_logReset, sizeof(int32_t), handle->forge.Bool, &handle->log_reset);
 
 					nk_group_end(ctx);
 				}
@@ -2756,6 +2766,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	handle->moony_editorHidden = handle->map->map(handle->map->handle, MOONY_EDITOR_HIDDEN_URI);
 	handle->moony_logHidden = handle->map->map(handle->map->handle, MOONY_LOG_HIDDEN_URI);
 	handle->moony_logFollow = handle->map->map(handle->map->handle, MOONY_LOG_FOLLOW_URI);
+	handle->moony_logReset = handle->map->map(handle->map->handle, MOONY_LOG_RESET_URI);
 	handle->moony_paramHidden = handle->map->map(handle->map->handle, MOONY_PARAM_HIDDEN_URI);
 	handle->moony_paramCols = handle->map->map(handle->map->handle, MOONY_PARAM_COLS_URI);
 	handle->moony_paramRows = handle->map->map(handle->map->handle, MOONY_PARAM_ROWS_URI);
@@ -2881,6 +2892,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	_patch_get(handle, handle->moony_editorHidden);
 	_patch_get(handle, handle->moony_logHidden);
 	_patch_get(handle, handle->moony_logFollow);
+	_patch_get(handle, handle->moony_logReset);
 	_patch_get(handle, handle->moony_paramHidden);
 	_patch_get(handle, handle->moony_paramCols);
 	_patch_get(handle, handle->moony_paramRows);
@@ -3318,6 +3330,7 @@ _patch_set_self(plughandle_t *handle, LV2_URID property, const LV2_Atom *value)
 		_patch_get(handle, handle->moony_editorHidden);
 		_patch_get(handle, handle->moony_logHidden);
 		_patch_get(handle, handle->moony_logFollow);
+		_patch_get(handle, handle->moony_logReset);
 		_patch_get(handle, handle->moony_paramHidden);
 		_patch_get(handle, handle->moony_paramCols);
 		_patch_get(handle, handle->moony_paramRows);
@@ -3385,6 +3398,15 @@ _patch_set_self(plughandle_t *handle, LV2_URID property, const LV2_Atom *value)
 		if(value->type == handle->forge.Bool)
 		{
 			handle->log_follow = ((const LV2_Atom_Bool *)value)->body;
+
+			nk_pugl_post_redisplay(&handle->win);
+		}
+	}
+	else if(property == handle->moony_logReset)
+	{
+		if(value->type == handle->forge.Bool)
+		{
+			handle->log_reset = ((const LV2_Atom_Bool *)value)->body;
 
 			nk_pugl_post_redisplay(&handle->win);
 		}

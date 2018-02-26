@@ -88,6 +88,12 @@ moony:logFollow
 	rdfs:comment "follow state of log tab" ;
 	rdfs:range atom:Bool .
 
+moony:logReset
+	a lv2:Parameter ;
+	rdfs:label "Log reset" ;
+	rdfs:comment "reset log upon code send" ;
+	rdfs:range atom:Bool .
+
 moony:paramHidden
 	a lv2:Parameter ;
 	rdfs:label "Parameter hidden" ;
@@ -182,6 +188,7 @@ moony:c1xc1
 		moony:editorHidden false ;
 		moony:logHidden true ;
 		moony:logFollow true ;
+		moony:logReset false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -271,6 +278,7 @@ moony:c2xc2
 		moony:editorHidden false ;
 		moony:logHidden true ;
 		moony:logFollow true ;
+		moony:logReset false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -390,6 +398,7 @@ moony:c4xc4
 		moony:editorHidden false ;
 		moony:logHidden true ;
 		moony:logFollow true ;
+		moony:logReset false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -469,6 +478,7 @@ moony:a1xa1
 		moony:editorHidden false ;
 		moony:logHidden true ;
 		moony:logFollow true ;
+		moony:logReset false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -570,6 +580,7 @@ moony:a2xa2
 		moony:editorHidden false ;
 		moony:logHidden true ;
 		moony:logFollow true ;
+		moony:logReset false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -715,6 +726,7 @@ moony:a4xa4
 		moony:editorHidden false ;
 		moony:logHidden true ;
 		moony:logFollow true ;
+		moony:logReset false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -825,6 +837,7 @@ moony:c1a1xc1a1
 		moony:editorHidden false ;
 		moony:logHidden true ;
 		moony:logFollow true ;
+		moony:logReset false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -940,6 +953,7 @@ moony:c2a1xc2a1
 		moony:editorHidden false ;
 		moony:logHidden true ;
 		moony:logFollow true ;
+		moony:logReset false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
@@ -1085,6 +1099,7 @@ moony:c4a1xc4a1
 		moony:editorHidden false ;
 		moony:logHidden true ;
 		moony:logFollow true ;
+		moony:logReset false ;
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;

@@ -687,6 +687,16 @@ _state_save(LV2_Handle instance,
 		LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
 	(void)status; //TODO check status
 
+	i32 = atomic_load_explicit(&moony->log_reset, memory_order_acquire);
+	status = store(
+		state,
+		moony->uris.moony_logReset,
+		&i32,
+		sizeof(int32_t),
+		moony->forge.Bool,
+		LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
+	(void)status; //TODO check status
+
 	i32 = atomic_load_explicit(&moony->param_hidden, memory_order_acquire);
 	status = store(
 		state,
@@ -882,6 +892,18 @@ _state_restore(LV2_Handle instance,
 	if(i32 && (size == sizeof(int32_t)) && (type == moony->forge.Bool) )
 	{
 		atomic_store_explicit(&moony->log_follow, *i32, memory_order_release);
+	}
+
+	// get moony:logReset
+	i32 = retrieve(
+		state,
+		moony->uris.moony_logReset,
+		&size,
+		&type,
+		&flags2);
+	if(i32 && (size == sizeof(int32_t)) && (type == moony->forge.Bool) )
+	{
+		atomic_store_explicit(&moony->log_reset, *i32, memory_order_release);
 	}
 
 	// get moony:paramHidden
@@ -1238,6 +1260,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->uris.moony_editorHidden = moony->map->map(moony->map->handle, MOONY_EDITOR_HIDDEN_URI);
 	moony->uris.moony_logHidden = moony->map->map(moony->map->handle, MOONY_LOG_HIDDEN_URI);
 	moony->uris.moony_logFollow = moony->map->map(moony->map->handle, MOONY_LOG_FOLLOW_URI);
+	moony->uris.moony_logReset = moony->map->map(moony->map->handle, MOONY_LOG_RESET_URI);
 	moony->uris.moony_paramHidden = moony->map->map(moony->map->handle, MOONY_PARAM_HIDDEN_URI);
 	moony->uris.moony_paramCols = moony->map->map(moony->map->handle, MOONY_PARAM_COLS_URI);
 	moony->uris.moony_paramRows = moony->map->map(moony->map->handle, MOONY_PARAM_ROWS_URI);
@@ -1368,6 +1391,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->editor_hidden = ATOMIC_VAR_INIT(0);
 	moony->log_hidden = ATOMIC_VAR_INIT(1);
 	moony->log_follow = ATOMIC_VAR_INIT(1);
+	moony->log_reset  = ATOMIC_VAR_INIT(0);
 	moony->param_hidden = ATOMIC_VAR_INIT(1);
 	moony->param_cols = ATOMIC_VAR_INIT(3);
 	moony->param_rows = ATOMIC_VAR_INIT(4);
@@ -2295,6 +2319,14 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 					if(ref)
 						ref = _patch_set(&moony->uris.patch, forge, property->body, sizeof(int32_t), forge->Bool, &i32);
 				}
+				else if(property->body == moony->uris.moony_logReset)
+				{
+					const int32_t i32 = atomic_load_explicit(&moony->log_reset, memory_order_acquire);
+					if(ref)
+						ref = lv2_atom_forge_frame_time(forge, 0); //FIXME
+					if(ref)
+						ref = _patch_set(&moony->uris.patch, forge, property->body, sizeof(int32_t), forge->Bool, &i32);
+				}
 				else if(property->body == moony->uris.moony_paramHidden)
 				{
 					const int32_t i32 = atomic_load_explicit(&moony->param_hidden, memory_order_acquire);
@@ -2379,6 +2411,10 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 				else if( (property->body == moony->uris.moony_logFollow) && (value->type == forge->Bool) )
 				{
 					atomic_store_explicit(&moony->log_follow, ((const LV2_Atom_Bool *)value)->body, memory_order_release);
+				}
+				else if( (property->body == moony->uris.moony_logReset) && (value->type == forge->Bool) )
+				{
+					atomic_store_explicit(&moony->log_reset, ((const LV2_Atom_Bool *)value)->body, memory_order_release);
 				}
 				else if( (property->body == moony->uris.moony_paramHidden) && (value->type == forge->Bool) )
 				{
