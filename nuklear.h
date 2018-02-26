@@ -14809,6 +14809,16 @@ nk_textedit_clear_state(struct nk_text_edit *state, enum nk_text_edit_type type,
    state->scrollbar = nk_vec2(0,0);
 }
 
+NK_INTERN void
+nk_textedit_reset_state(struct nk_text_edit *state, enum nk_text_edit_type type,
+    nk_plugin_filter filter)
+{
+    /* reset the state to default */
+   state->single_line = (unsigned char)(type == NK_TEXT_EDIT_SINGLE_LINE);
+   state->mode = NK_TEXT_EDIT_MODE_VIEW;
+   state->filter = filter;
+}
+
 NK_API void
 nk_textedit_init_fixed(struct nk_text_edit *state, void *memory, nk_size size)
 {
@@ -16571,7 +16581,7 @@ nk_do_edit(nk_flags *state, struct nk_command_buffer *out,
     if (!prev_state && edit->active) {
         const enum nk_text_edit_type type = (flags & NK_EDIT_MULTILINE) ?
             NK_TEXT_EDIT_MULTI_LINE: NK_TEXT_EDIT_SINGLE_LINE;
-        nk_textedit_clear_state(edit, type, filter);
+        nk_textedit_reset_state(edit, type, filter);
         if (flags & NK_EDIT_AUTO_SELECT)
             select_all = nk_true;
         if (flags & NK_EDIT_GOTO_END_ON_ACTIVATE) {
