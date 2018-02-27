@@ -2148,8 +2148,8 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 	char *err_new = (char *)atomic_exchange_explicit(&moony->err_new, 0, memory_order_relaxed);
 	if(err_new)
 	{
-		if(moony->error[0] == 0x0) // don't overwrite any previous error message
-			snprintf(moony->error, MOONY_MAX_ERROR_LEN, "%s", err_new);
+		//  always overwrite previous error message
+		snprintf(moony->error, MOONY_MAX_ERROR_LEN, "%s", err_new);
 		moony->error_out = true;
 
 		moony_job_t *req;

@@ -363,18 +363,10 @@ moony_err_async(moony_t *moony, const char *msg)
 	char *err_new = strdup(err);
 	if(err_new)
 	{
-		uintptr_t err_old = 0;
-		const bool match = atomic_compare_exchange_strong_explicit(&moony->err_new,
-			&err_old, (uintptr_t)err_new, memory_order_release, memory_order_relaxed);
-		if(match) // we have successfully exchanged
-		{
-			if(err_old)
-				free((char *)err_old);
-		}
-		else // !match, aka previous error message not consumed yet
-		{
-			free(err_new);
-		}
+		char *err_old = (char *)atomic_exchange_explicit(&moony->err_new, (uintptr_t)err_new, memory_order_relaxed);
+
+		if(err_old)
+			free(err_old);
 	}
 }
 
