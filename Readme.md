@@ -5,7 +5,7 @@
 This is a minimal state immediate mode graphical user interface toolkit
 written in ANSI C and licensed under public domain. It was designed as a simple
 embeddable user interface for application and does not have any dependencies,
-a default renderbackend or OS window and input handling but instead provides a very modular
+a default render backend or OS window and input handling but instead provides a very modular
 library approach by using simple input state for input and draw
 commands describing primitive shapes as output. So instead of providing a
 layered library that tries to abstract over a number of platform and
@@ -109,14 +109,14 @@ languages. Furthermore there are no guarantee that all bindings will always be k
 Developed by Micha Mettke and every direct or indirect contributor to the GitHub.
 
 
-Embeds `stb_texedit`, `stb_truetype` and `stb_rectpack` by Sean Barret (public domain)
+Embeds `stb_texedit`, `stb_truetype` and `stb_rectpack` by Sean Barrett (public domain)
 Embeds `ProggyClean.ttf` font by Tristan Grimmer (MIT license).
 
 
 Big thank you to Omar Cornut (ocornut@github) for his [imgui](https://github.com/ocornut/imgui) library and
 giving me the inspiration for this library, Casey Muratori for handmade hero
 and his original immediate mode graphical user interface idea and Sean
-Barret for his amazing single header [libraries](https://github.com/nothings/stb) which restored my faith
+Barrett for his amazing single header [libraries](https://github.com/nothings/stb) which restored my faith
 in libraries and brought me to create some of my own.
 
 ## License
