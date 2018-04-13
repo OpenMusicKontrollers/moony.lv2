@@ -1722,6 +1722,7 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 	lua_newtable(L);
 	{
 		SET_MAP(L, CANVAS__, graph);
+		SET_MAP(L, CANVAS__, aspectRatio);
 		SET_MAP(L, CANVAS__, body);
 		SET_MAP(L, CANVAS__, BeginPath);
 		SET_MAP(L, CANVAS__, ClosePath);
@@ -1730,6 +1731,7 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 		SET_MAP(L, CANVAS__, LineTo);
 		SET_MAP(L, CANVAS__, MoveTo);
 		SET_MAP(L, CANVAS__, Rectangle);
+		SET_MAP(L, CANVAS__, PolyLine);
 		SET_MAP(L, CANVAS__, Style);
 		SET_MAP(L, CANVAS__, LineWidth);
 		SET_MAP(L, CANVAS__, LineDash);

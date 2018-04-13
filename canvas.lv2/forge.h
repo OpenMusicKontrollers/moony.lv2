@@ -185,6 +185,13 @@ lv2_canvas_forge_rectangle(LV2_Atom_Forge *forge, LV2_Canvas_URID *urid,
 }
 
 static inline LV2_Atom_Forge_Ref
+lv2_canvas_forge_polyLine(LV2_Atom_Forge *forge, LV2_Canvas_URID *urid,
+	uint32_t n, const float *vec)
+{
+	return _lv2_canvas_forge_vec(forge, urid, urid->Canvas_PolyLine, n, vec);
+}
+
+static inline LV2_Atom_Forge_Ref
 lv2_canvas_forge_style(LV2_Atom_Forge *forge, LV2_Canvas_URID *urid,
 	uint32_t style)
 {

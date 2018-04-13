@@ -233,6 +233,7 @@ pre {
 								<li><a href="#forge-lineTo">LineTo</a></li>
 								<li><a href="#forge-moveTo">MoveTo</a></li>
 								<li><a href="#forge-rectangle">Rectangle</a></li>
+								<li><a href="#forge-polyLine">PolyLine</a></li>
 								<li><a href="#forge-style">Style</a></li>
 								<li><a href="#forge-lineWidth">LineWidth</a></li>
 								<li><a href="#forge-lineDash">LineDash</a></li>
@@ -2119,7 +2120,7 @@ end</code></pre>
 			<pre><code data-ref="forge-graph">-- Forge Graph
 
 function stash(forge)
-	for ctx in forge:time(0):graph():autopop() do
+	for ctx in forge:tuple():autopop() do
 		ctx:rectangle(0.1, 0.1, 0.8, 0.8):style(0xff000000):fill()
 	end
 end</code></pre>
@@ -2289,6 +2290,28 @@ end</code></pre>
 
 function stash(ctx)
 	ctx:rectangle(0.1, 0.1, 0.8, 0.8):fill()
+end</code></pre>
+				</div>
+
+				<!-- Forge PolyLine -->
+				<div class="api-section">
+				<h3 id="forge-polyLine">PolyLine</h3>
+				<p>Forge an atom object of type Canvas.PolyLine. Create polyline.</p>
+
+				<dl>
+					<dt class="func">forge:polyLine(x1, y1, ...)</dt>
+					<dt>x1 (number)</dt>
+						<dd>x coordinate of first point</dd>
+					<dt>y1 (number)</dt>
+						<dd>y coordinate of first poine</dd>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-polyLine">-- Forge PolyLine
+
+function stash(ctx)
+	ctx:beginPath():polyLine(0.1, 0.1, 0.9, 0.1, 0.5, 0.9):closePath():fill()
 end</code></pre>
 				</div>
 

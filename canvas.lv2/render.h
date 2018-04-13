@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-#define LV2_CANVAS_NUM_METHODS 24
+#define LV2_CANVAS_NUM_METHODS 25
 
 typedef struct _LV2_Canvas_Meth LV2_Canvas_Meth;
 typedef struct _LV2_Canvas LV2_Canvas;
@@ -46,15 +46,26 @@ struct _LV2_Canvas {
 };
 
 static inline const float *
-_lv2_canvas_render_get_float_vec(LV2_Canvas_URID *urid, const LV2_Atom *body, uint32_t N)
+_lv2_canvas_render_get_float_vecs(LV2_Canvas_URID *urid, const LV2_Atom *body,
+	uint32_t *n)
 {
 	const LV2_Atom_Vector *vec = (const LV2_Atom_Vector *)body;
 	const float *flt = LV2_ATOM_CONTENTS_CONST(LV2_Atom_Vector, vec);
-	const uint32_t n = (vec->atom.type == urid->forge.Vector)
+	*n = (vec->atom.type == urid->forge.Vector)
 		&& (vec->body.child_type == urid->forge.Float)
 		&& (vec->body.child_size == sizeof(float))
 		? (vec->atom.size - sizeof(LV2_Atom_Vector_Body)) / vec->body.child_size
 		: 0;
+
+	return flt;
+}
+
+static inline const float *
+_lv2_canvas_render_get_float_vec(LV2_Canvas_URID *urid, const LV2_Atom *body,
+	uint32_t n)
+{
+	uint32_t N;
+	const float *flt = _lv2_canvas_render_get_float_vecs(urid, body, &N);
 
 	return n == N ? flt : NULL;
 }
@@ -142,6 +153,27 @@ _lv2_canvas_render_rectangle(cairo_t *ctx,
 }
 
 static inline void
+_lv2_canvas_render_polyline(cairo_t *ctx,
+	LV2_Canvas_URID *urid, const LV2_Atom *body)
+{
+	uint32_t N;
+	const float *v = _lv2_canvas_render_get_float_vecs(urid, body, &N);
+
+	if(v)
+	{
+		for(uint32_t i = 0; i < 2; i += 2)
+		{
+			cairo_move_to(ctx, v[i], v[i+1]);
+		}
+
+		for(uint32_t i = 2; i < N; i += 2)
+		{
+			cairo_line_to(ctx, v[i], v[i+1]);
+		}
+	}
+}
+
+static inline void
 _lv2_canvas_render_style(cairo_t *ctx,
 	LV2_Canvas_URID *urid, const LV2_Atom *body)
 {
@@ -178,7 +210,7 @@ _lv2_canvas_render_lineDash(cairo_t *ctx,
 
 	if(v)
 	{
-		const double d[2] = {v[0], v[2]};
+		const double d[2] = {v[0], v[1]};
 		cairo_set_dash(ctx, d, 2, 0);
 	}
 }
@@ -419,6 +451,9 @@ lv2_canvas_init(LV2_Canvas *canvas, LV2_URID_Map *map)
 
 	canvas->methods[ptr].command = canvas->urid.Canvas_Rectangle;
 	canvas->methods[ptr++].func = _lv2_canvas_render_rectangle;
+
+	canvas->methods[ptr].command = canvas->urid.Canvas_PolyLine;
+	canvas->methods[ptr++].func = _lv2_canvas_render_polyline;
 
 	canvas->methods[ptr].command = canvas->urid.Canvas_Style;
 	canvas->methods[ptr++].func = _lv2_canvas_render_style;

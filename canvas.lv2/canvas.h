@@ -31,6 +31,7 @@ extern "C" {
 
 #define CANVAS__graph             CANVAS_PREFIX"graph"
 #define CANVAS__body              CANVAS_PREFIX"body"
+#define CANVAS__aspectRatio       CANVAS_PREFIX"aspectRatio"
 
 // Graph properties and attributes
 #define CANVAS__BeginPath         CANVAS_PREFIX"BeginPath"
@@ -40,6 +41,7 @@ extern "C" {
 #define CANVAS__LineTo            CANVAS_PREFIX"LineTo"
 #define CANVAS__MoveTo            CANVAS_PREFIX"MoveTo"
 #define CANVAS__Rectangle         CANVAS_PREFIX"Rectangle"
+#define CANVAS__PolyLine          CANVAS_PREFIX"PolyLine"
 #define CANVAS__Style             CANVAS_PREFIX"Style"
 #define CANVAS__LineWidth         CANVAS_PREFIX"LineWidth"
 #define CANVAS__LineDash          CANVAS_PREFIX"LineDash"
@@ -82,6 +84,7 @@ typedef struct _LV2_Canvas_URID LV2_Canvas_URID;
 struct _LV2_Canvas_URID  {
 	LV2_URID Canvas_graph;
 	LV2_URID Canvas_body;
+	LV2_URID Canvas_aspectRatio;
 
 	LV2_URID Canvas_BeginPath;
 	LV2_URID Canvas_ClosePath;
@@ -90,6 +93,7 @@ struct _LV2_Canvas_URID  {
 	LV2_URID Canvas_LineTo;
 	LV2_URID Canvas_MoveTo;
 	LV2_URID Canvas_Rectangle;
+	LV2_URID Canvas_PolyLine;
 	LV2_URID Canvas_Style;
 	LV2_URID Canvas_LineWidth;
 	LV2_URID Canvas_LineDash;
@@ -133,6 +137,7 @@ lv2_canvas_urid_init(LV2_Canvas_URID *urid, LV2_URID_Map *map)
 {
 	urid->Canvas_graph = map->map(map->handle, CANVAS__graph);
 	urid->Canvas_body = map->map(map->handle, CANVAS__body);
+	urid->Canvas_aspectRatio = map->map(map->handle, CANVAS__aspectRatio);
 
 	urid->Canvas_BeginPath = map->map(map->handle, CANVAS__BeginPath);
 	urid->Canvas_ClosePath = map->map(map->handle, CANVAS__ClosePath);
@@ -141,6 +146,7 @@ lv2_canvas_urid_init(LV2_Canvas_URID *urid, LV2_URID_Map *map)
 	urid->Canvas_LineTo = map->map(map->handle, CANVAS__LineTo);
 	urid->Canvas_MoveTo = map->map(map->handle, CANVAS__MoveTo);
 	urid->Canvas_Rectangle = map->map(map->handle, CANVAS__Rectangle);
+	urid->Canvas_PolyLine = map->map(map->handle, CANVAS__PolyLine);
 	urid->Canvas_Style = map->map(map->handle, CANVAS__Style);
 	urid->Canvas_LineWidth = map->map(map->handle, CANVAS__LineWidth);
 	urid->Canvas_LineDash = map->map(map->handle, CANVAS__LineDash);

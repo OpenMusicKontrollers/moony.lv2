@@ -689,6 +689,7 @@ local ui_lib = lib_const('Ui', {
 
 local canvas_lib = lib_const('Canvas', {
 	'graph',
+	'aspectRatio',
 	'body',
 	'BeginPath',
 	'ClosePath',
@@ -697,6 +698,7 @@ local canvas_lib = lib_const('Canvas', {
 	'LineTo',
 	'MoveTo',
 	'Rectangle',
+	'PolyLine',
 	'Style',
 	'LineWidth',
 	'LineDash',
@@ -799,7 +801,6 @@ local field_func = token(T.OPERATOR, S('.:')) * token(T.FUNCTION, word_match(ord
 	'pop',
 	'autopop',
 	-- moony canvas
-	'graph',
 	'beginPath',
 	'closePath',
 	'arc',
@@ -807,6 +808,7 @@ local field_func = token(T.OPERATOR, S('.:')) * token(T.FUNCTION, word_match(ord
 	'lineTo',
 	'moveTo',
 	'rectangle',
+	'polyLine',
 	'style',
 	'lineWidth',
 	'lineDash',

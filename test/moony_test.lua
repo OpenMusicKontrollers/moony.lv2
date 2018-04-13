@@ -2094,7 +2094,7 @@ do
 	local n = {0.125, 0.25, 0.375, 0.5, 0.625, 0.75}
 
 	local function producer(forge)
-		for ctx in forge:time(0):graph(subj, seqn):autopop() do
+		for ctx in forge:time(0):tuple():autopop() do
 			ctx:beginPath()
 			ctx:closePath()
 			ctx:arc(table.unpack(n, 1, 5))
@@ -2119,6 +2119,7 @@ do
 			ctx:reset()
 			ctx:fontSize(table.unpack(n, 1, 1))
 			ctx:fillText('hello')
+			ctx:polyLine(table.unpack(n, 1, 4))
 		end
 	end
 
@@ -2139,19 +2140,10 @@ do
 	local function consumer(seq)
 		assert(#seq == 1)
 
-		local set = seq[1]
-		assert(set.type == Atom.Object)
-		assert(set.otype == Patch.Set)
-		assert(#set == 4)
-
-		assert(set[Patch.subject].body == subj)
-		assert(set[Patch.sequenceNumber].body == seqn)
-		assert(set[Patch.property].body == Canvas.graph)
-
-		local graph = set[Patch.value]
+		local graph = seq[1]
 		assert(graph)
 		assert(graph.type == Atom.Tuple)
-		assert(#graph == 24)
+		assert(#graph == 25)
 
 		local beginPath = graph[1]
 		check_canvas_object(beginPath, Canvas.BeginPath)
@@ -2272,6 +2264,11 @@ do
 		body = itm[Canvas.body]
 		assert(body.type == Atom.String)
 		assert(body.body == 'hello')
+
+		itm = graph[25]
+		check_canvas_object(itm, Canvas.PolyLine)
+		body = itm[Canvas.body]
+		check_canvas_vector(body, 4)
 	end
 
 	test(producer, consumer)

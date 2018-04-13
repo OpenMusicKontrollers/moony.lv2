@@ -1470,51 +1470,6 @@ _lforge_insert(lua_State *L)
 }
 
 __realtime static int
-_lforge_canvas_graph(lua_State *L)
-{
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
-	lforge_t *lforge = lua_touserdata(L, 1);
-	const LV2_URID property = moony->canvas_urid.Canvas_graph;
-	const LV2_URID subject = luaL_optinteger(L, 2, 0);
-	const int32_t sequence_num = luaL_optinteger(L, 3, 0);
-	lforge_t *lframe = moony_newuserdata(L, moony, MOONY_UDATA_FORGE, lforge->lheader.cache);
-	lframe->depth = 2;
-	lframe->last.frames = lforge->last.frames;
-	lframe->forge = lforge->forge;
-
-	lua_pushvalue(L, 1); // lforge
-	lua_setuservalue(L, -2); // store parent as uservalue
-
-	if(!lv2_atom_forge_object(lforge->forge, &lframe->frame[0], 0, moony->uris.patch.set))
-		luaL_error(L, forge_buffer_overflow);
-
-	if(subject) // is optional
-	{
-		if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.subject))
-			luaL_error(L, forge_buffer_overflow);
-		if(!lv2_atom_forge_urid(lforge->forge, subject))
-			luaL_error(L, forge_buffer_overflow);
-	}
-
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.sequence))
-		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_int(lforge->forge, sequence_num))
-		luaL_error(L, forge_buffer_overflow);
-
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.property))
-		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_urid(lforge->forge, property))
-		luaL_error(L, forge_buffer_overflow);
-
-	if(!lv2_atom_forge_key(lforge->forge, moony->uris.patch.value))
-		luaL_error(L, forge_buffer_overflow);
-	if(!lv2_atom_forge_tuple(lforge->forge, &lframe->frame[1]))
-		luaL_error(L, forge_buffer_overflow);
-
-	return 1; // derived forge
-}
-
-__realtime static int
 _lforge_canvas_begin_path(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -1618,6 +1573,28 @@ _lforge_canvas_rectangle(lua_State *L)
 			luaL_checknumber(L, 3),
 			luaL_checknumber(L, 4),
 			luaL_checknumber(L, 5)) )
+		luaL_error(L, forge_buffer_overflow);
+
+	lua_settop(L, 1);
+	return 1;
+}
+
+__realtime static int
+_lforge_canvas_poly_line(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = lua_touserdata(L, 1);
+
+	const uint32_t nvec = lua_gettop(L) - 1;
+	float *vec = alloca(sizeof(float) * nvec); //FIXME add floats one at a time
+
+	//FIXME handle table as single argument
+	for(unsigned pos = 0; pos < nvec; pos++)
+	{
+		vec[pos] = luaL_checknumber(L, 2 + pos);
+	}
+
+	if(!lv2_canvas_forge_polyLine(lforge->forge, &moony->canvas_urid, nvec, vec) )
 		luaL_error(L, forge_buffer_overflow);
 
 	lua_settop(L, 1);
@@ -2109,7 +2086,6 @@ const luaL_Reg lforge_mt [] = {
 	{"insert", _lforge_insert},
 
 	// canvas
-	{"graph", _lforge_canvas_graph},
 	{"beginPath", _lforge_canvas_begin_path},
 	{"closePath", _lforge_canvas_close_path},
 	{"arc", _lforge_canvas_arc},
@@ -2117,6 +2093,7 @@ const luaL_Reg lforge_mt [] = {
 	{"lineTo", _lforge_canvas_line_to},
 	{"moveTo", _lforge_canvas_move_to},
 	{"rectangle", _lforge_canvas_rectangle},
+	{"polyLine", _lforge_canvas_poly_line},
 	{"style", _lforge_canvas_style},
 	{"lineWidth", _lforge_canvas_line_width},
 	{"lineDash", _lforge_canvas_line_dash},
