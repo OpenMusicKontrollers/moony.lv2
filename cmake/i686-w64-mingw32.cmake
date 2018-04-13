@@ -21,4 +21,4 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(LIBS ${LIBS} "-static-libgcc -lws2_32")
 set(LIBS_WEB ${LIBS_WEB} "-static-libgcc -lws2_32")
 
-set(WINE wine32)
+set(WINE wine)
