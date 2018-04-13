@@ -271,6 +271,26 @@ _lforge_basic_midi(lua_State *L, int pos, LV2_Atom_Forge *forge)
 	return _lforge_basic_bytes(L, pos, forge, moony->uris.midi_event);
 }
 
+__realtime static int
+_lforge_basic_atom(lua_State *L, int pos, LV2_Atom_Forge *forge, LV2_URID range)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	latom_t *latom = luaL_checkudata(L, pos, "latom");
+
+	if(latom->atom->type != range)
+	{
+		luaL_error(L, "%s: atom type mismatch", __func__);
+	}
+
+	if(  !lv2_atom_forge_atom(forge, latom->atom->size, latom->atom->type)
+		|| !lv2_atom_forge_write(forge, latom->body.raw, latom->atom->size) )
+	{
+		luaL_error(L, forge_buffer_overflow);
+	}
+
+	return 1;
+}
+
 __realtime static inline uint32_t
 _lforge_basic_vector_child_size(LV2_Atom_Forge *forge, LV2_URID child_type)
 {
@@ -356,7 +376,9 @@ _lforge_basic(lua_State *L, int pos, LV2_Atom_Forge *forge,
 	uint32_t child_size;
 
 	//FIXME binary lookup?
-	if(range == forge->Int)
+	if(luaL_testudata(L, pos, "latom"))
+		return _lforge_basic_atom(L, pos, forge, range);
+	else if(range == forge->Int)
 		return _lforge_basic_int(L, pos, forge);
 	else if(range == forge->Long)
 		return _lforge_basic_long(L, pos, forge);
