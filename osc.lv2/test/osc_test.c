@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <time.h>
 
 #include <osc.lv2/osc.h>
 #include <osc.lv2/reader.h>
@@ -9,7 +10,7 @@
 #include <osc.lv2/forge.h>
 #include <osc.lv2/stream.h>
 
-#define BUF_SIZE 8192
+#define BUF_SIZE 0x100000
 #define MAX_URIDS 512
 
 typedef void (*test_t)(LV2_OSC_Writer *writer);
@@ -588,12 +589,21 @@ static const LV2_OSC_Driver driv = {
 	.read_adv = _read_adv
 };
 
-#define COUNT 1024
+#define COUNT 128
+
+typedef struct _pair_t pair_t;
+
+struct _pair_t {
+	const char *server;
+	const char *client;
+	bool lossy;
+};
 
 static void *
 _thread_1(void *data)
 {
-	const char *uri = data;
+	const pair_t *pair = data;
+	const char *uri = pair->server;
 
 	LV2_OSC_Stream stream;
 	stash_t stash [2];
@@ -605,9 +615,11 @@ _thread_1(void *data)
 
 	assert(lv2_osc_stream_init(&stream, uri, &driv, stash) == 0);
 
+	time_t t0 = time(NULL);
 	unsigned count = 0;
 	while(true)
 	{
+		const time_t t1 = time(NULL);
 		const LV2_OSC_Enum ev = lv2_osc_stream_run(&stream);
 
 		if(ev & LV2_OSC_RECV)
@@ -648,10 +660,17 @@ _thread_1(void *data)
 
 				_stash_read_adv(&stash[0]);
 			}
+
+			t0 = t1;
 		}
 
 		if(count >= COUNT)
 		{
+			break;
+		}
+		else if(pair->lossy && (difftime(t1, t0) >= 1.0) )
+		{
+			fprintf(stderr, "%s: timeout: %i\n", __func__, count);
 			break;
 		}
 	}
@@ -660,19 +679,25 @@ _thread_1(void *data)
 	do
 	{
 		ev = lv2_osc_stream_run(&stream);
-	} while( (ev & LV2_OSC_SEND) || (stream.fd > 0) );
+	} while( (ev & LV2_OSC_SEND) || stream.connected );
 
-	sleep(1);
+	assert(pair->lossy || (count == COUNT) );
 
 	assert(lv2_osc_stream_deinit(&stream) == 0);
 
-	if(stash[0].rsvd)
+	free(stash[0].rsvd);
+	while(stash[0].size)
 	{
-		free(stash[0].rsvd);
-		stash[0].rsvd = NULL;
+		_stash_read_adv(&stash[0]);
 	}
+	free(stash[0].items);
 
-	assert(stash[1].rsvd == 0);
+	free(stash[1].rsvd);
+	while(stash[1].size)
+	{
+		_stash_read_adv(&stash[1]);
+	}
+	free(stash[1].items);
 
 	return NULL;
 }
@@ -680,7 +705,8 @@ _thread_1(void *data)
 static void *
 _thread_2(void *data)
 {
-	const char *uri = data;
+	const pair_t *pair = data;
+	const char *uri = pair->client;
 
 	LV2_OSC_Stream stream;
 	stash_t stash [2];
@@ -746,8 +772,10 @@ _thread_2(void *data)
 		}
 	}
 
-	while(count <= (COUNT - 1))
+	time_t t0 = time(NULL);
+	while(true)
 	{
+		const time_t t1 = time(NULL);
 		const LV2_OSC_Enum ev = lv2_osc_stream_run(&stream);
 
 		if(ev & LV2_OSC_RECV)
@@ -775,78 +803,97 @@ _thread_2(void *data)
 
 				_stash_read_adv(&stash[0]);
 			}
+
+			t0 = t1;
+		}
+
+		if(count >= COUNT)
+		{
+			break;
+		}
+		else if(pair->lossy && (difftime(t1, t0) >= 1.0) )
+		{
+			fprintf(stderr, "%s: timeout: %i\n", __func__, count);
+			break;
 		}
 	}
 
-	assert(count == COUNT);
-
-	sleep(1);
+	assert(pair->lossy || (count == COUNT) );
 
 	assert(lv2_osc_stream_deinit(&stream) == 0);
 
-	if(stash[0].rsvd)
+	free(stash[0].rsvd);
+	while(stash[0].size)
 	{
-		free(stash[0].rsvd);
-		stash[0].rsvd = NULL;
+		_stash_read_adv(&stash[0]);
 	}
+	free(stash[0].items);
 
-	assert(stash[1].rsvd == NULL);
+	free(stash[1].rsvd);
+	while(stash[1].size)
+	{
+		_stash_read_adv(&stash[1]);
+	}
+	free(stash[1].items);
 
 	return NULL;
 }
 
-typedef struct _pair_t pair_t;
-
-struct _pair_t {
-	const char *server;
-	const char *client;
-};
-
 static const pair_t pairs [] = {
 	{
 		.server = "osc.udp://:2222",
-		.client = "osc.udp://localhost:2222"
+		.client = "osc.udp://localhost:2222",
+		.lossy = true
 	},
 	{
 		.server = "osc.udp://[]:3333",
-		.client = "osc.udp://[::1]:3333"
+		.client = "osc.udp://[::1]:3333",
+		.lossy = true
 	},
 
 	{
 		.server = "osc.udp://:3344",
-		.client = "osc.udp://255.255.255.255:3344"
+		.client = "osc.udp://255.255.255.255:3344",
+		.lossy = true
 	},
 
 	{
 		.server = "osc.tcp://:4444",
-		.client = "osc.tcp://localhost:4444"
+		.client = "osc.tcp://localhost:4444",
+		.lossy = false
 	},
 	{
 		.server = "osc.tcp://[]:5555",
-		.client = "osc.tcp://[::1]:5555"
+		.client = "osc.tcp://[::1]:5555",
+		.lossy = false
 	},
 
 	{
 		.server = "osc.slip.tcp://:6666",
-		.client = "osc.slip.tcp://localhost:6666"
+		.client = "osc.slip.tcp://localhost:6666",
+		.lossy = false
 	},
 	{
 		.server = "osc.slip.tcp://[]:7777",
-		.client = "osc.slip.tcp://[::1]:7777"
+		.client = "osc.slip.tcp://[::1]:7777",
+		.lossy = false
 	},
 
 	{
 		.server = "osc.prefix.tcp://:8888",
-		.client = "osc.prefix.tcp://localhost:8888"
+		.client = "osc.prefix.tcp://localhost:8888",
+		.lossy = false
 	},
 	{
 		.server = "osc.prefix.tcp://[%lo]:9999",
-		.client = "osc.prefix.tcp://[::1%lo]:9999"
+		.client = "osc.prefix.tcp://[::1%lo]:9999",
+		.lossy = false
 	},
 
 	{
 		.server = NULL,
-		.client = NULL
+		.client = NULL,
+		.lossy = false
 	}
 };
 
@@ -864,13 +911,11 @@ main(int argc, char **argv)
 		pthread_t thread_1;
 		pthread_t thread_2;
 
-		const char *uri_1 = pair->server;
-		const char *uri_2 = pair->client;
+		fprintf(stdout, "running stream test: <%s> <%s> %i\n",
+			pair->server, pair->client, pair->lossy);
 
-		fprintf(stdout, "running stream test: <%s> <%s>\n", uri_1, uri_2);
-
-		assert(pthread_create(&thread_1, NULL, _thread_1, (void *)uri_1) == 0);
-		assert(pthread_create(&thread_2, NULL, _thread_2, (void *)uri_2) == 0);
+		assert(pthread_create(&thread_1, NULL, _thread_1, (void *)pair) == 0);
+		assert(pthread_create(&thread_2, NULL, _thread_2, (void *)pair) == 0);
 
 		assert(pthread_join(thread_1, NULL) == 0);
 		assert(pthread_join(thread_2, NULL) == 0);
