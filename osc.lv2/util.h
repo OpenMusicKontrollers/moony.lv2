@@ -32,6 +32,10 @@
 extern "C" {
 #endif
 
+#ifndef __unused
+#	define __unused __attribute__((unused))
+#endif
+
 #undef LV2_ATOM_TUPLE_FOREACH // there is a bug in LV2 1.10.0
 #define LV2_ATOM_TUPLE_FOREACH(tuple, iter) \
 	for (LV2_Atom* (iter) = lv2_atom_tuple_begin(tuple); \
@@ -203,7 +207,8 @@ lv2_osc_argument_type(LV2_OSC_URID *osc_urid, const LV2_Atom *atom)
 }
 
 static inline const LV2_Atom *
-lv2_osc_int32_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, int32_t *i)
+lv2_osc_int32_get(LV2_OSC_URID *osc_urid __unused, const LV2_Atom *atom,
+	int32_t *i)
 {
 	assert(i);
 	*i = ((const LV2_Atom_Int *)atom)->body;
@@ -212,7 +217,8 @@ lv2_osc_int32_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, int32_t *i)
 }
 
 static inline const LV2_Atom *
-lv2_osc_float_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, float *f)
+lv2_osc_float_get(LV2_OSC_URID *osc_urid __unused, const LV2_Atom *atom,
+	float *f)
 {
 	assert(f);
 	*f = ((const LV2_Atom_Float *)atom)->body;
@@ -221,7 +227,8 @@ lv2_osc_float_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, float *f)
 }
 
 static inline const LV2_Atom *
-lv2_osc_string_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, const char **s)
+lv2_osc_string_get(LV2_OSC_URID *osc_urid __unused, const LV2_Atom *atom,
+	const char **s)
 {
 	assert(s);
 	*s = LV2_ATOM_BODY_CONST(atom);
@@ -230,8 +237,8 @@ lv2_osc_string_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, const char **s)
 }
 
 static inline const LV2_Atom *
-lv2_osc_blob_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, uint32_t *size,
-	const uint8_t **b)
+lv2_osc_blob_get(LV2_OSC_URID *osc_urid __unused, const LV2_Atom *atom,
+	uint32_t *size, const uint8_t **b)
 {
 	assert(size && b);
 	*size = atom->size;
@@ -241,7 +248,8 @@ lv2_osc_blob_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, uint32_t *size,
 }
 
 static inline const LV2_Atom *
-lv2_osc_int64_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, int64_t *h)
+lv2_osc_int64_get(LV2_OSC_URID *osc_urid __unused, const LV2_Atom *atom,
+	int64_t *h)
 {
 	assert(h);
 	*h = ((const LV2_Atom_Long *)atom)->body;
@@ -250,7 +258,8 @@ lv2_osc_int64_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, int64_t *h)
 }
 
 static inline const LV2_Atom *
-lv2_osc_double_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, double *d)
+lv2_osc_double_get(LV2_OSC_URID *osc_urid __unused, const LV2_Atom *atom,
+	double *d)
 {
 	assert(d);
 	*d = ((const LV2_Atom_Double *)atom)->body;
@@ -289,31 +298,32 @@ lv2_osc_timetag_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom,
 }
 
 static inline const LV2_Atom *
-lv2_osc_true_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom)
+lv2_osc_true_get(LV2_OSC_URID *osc_urid __unused, const LV2_Atom *atom)
 {
 	return lv2_atom_tuple_next(atom);
 }
 
 static inline const LV2_Atom *
-lv2_osc_false_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom)
+lv2_osc_false_get(LV2_OSC_URID *osc_urid __unused, const LV2_Atom *atom)
 {
 	return lv2_atom_tuple_next(atom);
 }
 
 static inline const LV2_Atom *
-lv2_osc_nil_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom)
+lv2_osc_nil_get(LV2_OSC_URID *osc_urid __unused, const LV2_Atom *atom)
 {
 	return lv2_atom_tuple_next(atom);
 }
 
 static inline const LV2_Atom *
-lv2_osc_impulse_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom)
+lv2_osc_impulse_get(LV2_OSC_URID *osc_urid __unused, const LV2_Atom *atom)
 {
 	return lv2_atom_tuple_next(atom);
 }
 
 static inline const LV2_Atom *
-lv2_osc_symbol_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, LV2_URID *S)
+lv2_osc_symbol_get(LV2_OSC_URID *osc_urid __unused, const LV2_Atom *atom,
+	LV2_URID *S)
 {
 	assert(S);
 	*S = ((const LV2_Atom_URID *)atom)->body;
@@ -322,8 +332,8 @@ lv2_osc_symbol_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, LV2_URID *S)
 }
 
 static inline const LV2_Atom *
-lv2_osc_midi_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, uint32_t *size,
-	const uint8_t **m)
+lv2_osc_midi_get(LV2_OSC_URID *osc_urid __unused, const LV2_Atom *atom,
+	uint32_t *size, const uint8_t **m)
 {
 	assert(size && m);
 	*size = atom->size;
@@ -333,7 +343,7 @@ lv2_osc_midi_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, uint32_t *size,
 }
 
 static inline const LV2_Atom *
-lv2_osc_char_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, char *c)
+lv2_osc_char_get(LV2_OSC_URID *osc_urid __unused, const LV2_Atom *atom, char *c)
 {
 	assert(c);
 	const char *str = LV2_ATOM_CONTENTS_CONST(LV2_Atom_Literal, atom);
@@ -343,7 +353,7 @@ lv2_osc_char_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom, char *c)
 }
 
 static inline const LV2_Atom *
-lv2_osc_rgba_get(LV2_OSC_URID *osc_urid, const LV2_Atom *atom,
+lv2_osc_rgba_get(LV2_OSC_URID *osc_urid __unused, const LV2_Atom *atom,
 	uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a)
 {
 	assert(r && g && b && a);
