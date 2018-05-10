@@ -1746,6 +1746,7 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 		SET_MAP(L, CANVAS__, Translate);
 		SET_MAP(L, CANVAS__, Scale);
 		SET_MAP(L, CANVAS__, Rotate);
+		SET_MAP(L, CANVAS__, Transform);
 		SET_MAP(L, CANVAS__, Reset);
 		SET_MAP(L, CANVAS__, FontSize);
 		SET_MAP(L, CANVAS__, FillText);

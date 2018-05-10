@@ -2120,6 +2120,7 @@ do
 			ctx:fontSize(table.unpack(n, 1, 1))
 			ctx:fillText('hello')
 			ctx:polyLine(table.unpack(n, 1, 4))
+			ctx:transform(table.unpack(n, 1, 6))
 		end
 	end
 
@@ -2143,7 +2144,7 @@ do
 		local graph = seq[1]
 		assert(graph)
 		assert(graph.type == Atom.Tuple)
-		assert(#graph == 25)
+		assert(#graph == 26)
 
 		local beginPath = graph[1]
 		check_canvas_object(beginPath, Canvas.BeginPath)
@@ -2269,6 +2270,11 @@ do
 		check_canvas_object(itm, Canvas.PolyLine)
 		body = itm[Canvas.body]
 		check_canvas_vector(body, 4)
+
+		itm = graph[26]
+		check_canvas_object(itm, Canvas.Transform)
+		body = itm[Canvas.body]
+		check_canvas_vector(body, 6)
 	end
 
 	test(producer, consumer)

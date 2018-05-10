@@ -248,6 +248,7 @@ pre {
 								<li><a href="#forge-translate">Translate</a></li>
 								<li><a href="#forge-scale">Scale</a></li>
 								<li><a href="#forge-rotate">Rotate</a></li>
+								<li><a href="#forge-transform">Transform</a></li>
 								<li><a href="#forge-reset">Reset</a></li>
 								<li><a href="#forge-fontSize">FontSize</a></li>
 								<li><a href="#forge-fillText">FillText</a></li>
@@ -2627,6 +2628,38 @@ end</code></pre>
 
 function stash(ctx)
 	ctx:save():translate(0.4, 0.4):rotate(math.pi/4) -- rotate by 45 degrees
+	ctx:rectangle(-0.1, -0.1, 0.2, 0.2):fill()
+	ctx:restore()
+end</code></pre>
+				</div>
+
+				<!-- Forge Transform -->
+				<div class="api-section">
+				<h3 id="forge-transform">Transform</h3>
+				<p>Forge an atom object of type Canvas.Transform. Set current render matrix.</p>
+
+				<dl>
+					<dt class="func">forge:transform(a)</dt>
+					<dt>xx (number)</dt>
+						<dd>multiplier for x in: x' = xx*x + xy*y + x0</dd>
+					<dt>xy (number)</dt>
+						<dd>multiplier for y in: x' = xx*x + xy*y + x0</dd>
+					<dt>x0 (number)</dt>
+						<dd>constant in: x' = xx*x + xy*y + x0</dd>
+					<dt>yx (number)</dt>
+						<dd>multiplier for y in: y' = yy*y + yx*x + y0</dd>
+					<dt>yx (number)</dt>
+						<dd>multiplier for x in: y' = yy*y + yx*x + y0</dd>
+					<dt>y0 (number)</dt>
+						<dd>constant in: y' = yy*y + yx*x + y0</dd>
+					<dt class="ret">(userdata)</dt>
+						<dd>self forge object</dd>
+				</dl>
+
+				<pre><code data-ref="forge-transform">-- Forge Transform
+
+function stash(ctx)
+	ctx:save():transform(-1.0, 0.0, 1.0, 1.0, 0.0, 0.0) -- mirror on x-asix
 	ctx:rectangle(-0.1, -0.1, 0.2, 0.2):fill()
 	ctx:restore()
 end</code></pre>

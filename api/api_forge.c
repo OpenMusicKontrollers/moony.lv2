@@ -1796,6 +1796,25 @@ _lforge_canvas_rotate(lua_State *L)
 }
 
 __realtime static int
+_lforge_canvas_transform(lua_State *L)
+{
+	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
+	lforge_t *lforge = lua_touserdata(L, 1);
+
+	if(!lv2_canvas_forge_transform(lforge->forge, &moony->canvas_urid,
+			luaL_checknumber(L, 2),
+			luaL_checknumber(L, 3),
+			luaL_checknumber(L, 4),
+			luaL_checknumber(L, 5),
+			luaL_checknumber(L, 6),
+			luaL_checknumber(L, 7)) )
+		luaL_error(L, forge_buffer_overflow);
+
+	lua_settop(L, 1);
+	return 1;
+}
+
+__realtime static int
 _lforge_canvas_reset(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
@@ -2108,6 +2127,7 @@ const luaL_Reg lforge_mt [] = {
 	{"translate", _lforge_canvas_translate},
 	{"scale", _lforge_canvas_scale},
 	{"rotate", _lforge_canvas_rotate},
+	{"transform", _lforge_canvas_transform},
 	{"reset", _lforge_canvas_reset},
 	{"fontSize", _lforge_canvas_font_size},
 	{"fillText", _lforge_canvas_fill_text},
