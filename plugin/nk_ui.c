@@ -308,6 +308,8 @@ static const char *default_script =
 static void
 _patch_set_code(plughandle_t *handle, uint32_t size, const char *body, bool user);
 
+static bool
+_checkbox(struct nk_context *ctx, int32_t *state);
 
 #define URN_UUID_SIZE 49
 //tools.ietf.org/html/rfc4122 version 4
@@ -666,12 +668,17 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, float dy,
 
 			nk_spacing(ctx, 1);
 
-			if(nk_checkbox_label(ctx, "Show hidden", &browser->return_hidden))
+			const float ratio2 [2] = {0.2, 0.8};
+			nk_layout_row(ctx, NK_DYNAMIC, dy, 2, ratio2);
+			if(_checkbox(ctx, &browser->return_hidden))
 				file_browser_reload_directory_content(browser, browser->directory);
+			nk_label(ctx, "Show hidden", NK_TEXT_LEFT);
 
-			if(nk_checkbox_label(ctx, "Show *.lua only", &browser->return_lua_only))
+			if(_checkbox(ctx, &browser->return_lua_only))
 				file_browser_reload_directory_content(browser, browser->directory);
+			nk_label(ctx, "Show *.lua only", NK_TEXT_LEFT);
 
+			nk_layout_row_dynamic(ctx, dy, 1);
 			// change directory
 			if( (browser->selected >= 0) && (browser->selected < (ssize_t)browser->dir_count) )
 			{
@@ -1147,6 +1154,24 @@ _dial_bool(struct nk_context *ctx, int32_t *val, struct nk_color color, bool edi
 	}
 
 	return tmp != *val;
+}
+
+static int32_t
+_check(struct nk_context *ctx, int32_t state)
+{
+	_dial_bool(ctx, &state, nk_rgb(0xff, 0xff, 0xff), true);
+
+	return state;
+}
+
+static bool
+_checkbox(struct nk_context *ctx, int32_t *state)
+{
+	const int32_t old = *state;
+
+	_dial_bool(ctx, state, nk_rgb(0xff, 0xff, 0xff), true);
+
+	return old != *state;
 }
 
 static float
@@ -2334,7 +2359,8 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 						nk_list_view_end(&lview);
 					}
 
-					nk_layout_row_dynamic(ctx, dy, 3);
+					const float footer [5] = {0.3, 0.1, 0.25, 0.1, 0.25};
+					nk_layout_row(ctx, NK_DYNAMIC, dy, 5, footer);
 					if(_tooltip_visible(ctx))
 						nk_tooltip(ctx, "Ctrl-D");
 					nk_style_push_style_item(ctx, &ctx->style.button.normal, has_control_d
@@ -2345,14 +2371,16 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 					nk_style_pop_style_item(ctx);
 
 					const int log_follow = handle->log_follow;
-					handle->log_follow = nk_check_label(ctx, "Follow", handle->log_follow);
+					handle->log_follow = _check(ctx, handle->log_follow);
 					if(log_follow != handle->log_follow)
 						_patch_set(handle, handle->moony_logFollow, sizeof(int32_t), handle->forge.Bool, &handle->log_follow);
+					nk_label(ctx, "Follow", NK_TEXT_LEFT);
 
 					const int log_reset = handle->log_reset;
-					handle->log_reset = nk_check_label(ctx, "Reset", handle->log_reset);
+					handle->log_reset = _check(ctx, handle->log_reset);
 					if(log_reset != handle->log_reset)
 						_patch_set(handle, handle->moony_logReset, sizeof(int32_t), handle->forge.Bool, &handle->log_reset);
+					nk_label(ctx, "Reset", NK_TEXT_LEFT);
 
 					nk_group_end(ctx);
 				}
