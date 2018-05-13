@@ -267,7 +267,6 @@ local table_lib = table_lib_func
 local math_lib = lib_mixed('math', {
 	'exp',
 	'type',
-	'randomseed',
 	'deg',
 	'atan',
 	'cos',
@@ -281,7 +280,6 @@ local math_lib = lib_mixed('math', {
 	'tan',
 	'min',
 	'sqrt',
-	'random',
 	'tointeger',
 	'max',
 	'acos',
@@ -823,6 +821,7 @@ local field_func = token(T.OPERATOR, S('.:')) * token(T.FUNCTION, word_match(ord
 	'translate',
 	'scale',
 	'rotate',
+	'transform',
 	'reset',
 	'fontSize',
 	'fillText',
