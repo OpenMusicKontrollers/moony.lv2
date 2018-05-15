@@ -76,7 +76,7 @@ static const size_t moony_sz [MOONY_UDATA_COUNT] = {
 static atomic_long voice_uuid = ATOMIC_VAR_INIT(INT64_MAX / UINT16_MAX * 2LL);
 
 __realtime static int64_t
-_voice_map_new_uuid(void *handle)
+_voice_map_new_uuid(void *handle, uint32_t flag __attribute__((unused)))
 {
 	atomic_long *uuid = handle;
 	return atomic_fetch_add_explicit(uuid, 1, memory_order_relaxed);
@@ -216,7 +216,7 @@ _lvoice_map(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 
-	lua_pushinteger(L, moony->voice_map->new_uuid(moony->voice_map->handle));
+	lua_pushinteger(L, moony->voice_map->new_uuid(moony->voice_map->handle, 0));
 	return 1;
 }
 
