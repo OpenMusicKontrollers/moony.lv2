@@ -22,7 +22,7 @@
 # Orbit Looper
 timely:test
 	a lv2:Plugin ;
-	lv2:minorVersion @TIMELY_MINOR_VERSION@ ;
-	lv2:microVersion @TIMELY_MICRO_VERSION@ ;
-	lv2:binary <timely@CMAKE_SHARED_MODULE_SUFFIX@> ;
+	lv2:minorVersion @MINOR_VERSION@ ;
+	lv2:microVersion @MICRO_VERSION@ ;
+	lv2:binary <timely@MODULE_SUFFIX@> ;
 	rdfs:seeAlso <timely.ttl> .
