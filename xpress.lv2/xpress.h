@@ -23,6 +23,7 @@ extern "C" {
 #endif
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <time.h>
 
 #include <lv2/lv2plug.in/ns/lv2core/lv2.h>
