@@ -22,7 +22,7 @@
 # Orbit Looper
 xpress:test
 	a lv2:Plugin ;
-	lv2:minorVersion @XPRESS_MINOR_VERSION@ ;
-	lv2:microVersion @XPRESS_MICRO_VERSION@ ;
-	lv2:binary <xpress@LIB_EXT@> ;
+	lv2:minorVersion @MINOR_VERSION@ ;
+	lv2:microVersion @MICRO_VERSION@ ;
+	lv2:binary <xpress@MODULE_SUFFIX@> ;
 	rdfs:seeAlso <xpress.ttl> .
