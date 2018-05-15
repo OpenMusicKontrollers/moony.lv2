@@ -195,11 +195,14 @@ extern C {
 #define NK_COS cosf
 #define NK_SQRT sqrtf
 
-#	define NK_IMPLEMENTATION
-#	include "nuklear/nuklear.h"
+#define NK_IMPLEMENTATION
+#include "nuklear/nuklear.h"
 
-#	define STB_IMAGE_IMPLEMENTATION
-#	include "nuklear/example/stb_image.h"
+#define STB_IMAGE_IMPLEMENTATION
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmisleading-indentation"
+#include "nuklear/example/stb_image.h"
+#pragma GCC diagnostic pop
 
 typedef struct _nk_pugl_vertex_t nk_pugl_vertex_t;
 
@@ -440,6 +443,11 @@ _nk_pugl_font_init(nk_pugl_window_t *win)
 
 	if(ttf)
 		nk_style_set_font(&win->ctx, &ttf->handle);
+
+	// to please compiler
+	(void)nk_cos;
+	(void)nk_sin;
+	(void)nk_sqrt;
 }
 
 static void
@@ -1196,8 +1204,6 @@ nk_pugl_process_events(nk_pugl_window_t *win)
 {
 	if(!win->view)
 		return 1; // quit
-
-	struct nk_context *ctx = &win->ctx;
 
 	PuglStatus stat = puglProcessEvents(win->view);
 	(void)stat;
