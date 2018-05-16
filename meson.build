@@ -168,6 +168,9 @@ dsp_srcs = [
 	join_paths('plugin', 'caxca.c'),
 	join_paths('plugin', 'cxc.c')]
 
+app_srcs = [
+	join_paths('test', 'moony_test.c')]
+
 ui_srcs = [
 	join_paths('plugin', 'moony_ui.c'),
 	join_paths('plugin', 'simple_ui.c'),
@@ -213,6 +216,14 @@ ui = shared_module('moony_ui', ui_srcs,
 	install : true,
 	install_dir : inst_dir)
 
+app = executable('moony_test', app_srcs,
+	c_args : c_args,
+	include_directories : inc_dir,
+	name_prefix : '',
+	dependencies : dsp_deps,
+	link_with : dsp_links,
+	install : false)
+
 suffix = mod.full_path().strip().split('.')[-1]
 conf_data.set('MODULE_SUFFIX', '.' + suffix)
 
@@ -254,13 +265,13 @@ custom_target('font',
 	install : true,
 	install_dir : inst_dir)
 
-custom_target('lexer_lua',
+lexer_lua = custom_target('lexer_lua',
 	input : join_paths('plugin', 'lexer.lua'),
 	output : 'lexer.lua',
 	command : clone,
 	install : true,
 	install_dir : inst_dir)
-custom_target('moony_lua',
+moony_lua = custom_target('moony_lua',
 	input : join_paths('plugin', 'moony.lua'),
 	output : 'moony.lua',
 	command : clone,
@@ -387,3 +398,59 @@ custom_target('omk_logo_256x256_png',
 	command : clone,
 	install : true,
 	install_dir : inst_dir)
+custom_target('moony_logo_png',
+	input : join_paths('logo', 'moony_logo.png'),
+	output : 'moony_logo.png',
+	command : clone,
+	install : true,
+	install_dir : inst_dir)
+
+moony_test_lua = custom_target('moony_test_lua',
+	input : join_paths('test', 'moony_test.lua'),
+	output : 'moony_test.lua',
+	command : clone,
+	install : false)
+moony_overflow_lua = custom_target('moony_overflow_lua',
+	input : join_paths('test', 'moony_overflow.lua'),
+	output : 'moony_overflow.lua',
+	command : clone,
+	install : false)
+moony_manual_lua = custom_target('moony_manual_lua',
+	input : join_paths('test', 'moony_manual.lua'),
+	output : 'moony_manual.lua',
+	command : clone,
+	install : false)
+moony_presets_lua = custom_target('moony_presets_lua',
+	input : join_paths('test', 'moony_presets.lua'),
+	output : 'moony_presets.lua',
+	command : clone,
+	install : false)
+
+manual_html_in = custom_target('manual_html_in',
+	input : join_paths('manual', 'manual.html.in'),
+	output : 'manual.html.in',
+	command : clone,
+	install : false)
+hilight_lua = custom_target('hilight_lua',
+	input : join_paths('manual', 'hilight.lua'),
+	output : 'hilight.lua',
+	command : clone,
+	install : false)
+
+custom_target('manual_html',
+	input : hilight_lua,
+	output : 'manual.html',
+	capture : true,
+	command : [app, '@INPUT@'],
+	depends : [lexer_lua, moony_lua, manual_html_in],
+	install : true,
+	install_dir : inst_dir)
+
+test('API', app,
+	args : [moony_test_lua])
+test('Overflow', app,
+	args : [moony_overflow_lua, '0'])
+test('Manual', app,
+	args : [moony_manual_lua])
+test('Presets', app,
+	args : [moony_presets_lua])
