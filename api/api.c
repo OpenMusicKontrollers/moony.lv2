@@ -73,12 +73,12 @@ static const size_t moony_sz [MOONY_UDATA_COUNT] = {
 	[MOONY_UDATA_STASH]	= sizeof(lstash_t)
 };
 
-static atomic_long voice_uuid = ATOMIC_VAR_INIT(INT64_MAX / UINT16_MAX * 2LL);
+static atomic_uint voice_uuid = ATOMIC_VAR_INIT(UINT32_MAX / UINT16_MAX * 2L);
 
-__realtime static int64_t
+__realtime static uint32_t
 _voice_map_new_uuid(void *handle, uint32_t flag __attribute__((unused)))
 {
-	atomic_long *uuid = handle;
+	atomic_uint *uuid = handle;
 	return atomic_fetch_add_explicit(uuid, 1, memory_order_relaxed);
 }
 
@@ -831,6 +831,8 @@ _state_restore(LV2_Handle instance,
 		if(!strcmp(features[i]->URI, LV2_WORKER__schedule))
 			work_sched = features[i]->data;
 	}
+
+	(void)work_sched; //FIXME
 
 	size_t size;
 	uint32_t type;

@@ -36,21 +36,18 @@ Get more information at: [http://open-music-kontrollers.ch/lv2/moony](http://ope
 
 ### Build / install
 
-	git clone https://gitlab.com/OpenMusicKontrollers/moony.lv2.git
+	git clone https://git.open-music-kontrollers.ch/lv2//moony.lv2
 	cd moony.lv2
-	mkdir build
+	meson build
 	cd build
-	cmake -DCMAKE_BUILD_TYPE="Release" ..
-	make
-	sudo make install
+	ninja -j4
+	sudo ninja install
 
-If you want to run the unit test, do instead:
+If you want to run the unit tests:
 	
 	.
 	.
-	cmake -DCMAKE_BUILD_TYPE="Debug" -DBUILD_TESTING=1 ..
-	make
-	ARGS="-VV" make test
+	ninja test
 	.
 	.
 
