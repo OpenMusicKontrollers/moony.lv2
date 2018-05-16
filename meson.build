@@ -2,7 +2,7 @@ project('moony.lv2', 'c', default_options : [
 	'buildtype=release',
 	'warning_level=1',
 	'werror=false',
-	'b_lto=true',
+	'b_lto=false',
 	'c_std=c11'])
 
 cc = meson.get_compiler('c')
@@ -156,6 +156,7 @@ api_lib = static_library('api',
 	join_paths('api', 'api_time.c'),
 	join_paths('api', 'api_vm.c'),
 	include_directories : inc_dir,
+	dependencies : dsp_deps,
 	c_args : c_args)
 
 dsp_links = [laes128_lib, lascii85_lib, lbase64_lib, lcomplex_lib, lmathx_lib, lrandom_lib, lpeg_lib, lua_lib, tlsf_lib, api_lib]
@@ -437,20 +438,22 @@ hilight_lua = custom_target('hilight_lua',
 	command : clone,
 	install : false)
 
-custom_target('manual_html',
-	input : hilight_lua,
-	output : 'manual.html',
-	capture : true,
-	command : [app, '@INPUT@'],
-	depends : [lexer_lua, moony_lua, manual_html_in],
-	install : true,
-	install_dir : inst_dir)
+if host_machine.system() != 'darwin'
+	custom_target('manual_html',
+		input : hilight_lua,
+		output : 'manual.html',
+		capture : true,
+		command : [app, '@INPUT@'],
+		depends : [lexer_lua, moony_lua, manual_html_in],
+		install : true,
+		install_dir : inst_dir)
 
-test('API', app,
-	args : [moony_test_lua])
-test('Overflow', app,
-	args : [moony_overflow_lua, '0'])
-test('Manual', app,
-	args : [moony_manual_lua])
-test('Presets', app,
-	args : [moony_presets_lua])
+	test('API', app,
+		args : [moony_test_lua])
+	test('Overflow', app,
+		args : [moony_overflow_lua, '0'])
+	test('Manual', app,
+		args : [moony_manual_lua])
+	test('Presets', app,
+		args : [moony_presets_lua])
+endif

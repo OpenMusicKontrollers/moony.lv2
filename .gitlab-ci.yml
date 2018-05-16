@@ -1,12 +1,13 @@
 stages:
   - build
+  - test
   - deploy
 
 .variables_template: &variables_definition
   variables:
     BASE_NAME: "moony.lv2"
     PKG_CONFIG_PATH: "/opt/lv2/lib/pkgconfig:/opt/${CI_BUILD_NAME}/lib/pkgconfig:/usr/lib/${CI_BUILD_NAME}/pkgconfig"
-    TOOLCHAIN_FILE: "${CI_PROJECT_DIR}/cmake/${CI_BUILD_NAME}.cmake"
+    TOOLCHAIN_FILE: "meson/${CI_BUILD_NAME}"
 
 .common_template: &common_definition
   <<: *variables_definition
@@ -19,23 +20,21 @@ stages:
 .build_template: &build_definition
   <<: *common_definition
   script:
-    - mkdir build
-    - pushd build
-    - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=0 -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR} -DPLUGIN_DEST="${BASE_NAME}-$(cat ../VERSION)/${CI_BUILD_NAME}/${BASE_NAME}" -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FILE} ..
-    - cmake .. # needed for darwin
-    - make
-    - make install
+    - meson --prefix="/opt/${CI_BUILD_NAME}" --libdir="lib" --cross-file "${TOOLCHAIN_FILE}" build
+    - ninja -C build
+    - ninja -C build install
+    - mkdir -p "${BASE_NAME}-$(cat VERSION)/${CI_BUILD_NAME}/${BASE_NAME}"
+    - cp -r "/opt/${CI_BUILD_NAME}/lib/lv2/${BASE_NAME}/" "${BASE_NAME}-$(cat VERSION)/${CI_BUILD_NAME}/"
 
 .test_template: &test_definition
   <<: *common_definition
   script:
-    - mkdir build
-    - pushd build
-    - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=1 -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR} -DPLUGIN_DEST="${BASE_NAME}-$(cat ../VERSION)/${CI_BUILD_NAME}/${BASE_NAME}" -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FILE} ..
-    - cmake .. # needed for darwin
-    - make
-    - make install
-    - ARGS='-VV' make test
+    - meson --prefix="/opt/${CI_BUILD_NAME}" --libdir="lib" --cross-file "${TOOLCHAIN_FILE}" build
+    - ninja -C build
+    - ninja -C build install
+    - mkdir -p "${BASE_NAME}-$(cat VERSION)/${CI_BUILD_NAME}/${BASE_NAME}"
+    - cp -r "/opt/${CI_BUILD_NAME}/lib/lv2/${BASE_NAME}/" "${BASE_NAME}-$(cat VERSION)/${CI_BUILD_NAME}/"
+    - ninja -C build test
 
 .universal_linux_template: &universal_linux_definition
   image: ventosus/universal-linux-gnu
