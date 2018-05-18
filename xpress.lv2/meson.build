@@ -1,7 +1,7 @@
 project('xpress.lv2', 'c', default_options : [
 	'buildtype=release',
-	'warning_level=1',
-	'werror=false',
+	'warning_level=3',
+	'werror=true',
 	'b_lto=true',
 	'c_std=c11'])
 
@@ -13,8 +13,8 @@ cc = meson.get_compiler('c')
 cp = find_program('cp')
 clone = [cp, '@INPUT@', '@OUTPUT@']
 
-m_dep = cc.find_library('m')
 lv2_dep = dependency('lv2', version : '>=1.14.0')
+deps = [lv2_dep]
 
 inc_dir = []
 
@@ -25,11 +25,16 @@ dsp_srcs = [join_paths('test', 'xpress.c')]
 c_args = ['-fvisibility=hidden',
 	'-ffast-math']
 
+if host_machine.system() == 'linux'
+	rt_dep = cc.find_library('rt')
+	deps += rt_dep
+endif
+
 mod = shared_module('xpress', dsp_srcs,
 	c_args : c_args,
 	include_directories : inc_dir,
 	name_prefix : '',
-	dependencies : [m_dep, lv2_dep],
+	dependencies : deps,
 	install : true,
 	install_dir : inst_dir)
 

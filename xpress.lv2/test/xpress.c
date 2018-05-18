@@ -37,7 +37,7 @@ struct _targetI_t {
 };
 
 struct _targetO_t {
-	// empty
+	uint8_t dummy;
 };
 
 struct _plughandle_t {
@@ -54,21 +54,6 @@ struct _plughandle_t {
 	XPRESS_T(xpressO, MAX_NVOICES);
 	targetI_t targetI [MAX_NVOICES];
 	targetO_t targetO [MAX_NVOICES];
-};
-
-static atomic_uint voice_uuid = ATOMIC_VAR_INIT(0);
-
-static xpress_uuid_t
-_voice_map_new_uuid(void *handle, uint32_t flag)
-{
-	(void)flag;
-	atomic_uint *uuid = handle;
-	return atomic_fetch_add_explicit(uuid, 1, memory_order_relaxed);
-}
-
-static xpress_map_t voice_map_fallback = {
-	.handle = &voice_uuid,
-	.new_uuid = _voice_map_new_uuid
 };
 
 static void
@@ -155,8 +140,10 @@ static const xpress_iface_t ifaceO = {
 };
 
 static LV2_Handle
-instantiate(const LV2_Descriptor* descriptor, double rate,
-	const char *bundle_path, const LV2_Feature *const *features)
+instantiate(const LV2_Descriptor* descriptor,
+	double rate __attribute__((unused)),
+	const char *bundle_path __attribute__((unused)),
+	const LV2_Feature *const *features)
 {
 	plughandle_t *handle = calloc(1, sizeof(plughandle_t));
 	if(!handle)
@@ -188,8 +175,6 @@ instantiate(const LV2_Descriptor* descriptor, double rate,
 		free(handle);
 		return NULL;
 	}
-	if(!voice_map)
-		voice_map = &voice_map_fallback;
 
 	lv2_log_logger_init(&handle->logger, handle->map, handle->log);
 
@@ -267,6 +252,8 @@ cleanup(LV2_Handle instance)
 {
 	plughandle_t *handle = instance;
 
+	xpress_deinit(&handle->xpressI);
+	xpress_deinit(&handle->xpressO);
 	free(handle);
 }
 

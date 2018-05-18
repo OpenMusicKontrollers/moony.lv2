@@ -1,13 +1,12 @@
 stages:
   - build
-  - test
   - deploy
 
 .variables_template: &variables_definition
   variables:
     BASE_NAME: "xpress.lv2"
     PKG_CONFIG_PATH: "/opt/lv2/lib/pkgconfig:/opt/${CI_BUILD_NAME}/lib/pkgconfig"
-    TOOLCHAIN_FILE: "${CI_PROJECT_DIR}/cmake/${CI_BUILD_NAME}.cmake"
+    TOOLCHAIN_FILE: "${CI_PROJECT_DIR}/meson/${CI_BUILD_NAME}"
 
 .common_template: &common_definition
   <<: *variables_definition
@@ -20,12 +19,9 @@ stages:
 .build_template: &build_definition
   <<: *common_definition
   script:
-    - mkdir build
-    - pushd build
-    - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR} -DPLUGIN_DEST="${BASE_NAME}-$(cat ../VERSION)/${CI_BUILD_NAME}/${BASE_NAME}" -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FILE} ..
-    - cmake .. # needed for darwin
-    - make
-    - make install
+    - meson --prefix="/" --libdir="lib" --cross-file "${TOOLCHAIN_FILE}" build
+    - ninja -C build
+    - DESTDIR="${CI_PROJECT_DIR}/${BASE_NAME}-$(cat VERSION)/${CI_BUILD_NAME}" ninja -C build install
 
 .universal_linux_template: &universal_linux_definition
   image: ventosus/universal-linux-gnu
