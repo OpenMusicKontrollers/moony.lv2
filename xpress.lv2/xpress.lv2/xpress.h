@@ -387,7 +387,6 @@ _xpress_shm_init()
 		|| ((xpress_shm = mmap(NULL, total_size, PROT_READ | PROT_WRITE,
 					MAP_SHARED, fd, 0)) == MAP_FAILED) )
 	{
-		shm_unlink(XPRESS_SHM_ID);
 		close(fd);
 		return NULL;
 	}
@@ -410,7 +409,6 @@ _xpress_shm_deinit(xpress_shm_t *xpress_shm)
 	const size_t total_size = sizeof(xpress_shm_t);
 
 	munmap(xpress_shm, total_size);
-	shm_unlink(XPRESS_SHM_ID);
 #else
 	(void)xpress_shm;
 #endif
