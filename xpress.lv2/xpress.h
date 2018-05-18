@@ -190,7 +190,7 @@ xpress_init(xpress_t *xpress, const size_t max_nvoices, LV2_URID_Map *map,
 	xpress_map_t *voice_map, xpress_event_t event_mask, const xpress_iface_t *iface,
 	void *target, void *data);
 
-static void
+static inline void
 xpress_deinit(xpress_t *xpress);
 
 // rt-safe
@@ -362,7 +362,7 @@ _xpress_voice_free(xpress_t *xpress, xpress_voice_t *voice)
 	xpress->nvoices--;
 }
 
-xpress_shm_t *
+static xpress_shm_t *
 _xpress_shm_init()
 {
 	xpress_shm_t *xpress_shm = NULL;
@@ -403,7 +403,7 @@ _xpress_shm_init()
 	return xpress_shm;
 }
 
-void
+static void
 _xpress_shm_deinit(xpress_shm_t *xpress_shm)
 {
 #ifndef _WIN32
@@ -477,7 +477,7 @@ xpress_init(xpress_t *xpress, const size_t max_nvoices, LV2_URID_Map *map,
 	return 1;
 }
 
-static void
+static inline void
 xpress_deinit(xpress_t *xpress)
 {
 	if(xpress->xpress_shm)
