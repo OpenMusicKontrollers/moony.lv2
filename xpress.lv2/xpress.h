@@ -24,7 +24,14 @@ extern "C" {
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdatomic.h>
 #include <time.h>
+#ifndef _WIN32
+#	include <sys/mman.h>
+#	include <sys/stat.h>
+#	include <fcntl.h>
+#	include <unistd.h>
+#endif
 
 #include <lv2/lv2plug.in/ns/lv2core/lv2.h>
 #include <lv2/lv2plug.in/ns/ext/urid/urid.h>
@@ -35,6 +42,7 @@ extern "C" {
  * API START
  *****************************************************************************/
 
+#define XPRESS_SHM_ID				"/lv2_xpress_shm"
 #define XPRESS_URI	  			"http://open-music-kontrollers.ch/lv2/xpress"
 #define XPRESS_PREFIX				XPRESS_URI"#"
 
@@ -60,11 +68,9 @@ extern "C" {
 // types
 typedef uint32_t xpress_uuid_t;
 
-// enumerations
-typedef enum _xpress_event_t xpress_event_t;
-
 // structures
 typedef struct _xpress_map_t xpress_map_t;
+typedef struct _xpress_shm_t xpress_shm_t;
 typedef struct _xpress_state_t xpress_state_t;
 typedef struct _xpress_voice_t xpress_voice_t;
 typedef struct _xpress_iface_t xpress_iface_t;
@@ -81,11 +87,11 @@ typedef xpress_add_cb_t xpress_set_cb_t;
 typedef void (*xpress_del_cb_t)(void *data, int64_t frames,
 	xpress_uuid_t uuid, void *target);
 
-enum _xpress_event_t {
+typedef enum _xpress_event_t {
 	XPRESS_EVENT_ADD					= (1 << 0),
 	XPRESS_EVENT_DEL					= (1 << 1),
 	XPRESS_EVENT_SET					= (1 << 2)
-};
+} xpress_event_t;
 
 #define XPRESS_EVENT_NONE		(0)
 #define XPRESS_EVENT_ALL		(XPRESS_EVENT_ADD | XPRESS_EVENT_DEL | XPRESS_EVENT_SET)
@@ -122,6 +128,10 @@ struct _xpress_map_t {
 	xpress_map_new_uuid_t new_uuid;
 };
 
+struct _xpress_shm_t {
+	atomic_uint voice_uuid;
+};
+
 struct _xpress_t {
 	struct {
 		LV2_URID xpress_Token;
@@ -143,6 +153,8 @@ struct _xpress_t {
 
 	LV2_URID_Map *map;
 	xpress_map_t *voice_map;
+	xpress_shm_t *xpress_shm;
+	atomic_uint voice_uuid;
 	bool synced;
 	xpress_uuid_t source;
 
@@ -152,7 +164,7 @@ struct _xpress_t {
 
 	unsigned max_nvoices;
 	unsigned nvoices;
-	xpress_voice_t voices [0];
+	xpress_voice_t voices [1];
 };
 
 #define XPRESS_CONCAT_IMPL(X, Y) X##Y
@@ -160,7 +172,7 @@ struct _xpress_t {
 
 #define XPRESS_T(XPRESS, MAX_NVOICES) \
 	xpress_t (XPRESS); \
-	xpress_voice_t XPRESS_CONCAT(_voices, __COUNTER__) [(MAX_NVOICES)];
+	xpress_voice_t XPRESS_CONCAT(_voices, __COUNTER__) [(MAX_NVOICES - 1)]
 
 #define XPRESS_VOICE_FOREACH(XPRESS, VOICE) \
 	for(xpress_voice_t *(VOICE) = &(XPRESS)->voices[(int)(XPRESS)->nvoices - 1]; \
@@ -177,6 +189,9 @@ static inline int
 xpress_init(xpress_t *xpress, const size_t max_nvoices, LV2_URID_Map *map,
 	xpress_map_t *voice_map, xpress_event_t event_mask, const xpress_iface_t *iface,
 	void *target, void *data);
+
+static void
+xpress_deinit(xpress_t *xpress);
 
 // rt-safe
 static inline void *
@@ -245,8 +260,8 @@ _xpress_urn_uuid(LV2_URID_Map *map)
 	for(unsigned i=0x0; i<0x10; i++)
 		bytes[i] = rand() & 0xff;
 
-	bytes[6] = (bytes[6] & 0b00001111) | 0b01000000; // set four most significant bits of 7th byte to 0b0100
-	bytes[8] = (bytes[8] & 0b00111111) | 0b10000000; // set two most significant bits of 9th byte to 0b10
+	bytes[6] = (bytes[6] & 0x0f) | 0x40; // set four most significant bits of 7th byte to 0b0100
+	bytes[8] = (bytes[8] & 0x3f) | 0x80; // set two most significant bits of 9th byte to 0b10
 
 	char uuid [46];
 	snprintf(uuid, sizeof(uuid),
@@ -347,6 +362,60 @@ _xpress_voice_free(xpress_t *xpress, xpress_voice_t *voice)
 	xpress->nvoices--;
 }
 
+xpress_shm_t *
+_xpress_shm_init()
+{
+	xpress_shm_t *xpress_shm = NULL;
+#ifndef _WIN32
+	const size_t total_size = sizeof(xpress_shm_t);
+
+	bool is_first = true;
+	int fd = shm_open(XPRESS_SHM_ID, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
+
+	if(fd == -1)
+	{
+		is_first = false;
+		fd = shm_open(XPRESS_SHM_ID, O_RDWR, S_IRUSR | S_IWUSR);
+	}
+
+	if(fd == -1)
+	{
+		return NULL;
+	}
+
+	if(  (ftruncate(fd, total_size) == -1)
+		|| ((xpress_shm = mmap(NULL, total_size, PROT_READ | PROT_WRITE,
+					MAP_SHARED, fd, 0)) == MAP_FAILED) )
+	{
+		shm_unlink(XPRESS_SHM_ID);
+		close(fd);
+		return NULL;
+	}
+
+	close(fd);
+
+	if(is_first)
+	{
+		atomic_init(&xpress_shm->voice_uuid, 1);
+	}
+#endif
+
+	return xpress_shm;
+}
+
+void
+_xpress_shm_deinit(xpress_shm_t *xpress_shm)
+{
+#ifndef _WIN32
+	const size_t total_size = sizeof(xpress_shm_t);
+
+	munmap(xpress_shm, total_size);
+	shm_unlink(XPRESS_SHM_ID);
+#else
+	(void)xpress_shm;
+#endif
+}
+
 static inline int
 xpress_init(xpress_t *xpress, const size_t max_nvoices, LV2_URID_Map *map,
 	xpress_map_t *voice_map, xpress_event_t event_mask, const xpress_iface_t *iface,
@@ -386,13 +455,35 @@ xpress_init(xpress_t *xpress, const size_t max_nvoices, LV2_URID_Map *map,
 
 		voice->uuid = 0;
 		voice->target = target && iface
-			? target + i*iface->size
+			? (uint8_t *)target + i*iface->size
 			: NULL;
 	}
 
 	xpress->source = _xpress_urn_uuid(map);
 
+	if(!xpress->voice_map)
+	{
+		// fall-back to shared memory
+		xpress->xpress_shm = _xpress_shm_init();
+
+		if(!xpress->xpress_shm)
+		{
+			// fall-back to local memory
+			const uint32_t pseudo_unique =  (const uintptr_t)xpress;
+			atomic_init(&xpress->voice_uuid, pseudo_unique);
+		}
+	}
+
 	return 1;
+}
+
+static void
+xpress_deinit(xpress_t *xpress)
+{
+	if(xpress->xpress_shm)
+	{
+		_xpress_shm_deinit(xpress->xpress_shm);
+	}
 }
 
 static inline void *
@@ -407,7 +498,7 @@ xpress_get(xpress_t *xpress, xpress_uuid_t uuid)
 
 static inline int
 xpress_advance(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
-	const LV2_Atom_Object *obj, LV2_Atom_Forge_Ref *ref)
+	const LV2_Atom_Object *obj, LV2_Atom_Forge_Ref *ref __attribute__((unused)))
 {
 	if(!lv2_atom_forge_is_object_type(forge, obj->atom.type))
 		return 0;
@@ -731,7 +822,21 @@ xpress_alive(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames)
 static inline int32_t
 xpress_map(xpress_t *xpress)
 {
-	return xpress->voice_map->new_uuid(xpress->voice_map->handle, 0);
+	if(xpress->voice_map)
+	{
+		xpress_map_t *voice_map = xpress->voice_map;
+
+		return voice_map->new_uuid(voice_map->handle, 0);
+	}
+	else if(xpress->xpress_shm)
+	{
+		xpress_shm_t *xpress_shm = xpress->xpress_shm;
+
+		return atomic_fetch_add_explicit(&xpress_shm->voice_uuid, 1, memory_order_relaxed);
+	}
+
+	// fall-back
+	return atomic_fetch_add_explicit(&xpress->voice_uuid, 1, memory_order_relaxed);
 }
 
 #ifdef __cplusplus
