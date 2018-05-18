@@ -269,7 +269,7 @@ struct _moony_t {
 	LV2_Log_Log *log;
 	LV2_Log_Logger logger;
 
-	xpress_map_t *voice_map;
+	xpress_t xpress;
 
 	LV2_Canvas_URID canvas_urid;
 

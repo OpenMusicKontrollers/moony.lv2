@@ -179,6 +179,7 @@ ui_srcs = [
 
 if host_machine.system() == 'linux'
 	conf_data.set('UI_TYPE', 'X11UI')
+	dsp_deps += cc.find_library('rt')
 	ui_deps += dependency('gl')
 	ui_deps += dependency('x11', version : '>=1.6.0')
 	ui_deps += dependency('xext', version : '>=1.3.0')

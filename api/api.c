@@ -73,20 +73,6 @@ static const size_t moony_sz [MOONY_UDATA_COUNT] = {
 	[MOONY_UDATA_STASH]	= sizeof(lstash_t)
 };
 
-static atomic_uint voice_uuid = ATOMIC_VAR_INIT(UINT32_MAX / UINT16_MAX * 2L);
-
-__realtime static uint32_t
-_voice_map_new_uuid(void *handle, uint32_t flag __attribute__((unused)))
-{
-	atomic_uint *uuid = handle;
-	return atomic_fetch_add_explicit(uuid, 1, memory_order_relaxed);
-}
-
-static xpress_map_t voice_map_fallback = {
-	.handle = &voice_uuid,
-	.new_uuid = _voice_map_new_uuid
-};
-
 __non_realtime static int
 _hash_sort(const void *itm1, const void *itm2)
 {
@@ -216,7 +202,7 @@ _lvoice_map(lua_State *L)
 {
 	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 
-	lua_pushinteger(L, moony->voice_map->new_uuid(moony->voice_map->handle, 0));
+	lua_pushinteger(L, xpress_map(&moony->xpress));
 	return 1;
 }
 
@@ -1207,6 +1193,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	}
 
 	bool load_default_state = false;
+	xpress_map_t *voice_map = NULL;
 
 	for(unsigned i=0; features[i]; i++)
 	{
@@ -1225,7 +1212,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 		else if(!strcmp(features[i]->URI, LV2_STATE__loadDefaultState))
 			load_default_state = true;
 		else if(!strcmp(features[i]->URI, XPRESS__voiceMap))
-			moony->voice_map = features[i]->data;
+			voice_map = features[i]->data;
 	}
 
 	if(!moony->map)
@@ -1251,8 +1238,9 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 			"end");
 		moony->chunk_nrt = strdup(moony->chunk);
 	}
-	if(!moony->voice_map)
-		moony->voice_map = &voice_map_fallback;
+
+	xpress_init(&moony->xpress, 0, moony->map, voice_map, XPRESS_EVENT_NONE,
+		NULL, NULL, NULL);
 
 	moony->uris.moony_code = moony->map->map(moony->map->handle, MOONY_CODE_URI);
 	moony->uris.moony_error = moony->map->map(moony->map->handle, MOONY_ERROR_URI);
@@ -1409,6 +1397,8 @@ moony_deinit(moony_t *moony)
 		free(state_atom_old);
 	if(moony->state_atom)
 		free(moony->state_atom);
+
+	xpress_deinit(&moony->xpress);
 
 	moony_vm_t *vm_old = (moony_vm_t *)atomic_load_explicit(&moony->vm_new, memory_order_relaxed);
 	if(vm_old)
