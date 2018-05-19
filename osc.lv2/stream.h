@@ -20,12 +20,14 @@
 
 #include <stdbool.h>
 #include <string.h>
-#include <arpa/inet.h>
+#if !defined(_WIN32)
+#	include <arpa/inet.h>
+#	include <sys/socket.h>
+#	include <net/if.h>
+#	include <netinet/tcp.h>
+#	include <netdb.h>
+#endif
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <net/if.h>
-#include <netinet/tcp.h>
-#include <netdb.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
