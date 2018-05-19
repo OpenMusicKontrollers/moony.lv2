@@ -7,7 +7,6 @@ stages:
   variables:
     BASE_NAME: "timely.lv2"
     PKG_CONFIG_PATH: "/opt/lv2/lib/pkgconfig:/opt/${CI_BUILD_NAME}/lib/pkgconfig"
-    TOOLCHAIN_FILE: "${CI_PROJECT_DIR}/cmake/${CI_BUILD_NAME}.cmake"
 
 .common_template: &common_definition
   <<: *variables_definition
@@ -22,7 +21,7 @@ stages:
   script:
     - mkdir build
     - pushd build
-    - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR} -DPLUGIN_DEST="${BASE_NAME}-$(cat ../VERSION)/${CI_BUILD_NAME}/${BASE_NAME}" -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FILE} ..
+    - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR} -DPLUGIN_DEST="${BASE_NAME}-$(cat ../VERSION)/${CI_BUILD_NAME}/${BASE_NAME}" -DCMAKE_CI_BUILD_NAME=${CI_BUILD_NAME} ..
     - cmake .. # needed for darwin
     - make
     - make install
