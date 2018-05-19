@@ -8,26 +8,28 @@
 #include <osc.lv2/reader.h>
 #include <osc.lv2/writer.h>
 #include <osc.lv2/forge.h>
-#include <osc.lv2/stream.h>
+#if !defined(_WIN32)
+#	include <osc.lv2/stream.h>
+#endif
 
 #define BUF_SIZE 0x100000
 #define MAX_URIDS 512
 
 typedef void (*test_t)(LV2_OSC_Writer *writer);
 typedef struct _urid_t urid_t;
-typedef struct _handle_t handle_t;
+typedef struct _app_t app_t;
 
 struct _urid_t {
 	LV2_URID urid;
 	char *uri;
 };
 
-struct _handle_t {
+struct _app_t {
 	urid_t urids [MAX_URIDS];
 	LV2_URID urid;
 };
 
-static handle_t __handle;
+static app_t __app;
 static uint8_t buf0 [BUF_SIZE];
 static uint8_t buf1 [BUF_SIZE];
 static uint8_t buf2 [BUF_SIZE];
@@ -134,19 +136,19 @@ const uint8_t raw_8 [] = {
 static LV2_URID
 _map(LV2_URID_Map_Handle instance, const char *uri)
 {
-	handle_t *handle = instance;
+	app_t *app = instance;
 
 	urid_t *itm;
-	for(itm=handle->urids; itm->urid; itm++)
+	for(itm=app->urids; itm->urid; itm++)
 	{
 		if(!strcmp(itm->uri, uri))
 			return itm->urid;
 	}
 
-	assert(handle->urid + 1 < MAX_URIDS);
+	assert(app->urid + 1 < MAX_URIDS);
 
 	// create new
-	itm->urid = ++handle->urid;
+	itm->urid = ++app->urid;
 	itm->uri = strdup(uri);
 
 	return itm->urid;
@@ -155,10 +157,10 @@ _map(LV2_URID_Map_Handle instance, const char *uri)
 static const char *
 _unmap(LV2_URID_Unmap_Handle instance, LV2_URID urid)
 {
-	handle_t *handle = instance;
+	app_t *app = instance;
 
 	urid_t *itm;
-	for(itm=handle->urids; itm->urid; itm++)
+	for(itm=app->urids; itm->urid; itm++)
 	{
 		if(itm->urid == urid)
 			return itm->uri;
@@ -169,12 +171,12 @@ _unmap(LV2_URID_Unmap_Handle instance, LV2_URID urid)
 }
 
 static LV2_URID_Map map = {
-	.handle = &__handle,
+	.handle = &__app,
 	.map = _map
 };
 
 static LV2_URID_Unmap unmap = {
-	.handle = &__handle,
+	.handle = &__app,
 	.unmap = _unmap
 };
 
@@ -197,7 +199,7 @@ _clone(LV2_OSC_Reader *reader, LV2_OSC_Writer *writer, size_t size)
 		LV2_OSC_Item *itm = OSC_READER_BUNDLE_BEGIN(reader, size);
 		assert(itm);
 
-		LV2_OSC_Writer_Frame frame_bndl;
+		LV2_OSC_Writer_Frame frame_bndl = { .ref = 0 };
 		assert(lv2_osc_writer_push_bundle(writer, &frame_bndl, itm->timetag));
 
 		OSC_READER_BUNDLE_ITERATE(reader, itm)
@@ -205,7 +207,7 @@ _clone(LV2_OSC_Reader *reader, LV2_OSC_Writer *writer, size_t size)
 			LV2_OSC_Reader reader2;
 			lv2_osc_reader_initialize(&reader2, itm->body, itm->size);
 
-			LV2_OSC_Writer_Frame frame_itm;
+			LV2_OSC_Writer_Frame frame_itm = { .ref = 0 };
 			assert(lv2_osc_writer_push_item(writer, &frame_itm));
 			_clone(&reader2, writer, itm->size);
 			assert(lv2_osc_writer_pop_item(writer, &frame_itm));
@@ -341,7 +343,7 @@ static void
 test_2_a(LV2_OSC_Writer *writer)
 {
 	assert(lv2_osc_writer_message_vararg(writer, "/ping", "hdS",
-		12, 3.4, "http://example.com"));
+		(int64_t)12, (double)3.4, "http://example.com"));
 	_test_a(writer, raw_2, sizeof(raw_2));
 }
 
@@ -373,7 +375,8 @@ test_5_a(LV2_OSC_Writer *writer)
 static void
 test_6_a(LV2_OSC_Writer *writer)
 {
-	LV2_OSC_Writer_Frame frame_bndl, frame_itm;
+	LV2_OSC_Writer_Frame frame_bndl = { .ref = 0 };
+	LV2_OSC_Writer_Frame frame_itm = { .ref = 0 };
 
 	assert(lv2_osc_writer_push_bundle(writer, &frame_bndl, LV2_OSC_IMMEDIATE));
 	{
@@ -391,7 +394,8 @@ test_6_a(LV2_OSC_Writer *writer)
 static void
 test_7_a(LV2_OSC_Writer *writer)
 {
-	LV2_OSC_Writer_Frame frame_bndl[2], frame_itm[2];
+	LV2_OSC_Writer_Frame frame_bndl[2] = { { .ref = 0 }, { .ref = 0 } };
+	LV2_OSC_Writer_Frame frame_itm[2] = { { .ref = 0 }, { .ref = 0 } };;
 
 	assert(lv2_osc_writer_push_bundle(writer, &frame_bndl[0], LV2_OSC_IMMEDIATE));
 	{
@@ -466,6 +470,7 @@ _run_tests()
 	return 0;
 }
 
+#if !defined(_WIN32)
 typedef struct _item_t item_t;
 typedef struct _stash_t stash_t;
 
@@ -896,6 +901,7 @@ static const pair_t pairs [] = {
 		.lossy = false
 	}
 };
+#endif
 
 int
 main(int argc, char **argv)
@@ -906,6 +912,7 @@ main(int argc, char **argv)
 	fprintf(stdout, "running main tests:\n");
 	assert(_run_tests() == 0);
 
+#if !defined(_WIN32)
 	for(const pair_t *pair = pairs; pair->server; pair++)
 	{
 		pthread_t thread_1;
@@ -920,10 +927,11 @@ main(int argc, char **argv)
 		assert(pthread_join(thread_1, NULL) == 0);
 		assert(pthread_join(thread_2, NULL) == 0);
 	}
+#endif
 
-	for(unsigned i=0; i<__handle.urid; i++)
+	for(unsigned i=0; i<__app.urid; i++)
 	{
-		urid_t *itm = &__handle.urids[i];
+		urid_t *itm = &__app.urids[i];
 
 		free(itm->uri);
 	}
