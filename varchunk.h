@@ -93,7 +93,7 @@ struct _varchunk_t {
   atomic_size_t head;
   atomic_size_t tail;
 
-  uint8_t buf [0] __attribute__((aligned(sizeof(varchunk_elmnt_t))));
+  uint8_t buf [] __attribute__((aligned(sizeof(varchunk_elmnt_t))));
 }; 
 
 static inline bool
@@ -195,13 +195,13 @@ varchunk_write_request_max(varchunk_t *varchunk, size_t minimum, size_t *maximum
 	if(end > varchunk->size) // available region wraps over at end of buffer
 	{
 		// get first part of available buffer
-		void *buf1 = varchunk->buf + head;
+		uint8_t *buf1 = varchunk->buf + head;
 		const size_t len1 = varchunk->size - head;
 
 		if(len1 < padded) // not enough space left on first part of buffer
 		{
 			// get second part of available buffer
-			void *buf2 = varchunk->buf;
+			uint8_t *buf2 = varchunk->buf;
 			const size_t len2 = end & varchunk->mask;
 
 			if(len2 < padded) // not enough space left on second buffer, either
@@ -232,7 +232,7 @@ varchunk_write_request_max(varchunk_t *varchunk, size_t minimum, size_t *maximum
 	}
 	else // available region is contiguous
 	{
-		void *buf = varchunk->buf + head;
+		uint8_t *buf = varchunk->buf + head;
 
 		if(space < padded) // no space left on contiguous buffer
 		{
@@ -271,7 +271,7 @@ varchunk_write_advance(varchunk_t *varchunk, size_t written)
 	if(varchunk->gapd > 0)
 	{
 		// fill end of first buffer with gap
-		varchunk_elmnt_t *elmnt = (void *)varchunk->buf + head;
+		varchunk_elmnt_t *elmnt = (varchunk_elmnt_t *)(varchunk->buf + head);
 		elmnt->size = varchunk->gapd - sizeof(varchunk_elmnt_t);
 		elmnt->gap = 1;
 
@@ -283,7 +283,7 @@ varchunk_write_advance(varchunk_t *varchunk, size_t written)
 	else // varchunk->gapd == 0
 	{
 		// fill written element header
-		varchunk_elmnt_t *elmnt = (void *)varchunk->buf + head;
+		varchunk_elmnt_t *elmnt = (varchunk_elmnt_t *)(varchunk->buf + head);
 		elmnt->size = written;
 		elmnt->gap = 0;
 	}
@@ -322,9 +322,9 @@ varchunk_read_request(varchunk_t *varchunk, size_t *toread)
 		if(end > varchunk->size) // available buffer wraps around at end
 		{
 			// first part of available buffer
-			const void *buf1 = varchunk->buf + tail;
+			const uint8_t *buf1 = varchunk->buf + tail;
 			const size_t len1 = varchunk->size - tail;
-			const varchunk_elmnt_t *elmnt = buf1;
+			const varchunk_elmnt_t *elmnt = (const varchunk_elmnt_t *)buf1;
 
 			if(elmnt->gap) // gap elmnt?
 			{
@@ -332,8 +332,9 @@ varchunk_read_request(varchunk_t *varchunk, size_t *toread)
 				_varchunk_read_advance_raw(varchunk, tail, len1);
 
 				// second part of available buffer
-				const void *buf2 = varchunk->buf;
-				elmnt = buf2; // there will always be at least on element after a gap
+				const uint8_t *buf2 = varchunk->buf;
+				// there will always be at least on element after a gap
+				elmnt = (const varchunk_elmnt_t *)buf2;
 
 				*toread = elmnt->size;
 				return buf2 + sizeof(varchunk_elmnt_t);
@@ -347,8 +348,8 @@ varchunk_read_request(varchunk_t *varchunk, size_t *toread)
 		else // available buffer is contiguous
 		{
 			// get buffer
-			const void *buf = varchunk->buf + tail;
-			const varchunk_elmnt_t *elmnt = buf;
+			const uint8_t *buf = varchunk->buf + tail;
+			const varchunk_elmnt_t *elmnt = (const varchunk_elmnt_t *)buf;
 
 			*toread = elmnt->size;
 			return buf + sizeof(varchunk_elmnt_t);
@@ -367,7 +368,7 @@ varchunk_read_advance(varchunk_t *varchunk)
 	assert(varchunk);
 	// get elmnt header from tail (for size)
 	const size_t tail = atomic_load_explicit(&varchunk->tail, memory_order_relaxed);
-	const varchunk_elmnt_t *elmnt = (const void *)varchunk->buf + tail;
+	const varchunk_elmnt_t *elmnt = (const varchunk_elmnt_t *)(varchunk->buf + tail);
 
 	// advance read tail
 	_varchunk_read_advance_raw(varchunk, tail,
