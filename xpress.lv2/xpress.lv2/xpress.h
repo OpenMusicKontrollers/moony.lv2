@@ -255,8 +255,6 @@ _xpress_urn_uuid(LV2_URID_Map *map)
 {
 	uint8_t bytes [0x10];
 
-	srand(time(NULL));
-
 	for(unsigned i=0x0; i<0x10; i++)
 		bytes[i] = rand() & 0xff;
 
