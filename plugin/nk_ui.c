@@ -3478,7 +3478,8 @@ port_event(LV2UI_Handle instance, uint32_t index, uint32_t size,
 {
 	plughandle_t *handle = instance;
 
-	if( (index == handle->notify) && (protocol == handle->atom_eventTransfer) )
+	if(  ( (index == handle->notify) || (index == handle->control) )
+		&& (protocol == handle->atom_eventTransfer) )
 	{
 		const LV2_Atom_Object *obj = buf;
 
