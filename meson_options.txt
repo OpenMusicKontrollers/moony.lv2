@@ -1,0 +1,2 @@
+option('build-opengl-ui', type : 'boolean', value : true)
+option('build-zimple-ui', type : 'boolean', value : false)

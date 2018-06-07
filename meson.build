@@ -13,6 +13,14 @@ lv2_dep = dependency('lv2', version : '>=1.14.0')
 dsp_deps = [m_dep, lv2_dep]
 ui_deps = [m_dep, lv2_dep]
 
+if host_machine.system() == 'windows'
+	# nothing to do for DSP
+elif host_machine.system() == 'darwin'
+	# nothing to do for DSP
+else
+	dsp_deps += cc.find_library('rt')
+endif
+
 canvas_inc = include_directories('canvas.lv2')
 extui_inc = include_directories('ext_ui.lv2')
 include_inc= include_directories('include')
@@ -172,34 +180,6 @@ dsp_srcs = [
 app_srcs = [
 	join_paths('test', 'moony_test.c')]
 
-ui_srcs = [
-	join_paths('plugin', 'moony_ui.c'),
-	join_paths('plugin', 'simple_ui.c'),
-	join_paths('plugin', 'nk_ui.c')]
-
-if host_machine.system() == 'windows'
-	add_languages('cpp')
-	conf_data.set('UI_TYPE', 'WindowsUI')
-	ui_deps += cc.find_library('opengl32')
-	ui_deps += cc.find_library('gdi32')
-	ui_deps += cc.find_library('user32')
-	ui_srcs += 'pugl/pugl/pugl_win.cpp'
-elif host_machine.system() == 'darwin'
-	#add_languages('objc')
-	conf_data.set('UI_TYPE', 'CocoaUI')
-	#ui_deps += cc.find_library('Cocoa')
-	#ui_deps += cc.find_library('gl')
-	#ui_deps += dependency('appleframeworks', modules : 'cocoa')
-	#ui_srcs += 'pugl/pugl/pugl_osx.m'
-else
-	conf_data.set('UI_TYPE', 'X11UI')
-	dsp_deps += cc.find_library('rt')
-	ui_deps += dependency('gl')
-	ui_deps += dependency('x11', version : '>=1.6.0')
-	ui_deps += dependency('xext', version : '>=1.3.0')
-	ui_srcs += 'pugl/pugl/pugl_x11.c'
-endif
-
 mod = shared_module('moony', dsp_srcs,
 	c_args : c_args,
 	include_directories : inc_dir,
@@ -209,14 +189,69 @@ mod = shared_module('moony', dsp_srcs,
 	install : true,
 	install_dir : inst_dir)
 
-ui = shared_module('moony_ui', ui_srcs,
-	c_args : c_args,
-	include_directories : inc_dir,
-	name_prefix : '',
-	dependencies : ui_deps,
-	link_with : ui_links,
-	install : true,
-	install_dir : inst_dir)
+suffix = mod.full_path().strip().split('.')[-1]
+conf_data.set('MODULE_SUFFIX', '.' + suffix)
+
+build_opengl_ui = get_option('build-opengl-ui')
+build_zimple_ui = get_option('build-zimple-ui')
+
+conf_data.set('UI', '#')
+conf_data.set('UI_TYPE', 'UI')
+
+if build_opengl_ui
+	message('building OpenGL UI')
+	conf_data.set('UI', '')
+	conf_data.set('UI_OPENGL', '')
+else
+	conf_data.set('UI_OPENGL', '#')
+endif
+
+if build_zimple_ui
+	message('building Zimple UI')
+	conf_data.set('UI', '')
+	conf_data.set('UI_ZIMPLE', '')
+else
+	conf_data.set('UI_ZIMPLE', '#')
+endif
+
+if build_opengl_ui or build_zimple_ui
+	ui_srcs = [
+		join_paths('plugin', 'moony_ui.c'),
+		join_paths('plugin', 'simple_ui.c'),
+		join_paths('plugin', 'nk_ui.c')]
+
+	if host_machine.system() == 'windows'
+		add_languages('cpp')
+		conf_data.set('UI_TYPE', 'WindowsUI')
+		ui_deps += cc.find_library('opengl32')
+		ui_deps += cc.find_library('gdi32')
+		ui_deps += cc.find_library('user32')
+		ui_srcs += 'pugl/pugl/pugl_win.cpp'
+	elif host_machine.system() == 'darwin'
+		#add_languages('objc')
+		conf_data.set('UI_TYPE', 'CocoaUI')
+		#ui_deps += cc.find_library('Cocoa')
+		#ui_deps += cc.find_library('gl')
+		#ui_deps += dependency('appleframeworks', modules : 'cocoa')
+		#ui_srcs += 'pugl/pugl/pugl_osx.m'
+	else
+		conf_data.set('UI_TYPE', 'X11UI')
+		dsp_deps += cc.find_library('rt')
+		ui_deps += dependency('gl')
+		ui_deps += dependency('x11', version : '>=1.6.0')
+		ui_deps += dependency('xext', version : '>=1.3.0')
+		ui_srcs += 'pugl/pugl/pugl_x11.c'
+	endif
+
+	ui = shared_module('moony_ui', ui_srcs,
+		c_args : c_args,
+		include_directories : inc_dir,
+		name_prefix : '',
+		dependencies : ui_deps,
+		link_with : ui_links,
+		install : true,
+		install_dir : inst_dir)
+endif
 
 app = executable('moony_test', app_srcs,
 	c_args : c_args,
@@ -225,12 +260,6 @@ app = executable('moony_test', app_srcs,
 	dependencies : dsp_deps,
 	link_with : dsp_links,
 	install : false)
-
-suffix = mod.full_path().strip().split('.')[-1]
-conf_data.set('MODULE_SUFFIX', '.' + suffix)
-
-conf_data.set('UI_EXT', '') #FIXME
-conf_data.set('UI_WRAP', '') #FIXME
 
 configure_file(
 	input : join_paths('plugin', 'manifest.ttl.in'),
