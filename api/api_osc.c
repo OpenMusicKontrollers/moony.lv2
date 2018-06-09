@@ -33,8 +33,7 @@ struct _osc_responder_data_t {
 __realtime static inline bool
 _osc_path_has_wildcards(const char *path)
 {
-	for(const char *ptr=path+1; *ptr; ptr++)
-		if(strchr("?*[{", *ptr))
+	if(strpbrk(path, "?*[{}]"))
 			return true;
 	return false;
 }
