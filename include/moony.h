@@ -206,7 +206,7 @@ struct _moony_t {
 	LV2_Atom_Forge_Ref notify_ref;
 	LV2_Atom_Forge notify_snapshot;
 
-	double sample_rate;
+	LV2_Atom_Float sample_rate;
 
 	struct {
 		LV2_URID moony_code;
@@ -259,6 +259,8 @@ struct _moony_t {
 		LV2_URID xpress_dPitch;
 		LV2_URID xpress_dPressure;
 		LV2_URID xpress_dTimbre;
+
+		LV2_URID param_sampleRate;
 	} uris;
 
 	LV2_OSC_URID osc_urid;

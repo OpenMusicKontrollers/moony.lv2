@@ -322,6 +322,12 @@ _lopts__index(lua_State *L)
 		}
 	}
 
+	if(key == moony->uris.param_sampleRate)
+	{
+		_latom_body_new(L, &moony->sample_rate.atom, &moony->sample_rate.body, false);
+		return 1;
+	}
+
 	lua_pushnil(L); // not found
 	return 1;
 }
@@ -1168,8 +1174,6 @@ __non_realtime int
 moony_init(moony_t *moony, const char *subject, double sample_rate,
 	const LV2_Feature *const *features, size_t mem_size, bool testing)
 {
-	moony->sample_rate = sample_rate;
-
 	atomic_init(&moony->state_atom_new, 0);
 	atomic_init(&moony->vm_new, 0);
 	atomic_init(&moony->err_new, 0);
@@ -1324,6 +1328,10 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	lv2_atom_forge_init(&moony->notify_forge, moony->map);
 	if(moony->log)
 		lv2_log_logger_init(&moony->logger, moony->map, moony->log);
+
+	moony->sample_rate.atom.size = sizeof(float);
+	moony->sample_rate.atom.type = moony->forge.Float;
+	moony->sample_rate.body = sample_rate;
 
 	latom_driver_hash_t *latom_driver_hash = moony->atom_driver_hash;
 	unsigned pos = 0;
@@ -1786,7 +1794,7 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 
 	lua_newtable(L);
 	{
-		SET_MAP(L, LV2_PARAMETERS__, sampleRate);
+		moony->uris.param_sampleRate = SET_MAP(L, LV2_PARAMETERS__, sampleRate);
 		//TODO more
 	}
 	lua_setglobal(L, "Param");

@@ -222,17 +222,8 @@ main(int argc, char **argv)
 		.frames2osc = _frames2osc
 	};
 
-	const LV2_URID param_sampleRate = map.map(map.handle, LV2_PARAMETERS__sampleRate);
-	const LV2_URID atom_Float = map.map(map.handle, LV2_ATOM__Float);
-
 	const float srate = 48000.f;
 	LV2_Options_Option opts [] = {
-		{
-			.key = param_sampleRate,
-			.size = sizeof(float),
-			.type = atom_Float,
-			.value = &srate
-		},
 		{
 			.key = 0,
 			.value =NULL
