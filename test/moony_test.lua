@@ -1316,10 +1316,12 @@ do
 		vectorize(forge, Atom.URID, {Atom.Int, Atom.Long})
 		forge:time(5):vector(Atom.URID, Atom.Int, Atom.Long)
 		forge:time(5):vector(Atom.URID, {Atom.Int, Atom.Long})
+
+		forge:time(6):vector(Atom.Float, { a = 1.0, b = 2.0 })
 	end
 
 	local function consumer(seq)
-		assert(#seq == 18)
+		assert(#seq == 19)
 
 		for _, vec in ipairs{seq[1], seq[2], seq[3]} do
 			assert(vec.type == Atom.Vector)
@@ -1422,6 +1424,23 @@ do
 			local c = vec.body
 			assert(c[1] == Atom.Int)
 			assert(c[2] == Atom.Long)
+		end
+
+		for _, vec in ipairs{seq[19]} do
+			assert(vec.type == Atom.Vector)
+			assert(#vec == 2)
+			assert(vec.childType == Atom.Float)
+			assert(vec.childSize == 4)
+			local a, b = vec:unpack(1, 1)
+			assert( (a.body == 1.0) or (a.body == 2.0) )
+			assert(b == nil)
+			local a, b = vec:unpack(2, 2)
+			assert( (a.body == 1.0) or (a.body == 2.0) )
+			assert(b == nil)
+
+			local c = vec.body
+			assert( (c[1] == 1.0) or (c[1] == 2.0) )
+			assert( (c[2] == 1.0) or (c[2] == 2.0) )
 		end
 	end
 
