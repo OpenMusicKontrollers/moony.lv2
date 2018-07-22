@@ -150,7 +150,7 @@ lua_lib = static_library('lua',
 tlsf_lib = static_library('tlsf',
 	join_paths('tlsf-3.0', 'tlsf.c'),
 	include_directories : inc_dir,
-	c_args : c_args)
+	c_args : [c_args, '-Dtlsf_assert=(void)sizeof'])
 
 api_lib = static_library('api',
 	join_paths('api', 'api_atom.c'),
