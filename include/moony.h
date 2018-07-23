@@ -48,6 +48,18 @@
 #include <lv2/lv2plug.in/ns/extensions/ui/ui.h>
 #include <lv2/lv2plug.in/ns/extensions/units/units.h>
 
+typedef struct _atom_ser_t atom_ser_t;
+
+struct _atom_ser_t {
+	void *data; // e.g. use rt-memory pool?
+	uint32_t size;
+	union {
+		uint8_t *buf;
+		const LV2_Atom *atom;
+	};
+	uint32_t offset;
+};
+
 #include <api_vm.h>
 #include <osc.lv2/osc.h>
 #include <xpress.lv2/xpress.h>
@@ -458,17 +470,5 @@ _sink_non_rt(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size);
 
 LV2_Atom *
 _deref(LV2_Atom_Forge_Sink_Handle handle, LV2_Atom_Forge_Ref ref);
-
-typedef struct _atom_ser_t atom_ser_t;
-
-struct _atom_ser_t {
-	moony_vm_t *vm; // use rt-memory pool?
-	uint32_t size;
-	union {
-		uint8_t *buf;
-		const LV2_Atom *atom;
-	};
-	uint32_t offset;
-};
 
 #endif // _MOONY_H

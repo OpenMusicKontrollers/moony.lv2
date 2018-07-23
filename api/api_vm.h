@@ -49,6 +49,8 @@ struct _moony_vm_t {
 	bool trace_out;
 	bool trace_overflow;
 	char trace [MOONY_MAX_TRACE_LEN];
+
+	atom_ser_t ser;
 };
 
 enum _moony_job_enum_t {

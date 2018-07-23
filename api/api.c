@@ -472,8 +472,8 @@ _sink_rt(LV2_Atom_Forge_Sink_Handle handle, const void *buf, uint32_t size)
 		while(new_offset > new_size)
 			new_size <<= 1;
 
-		assert(ser->vm);
-		if(!(ser->buf = moony_rt_realloc(ser->vm, ser->buf, ser->size, new_size)))
+		assert(ser->data);
+		if(!(ser->buf = moony_rt_realloc(ser->data, ser->buf, ser->size, new_size)))
 			return 0; // realloc failed
 
 		ser->size = new_size;
@@ -534,23 +534,26 @@ _stash(lua_State *L)
 		lframe->last.frames = 0;
 		lframe->forge = &moony->stash_forge;
 
-		atom_ser_t ser = {
-			.vm = moony->vm,
-			.size = 1024,
-			.offset = 0
-		};
-		ser.buf = moony_rt_alloc(moony->vm, ser.size);
+		atom_ser_t *ser = &moony->vm->ser;
+		ser->data = moony->vm;
+		ser->size = 1024;
+		ser->offset = 0;
+		ser->buf = moony_rt_alloc(moony->vm, ser->size);
 
-		if(ser.buf)
+		if(ser->buf)
 		{
-			memset(ser.buf, 0x0, sizeof(LV2_Atom));
+			memset(ser->buf, 0x0, sizeof(LV2_Atom));
 
-			lv2_atom_forge_set_sink(lframe->forge, _sink_rt, _deref, &ser);
+			lv2_atom_forge_set_sink(lframe->forge, _sink_rt, _deref, ser);
 			lua_call(L, 1, 0);
 
-			LV2_Atom *atom = (LV2_Atom *)ser.buf;
+			LV2_Atom *atom = (LV2_Atom *)ser->buf;
 			moony->stash_atom = atom;
-			moony->stash_size = ser.size;
+			moony->stash_size = ser->size;
+
+			// invalidate ser_atom
+			ser->size = 0;
+			ser->buf = NULL;
 		}
 	}
 	else
@@ -720,7 +723,7 @@ _state_save(LV2_Handle instance,
 	(void)status; //TODO check status
 
 	atom_ser_t ser = {
-		.vm = NULL,
+		.data = NULL,
 		.size = 1024,
 		.offset = 0
 	};

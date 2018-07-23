@@ -254,6 +254,9 @@ moony_vm_free(moony_vm_t *vm)
 	if(vm->L)
 		lua_close(vm->L);
 
+	if(vm->ser.buf)
+		moony_rt_free(vm, vm->ser.buf, vm->ser.size);
+
 	vm->used = 0;
 
 	for(int i=(MOONY_POOL_NUM-1); i>=0; i--)
