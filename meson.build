@@ -21,6 +21,9 @@ else
 	dsp_deps += cc.find_library('rt')
 endif
 
+lpeg_prefix = 'lpeg-1.0.1'
+lua_prefix = 'lua-5.3.4'
+
 canvas_inc = include_directories('canvas.lv2')
 extui_inc = include_directories('ext_ui.lv2')
 include_inc= include_directories('include')
@@ -32,9 +35,9 @@ lascii85_inc = include_directories('lascii85')
 lbase64_inc = include_directories('lbase64')
 lcomplex_inc = include_directories('lcomplex')
 lmathx_inc = include_directories('lmathx')
-lpeg_inc = include_directories('lpeg-1.0.1')
+lpeg_inc = include_directories(lpeg_prefix)
 lrandom_inc = include_directories('lrandom')
-lua_inc = include_directories('lua-5.3.4')
+lua_inc = include_directories(lua_prefix)
 osc_inc = include_directories('osc.lv2')
 pugl_inc = include_directories('pugl')
 timely_inc = include_directories('timely.lv2')
@@ -100,50 +103,50 @@ lrandom_lib = static_library('lrandom',
 	c_args : c_args)
 
 lpeg_lib = static_library('lpeg',
-	join_paths('lpeg-1.0.1', 'lpcap.c'),
-	join_paths('lpeg-1.0.1', 'lpcode.c'),
-	join_paths('lpeg-1.0.1', 'lpprint.c'),
-	join_paths('lpeg-1.0.1', 'lptree.c'),
-	join_paths('lpeg-1.0.1', 'lpvm.c'),
+	join_paths(lpeg_prefix, 'lpcap.c'),
+	join_paths(lpeg_prefix, 'lpcode.c'),
+	join_paths(lpeg_prefix, 'lpprint.c'),
+	join_paths(lpeg_prefix, 'lptree.c'),
+	join_paths(lpeg_prefix, 'lpvm.c'),
 	include_directories : inc_dir,
 	c_args : c_args)
 
 lua_lib = static_library('lua',
-	join_paths('lua-5.3.4', 'lapi.c'),
-	join_paths('lua-5.3.4', 'lcode.c'),
-	join_paths('lua-5.3.4', 'lctype.c'),
-	join_paths('lua-5.3.4', 'ldebug.c'),
-	join_paths('lua-5.3.4', 'ldo.c'),
-	join_paths('lua-5.3.4', 'ldump.c'),
-	join_paths('lua-5.3.4', 'lfunc.c'),
-	join_paths('lua-5.3.4', 'lgc.c'),
-	join_paths('lua-5.3.4', 'llex.c'),
-	join_paths('lua-5.3.4', 'lmem.c'),
-	join_paths('lua-5.3.4', 'lobject.c'),
-	join_paths('lua-5.3.4', 'lopcodes.c'),
-	join_paths('lua-5.3.4', 'lparser.c'),
-	join_paths('lua-5.3.4', 'lstate.c'),
-	join_paths('lua-5.3.4', 'lstring.c'),
-	join_paths('lua-5.3.4', 'ltable.c'),
-	join_paths('lua-5.3.4', 'ltm.c'),
-	join_paths('lua-5.3.4', 'lundump.c'),
-	join_paths('lua-5.3.4', 'lvm.c'),
-	join_paths('lua-5.3.4', 'lzio.c'),
+	join_paths(lua_prefix, 'lapi.c'),
+	join_paths(lua_prefix, 'lcode.c'),
+	join_paths(lua_prefix, 'lctype.c'),
+	join_paths(lua_prefix, 'ldebug.c'),
+	join_paths(lua_prefix, 'ldo.c'),
+	join_paths(lua_prefix, 'ldump.c'),
+	join_paths(lua_prefix, 'lfunc.c'),
+	join_paths(lua_prefix, 'lgc.c'),
+	join_paths(lua_prefix, 'llex.c'),
+	join_paths(lua_prefix, 'lmem.c'),
+	join_paths(lua_prefix, 'lobject.c'),
+	join_paths(lua_prefix, 'lopcodes.c'),
+	join_paths(lua_prefix, 'lparser.c'),
+	join_paths(lua_prefix, 'lstate.c'),
+	join_paths(lua_prefix, 'lstring.c'),
+	join_paths(lua_prefix, 'ltable.c'),
+	join_paths(lua_prefix, 'ltm.c'),
+	join_paths(lua_prefix, 'lundump.c'),
+	join_paths(lua_prefix, 'lvm.c'),
+	join_paths(lua_prefix, 'lzio.c'),
 
-	join_paths('lua-5.3.4', 'liolib.c'),
-	join_paths('lua-5.3.4', 'loadlib.c'),
-	#join_paths('lua-5.3.4', 'lbitlib.c'),
-	#join_paths('lua-5.3.4', 'loslib.c'),
-	#join_paths('lua-5.3.4', 'linit.c'),
+	join_paths(lua_prefix, 'liolib.c'),
+	join_paths(lua_prefix, 'loadlib.c'),
+	#join_paths(lua_prefix, 'lbitlib.c'),
+	#join_paths(lua_prefix, 'loslib.c'),
+	#join_paths(lua_prefix, 'linit.c'),
 
-	join_paths('lua-5.3.4', 'ldblib.c'),
-	join_paths('lua-5.3.4', 'lbaselib.c'),
-	join_paths('lua-5.3.4', 'lauxlib.c'),
-	join_paths('lua-5.3.4', 'lcorolib.c'),
-	join_paths('lua-5.3.4', 'lmathlib.c'),
-	join_paths('lua-5.3.4', 'lstrlib.c'),
-	join_paths('lua-5.3.4', 'ltablib.c'),
-	join_paths('lua-5.3.4', 'lutf8lib.c'),
+	join_paths(lua_prefix, 'ldblib.c'),
+	join_paths(lua_prefix, 'lbaselib.c'),
+	join_paths(lua_prefix, 'lauxlib.c'),
+	join_paths(lua_prefix, 'lcorolib.c'),
+	join_paths(lua_prefix, 'lmathlib.c'),
+	join_paths(lua_prefix, 'lstrlib.c'),
+	join_paths(lua_prefix, 'ltablib.c'),
+	join_paths(lua_prefix, 'lutf8lib.c'),
 	include_directories : inc_dir,
 	c_args : c_args)
 
