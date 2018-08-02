@@ -20,6 +20,7 @@
 @prefix pset:	<http://lv2plug.in/ns/ext/presets#> .
 @prefix kx: <http://kxstudio.sf.net/ns/lv2ext/external-ui#> .
 
+@prefix canvas:   <http://open-music-kontrollers.ch/lv2/canvas#> .
 @prefix moony: <http://open-music-kontrollers.ch/lv2/moony#> .
 
 # to please sord_validate
@@ -38,6 +39,7 @@ moony:c1xc1
 	@UI_OPENGL@ui:ui moony:moony_ui ;
 	@UI_ZIMPLE@ui:ui moony:moony_zimple_ui ;
 	@UI_ZIMPLE@ui:ui moony:moony_zimple_kx ;
+	ui:ui canvas:display_ui ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:c2xc2
@@ -48,6 +50,7 @@ moony:c2xc2
 	@UI_OPENGL@ui:ui moony:moony_ui ;
 	@UI_ZIMPLE@ui:ui moony:moony_zimple_ui ;
 	@UI_ZIMPLE@ui:ui moony:moony_zimple_kx ;
+	ui:ui canvas:display_ui ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:c4xc4
@@ -58,6 +61,7 @@ moony:c4xc4
 	@UI_OPENGL@ui:ui moony:moony_ui ;
 	@UI_ZIMPLE@ui:ui moony:moony_zimple_ui ;
 	@UI_ZIMPLE@ui:ui moony:moony_zimple_kx ;
+	ui:ui canvas:display_ui ;
 	rdfs:seeAlso <moony.ttl> .
 
 # atom in, atom out
@@ -69,6 +73,7 @@ moony:a1xa1
 	@UI_OPENGL@ui:ui moony:moony_ui ;
 	@UI_ZIMPLE@ui:ui moony:moony_zimple_ui ;
 	@UI_ZIMPLE@ui:ui moony:moony_zimple_kx ;
+	ui:ui canvas:display_ui ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:a2xa2
@@ -79,6 +84,7 @@ moony:a2xa2
 	@UI_OPENGL@ui:ui moony:moony_ui ;
 	@UI_ZIMPLE@ui:ui moony:moony_zimple_ui ;
 	@UI_ZIMPLE@ui:ui moony:moony_zimple_kx ;
+	ui:ui canvas:display_ui ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:a4xa4
@@ -89,6 +95,7 @@ moony:a4xa4
 	@UI_OPENGL@ui:ui moony:moony_ui ;
 	@UI_ZIMPLE@ui:ui moony:moony_zimple_ui ;
 	@UI_ZIMPLE@ui:ui moony:moony_zimple_kx ;
+	ui:ui canvas:display_ui ;
 	rdfs:seeAlso <moony.ttl> .
 
 # control/atom in, control/atom out
@@ -100,6 +107,7 @@ moony:c1a1xc1a1
 	@UI_OPENGL@ui:ui moony:moony_ui ;
 	@UI_ZIMPLE@ui:ui moony:moony_zimple_ui ;
 	@UI_ZIMPLE@ui:ui moony:moony_zimple_kx ;
+	ui:ui canvas:display_ui ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:c2a1xc2a1
@@ -110,6 +118,7 @@ moony:c2a1xc2a1
 	@UI_OPENGL@ui:ui moony:moony_ui ;
 	@UI_ZIMPLE@ui:ui moony:moony_zimple_ui ;
 	@UI_ZIMPLE@ui:ui moony:moony_zimple_kx ;
+	ui:ui canvas:display_ui ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:c4a1xc4a1
@@ -120,6 +129,7 @@ moony:c4a1xc4a1
 	@UI_OPENGL@ui:ui moony:moony_ui ;
 	@UI_ZIMPLE@ui:ui moony:moony_zimple_ui ;
 	@UI_ZIMPLE@ui:ui moony:moony_zimple_kx ;
+	ui:ui canvas:display_ui ;
 	rdfs:seeAlso <moony.ttl> .
 
 # UI
