@@ -535,7 +535,42 @@ _lstateresponder__call(lua_State *L)
 		}
 		else if(latom->body.obj->otype == moony->uris.patch.put)
 		{
-			//TODO implement this
+			const LV2_Atom_Object *patch_body = NULL;
+			const LV2_Atom_Int *sequence = NULL;
+
+			lv2_atom_object_body_get(latom->atom->size, latom->body.obj,
+				moony->uris.patch.body, &patch_body,
+				moony->uris.patch.sequence, &sequence,
+				NULL);
+
+			int32_t sequence_num = 0;
+			if(sequence && (sequence->atom.type == moony->forge.Int) )
+				sequence_num = sequence->body;
+
+			if(patch_body && (patch_body->atom.type == moony->forge.Object) )
+			{
+				LV2_ATOM_OBJECT_FOREACH(patch_body, prop)
+				{
+					const LV2_URID property = prop->key;
+					const LV2_Atom *value = &prop->value;
+
+					if(  (lua_geti(L, 1, moony->uris.patch.writable) != LUA_TNIL)
+						&& (lua_geti(L, -1, property) != LUA_TNIL) ) // self[property]
+					{
+						_latom_value(L, value);
+						lua_seti(L, -2, moony->uris.rdf_value); // self[property][RDF.value] = value
+					}
+				}
+
+				if(sequence_num)
+					_lstateresponder_ack(L, lforge, moony, frames, sequence_num);
+
+				lua_pushboolean(L, 1); // handled
+				return 1;
+			}
+
+			if(sequence_num)
+				_lstateresponder_error(L, lforge, moony, frames, sequence_num);
 		}
 	}
 

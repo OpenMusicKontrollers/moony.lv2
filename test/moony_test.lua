@@ -1651,8 +1651,8 @@ do
 	local urid = Mapper(prefix)
 	local subj = Map('http://open-music-kontrollers.ch/lv2/moony#test')
 
-	local flt_get_responded = false
-	local flt_set_responded = false
+	local flt_get_responded = 0
+	local flt_set_responded = 0
 
 	local state_int = Parameter{
 		[RDFS.label] = 'Int',
@@ -1677,12 +1677,12 @@ do
 		[Units.symbol] = 'flt',
 		_value = 1.0,
 		[Patch.Get] = function(self)
-			flt_get_responded = true
+			flt_get_responded = flt_get_responded + 1
 			return self._value
 		end,
 		[Patch.Set] = function(self, value)
 			self._value = value
-			flt_set_responded = true
+			flt_set_responded = flt_set_responded + 1
 		end
 	}
 
@@ -1731,12 +1731,11 @@ do
 	local function consumer(seq, forge)
 		assert(#seq == 7)
 
+		-- test up to sync
 		for frames, atom in seq:foreach() do
-			local handled = state(frames, forge, atom)
-			if frames < 5 then
-				assert(handled == true)
-			else
-				assert(handled == false)
+			if frames < 6 then
+				local handled = state(frames, forge, atom)
+				assert(handled == (frames ~= 5))
 			end
 		end
 
@@ -1744,8 +1743,8 @@ do
 		assert(state_int() == 2)
 		assert(state_flt() == state_flt[RDF.value])
 		assert(state_flt() == 2.0)
-		assert(flt_get_responded)
-		assert(flt_set_responded)
+		assert(flt_get_responded == 6)
+		assert(flt_set_responded == 1)
 
 		assert(#seq == 7)
 
@@ -1795,6 +1794,21 @@ do
 		assert(body[urid.flt].body == 1.0)
 		assert(body[urid.bool].type == Atom.Bool)
 		assert(body[urid.bool].body == false)
+
+		-- test from sync
+		for frames, atom in seq:foreach() do
+			if frames == 6 then
+				local handled = state(frames, forge, atom)
+				assert(handled)
+			end
+		end
+
+		assert(state_int() == state_int[RDF.value])
+		assert(state_int() == 1)
+		assert(state_flt() == state_flt[RDF.value])
+		assert(state_flt() == 1.0)
+		assert(flt_get_responded == 10)
+		assert(flt_set_responded == 3)
 	end
 
 	test(producer, consumer)
