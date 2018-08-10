@@ -618,7 +618,8 @@ local function render()
 	ctx:tuple()
 
 	-- background
-	:rectangle(0.0, 0.0, 1.0, 1.0):style(bg):fill()
+	ctx:beginPath()
+	ctx:rectangle(0.0, 0.0, 1.0, 1.0):style(bg):fill()
 
 	-- 'L'
 	ctx:beginPath()
