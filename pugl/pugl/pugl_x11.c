@@ -60,7 +60,8 @@ static int attrListDbl[] = {
 	GLX_RED_SIZE        , 4,
 	GLX_GREEN_SIZE      , 4,
 	GLX_BLUE_SIZE       , 4,
-	GLX_DEPTH_SIZE      , 16,
+	GLX_DEPTH_SIZE      , 8,
+	GLX_STENCIL_SIZE    , 8,
 	/* GLX_SAMPLE_BUFFERS  , 1, */
 	/* GLX_SAMPLES         , 4, */
 	None
@@ -73,7 +74,8 @@ static int attrListSgl[] = {
 	GLX_RED_SIZE        , 4,
 	GLX_GREEN_SIZE      , 4,
 	GLX_BLUE_SIZE       , 4,
-	GLX_DEPTH_SIZE      , 16,
+	GLX_DEPTH_SIZE      , 8,
+	GLX_STENCIL_SIZE    , 8,
 	/* GLX_SAMPLE_BUFFERS  , 1, */
 	/* GLX_SAMPLES         , 4, */
 	None
@@ -220,12 +222,6 @@ puglEnterContext(PuglView* view)
 #ifdef PUGL_HAVE_GL
 	if (view->ctx_type & PUGL_GL) {
 		glXMakeCurrent(view->impl->display, view->impl->win, view->impl->ctx);
-	}
-#endif
-#ifdef PUGL_HAVE_CAIRO
-	if (view->ctx_type & PUGL_CAIRO) {
-		cairo_set_source_rgb(view->impl->cr, 0, 0, 0);
-		cairo_paint(view->impl->cr);
 	}
 #endif
 }
@@ -742,7 +738,9 @@ puglProcessEvents(PuglView* view)
 		}
 	}
 
-	if (config_event.type) {
+	if (config_event.type
+		&& ( (view->width != config_event.configure.width)
+			|| (view->height != config_event.configure.height) )) {
 #ifdef PUGL_HAVE_CAIRO
 		if (view->ctx_type == PUGL_CAIRO) {
 			// Resize surfaces/contexts before dispatching
