@@ -30,5 +30,7 @@ osc_test = executable('osc_test',
 	dependencies : deps,
 	install : false)
 
+# FIXME start virautl serial pair before test
+# socat -d -d pty,raw,echo=0 pty,raw,echo=0
 test('Test', osc_test,
 	timeout : 240)
