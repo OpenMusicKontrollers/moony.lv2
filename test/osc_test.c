@@ -627,6 +627,11 @@ _thread_1(void *data)
 		const time_t t1 = time(NULL);
 		const LV2_OSC_Enum ev = lv2_osc_stream_run(&stream);
 
+		if(ev & LV2_OSC_ERR)
+		{
+			fprintf(stderr, "%s: %s\n", __func__, strerror(ev & LV2_OSC_ERR));
+		}
+
 		if(ev & LV2_OSC_RECV)
 		{
 			const uint8_t *buf_rx;
@@ -684,7 +689,12 @@ _thread_1(void *data)
 	do
 	{
 		ev = lv2_osc_stream_run(&stream);
-	} while( (ev & LV2_OSC_SEND) || stream.connected );
+
+		if(ev & LV2_OSC_ERR)
+		{
+			fprintf(stderr, "%s: %s\n", __func__, strerror(ev & LV2_OSC_ERR));
+		}
+	} while( (ev & LV2_OSC_SEND) || (ev & LV2_OSC_CONN) );
 
 	assert(pair->lossy || (count == COUNT) );
 
@@ -749,6 +759,11 @@ _thread_2(void *data)
 
 		const LV2_OSC_Enum ev = lv2_osc_stream_run(&stream);
 
+		if(ev & LV2_OSC_ERR)
+		{
+			fprintf(stderr, "%s: %s\n", __func__, strerror(ev & LV2_OSC_ERR));
+		}
+
 		if(ev & LV2_OSC_RECV)
 		{
 			const uint8_t *buf_rx;
@@ -782,6 +797,11 @@ _thread_2(void *data)
 	{
 		const time_t t1 = time(NULL);
 		const LV2_OSC_Enum ev = lv2_osc_stream_run(&stream);
+
+		if(ev & LV2_OSC_ERR)
+		{
+			fprintf(stderr, "%s: %s\n", __func__, strerror(ev & LV2_OSC_ERR));
+		}
 
 		if(ev & LV2_OSC_RECV)
 		{
@@ -894,6 +914,14 @@ static const pair_t pairs [] = {
 		.client = "osc.prefix.tcp://[::1%lo]:9999",
 		.lossy = false
 	},
+
+#if 0
+	{
+		.server = "osc.serial:///dev/pts/4", //FIXME baudrate
+		.client = "osc.serial:///dev/pts/5",
+		.lossy = false
+	},
+#endif
 
 	{
 		.server = NULL,
