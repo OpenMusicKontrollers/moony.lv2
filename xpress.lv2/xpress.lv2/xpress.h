@@ -277,9 +277,9 @@ _xpress_urn_uuid(LV2_URID_Map *map)
 static inline xpress_voice_t *
 _xpress_voice_get(xpress_t *xpress, xpress_uuid_t uuid)
 {
-	for(unsigned i = 0, idx = (uuid + i*i) & xpress->mask_nvoices;
+	for(unsigned i = 0, idx = (uuid + i) & xpress->mask_nvoices;
 		i < xpress->max_nvoices;
-		i++, idx = (uuid + i*i) & xpress->mask_nvoices)
+		i++, idx = (uuid + i) & xpress->mask_nvoices)
 	{
 		xpress_voice_t *voice = &xpress->voices[idx];
 
@@ -295,9 +295,9 @@ _xpress_voice_get(xpress_t *xpress, xpress_uuid_t uuid)
 static inline void *
 _xpress_voice_add(xpress_t *xpress, LV2_URID source, xpress_uuid_t uuid, bool alive)
 {
-	for(unsigned i = 0, idx = (uuid + i*i) & xpress->mask_nvoices;
+	for(unsigned i = 0, idx = (uuid + i) & xpress->mask_nvoices;
 		i < xpress->max_nvoices;
-		i++, idx = (uuid + i*i) & xpress->mask_nvoices)
+		i++, idx = (uuid + i) & xpress->mask_nvoices)
 	{
 		xpress_voice_t *voice = &xpress->voices[idx];
 
