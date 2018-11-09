@@ -172,7 +172,8 @@ api_lib = static_library('api',
 
 dsp_links = [laes128_lib, lascii85_lib, lbase64_lib, lcomplex_lib, lmathx_lib, lrandom_lib, lpeg_lib, lua_lib, tlsf_lib, api_lib]
 
-ui_links = [lpeg_lib, lua_lib]
+ui_with = [lpeg_lib, lua_lib]
+ui_links = []
 
 dsp_srcs = [
 	join_paths('plugin', 'moony.c'),
@@ -250,7 +251,8 @@ if build_opengl_ui or build_zimple_ui
 		include_directories : inc_dir,
 		name_prefix : '',
 		dependencies : ui_deps,
-		link_with : ui_links,
+		link_with : ui_with,
+		link_args : ui_links,
 		install : true,
 		install_dir : inst_dir)
 endif
