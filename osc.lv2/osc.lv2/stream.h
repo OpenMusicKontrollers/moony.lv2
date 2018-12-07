@@ -28,6 +28,7 @@
 #	include <netinet/in.h>
 #	include <netdb.h>
 #	include <termios.h>
+#	include <limits.h>
 #endif
 #include <sys/types.h>
 #include <fcntl.h>
@@ -100,6 +101,7 @@ struct _LV2_OSC_Stream {
 	uint8_t tx_buf [0x4000];
 	uint8_t rx_buf [0x4000];
 	size_t rx_off;
+	char url [PATH_MAX];
 };
 
 typedef enum _LV2_OSC_Enum {
@@ -159,14 +161,36 @@ _lv2_osc_stream_interface_attribs(int fd, int speed)
 
 #define LV2_OSC_STREAM_ERRNO(EV, ERRNO) ( (EV & (~LV2_OSC_ERR)) | (ERRNO) )
 
+static void
+_close_socket(int *fd)
+{
+	if(fd)
+	{
+		if(*fd >= 0)
+		{
+			close(*fd);
+		}
+
+		*fd = -1;
+	}
+}
+
 static int
-lv2_osc_stream_init(LV2_OSC_Stream *stream, const char *url,
-	const LV2_OSC_Driver *driv, void *data)
+lv2_osc_stream_deinit(LV2_OSC_Stream *stream)
+{
+	_close_socket(&stream->fd);
+	_close_socket(&stream->sock);
+
+	return 0;
+}
+
+static int
+_lv2_osc_stream_reinit(LV2_OSC_Stream *stream)
 {
 	LV2_OSC_Enum ev = LV2_OSC_NONE;
-	memset(stream, 0x0, sizeof(LV2_OSC_Stream));
+	lv2_osc_stream_deinit(stream);
 
-	char *dup = strdup(url);
+	char *dup = strdup(stream->url);
 	if(!dup)
 	{
 		ev = LV2_OSC_STREAM_ERRNO(ev, ENOMEM);
@@ -225,9 +249,6 @@ lv2_osc_stream_init(LV2_OSC_Stream *stream, const char *url,
 		ev = LV2_OSC_STREAM_ERRNO(ev, EDESTADDRREQ);
 		goto fail;
 	}
-
-	stream->driv = driv;
-	stream->data = data;
 
 	if(stream->serial)
 	{
@@ -331,16 +352,24 @@ lv2_osc_stream_init(LV2_OSC_Stream *stream, const char *url,
 
 		const int sendbuff = LV2_OSC_STREAM_SNDBUF;
 		const int recvbuff = LV2_OSC_STREAM_RCVBUF;
+		const int reuseaddr = 1;
 
 		if(setsockopt(stream->sock, SOL_SOCKET,
-			SO_SNDBUF, &sendbuff, sizeof(int))== -1)
+			SO_SNDBUF, &sendbuff, sizeof(sendbuff)) == -1)
 		{
 			ev = LV2_OSC_STREAM_ERRNO(ev, errno);
 			goto fail;
 		}
 
 		if(setsockopt(stream->sock, SOL_SOCKET,
-			SO_RCVBUF, &recvbuff, sizeof(int))== -1)
+			SO_RCVBUF, &recvbuff, sizeof(recvbuff)) == -1)
+		{
+			ev = LV2_OSC_STREAM_ERRNO(ev, errno);
+			goto fail;
+		}
+
+		if(setsockopt(stream->sock, SOL_SOCKET,
+			SO_REUSEADDR, &reuseaddr, sizeof(reuseaddr)) == -1)
 		{
 			ev = LV2_OSC_STREAM_ERRNO(ev, errno);
 			goto fail;
@@ -439,14 +468,14 @@ lv2_osc_stream_init(LV2_OSC_Stream *stream, const char *url,
 				const int flag = 1;
 
 				if(setsockopt(stream->sock, stream->protocol,
-					TCP_NODELAY, &flag, sizeof(int)) != 0)
+					TCP_NODELAY, &flag, sizeof(flag)) != 0)
 				{
 					ev = LV2_OSC_STREAM_ERRNO(ev, errno);
 					goto fail;
 				}
 
 				if(setsockopt(stream->sock, SOL_SOCKET,
-					SO_KEEPALIVE, &flag, sizeof(int)) != 0)
+					SO_KEEPALIVE, &flag, sizeof(flag)) != 0)
 				{
 					ev = LV2_OSC_STREAM_ERRNO(ev, errno);
 					goto fail;
@@ -572,14 +601,14 @@ lv2_osc_stream_init(LV2_OSC_Stream *stream, const char *url,
 				const int flag = 1;
 
 				if(setsockopt(stream->sock, stream->protocol,
-					TCP_NODELAY, &flag, sizeof(int)) != 0)
+					TCP_NODELAY, &flag, sizeof(flag)) != 0)
 				{
 					ev = LV2_OSC_STREAM_ERRNO(ev, errno);
 					goto fail;
 				}
 
 				if(setsockopt(stream->sock, SOL_SOCKET,
-					SO_KEEPALIVE, &flag, sizeof(int)) != 0)
+					SO_KEEPALIVE, &flag, sizeof(flag)) != 0)
 				{
 					ev = LV2_OSC_STREAM_ERRNO(ev, errno);
 					goto fail;
@@ -625,13 +654,24 @@ fail:
 		free(dup);
 	}
 
-	if(stream->sock >= 0)
-	{
-		close(stream->sock);
-		stream->sock = -1;
-	}
+	_close_socket(&stream->sock);
 
 	return ev;
+}
+
+static int
+lv2_osc_stream_init(LV2_OSC_Stream *stream, const char *url,
+	const LV2_OSC_Driver *driv, void *data)
+{
+	memset(stream, 0x0, sizeof(LV2_OSC_Stream));
+
+	strncpy(stream->url, url, sizeof(stream->url));
+	stream->driv = driv;
+	stream->data = data;
+	stream->sock = -1;
+	stream->fd = -1;
+
+	return _lv2_osc_stream_reinit(stream);
 }
 
 #define SLIP_END					0300	// 0xC0, 192, indicates end of packet
@@ -843,38 +883,56 @@ _lv2_osc_stream_run_tcp(LV2_OSC_Stream *stream)
 				}
 
 				if(setsockopt(stream->fd, stream->protocol,
-					TCP_NODELAY, &flag, sizeof(int)) != 0)
+					TCP_NODELAY, &flag, sizeof(flag)) != 0)
 				{
 					ev = LV2_OSC_STREAM_ERRNO(ev, errno);
 				}
 
 				if(setsockopt(stream->sock, SOL_SOCKET,
-					SO_KEEPALIVE, &flag, sizeof(int)) != 0)
+					SO_KEEPALIVE, &flag, sizeof(flag)) != 0)
 				{
 					ev = LV2_OSC_STREAM_ERRNO(ev, errno);
 				}
 
 				if(setsockopt(stream->fd, SOL_SOCKET,
-					SO_SNDBUF, &sendbuff, sizeof(int))== -1)
+					SO_SNDBUF, &sendbuff, sizeof(sendbuff)) == -1)
 				{
 					ev = LV2_OSC_STREAM_ERRNO(ev, errno);
 				}
 
 				if(setsockopt(stream->fd, SOL_SOCKET,
-					SO_RCVBUF, &recvbuff, sizeof(int))== -1)
+					SO_RCVBUF, &recvbuff, sizeof(recvbuff)) == -1)
 				{
 					ev = LV2_OSC_STREAM_ERRNO(ev, errno);
 				}
 
 				stream->connected = true; // orderly accept
 			}
+			else
+			{
+				//ev = LV2_OSC_STREAM_ERRNO(ev, errno);
+			}
 		}
 		else
 		{
+			if(stream->sock < 0)
+			{
+				ev = _lv2_osc_stream_reinit(stream);
+			}
+
 			if(connect(stream->sock, (struct sockaddr *)&stream->peer.in6,
 				stream->peer.len) == 0)
 			{
 				stream->connected = true; // orderly (re)connect
+			}
+			else
+			{
+				//if(errno == EISCONN)
+				//{
+				//	_close_socket(&stream->sock);
+				//}
+
+				//ev = LV2_OSC_STREAM_ERRNO(ev, errno);
 			}
 		}
 	}
@@ -882,11 +940,11 @@ _lv2_osc_stream_run_tcp(LV2_OSC_Stream *stream)
 	// send everything
 	if(stream->connected)
 	{
-		const int fd = stream->server
-			? stream->fd
-			: stream->sock;
+		int *fd = stream->server
+			? &stream->fd
+			: &stream->sock;
 
-		if(fd >= 0)
+		if(*fd >= 0)
 		{
 			const uint8_t *buf;
 			size_t tosend;
@@ -924,7 +982,7 @@ _lv2_osc_stream_run_tcp(LV2_OSC_Stream *stream)
 				}
 
 				const ssize_t sent = tosend
-					? send(fd, stream->tx_buf, tosend, 0)
+					? send(*fd, stream->tx_buf, tosend, 0)
 					: 0;
 
 				if(sent == -1)
@@ -934,13 +992,8 @@ _lv2_osc_stream_run_tcp(LV2_OSC_Stream *stream)
 						// empty queue
 						break;
 					}
-					else if(stream->server)
-					{
-						// peer has shut down
-						close(stream->fd);
-						stream->fd = -1;
-					}
 
+					_close_socket(fd);
 					stream->connected = false;
 					ev = LV2_OSC_STREAM_ERRNO(ev, errno);
 					break;
@@ -960,17 +1013,17 @@ _lv2_osc_stream_run_tcp(LV2_OSC_Stream *stream)
 	// recv everything
 	if(stream->connected)
 	{
-		const int fd = stream->server
-			? stream->fd
-			: stream->sock;
+		int *fd = stream->server
+			? &stream->fd
+			: &stream->sock;
 
-		if(fd >= 0)
+		if(*fd >= 0)
 		{
 			if(stream->slip) // SLIP framed
 			{
 				while(true)
 				{
-					ssize_t recvd = recv(fd, stream->rx_buf + stream->rx_off,
+					ssize_t recvd = recv(*fd, stream->rx_buf + stream->rx_off,
 						sizeof(stream->rx_buf) - stream->rx_off, 0);
 
 					if(recvd == -1)
@@ -980,26 +1033,15 @@ _lv2_osc_stream_run_tcp(LV2_OSC_Stream *stream)
 							// empty queue
 							break;
 						}
-						else if(stream->server)
-						{
-							// peer has shut down
-							close(stream->fd);
-							stream->fd = -1;
-						}
 
+						_close_socket(fd);
 						stream->connected = false;
 						ev = LV2_OSC_STREAM_ERRNO(ev, errno);
 						break;
 					}
 					else if(recvd == 0)
 					{
-						if(stream->server)
-						{
-							// peer has shut down
-							close(stream->fd);
-							stream->fd = -1;
-						}
-
+						_close_socket(fd);
 						stream->connected = false; // orderly shutdown
 						break;
 					}
@@ -1063,11 +1105,11 @@ _lv2_osc_stream_run_tcp(LV2_OSC_Stream *stream)
 				{
 					uint32_t prefix;
 
-					ssize_t recvd = recv(fd, &prefix, sizeof(uint32_t), 0);
+					ssize_t recvd = recv(*fd, &prefix, sizeof(uint32_t), 0);
 					if(recvd == sizeof(uint32_t))
 					{
 						prefix = ntohl(prefix); //FIXME check prefix <= max_len
-						recvd = recv(fd, buf, prefix, 0);
+						recvd = recv(*fd, buf, prefix, 0);
 					}
 					else if(recvd == -1)
 					{
@@ -1076,26 +1118,15 @@ _lv2_osc_stream_run_tcp(LV2_OSC_Stream *stream)
 							// empty queue
 							break;
 						}
-						else if(stream->server)
-						{
-							// peer has shut down
-							close(stream->fd);
-							stream->fd = -1;
-						}
 
+						_close_socket(fd);
 						stream->connected = false;
 						ev = LV2_OSC_STREAM_ERRNO(ev, errno);
 						break;
 					}
 					else if(recvd == 0)
 					{
-						if(stream->server)
-						{
-							// peer has shut down
-							close(stream->fd);
-							stream->fd = -1;
-						}
-
+						_close_socket(fd);
 						stream->connected = false; // orderly shutdown
 						break;
 					}
@@ -1339,24 +1370,6 @@ lv2_osc_stream_run(LV2_OSC_Stream *stream)
 	}
 
 	return ev;
-}
-
-static int
-lv2_osc_stream_deinit(LV2_OSC_Stream *stream)
-{
-	if(stream->fd >= 0)
-	{
-		close(stream->fd);
-		stream->fd = -1;
-	}
-
-	if(stream->sock >= 0)
-	{
-		close(stream->sock);
-		stream->sock = -1;
-	}
-
-	return 0;
 }
 
 #ifdef __cplusplus
