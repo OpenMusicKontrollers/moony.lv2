@@ -48,7 +48,8 @@ pugl_cairo_gl_free(PuglCairoGL* ctx)
 }
 
 static void
-pugl_cairo_gl_configure(PuglCairoGL* ctx, int width, int height)
+pugl_cairo_gl_configure(PuglCairoGL* ctx,
+	int width __attribute__((unused)), int height __attribute__((unused)))
 {
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);

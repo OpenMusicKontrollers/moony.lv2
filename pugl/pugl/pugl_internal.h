@@ -64,7 +64,7 @@ struct PuglViewImpl {
 PuglInternals* puglInitInternals(void);
 
 PuglView*
-puglInit(int* pargc, char** argv)
+puglInit(int* pargc __attribute__((unused)), char** argv __attribute__((unused)))
 {
 	PuglView* view = (PuglView*)calloc(1, sizeof(PuglView));
 	if (!view) {
