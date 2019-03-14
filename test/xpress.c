@@ -61,8 +61,6 @@ _dump(plughandle_t *handle)
 {
 	XPRESS_VOICE_FOREACH(&handle->xpressI, voice)
 	{
-		if(!voice->uuid) continue;
-
 		lv2_log_trace(&handle->logger, "\t%"PRIu32" (%"PRIu32")", voice->uuid, voice->source);
 	}
 }

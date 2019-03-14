@@ -11,6 +11,8 @@ conf_data = configuration_data()
 cc = meson.get_compiler('c')
 
 cp = find_program('cp')
+lv2_validate = find_program('lv2_validate', native : true, required : false)
+lv2lint = find_program('lv2lint', required : false)
 clone = [cp, '@INPUT@', '@OUTPUT@']
 
 lv2_dep = dependency('lv2', version : '>=1.14.0')
@@ -46,13 +48,25 @@ conf_data.set('MICRO_VERSION', version[2])
 suffix = mod.full_path().strip().split('.')[-1]
 conf_data.set('MODULE_SUFFIX', '.' + suffix)
 
-configure_file(input : join_paths('test', 'manifest.ttl.in'), output : 'manifest.ttl',
+manifest_ttl = configure_file(input : join_paths('test', 'manifest.ttl.in'),
+	output : 'manifest.ttl',
 	configuration : conf_data,
 	install : true,
 	install_dir : inst_dir)
-custom_target('xpress_ttl',
+dsp_ttl = custom_target('xpress_ttl',
 	input : join_paths('test', 'xpress.ttl'),
 	output : 'xpress.ttl',
 	command : clone,
 	install : true,
 	install_dir : inst_dir)
+
+if lv2_validate.found()
+	test('LV2 validate', lv2_validate,
+		args : [manifest_ttl, dsp_ttl])
+endif
+
+if lv2lint.found()
+	test('LV2 lint', lv2lint,
+		args : ['-Ewarn',
+			'http://open-music-kontrollers.ch/lv2/xpress#test'])
+endif

@@ -175,15 +175,56 @@ struct _xpress_t {
 	xpress_t (XPRESS); \
 	xpress_voice_t XPRESS_CONCAT(_voices, __COUNTER__) [(MAX_NVOICES - 1)]
 
+// rt-safe
+static inline bool
+_xpress_voice_not_end(xpress_t *xpress, xpress_voice_t *voice)
+{
+	return (unsigned)(voice - xpress->voices) < xpress->max_nvoices;
+}
+
+// rt-safe
+static inline xpress_voice_t *
+xpress_voice_begin(xpress_t *xpress)
+{
+	for(xpress_voice_t *voice = xpress->voices;
+		_xpress_voice_not_end(xpress, voice);
+		voice = voice + 1)
+	{
+		if(voice->uuid)
+		{
+			return voice;
+		}
+	}
+
+	return NULL;
+}
+
+// rt-safe
+static inline xpress_voice_t *
+xpress_voice_next(xpress_t *xpress, xpress_voice_t *voice)
+{
+	for( ;
+		_xpress_voice_not_end(xpress, voice);
+		voice = voice + 1)
+	{
+		if(voice->uuid)
+		{
+			return voice;
+		}
+	}
+
+	return NULL;
+}
+
 #define XPRESS_VOICE_FOREACH(XPRESS, VOICE) \
-	for(xpress_voice_t *(VOICE) = &(XPRESS)->voices[(int)(XPRESS)->max_nvoices - 1]; \
-		(VOICE) >= (XPRESS)->voices; \
-		(VOICE)--)
+	for(xpress_voice_t *(VOICE) = xpress_voice_begin((XPRESS)); \
+		(VOICE); \
+		(VOICE) = xpress_voice_next((XPRESS), (VOICE)))
 
 #define XPRESS_VOICE_FREE(XPRESS, VOICE) \
-	for(xpress_voice_t *(VOICE) = &(XPRESS)->voices[(int)(XPRESS)->max_nvoices - 1]; \
-		(VOICE) >= (XPRESS)->voices; \
-		(VOICE)->uuid = 0, (VOICE)--)
+	for(xpress_voice_t *(VOICE) = xpress_voice_begin((XPRESS)); \
+		(VOICE); \
+		(VOICE)->uuid = 0, (VOICE) = xpress_voice_next((XPRESS), (VOICE)))
 
 // non rt-safe
 static inline int
