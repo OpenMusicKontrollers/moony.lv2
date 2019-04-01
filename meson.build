@@ -198,6 +198,7 @@ conf_data.set('MODULE_SUFFIX', '.' + suffix)
 
 build_opengl_ui = get_option('build-opengl-ui')
 build_zimple_ui = get_option('build-zimple-ui')
+build_canvas_ui = get_option('build-canvas-ui')
 
 conf_data.set('UI', '#')
 conf_data.set('UI_TYPE', 'UI')
@@ -216,6 +217,14 @@ if build_zimple_ui
 	conf_data.set('UI_ZIMPLE', '')
 else
 	conf_data.set('UI_ZIMPLE', '#')
+endif
+
+if build_canvas_ui
+	message('building Canvas UI')
+	conf_data.set('UI', '')
+	conf_data.set('UI_CANVAS', '')
+else
+	conf_data.set('UI_CANVAS', '#')
 endif
 
 if build_opengl_ui or build_zimple_ui
