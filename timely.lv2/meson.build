@@ -2,7 +2,7 @@ project('timely.lv2', 'c', default_options : [
 	'buildtype=release',
 	'warning_level=1',
 	'werror=false',
-	'b_lto=true',
+	'b_lto=false',
 	'c_std=c11'])
 
 add_project_arguments('-D_GNU_SOURCE', language : 'c')
