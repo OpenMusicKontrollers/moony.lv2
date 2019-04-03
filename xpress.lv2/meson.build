@@ -60,6 +60,15 @@ dsp_ttl = custom_target('xpress_ttl',
 	install : true,
 	install_dir : inst_dir)
 
+xpress_test = executable('xpress_test',
+	join_paths('test', 'xpress_test.c'),
+	c_args : c_args,
+	dependencies : deps,
+	install : false)
+
+test('Test', xpress_test,
+	timeout : 240)
+
 if lv2_validate.found()
 	test('LV2 validate', lv2_validate,
 		args : [manifest_ttl, dsp_ttl])

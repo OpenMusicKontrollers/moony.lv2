@@ -632,8 +632,6 @@ xpress_advance(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
 
 		XPRESS_VOICE_FOREACH(xpress, voice)
 		{
-			if(!voice->uuid) continue;
-
 			if(  (voice->source == source->body)
 				&& !voice->alive )
 			{
@@ -655,8 +653,6 @@ xpress_pre(xpress_t *xpress)
 {
 	XPRESS_VOICE_FOREACH(xpress, voice)
 	{
-		if(!voice->uuid) continue;
-
 		voice->alive = false;
 	}
 }
@@ -678,8 +674,6 @@ xpress_post(xpress_t *xpress, int64_t frames)
 {
 	XPRESS_VOICE_FOREACH(xpress, voice)
 	{
-		if(!voice->uuid) continue;
-
 		if(!voice->alive)
 		{
 			if( (xpress->event_mask & XPRESS_EVENT_DEL) && xpress->iface->del)
@@ -803,8 +797,6 @@ xpress_alive(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames)
 		{
 			XPRESS_VOICE_FOREACH(xpress, voice)
 			{
-				if(!voice->uuid) continue;
-
 				if(ref)
 					ref = lv2_atom_forge_int(forge, voice->uuid);
 			}
