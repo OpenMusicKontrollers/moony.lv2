@@ -1,0 +1,39 @@
+# Changelog
+
+## [0.26.0] - 15 Apr 2019
+
+### Added
+
+* use custom environment in code injection example preset
+* global moony:error parameter
+* global moony:code parameter
+* external editor ui
+* supported options to turtle metadata
+* HTML reference manual to plugin bundle
+* button for opening HTML reference manual
+* support for plain atoms as rdf:value in state responder
+* support decoding patch:Put events in state responder
+
+### Changed
+
+* from Cmake to meson build system
+* enable manual garbage collection by default
+* internal Lua registry code cleanup
+* from lv2_atom_object_query to lv2_atom_object_get (GCC bug)
+* from strtok to strsep (the latter is rt-safe)
+* to updated (experimental) canvas extension
+* use strpbrk to match OSC path wildcards
+* always return params:sampleRate from options interface
+* render instructions in presets to be compatible with nanovg backend
+
+### Fixed
+
+* automatic scaling for hiDPI displays
+* initial focus on text edit fields
+* text edit for onon-single line edits
+* log auto-clear upon code send
+* always overwrite error message with latest
+
+### Deprecated
+
+* math.random and math.randomseed (use rt-safe 'random' module instead)
