@@ -63,6 +63,8 @@ add_project_arguments('-D_GNU_SOURCE', language : 'c')
 add_project_arguments('-DPUGL_HAVE_GL', language : 'c')
 
 cp = find_program('cp')
+lv2_validate = find_program('lv2_validate', native : true, required : false)
+lv2lint = find_program('lv2lint', required : false)
 clone = [cp, '@INPUT@', '@OUTPUT@']
 
 c_args = ['-fvisibility=hidden',
@@ -274,28 +276,28 @@ app = executable('moony_test', app_srcs,
 	link_with : dsp_links,
 	install : false)
 
-configure_file(
+manifest_ttl = configure_file(
 	input : join_paths('plugin', 'manifest.ttl.in'),
 	output : 'manifest.ttl',
 	configuration : conf_data,
 	install : true,
 	install_dir : inst_dir)
 
-custom_target('dsp_ttl',
+dsp_ttl = custom_target('dsp_ttl',
 	input : join_paths('plugin', 'moony.ttl'),
 	output : 'moony.ttl',
 	command : clone,
 	install : true,
 	install_dir : inst_dir)
 
-custom_target('ui_ttl',
+ui_ttl = custom_target('ui_ttl',
 	input : join_paths('plugin', 'moony_ui.ttl'),
 	output : 'moony_ui.ttl',
 	command : clone,
 	install : true,
 	install_dir : inst_dir)
 
-custom_target('presets_ttl',
+pset_ttl = custom_target('presets_ttl',
 	input : join_paths('plugin', 'presets.ttl'),
 	output : 'presets.ttl',
 	command : clone,
@@ -499,4 +501,23 @@ if host_machine.system() != 'darwin'
 		args : [moony_manual_lua])
 	test('Presets', app,
 		args : [moony_presets_lua])
+endif
+
+if lv2_validate.found()
+	test('LV2 validate', lv2_validate,
+		args : [manifest_ttl, dsp_ttl, ui_ttl, pset_ttl])
+endif
+
+if lv2lint.found()
+	test('LV2 lint', lv2lint,
+		args : ['-Ewarn',
+			'http://open-music-kontrollers.ch/lv2/moony#a1xa1',
+			'http://open-music-kontrollers.ch/lv2/moony#a2xa2',
+			'http://open-music-kontrollers.ch/lv2/moony#a4xa4',
+			'http://open-music-kontrollers.ch/lv2/moony#c1a1xc1a1',
+			'http://open-music-kontrollers.ch/lv2/moony#c1xc1',
+			'http://open-music-kontrollers.ch/lv2/moony#c2a1xc2a1',
+			'http://open-music-kontrollers.ch/lv2/moony#c2xc2',
+			'http://open-music-kontrollers.ch/lv2/moony#c4a1xc4a1',
+			'http://open-music-kontrollers.ch/lv2/moony#c4xc4'])
 endif
