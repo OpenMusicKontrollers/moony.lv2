@@ -190,6 +190,7 @@ _lv2_canvas_render_lineDash(void *data,
 	LV2_Canvas_URID *urid, const LV2_Atom *body)
 {
 	NVGcontext *ctx = data;
+	(void)ctx; //FIXME
 	const float *v = _lv2_canvas_render_get_float_vec(urid, body, 2);
 
 	if(v)
@@ -277,6 +278,7 @@ _lv2_canvas_render_clip(void *data,
 	LV2_Canvas_URID *urid, const LV2_Atom *body)
 {
 	NVGcontext *ctx = data;
+	(void)ctx; //FIXME
 	//FIXME cairo_clip(ctx);
 }
 
@@ -374,6 +376,7 @@ _lv2_canvas_render_fillText(void *data,
 	LV2_Canvas_URID *urid, const LV2_Atom *body)
 {
 	NVGcontext *ctx = data;
+	(void)ctx; //FIXME
 	const char *v = _lv2_canvas_render_get_type(body, urid->forge.String);
 
 	if(v)
@@ -533,7 +536,7 @@ lv2_canvas_init(LV2_Canvas *canvas, LV2_URID_Map *map)
 }
 
 static inline bool
-lv2_canvas_render_body(LV2_Canvas *canvas, cairo_t *ctx, uint32_t type,
+lv2_canvas_render_body(LV2_Canvas *canvas, NVGcontext *ctx, uint32_t type,
 	uint32_t size, const LV2_Atom *body)
 {
 	LV2_Canvas_URID *urid = &canvas->urid;
