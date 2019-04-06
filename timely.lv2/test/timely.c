@@ -99,7 +99,8 @@ _timely_cb(timely_t *timely, int64_t frames, LV2_URID type, void *data)
 
 static LV2_Handle
 instantiate(const LV2_Descriptor* descriptor, double rate,
-	const char *bundle_path, const LV2_Feature *const *features)
+	const char *bundle_path __attribute__((unused)),
+	const LV2_Feature *const *features)
 {
 	plughandle_t *handle = calloc(1, sizeof(plughandle_t));
 	if(!handle)

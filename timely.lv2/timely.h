@@ -26,12 +26,11 @@
 #include <lv2/lv2plug.in/ns/ext/atom/forge.h>
 #include <lv2/lv2plug.in/ns/ext/time/time.h>
 
-typedef enum _timely_mask_t timely_mask_t;
 typedef struct _timely_t timely_t;
 typedef void (*timely_cb_t)(timely_t *timely, int64_t frames, LV2_URID type,
 	void *data);
 
-enum _timely_mask_t {
+typedef enum _timely_mask_t {
 	TIMELY_MASK_BAR_BEAT					= (1 << 0),
 	TIMELY_MASK_BAR								= (1 << 1),
 	TIMELY_MASK_BEAT_UNIT					= (1 << 2),
@@ -42,7 +41,7 @@ enum _timely_mask_t {
 	TIMELY_MASK_SPEED							= (1 << 7),
 	TIMELY_MASK_BAR_BEAT_WHOLE		= (1 << 8),
 	TIMELY_MASK_BAR_WHOLE					= (1 << 9)
-};
+} timely_mask_t;
 
 struct _timely_t {
 	struct {
