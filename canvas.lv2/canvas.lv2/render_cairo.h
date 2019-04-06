@@ -30,7 +30,8 @@ extern "C" {
 
 static inline void
 _lv2_canvas_render_beginPath(void *data,
-	LV2_Canvas_URID *urid, const LV2_Atom *body)
+	LV2_Canvas_URID *urid __attribute__((unused)),
+	const LV2_Atom *body __attribute__((unused)))
 {
 	cairo_t *ctx = data;
 	cairo_new_sub_path(ctx);
@@ -38,7 +39,8 @@ _lv2_canvas_render_beginPath(void *data,
 
 static inline void
 _lv2_canvas_render_closePath(void *data,
-	LV2_Canvas_URID *urid, const LV2_Atom *body)
+	LV2_Canvas_URID *urid __attribute__((unused)),
+	const LV2_Atom *body __attribute__((unused)))
 {
 	cairo_t *ctx = data;
 	cairo_close_path(ctx);
@@ -235,7 +237,8 @@ _lv2_canvas_render_miterLimit(void *data,
 
 static inline void
 _lv2_canvas_render_stroke(void *data,
-	LV2_Canvas_URID *urid, const LV2_Atom *body)
+	LV2_Canvas_URID *urid __attribute__((unused)),
+	const LV2_Atom *body __attribute__((unused)))
 {
 	cairo_t *ctx = data;
 	cairo_stroke(ctx);
@@ -243,7 +246,8 @@ _lv2_canvas_render_stroke(void *data,
 
 static inline void
 _lv2_canvas_render_fill(void *data,
-	LV2_Canvas_URID *urid, const LV2_Atom *body)
+	LV2_Canvas_URID *urid __attribute__((unused)),
+	const LV2_Atom *body __attribute__((unused)))
 {
 	cairo_t *ctx = data;
 	cairo_fill(ctx);
@@ -251,7 +255,8 @@ _lv2_canvas_render_fill(void *data,
 
 static inline void
 _lv2_canvas_render_clip(void *data,
-	LV2_Canvas_URID *urid, const LV2_Atom *body)
+	LV2_Canvas_URID *urid __attribute__((unused)),
+	const LV2_Atom *body __attribute__((unused)))
 {
 	cairo_t *ctx = data;
 	cairo_clip(ctx);
@@ -259,7 +264,8 @@ _lv2_canvas_render_clip(void *data,
 
 static inline void
 _lv2_canvas_render_save(void *data,
-	LV2_Canvas_URID *urid, const LV2_Atom *body)
+	LV2_Canvas_URID *urid __attribute__((unused)),
+	const LV2_Atom *body __attribute__((unused)))
 {
 	cairo_t *ctx = data;
 	cairo_save(ctx);
@@ -267,7 +273,8 @@ _lv2_canvas_render_save(void *data,
 
 static inline void
 _lv2_canvas_render_restore(void *data,
-	LV2_Canvas_URID *urid, const LV2_Atom *body)
+	LV2_Canvas_URID *urid __attribute__((unused)),
+	const LV2_Atom *body __attribute__((unused)))
 {
 	cairo_t *ctx = data;
 	cairo_restore(ctx);
@@ -336,7 +343,8 @@ _lv2_canvas_render_transform(void *data,
 
 static inline void
 _lv2_canvas_render_reset(void *data,
-	LV2_Canvas_URID *urid, const LV2_Atom *body)
+	LV2_Canvas_URID *urid __attribute__((unused)),
+	const LV2_Atom *body __attribute__((unused)))
 {
 	cairo_t *ctx = data;
 		cairo_identity_matrix(ctx);
@@ -512,11 +520,12 @@ lv2_canvas_init(LV2_Canvas *canvas, LV2_URID_Map *map)
 }
 
 static inline bool
-lv2_canvas_render(LV2_Canvas *canvas, cairo_t *ctx, const LV2_Atom_Tuple *tup)
+lv2_canvas_render_body(LV2_Canvas *canvas, cairo_t *ctx, uint32_t type,
+	uint32_t size, const LV2_Atom *body)
 {
 	LV2_Canvas_URID *urid = &canvas->urid;
 
-	if(!tup || (tup->atom.type != urid->forge.Tuple) )
+	if(!body || (type != urid->forge.Tuple) )
 		return false;
 
 	// save state
@@ -532,7 +541,7 @@ lv2_canvas_render(LV2_Canvas *canvas, cairo_t *ctx, const LV2_Atom_Tuple *tup)
 	cairo_set_line_width(ctx, 0.01);
 	cairo_set_source_rgba(ctx, 1.0, 1.0, 1.0, 1.0);
 
-	LV2_ATOM_TUPLE_FOREACH(tup, itm)
+	LV2_ATOM_TUPLE_BODY_FOREACH(body, size, itm)
 	{
 		if(lv2_atom_forge_is_object_type(&urid->forge, itm->type))
 		{
@@ -559,6 +568,13 @@ lv2_canvas_render(LV2_Canvas *canvas, cairo_t *ctx, const LV2_Atom_Tuple *tup)
 	cairo_surface_flush(surface);
 
 	return true;
+}
+
+static inline bool
+lv2_canvas_render(LV2_Canvas *canvas, cairo_t *ctx, const LV2_Atom_Tuple *tup)
+{
+	return lv2_canvas_render_body(canvas, ctx, tup->atom.type, tup->atom.size,
+		LV2_ATOM_BODY_CONST(&tup->atom));
 }
 
 #ifdef __cplusplus

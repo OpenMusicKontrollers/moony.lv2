@@ -84,4 +84,4 @@ _lv2_canvas_render_get_type(const LV2_Atom *body, LV2_URID type)
 #	include <canvas.lv2/render_cairo.h>
 #endif
 
-#endif // CANVAS_IMPLEMENTATION
+#endif // _LV2_CANVAS_RENDER_H
