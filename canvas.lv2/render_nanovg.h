@@ -533,11 +533,12 @@ lv2_canvas_init(LV2_Canvas *canvas, LV2_URID_Map *map)
 }
 
 static inline bool
-lv2_canvas_render(LV2_Canvas *canvas, NVGcontext *ctx, const LV2_Atom_Tuple *tup)
+lv2_canvas_render_body(LV2_Canvas *canvas, cairo_t *ctx, uint32_t type,
+	uint32_t size, const LV2_Atom *body)
 {
 	LV2_Canvas_URID *urid = &canvas->urid;
 
-	if(!tup || (tup->atom.type != urid->forge.Tuple) )
+	if(!body || (type != urid->forge.Tuple) )
 		return false;
 
 	// save state
@@ -554,7 +555,7 @@ lv2_canvas_render(LV2_Canvas *canvas, NVGcontext *ctx, const LV2_Atom_Tuple *tup
 	nvgStrokeColor(ctx, nvgRGBA(0xff, 0xff, 0xff, 0xff));
 	nvgFillColor(ctx, nvgRGBA(0xff, 0xff, 0xff, 0xff));
 
-	LV2_ATOM_TUPLE_FOREACH(tup, itm)
+	LV2_ATOM_TUPLE_BODY_FOREACH(body, size, itm)
 	{
 		if(lv2_atom_forge_is_object_type(&urid->forge, itm->type))
 		{
@@ -577,6 +578,13 @@ lv2_canvas_render(LV2_Canvas *canvas, NVGcontext *ctx, const LV2_Atom_Tuple *tup
 	nvgRestore(ctx);
 
 	return true;
+}
+
+static inline bool
+lv2_canvas_render(LV2_Canvas *canvas, NVGcontext *ctx, const LV2_Atom_Tuple *tup)
+{
+	return lv2_canvas_render_body(canvas, ctx, tup->atom.type, tup->atom.size,
+		LV2_ATOM_BODY_CONST(&tup->atom));
 }
 
 #ifdef __cplusplus
