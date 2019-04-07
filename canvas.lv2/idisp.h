@@ -44,7 +44,7 @@ _lv2_canvas_idisp_surf_init(LV2_Canvas_Idisp *idisp, int w, int h)
 	LV2_Inline_Display_Image_Surface *surf = &idisp->image_surface;
 
 	surf->width = w;
-	surf->height = w > h ? h : w; // try to use 1:1 ratio
+	surf->height = h;
 	surf->stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, surf->width);
 	surf->data = realloc(surf->data, surf->stride * surf->height);
 	if(!surf->data)
@@ -113,7 +113,7 @@ lv2_canvas_idisp_surf_configure(LV2_Canvas_Idisp *idisp,
 		W = w;
 		H = w / aspect_ratio;
 	}
-	else // aspect_ratio == 0.f
+	else // aspect_ratio == 1.f
 	{
 		W = w;
 		H = h;
