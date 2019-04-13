@@ -2,6 +2,9 @@
 
 ### Realtime Lua as programmable glue in LV2
 
+Write LV2 control port and event filters in Lua. Use it for one-off fillters,
+prototyping, experimenting or glueing stuff together.
+
 #### Build status
 
 [![build status](https://gitlab.com/OpenMusicKontrollers/moony.lv2/badges/master/build.svg)](https://gitlab.com/OpenMusicKontrollers/moony.lv2/commits/master)
