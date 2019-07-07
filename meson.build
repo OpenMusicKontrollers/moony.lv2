@@ -21,7 +21,7 @@ else
 	dsp_deps += cc.find_library('rt')
 endif
 
-lpeg_prefix = 'lpeg-1.0.1'
+lpeg_prefix = 'lpeg-1.0.2'
 lua_prefix = 'lua-5.3.4'
 
 canvas_inc = include_directories('canvas.lv2')
