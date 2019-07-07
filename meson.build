@@ -22,7 +22,7 @@ else
 endif
 
 lpeg_prefix = 'lpeg-1.0.2'
-lua_prefix = 'lua-5.3.4'
+lua_prefix = 'lua-5.3.5'
 
 canvas_inc = include_directories('canvas.lv2')
 extui_inc = include_directories('ext_ui.lv2')
