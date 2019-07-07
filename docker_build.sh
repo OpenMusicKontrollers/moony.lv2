@@ -1,25 +1,24 @@
 #!/bin/bash
 
-TARGET=$1
-
-CI_PROJECT_DIR=$(pwd)
-CI_BUILD_NAME=${TARGET}
-
 BASE_NAME="moony.lv2"
-PKG_CONFIG_PATH="/opt/lv2/lib/pkgconfig:/opt/${CI_BUILD_NAME}/lib/pkgconfig"
-TOOLCHAIN_FILE="${CI_PROJECT_DIR}/cmake/${CI_BUILD_NAME}.cmake"
+CI_BUILD_NAME=$1
+CI_BUILD_DIR="build-${CI_BUILD_NAME}"
 
-rm -rf ${TARGET}
-mkdir -p ${TARGET}
-pushd ${TARGET}
-	PKG_CONFIG_PATH=${PKG_CONFIG_PATH} cmake \
-		-DCMAKE_BUILD_TYPE=Release \
-		-DBUILD_TESTING=0 \
-		-DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR} \
-		-DPLUGIN_DEST="${BASE_NAME}-$(cat ../VERSION)/${CI_BUILD_NAME}/${BASE_NAME}" \
-		-DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FILE} \
-		..
-	make -j4
-	make install
-	#ARGS='-VV' make test
-popd
+PKG_CONFIG_PATH="/opt/lv2/lib/pkgconfig:/opt/${CI_BUILD_NAME}/lib/pkgconfig:/usr/lib/${CI_BUILD_NAME}/pkgconfig"
+
+rm -rf ${CI_BUILD_DIR}
+PKG_CONFIG_PATH=${PKG_CONFIG_PATH} meson \
+	--prefix="/opt/${CI_BUILD_NAME}" \
+	--libdir="lib" \
+	--cross-file ${CI_BUILD_NAME} ${CI_BUILD_DIR} \
+	-Db_lto=false -Db_lundef=true -Db_asneeded=true
+
+sed -i \
+	-e '/framework/s/-Wl,-O1//g' \
+	-e '/framework/s/-Wl,--start-group//g' \
+	-e '/framework/s/-Wl,--end-group//g' \
+  -e '/framework/s/-Wl,-soname,.*dylib//g' \
+  -e '/framework/s/-Wl,-rpath-link,[^ ]*//g' \
+	${CI_BUILD_DIR}/build.ninja
+
+ninja -C ${CI_BUILD_DIR}

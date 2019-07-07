@@ -19,7 +19,7 @@ stages:
   <<: *common_definition
   script:
     - meson --prefix="/opt/${CI_BUILD_NAME}" --libdir="lib" --cross-file "${CI_BUILD_NAME}" build
-    - sed -i -e '/framework/s/-Wl,-O1//g' -e '/framework/s/-Wl,--start-group//g' -e '/framework/s/-Wl,--end-group//g' -e '/framework/s/-Wl,-soname,.*dylib//g' build/build.ninja
+    - sed -i -e '/framework/s/-Wl,-O1//g' -e '/framework/s/-Wl,--start-group//g' -e '/framework/s/-Wl,--end-group//g' -e '/framework/s/-Wl,-soname,.*dylib//g' -e '/framework/s/-Wl,-rpath-link,[^ ]*//g' build/build.ninja
     - ninja -C build
     - ninja -C build install
     - mkdir -p "${BASE_NAME}-$(cat VERSION)/${CI_BUILD_NAME}/${BASE_NAME}"
@@ -29,7 +29,7 @@ stages:
   <<: *common_definition
   script:
     - meson --prefix="/opt/${CI_BUILD_NAME}" --libdir="lib" --cross-file "${CI_BUILD_NAME}" build
-    - sed -i -e '/framework/s/-Wl,-O1//g' -e '/framework/s/-Wl,--start-group//g' -e '/framework/s/-Wl,--end-group//g' -e '/framework/s/-Wl,-soname,.*dylib//g' build/build.ninja
+    - sed -i -e '/framework/s/-Wl,-O1//g' -e '/framework/s/-Wl,--start-group//g' -e '/framework/s/-Wl,--end-group//g' -e '/framework/s/-Wl,-soname,.*dylib//g' -e '/framework/s/-Wl,-rpath-link,[^ ]*//g' build/build.ninja
     - ninja -C build
     - ninja -C build install
     - mkdir -p "${BASE_NAME}-$(cat VERSION)/${CI_BUILD_NAME}/${BASE_NAME}"
@@ -40,7 +40,7 @@ stages:
   <<: *common_definition
   script:
     - meson --prefix="/opt/${CI_BUILD_NAME}" --libdir="lib" --cross-file "${CI_BUILD_NAME}" build
-    - sed -i -e '/framework/s/-Wl,-O1//g' -e '/framework/s/-Wl,--start-group//g' -e '/framework/s/-Wl,--end-group//g' -e '/framework/s/-Wl,-soname,.*dylib//g' build/build.ninja
+    - sed -i -e '/framework/s/-Wl,-O1//g' -e '/framework/s/-Wl,--start-group//g' -e '/framework/s/-Wl,--end-group//g' -e '/framework/s/-Wl,-soname,.*dylib//g' -e '/framework/s/-Wl,-rpath-link,[^ ]*//g' build/build.ninja
     - ninja -C build
     - ninja -C build install
     - mkdir -p "${BASE_NAME}-$(cat VERSION)/${CI_BUILD_NAME}/${BASE_NAME}"
