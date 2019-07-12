@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.28.0] - 15 Jul 2019
+
+### Added
+
+* support for aarch64
+
+### Changed
+
+* lua to version 5.3.5
+* lpeg to version 1.0.2
+
 ## [0.26.0] - 15 Apr 2019
 
 ### Added
