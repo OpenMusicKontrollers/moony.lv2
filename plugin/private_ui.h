@@ -212,7 +212,7 @@ _spawn_spawn(spawn_t *spawn, char **args)
 		return -1;
 	}
 
-	spawn->pid = fork();
+	spawn->pid = vfork();
 
 	if(spawn->pid == 0) // child
 	{
@@ -225,11 +225,11 @@ _spawn_spawn(spawn_t *spawn, char **args)
 	else if(spawn->pid < 0)
 	{
 		if(spawn->logger)
-			lv2_log_error(spawn->logger, "fork failed\n");
+			lv2_log_error(spawn->logger, "vfork failed\n");
 		return -1;
 	}
 
-	return 0; // fork succeeded
+	return 0; // vfork succeeded
 }
 
 static inline int
