@@ -1,3 +1,4 @@
 option('build-opengl-ui', type : 'boolean', value : true)
 option('build-zimple-ui', type : 'boolean', value : false)
 option('build-canvas-ui', type : 'boolean', value : false)
+option('build-inline-disp', type : 'boolean', value : false)

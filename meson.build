@@ -5,12 +5,22 @@ project('moony.lv2', 'c', default_options : [
 	'b_lto=false',
 	'c_std=c11'])
 
+build_opengl_ui = get_option('build-opengl-ui')
+build_zimple_ui = get_option('build-zimple-ui')
+build_canvas_ui = get_option('build-canvas-ui')
+build_inline_disp = get_option('build-inline-disp')
+
+static_link = meson.is_cross_build()
+
 cc = meson.get_compiler('c')
 
 m_dep = cc.find_library('m')
 lv2_dep = dependency('lv2', version : '>=1.14.0')
+cairo_dep = dependency('cairo', version : '>=1.15.0',
+	required : build_inline_disp,
+	static : static_link)
 
-dsp_deps = [m_dep, lv2_dep]
+dsp_deps = [m_dep, lv2_dep, cairo_dep]
 ui_deps = [m_dep, lv2_dep]
 
 if host_machine.system() == 'windows'
@@ -61,12 +71,13 @@ add_project_arguments('-DMOONY_MINOR_VERSION='+version[1], language : 'c')
 add_project_arguments('-DMOONY_MICRO_VERSION='+version[2], language : 'c')
 add_project_arguments('-D_GNU_SOURCE', language : 'c')
 add_project_arguments('-DPUGL_HAVE_GL', language : 'c')
+if build_inline_disp
+	add_project_arguments('-DBUILD_INLINE_DISP', language : 'c')
+endif
 
-cp = find_program('cp')
 lv2_validate = find_program('lv2_validate', native : true, required : false)
 sord_validate = find_program('sord_validate', native : true, required : false)
 lv2lint = find_program('lv2lint', required : false)
-clone = [cp, '@INPUT@', '@OUTPUT@']
 
 c_args = ['-fvisibility=hidden',
 	'-ffast-math',
@@ -198,13 +209,14 @@ mod = shared_module('moony', dsp_srcs,
 
 suffix = mod.full_path().strip().split('.')[-1]
 conf_data.set('MODULE_SUFFIX', '.' + suffix)
-
-build_opengl_ui = get_option('build-opengl-ui')
-build_zimple_ui = get_option('build-zimple-ui')
-build_canvas_ui = get_option('build-canvas-ui')
-
 conf_data.set('UI', '#')
 conf_data.set('UI_TYPE', 'UI')
+
+if build_inline_disp
+	conf_data.set('BUILD_INLINE_DISPLAY', '')
+else
+	conf_data.set('BUILD_INLINE_DISPLAY', '#')
+endif
 
 if build_opengl_ui
 	message('building OpenGL UI')
@@ -284,204 +296,204 @@ manifest_ttl = configure_file(
 	install : true,
 	install_dir : inst_dir)
 
-dsp_ttl = custom_target('dsp_ttl',
-	input : join_paths('plugin', 'moony.ttl'),
+dsp_ttl = configure_file(
+	input : join_paths('plugin', 'moony.ttl.in'),
 	output : 'moony.ttl',
-	command : clone,
+	configuration: conf_data,
 	install : true,
 	install_dir : inst_dir)
 
-ui_ttl = custom_target('ui_ttl',
+ui_ttl = configure_file(
 	input : join_paths('plugin', 'moony_ui.ttl'),
 	output : 'moony_ui.ttl',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
 
-pset_ttl = custom_target('presets_ttl',
+pset_ttl = configure_file(
 	input : join_paths('plugin', 'presets.ttl'),
 	output : 'presets.ttl',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
 
-custom_target('font',
+configure_file(
 	input : join_paths('nuklear', 'extra_font', 'Cousine-Regular.ttf'),
 	output : 'Cousine-Regular.ttf',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
 
-lexer_lua = custom_target('lexer_lua',
+lexer_lua = configure_file(
 	input : join_paths('plugin', 'lexer.lua'),
 	output : 'lexer.lua',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
-moony_lua = custom_target('moony_lua',
+moony_lua = configure_file(
 	input : join_paths('plugin', 'moony.lua'),
 	output : 'moony.lua',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
 
-custom_target('bell_png',
+configure_file(
 	input : join_paths('png', 'bell.png'),
 	output : 'bell.png',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
-custom_target('cancel-1_png',
+configure_file(
 	input : join_paths('png', 'cancel-1.png'),
 	output : 'cancel-1.png',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
-custom_target('cancel_png',
+configure_file(
 	input : join_paths('png', 'cancel.png'),
 	output : 'cancel.png',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
-custom_target('checked_png',
+configure_file(
 	input : join_paths('png', 'checked.png'),
 	output : 'checked.png',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
-custom_target('download_png',
+configure_file(
 	input : join_paths('png', 'download.png'),
 	output : 'download.png',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
-custom_target('envelope_png',
+configure_file(
 	input : join_paths('png', 'envelope.png'),
 	output : 'envelope.png',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
-custom_target('house_png',
+configure_file(
 	input : join_paths('png', 'house.png'),
 	output : 'house.png',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
-custom_target('layers_png',
+configure_file(
 	input : join_paths('png', 'layers.png'),
 	output : 'layers.png',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
-custom_target('menu_png',
+configure_file(
 	input : join_paths('png', 'menu.png'),
 	output : 'menu.png',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
-custom_target('next_png',
+configure_file(
 	input : join_paths('png', 'next.png'),
 	output : 'next.png',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
-custom_target('pencil_png',
+configure_file(
 	input : join_paths('png', 'pencil.png'),
 	output : 'pencil.png',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
-custom_target('plus_png',
+configure_file(
 	input : join_paths('png', 'plus.png'),
 	output : 'plus.png',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
-custom_target('question_png',
+configure_file(
 	input : join_paths('png', 'question.png'),
 	output : 'question.png',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
-custom_target('reload_png',
+configure_file(
 	input : join_paths('png', 'reload.png'),
 	output : 'reload.png',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
-custom_target('screen_png',
+configure_file(
 	input : join_paths('png', 'screen.png'),
 	output : 'screen.png',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
-custom_target('settings_png',
+configure_file(
 	input : join_paths('png', 'settings.png'),
 	output : 'settings.png',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
-custom_target('sort_png',
+configure_file(
 	input : join_paths('png', 'sort.png'),
 	output : 'sort.png',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
-custom_target('upload_png',
+configure_file(
 	input : join_paths('png', 'upload.png'),
 	output : 'upload.png',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
-custom_target('user_png',
+configure_file(
 	input : join_paths('png', 'user.png'),
 	output : 'user.png',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
-custom_target('omk_logo_256x256_png',
+configure_file(
 	input : join_paths('logo', 'omk_logo_256x256.png'),
 	output : 'omk_logo_256x256.png',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
-custom_target('moony_logo_png',
+configure_file(
 	input : join_paths('logo', 'moony_logo.png'),
 	output : 'moony_logo.png',
-	command : clone,
+	copy : true,
 	install : true,
 	install_dir : inst_dir)
 
-moony_test_lua = custom_target('moony_test_lua',
+moony_test_lua = configure_file(
 	input : join_paths('test', 'moony_test.lua'),
 	output : 'moony_test.lua',
-	command : clone,
+	copy : true,
 	install : false)
-moony_overflow_lua = custom_target('moony_overflow_lua',
+moony_overflow_lua = configure_file(
 	input : join_paths('test', 'moony_overflow.lua'),
 	output : 'moony_overflow.lua',
-	command : clone,
+	copy : true,
 	install : false)
-moony_manual_lua = custom_target('moony_manual_lua',
+moony_manual_lua = configure_file(
 	input : join_paths('test', 'moony_manual.lua'),
 	output : 'moony_manual.lua',
-	command : clone,
+	copy : true,
 	install : false)
-moony_presets_lua = custom_target('moony_presets_lua',
+moony_presets_lua = configure_file(
 	input : join_paths('test', 'moony_presets.lua'),
 	output : 'moony_presets.lua',
-	command : clone,
+	copy : true,
 	install : false)
 
-manual_html_in = custom_target('manual_html_in',
+manual_html_in = configure_file(
 	input : join_paths('manual', 'manual.html.in'),
 	output : 'manual.html.in',
-	command : clone,
+	copy: true,
 	install : false)
-hilight_lua = custom_target('hilight_lua',
+hilight_lua = configure_file(
 	input : join_paths('manual', 'hilight.lua'),
 	output : 'hilight.lua',
-	command : clone,
+	copy : true,
 	install : false)
 
 if host_machine.system() != 'darwin'
@@ -490,7 +502,7 @@ if host_machine.system() != 'darwin'
 		output : 'manual.html',
 		capture : true,
 		command : [app, '@INPUT@'],
-		depends : [lexer_lua, moony_lua, manual_html_in],
+		#depends : [lexer_lua, moony_lua, manual_html_in], FIXME
 		install : true,
 		install_dir : inst_dir)
 

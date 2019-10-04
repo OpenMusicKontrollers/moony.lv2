@@ -1162,6 +1162,51 @@ static const LV2_Worker_Interface work_iface = {
 	.end_run = _end_run
 };
 
+#if defined(BUILD_INLINE_DISP)
+__non_realtime static LV2_Inline_Display_Image_Surface *
+_idisp_render(LV2_Handle instance, uint32_t w, uint32_t h)
+{
+	moony_t *moony = instance;
+
+	float aspect_ratio = 1.f; //FIXME
+
+	LV2_Inline_Display_Image_Surface *surf = 
+		lv2_canvas_idisp_surf_configure(&moony->canvas_idisp, w, h, aspect_ratio);
+
+	const LV2_Atom *value = NULL;
+	size_t tot_size = 0;
+	while( (value = varchunk_read_request(moony->to_idisp, &tot_size)) )
+	{
+		moony->canvas_graph = realloc(moony->canvas_graph, tot_size);
+
+		memcpy(moony->canvas_graph, value, tot_size);
+
+		varchunk_read_advance(moony->to_idisp);
+	}
+
+	value = moony->canvas_graph;
+
+	if(value)
+	{
+		tot_size = lv2_atom_total_size(value);
+
+		lv2_canvas_idisp_render_body(&moony->canvas_idisp, value->type, value->size,
+			LV2_ATOM_BODY_CONST(value));
+	}
+	else
+	{
+		lv2_canvas_idisp_render_body(&moony->canvas_idisp, moony->forge.Tuple, 0,
+			NULL);
+	}
+
+	return surf;
+}
+
+static const LV2_Inline_Display_Interface idisp_iface = {
+	.render = _idisp_render
+};
+#endif
+
 __non_realtime const void*
 extension_data(const char* uri)
 {
@@ -1169,6 +1214,10 @@ extension_data(const char* uri)
 		return &work_iface;
 	else if(!strcmp(uri, LV2_STATE__interface))
 		return &state_iface;
+#if defined(BUILD_INLINE_DISP)
+	else if(!strcmp(uri, LV2_INLINEDISPLAY__interface))
+		return &idisp_iface;
+#endif
 	else
 		return NULL;
 }
@@ -1201,6 +1250,15 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 
 	bool load_default_state = false;
 	xpress_map_t *voice_map = NULL;
+#if defined(BUILD_INLINE_DISP)
+	LV2_Inline_Display *queue_draw = NULL;
+	moony->to_idisp = varchunk_new(8192, true); //FIXME
+	if(!moony->to_idisp)
+	{
+		fprintf(stderr, "varchunk_new failed\n");
+		return -1;
+	}
+#endif
 
 	for(unsigned i=0; features[i]; i++)
 	{
@@ -1220,6 +1278,10 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 			load_default_state = true;
 		else if(!strcmp(features[i]->URI, XPRESS__voiceMap))
 			voice_map = features[i]->data;
+#if defined(BUILD_INLINE_DISP)
+		else if(!strcmp(features[i]->URI, LV2_INLINEDISPLAY__queue_draw))
+			queue_draw = features[i]->data;
+#endif
 	}
 
 	if(!moony->map)
@@ -1397,12 +1459,23 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->param_cols = ATOMIC_VAR_INIT(3);
 	moony->param_rows = ATOMIC_VAR_INIT(4);
 
+#if defined(BUILD_INLINE_DISP)
+	lv2_canvas_idisp_init(&moony->canvas_idisp, queue_draw, moony->map);
+#endif
+
 	return 0;
 }
 
 __non_realtime void
 moony_deinit(moony_t *moony)
 {
+#if defined(BUILD_INLINE_DISP)
+	if(moony->to_idisp)
+		varchunk_free(moony->to_idisp);
+	free(moony->canvas_graph);
+	lv2_canvas_idisp_deinit(&moony->canvas_idisp);
+#endif
+
 	LV2_Atom *state_atom_old = (LV2_Atom *)atomic_load_explicit(&moony->state_atom_new, memory_order_relaxed);
 	if(state_atom_old)
 		free(state_atom_old);
@@ -2501,6 +2574,56 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 		lv2_atom_forge_pop(forge, &moony->notify_frame);
 	else
 		lv2_atom_sequence_clear(notify);
+
+#if defined(BUILD_INLINE_DISP)
+	LV2_ATOM_SEQUENCE_FOREACH(notify, ev)
+	{
+		const LV2_Atom_Object *obj = (const LV2_Atom_Object *)&ev->body;
+
+		if(!lv2_atom_forge_is_object_type(forge, obj->atom.type))
+		{
+			continue;
+		}
+
+		if(obj->body.otype != moony->uris.patch.set) //FIXME handle patch:Put
+		{
+			continue;
+		}
+
+		const LV2_Atom_URID *subject = NULL;
+		const LV2_Atom_URID *property = NULL;
+		const LV2_Atom *value = NULL;
+
+		lv2_atom_object_get(obj,
+			moony->uris.patch.subject, &subject,
+			moony->uris.patch.property, &property,
+			moony->uris.patch.value, &value,
+			0);
+
+		const LV2_URID subj = subject && (subject->atom.type == forge->URID)
+			? subject->body : 0;
+
+		//FIXME check subj
+
+		const LV2_URID prop = property && (property->atom.type == forge->URID)
+			? property->body : 0;
+
+		if(  (prop == moony->canvas_urid.Canvas_graph)
+			&& value
+			&& (value->type == forge->Tuple) )
+		{
+			const uint32_t tot_size = lv2_atom_total_size(value);
+			void *dst;
+			if( (dst = varchunk_write_request(moony->to_idisp, tot_size)) )
+			{
+				memcpy(dst, value, tot_size);
+				varchunk_write_advance(moony->to_idisp, tot_size);
+
+				lv2_canvas_idisp_queue_draw(&moony->canvas_idisp);
+			}
+		}
+	}
+#endif
 
 	moony->once = false;
 }

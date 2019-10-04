@@ -69,6 +69,9 @@ struct _atom_ser_t {
 #include <lauxlib.h>
 
 #include <canvas.lv2/forge.h>
+#if defined(BUILD_INLINE_DISP)
+#	include <canvas.lv2/idisp.h>
+#endif
 
 #define __realtime __attribute__((annotate("realtime")))
 #define __non_realtime __attribute__((annotate("non-realtime")))
@@ -286,6 +289,11 @@ struct _moony_t {
 	xpress_t xpress;
 
 	LV2_Canvas_URID canvas_urid;
+#if defined(BUILD_INLINE_DISP)
+	LV2_Canvas_Idisp canvas_idisp;
+	varchunk_t *to_idisp;
+	LV2_Atom *canvas_graph;
+#endif
 
 	moony_vm_t *vm;
 	atomic_uintptr_t vm_new;

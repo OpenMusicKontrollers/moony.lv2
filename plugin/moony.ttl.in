@@ -30,6 +30,7 @@
 @prefix param: <http://lv2plug.in/ns/ext/parameters#> .
 @prefix ui: <http://lv2plug.in/ns/extensions/ui#> .
 @prefix kx:		<http://kxstudio.sf.net/ns/lv2ext/external-ui#> .
+@prefix idisp: <http://harrisonconsoles.com/lv2/inlinedisplay#> .
 
 @prefix xpress: <http://open-music-kontrollers.ch/lv2/xpress#> .
 @prefix osc:  <http://open-music-kontrollers.ch/lv2/osc#> .
@@ -38,9 +39,13 @@
 @prefix proj:	<http://open-music-kontrollers.ch/lv2/> .
 @prefix moony:	<http://open-music-kontrollers.ch/lv2/moony#> .
 
+# to please sord_validate
+idisp:queue_draw
+	a lv2:Feature .
+idisp:interface
+	a lv2:ExtensionData .
 xpress:voiceMap
 	a lv2:Feature .
-
 osc:schedule
 	a lv2:Feature .
 
@@ -132,6 +137,8 @@ moony:c1xc1
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
 	lv2:extensionData work:interface, state:interface ;
+	@BUILD_INLINE_DISPLAY@lv2:optionalFeature idisp:queue_draw ;
+	@BUILD_INLINE_DISPLAY@lv2:extensionData idisp:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 	opts:supportedOption bufsz:minBlockLength, bufsz:maxBlockLength, bufsz:nominalBlockLength, bufsz:sequenceSize, ui:updateRate, param:sampleRate ;
 
@@ -207,6 +214,8 @@ moony:c2xc2
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
 	lv2:extensionData work:interface, state:interface ;
+	@BUILD_INLINE_DISPLAY@lv2:optionalFeature idisp:queue_draw ;
+	@BUILD_INLINE_DISPLAY@lv2:extensionData idisp:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 	opts:supportedOption bufsz:minBlockLength, bufsz:maxBlockLength, bufsz:nominalBlockLength, bufsz:sequenceSize, ui:updateRate, param:sampleRate ;
 
@@ -297,6 +306,8 @@ moony:c4xc4
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
 	lv2:extensionData work:interface, state:interface ;
+	@BUILD_INLINE_DISPLAY@lv2:optionalFeature idisp:queue_draw ;
+	@BUILD_INLINE_DISPLAY@lv2:extensionData idisp:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 	opts:supportedOption bufsz:minBlockLength, bufsz:maxBlockLength, bufsz:nominalBlockLength, bufsz:sequenceSize, ui:updateRate, param:sampleRate ;
 
@@ -417,6 +428,8 @@ moony:a1xa1
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
 	lv2:extensionData work:interface, state:interface ;
+	@BUILD_INLINE_DISPLAY@lv2:optionalFeature idisp:queue_draw ;
+	@BUILD_INLINE_DISPLAY@lv2:extensionData idisp:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 	opts:supportedOption bufsz:minBlockLength, bufsz:maxBlockLength, bufsz:nominalBlockLength, bufsz:sequenceSize, ui:updateRate, param:sampleRate ;
 
@@ -499,6 +512,8 @@ moony:a2xa2
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
 	lv2:extensionData work:interface, state:interface ;
+	@BUILD_INLINE_DISPLAY@lv2:optionalFeature idisp:queue_draw ;
+	@BUILD_INLINE_DISPLAY@lv2:extensionData idisp:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 	opts:supportedOption bufsz:minBlockLength, bufsz:maxBlockLength, bufsz:nominalBlockLength, bufsz:sequenceSize, ui:updateRate, param:sampleRate ;
 
@@ -605,6 +620,8 @@ moony:a4xa4
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
 	lv2:extensionData work:interface, state:interface ;
+	@BUILD_INLINE_DISPLAY@lv2:optionalFeature idisp:queue_draw ;
+	@BUILD_INLINE_DISPLAY@lv2:extensionData idisp:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 	opts:supportedOption bufsz:minBlockLength, bufsz:maxBlockLength, bufsz:nominalBlockLength, bufsz:sequenceSize, ui:updateRate, param:sampleRate ;
 
@@ -759,6 +776,8 @@ moony:c1a1xc1a1
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
 	lv2:extensionData work:interface, state:interface ;
+	@BUILD_INLINE_DISPLAY@lv2:optionalFeature idisp:queue_draw ;
+	@BUILD_INLINE_DISPLAY@lv2:extensionData idisp:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 	opts:supportedOption bufsz:minBlockLength, bufsz:maxBlockLength, bufsz:nominalBlockLength, bufsz:sequenceSize, ui:updateRate, param:sampleRate ;
 
@@ -860,6 +879,8 @@ moony:c2a1xc2a1
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
 	lv2:extensionData work:interface, state:interface ;
+	@BUILD_INLINE_DISPLAY@lv2:optionalFeature idisp:queue_draw ;
+	@BUILD_INLINE_DISPLAY@lv2:extensionData idisp:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 	opts:supportedOption bufsz:minBlockLength, bufsz:maxBlockLength, bufsz:nominalBlockLength, bufsz:sequenceSize, ui:updateRate, param:sampleRate ;
 
@@ -976,6 +997,8 @@ moony:c4a1xc4a1
 	lv2:project proj:moony ;
 	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
 	lv2:extensionData work:interface, state:interface ;
+	@BUILD_INLINE_DISPLAY@lv2:optionalFeature idisp:queue_draw ;
+	@BUILD_INLINE_DISPLAY@lv2:extensionData idisp:interface ;
 	lv2:requiredFeature work:schedule, urid:map, urid:unmap ;
 	opts:supportedOption bufsz:minBlockLength, bufsz:maxBlockLength, bufsz:nominalBlockLength, bufsz:sequenceSize, ui:updateRate, param:sampleRate ;
 
