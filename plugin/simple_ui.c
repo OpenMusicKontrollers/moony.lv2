@@ -126,7 +126,7 @@ _show_cb(LV2UI_Handle instance)
 	const char *command = "open -nW";
 #else // Linux/BSD
 	//const char *command = "xdg-open";
-	const char *command = "xterm -e vi";
+	const char *command = "xterm -e vim -o2";
 #endif
 
 	// get default editor from environment

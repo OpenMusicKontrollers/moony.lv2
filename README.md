@@ -169,17 +169,29 @@ is this here:
 
 ### Dependencies
 
+#### mandatory
+
 * [LV2](http://lv2plug.in) (LV2 Plugin Standard)
+
+#### optional (for inline display)
+
+* [cairo](https://www.cairographics.org) (2D graphics library)
 
 ### Build / install
 
 	git clone https://git.open-music-kontrollers.ch/lv2/moony.lv2
 	cd moony.lv2
-	meson -Dbuild-zimple-ui=true build
+	meson -Dbuild-zimple-ui=true -Dbuild-inline-disp=true build
 	cd build
 	ninja -j4
 	sudo ninja install
 	ninja test
+
+#### Compile options
+
+* build-opengl-ui (build OpenGl UI, default=on)
+* build-zimple-ui (build external UI, default=off)
+* build-inline-disp (build inline display, default=off)
 
 ### GUI
 
@@ -193,12 +205,12 @@ Currently, the editor has to be defined via an environment variable. You can
 use either the environment varialbe *EDITOR* or *MOONY_EDITOR*, whereby the
 latter will take precedence over the former.
 
-    export EDITOR='urxvt -e nvim'
+    export MOONY_EDITOR='urxvt -e nvim -o2'
 
 If no environment variable is defined, the default fallback invocation commands
 are defined as follows:
 
-* 'xterm -e vi' (Unix)
+* 'xterm -e vim -o2' (Unix)
 * 'open -nW' (MacOS)
 * 'cmd /c start /wait' (Windows)
 
