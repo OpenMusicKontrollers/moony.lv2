@@ -1252,7 +1252,7 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	xpress_map_t *voice_map = NULL;
 #if defined(BUILD_INLINE_DISP)
 	LV2_Inline_Display *queue_draw = NULL;
-	moony->to_idisp = varchunk_new(8192, true); //FIXME
+	moony->to_idisp = varchunk_new(MOONY_MAX_CHUNK_LEN * 2, true);
 	if(!moony->to_idisp)
 	{
 		fprintf(stderr, "varchunk_new failed\n");
@@ -2585,41 +2585,79 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 			continue;
 		}
 
-		if(obj->body.otype != moony->uris.patch.set) //FIXME handle patch:Put
+		if(obj->body.otype == moony->uris.patch.set)
 		{
-			continue;
-		}
+			const LV2_Atom_URID *subject = NULL;
+			const LV2_Atom_URID *property = NULL;
+			const LV2_Atom *value = NULL;
 
-		const LV2_Atom_URID *subject = NULL;
-		const LV2_Atom_URID *property = NULL;
-		const LV2_Atom *value = NULL;
+			lv2_atom_object_get(obj,
+				moony->uris.patch.subject, &subject,
+				moony->uris.patch.property, &property,
+				moony->uris.patch.value, &value,
+				0);
 
-		lv2_atom_object_get(obj,
-			moony->uris.patch.subject, &subject,
-			moony->uris.patch.property, &property,
-			moony->uris.patch.value, &value,
-			0);
+			const LV2_URID subj = subject && (subject->atom.type == forge->URID)
+				? subject->body : 0;
 
-		const LV2_URID subj = subject && (subject->atom.type == forge->URID)
-			? subject->body : 0;
+			//FIXME check subj
 
-		//FIXME check subj
+			const LV2_URID prop = property && (property->atom.type == forge->URID)
+				? property->body : 0;
 
-		const LV2_URID prop = property && (property->atom.type == forge->URID)
-			? property->body : 0;
-
-		if(  (prop == moony->canvas_urid.Canvas_graph)
-			&& value
-			&& (value->type == forge->Tuple) )
-		{
-			const uint32_t tot_size = lv2_atom_total_size(value);
-			void *dst;
-			if( (dst = varchunk_write_request(moony->to_idisp, tot_size)) )
+			if(  (prop == moony->canvas_urid.Canvas_graph)
+				&& value
+				&& (value->type == forge->Tuple) )
 			{
-				memcpy(dst, value, tot_size);
-				varchunk_write_advance(moony->to_idisp, tot_size);
+				const uint32_t tot_size = lv2_atom_total_size(value);
+				void *dst;
+				if( (dst = varchunk_write_request(moony->to_idisp, tot_size)) )
+				{
+					memcpy(dst, value, tot_size);
+					varchunk_write_advance(moony->to_idisp, tot_size);
 
-				lv2_canvas_idisp_queue_draw(&moony->canvas_idisp);
+					lv2_canvas_idisp_queue_draw(&moony->canvas_idisp);
+				}
+			}
+		}
+		else if(obj->body.otype == moony->uris.patch.put)
+		{
+			const LV2_Atom_URID *subject = NULL;
+			const LV2_Atom_Object *body = NULL;
+
+			lv2_atom_object_get(obj,
+				moony->uris.patch.subject, &subject,
+				moony->uris.patch.body, &body,
+				0);
+
+			const LV2_URID subj = subject && (subject->atom.type == forge->URID)
+				? subject->body : 0;
+
+			//FIXME check subj
+
+			if(  body
+				&& lv2_atom_forge_is_object_type(forge, body->atom.type) )
+			{
+				LV2_ATOM_OBJECT_FOREACH(body, prop)
+				{
+					const LV2_Atom *value = &prop->value;
+
+					if(  (prop->key != moony->canvas_urid.Canvas_graph)
+						|| (value->type != forge->Tuple))
+					{
+						continue;
+					}
+
+					const uint32_t tot_size = lv2_atom_total_size(value);
+					void *dst;
+					if( (dst = varchunk_write_request(moony->to_idisp, tot_size)) )
+					{
+						memcpy(dst, value, tot_size);
+						varchunk_write_advance(moony->to_idisp, tot_size);
+
+						lv2_canvas_idisp_queue_draw(&moony->canvas_idisp);
+					}
+				}
 			}
 		}
 	}
