@@ -1918,7 +1918,7 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 	lua_setglobal(L, "OSCResponder");
 
 	// OSCResponder pattern matcher
-	luaL_dostring(L, loscresponder_match); // cannot fail
+	(void)luaL_dostring(L, loscresponder_match); // cannot fail
 
 	// TimeResponder metatable
 	luaL_newmetatable(L, "ltimeresponder");

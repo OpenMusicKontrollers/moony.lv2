@@ -384,7 +384,7 @@ dir_list(const char *dir, int return_subdirs, int return_hidden,
 	
 	assert(dir);
 	assert(count);
-	strncpy(buffer, dir, MAX_PATH_LEN);
+	strncpy(buffer, dir, MAX_PATH_LEN - 1);
 	n = strlen(buffer);
 	
 	if(n > 0 && (buffer[n-1] != SLASH_CHAR))
@@ -455,7 +455,7 @@ dir_list(const char *dir, int return_subdirs, int return_hidden,
 static void
 file_browser_reload_directory_content(browser_t *browser, const char *path)
 {
-	strncpy(browser->directory, path, MAX_PATH_LEN);
+	strncpy(browser->directory, path, MAX_PATH_LEN - 1);
 	dir_free_list(browser->files, browser->file_count);
 	dir_free_list(browser->directories, browser->dir_count);
 	browser->files = dir_list(path, 0, browser->return_hidden, browser->return_lua_only, &browser->file_count);
@@ -477,7 +477,7 @@ file_browser_init(browser_t *browser, int return_hidden, int return_lua_only,
 #endif
 
 	size_t l;
-	strncpy(browser->home, home, MAX_PATH_LEN);
+	strncpy(browser->home, home, MAX_PATH_LEN - 1);
 	l = strlen(browser->home);
 	strcpy(browser->home + l, SLASH_STRING);
 	strcpy(browser->directory, browser->home);
@@ -643,7 +643,7 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, float dy,
 							commited = true; // poor-man's double-click
 
 						browser->selected = j;
-						strncpy(browser->export, browser->files[k], MAX_PATH_LEN);
+						strncpy(browser->export, browser->files[k], MAX_PATH_LEN - 1);
 					}
 				}
 				if(odd)
@@ -1907,8 +1907,8 @@ _plot_f32(struct nk_context *ctx, prop_t *prop)
 			const nk_flags ret = nk_chart_push(ctx, f32[i]);
 			if(ret & NK_CHART_HOVERING)
 			{
-				char label [16];
-				snprintf(label, 16, "%u: %f", i, f32[i]);
+				char label [32];
+				snprintf(label, sizeof(label), "%u: %f", i, f32[i]);
 				nk_tooltip(ctx, label);
 			}
 		}
@@ -1930,8 +1930,8 @@ _plot_f64(struct nk_context *ctx, prop_t *prop)
 			const nk_flags ret = nk_chart_push(ctx, f64[i]);
 			if(ret & NK_CHART_HOVERING)
 			{
-				char label [16];
-				snprintf(label, 16, "%u: %lf", i, f64[i]);
+				char label [32];
+				snprintf(label, sizeof(label), "%u: %lf", i, f64[i]);
 				nk_tooltip(ctx, label);
 			}
 		}
