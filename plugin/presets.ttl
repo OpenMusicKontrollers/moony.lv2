@@ -606,22 +606,58 @@ moony:bank-canvas_lv2-logo
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
-		moony:paramHidden true ;
-		moony:paramCols 3 ;
-		moony:paramRows 4 ;
-		moony:code """local bg = 0x00000000 -- transparent black
-local fg = 0xff0066ff -- purple
+		moony:paramHidden false ;
+		moony:paramCols 1 ;
+		moony:paramRows 2 ;
+		moony:code """local srate = Options[Param.sampleRate]
+srate = srate and srate.body or 48000 -- get DSP sample rate or fallback
 
-local ctx = Stash()
+local urate = Options[Ui.updateRate]
+urate = urate and urate.body or 30 -- get UI update rate or fallback
+
+local spu = srate // urate -- samples per frame update
+
+local next_color = coroutine.wrap(function()
+	local step = 0x10
+
+	while true do
+		for i = 0x0, 0xff, step do -- black -> red
+			local col = (i << 24) | 0x000000ff
+			coroutine.yield(col)
+		end
+
+		for i = 0x0, 0xff, step do -- red -> yellow
+			local col = (i << 16) | 0xff0000ff
+			coroutine.yield(col)
+		end
+
+		for i = 0xff, 0x0, -step do -- yellow -> green
+			local col = (i << 24) | 0x00ff00ff
+			coroutine.yield(col)
+		end
+
+		for i = 0xff, 0x0, -step do -- green -> black
+			local col = (i << 16) | 0x000000ff
+			coroutine.yield(col)
+		end
+	end
+end)
+
+local bg = 0x00000000 -- transparent black
+local fg = next_color() -- first color from generator
+
+local ctx = Stash() -- stash to contain vector graphics
 
 local function render()
-	ctx:tuple()
+	ctx:write() -- put stash into writing mode
 
-	-- background
+	ctx:tuple() -- create tuple container
+
+	-- draw background
 	ctx:beginPath()
 	ctx:rectangle(0.0, 0.0, 1.0, 1.0):style(bg):fill()
 
-	-- 'L'
+	-- draw 'L'
 	ctx:beginPath()
 	ctx:polyLine(0.05, 0.275,
 		0.05, 0.73463521816969,
@@ -632,7 +668,7 @@ local function render()
 		0.05, 0.275)
 	ctx:closePath():style(fg):stroke()
 
-	-- 'V'
+	-- draw 'V'
 	ctx:beginPath()
 	ctx:polyLine(0.44035674587458, 0.73463521816969,
 		0.27321237521861, 0.275,
@@ -644,7 +680,7 @@ local function render()
 		0.44035674587458, 0.73463521816969)
 	ctx:closePath():style(fg):stroke()
 
-	-- '2'
+	-- draw '2'
 	ctx:beginPath()
 	ctx:moveTo(0.92679577564592, 0.33745757758451)
 	ctx:curveTo(0.95, 0.37544661222032,
@@ -666,34 +702,35 @@ local function render()
 		0.90879494370618, 0.30798728419169, 0.92679577564592, 0.33745757758451)
 	ctx:closePath():style(fg):stroke()
 
-	ctx:pop()
+	ctx:pop() -- close tuple container
+
+	return ctx:read() -- return graph tuple
 end
 
-render()
-
--- define single parameter
+-- define canvas graph parameter
 local graph = Parameter({
 	[RDFS.label] = 'Graph',
 	[RDFS.comment] = 'Canvas of graph as atom:Tuple',
 	[RDFS.range] = Atom.Tuple,
-	[RDF.value] = ctx:read()
+	[Patch.Get] = function(self)
+		return render() -- whenever the parameter is requested, render graph
+	end
 })
 
+-- define canvas aspect ratio parameter
 local aspect = Parameter({
 	[RDFS.label] = 'AspectRatio',
 	[RDFS.comment] = 'Aspect ratio of canvas graph',
 	[RDFS.range] = Atom.Float,
-	[LV2.minimum] = 0.25,
-	[LV2.maximum] = 4.0,
-	[RDF.value] = 2.0
+	[LV2.minimum] = 1.0,
+	[LV2.maximum] = 1.0,
+	[RDF.value] = 1.0
 })
 
 -- define a StateResponder object
 local stateR = StateResponder({
 	[Patch.readable] = {
-		[Canvas.graph] = graph
-	},
-	[Patch.writable] = {
+		[Canvas.graph] = graph,
 		[Canvas.aspectRatio] = aspect
 	}
 })
@@ -703,10 +740,21 @@ function once(n, control, notify)
 	stateR:register(0, notify)
 end
 
+local count = 0 -- count samples until next frame update
+
 function run(n, control, notify)
 	for frames, atom in control:foreach() do -- iterate over incoming events
 		local handled = stateR(frames, notify, atom)
 	end
+
+	if count <= 0 then -- check for frame update counter underflow
+		fg = next_color() -- get next color
+		stateR:sync(n - 1, notify) -- sync graph to UI (calls render function)
+
+		count = count + spu  -- schedule next frame update
+	end
+
+	count = count - n  -- update next frame update
 end"""
 	] .
 
