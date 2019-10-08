@@ -19,9 +19,10 @@ lv2_dep = dependency('lv2', version : '>=1.14.0')
 cairo_dep = dependency('cairo', version : '>=1.15.0',
 	required : build_inline_disp,
 	static : static_link)
+thread_dep = dependency('threads')
 
-dsp_deps = [m_dep, lv2_dep, cairo_dep]
-ui_deps = [m_dep, lv2_dep, cairo_dep]
+dsp_deps = [m_dep, lv2_dep, cairo_dep, thread_dep]
+ui_deps = [m_dep, lv2_dep, cairo_dep, thread_dep]
 
 if host_machine.system() == 'windows'
 	# nothing to do for DSP
