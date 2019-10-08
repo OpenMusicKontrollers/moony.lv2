@@ -33,6 +33,10 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
+#if defined(BUILD_INLINE_DISP)
+#	include <canvas.lv2/render.h>
+#endif
+
 extern int luaopen_lpeg(lua_State *L);
 
 #ifdef Bool
@@ -84,6 +88,7 @@ _strndup(const char *s, size_t n)
 #endif
 
 typedef struct _chunk_t chunk_t;
+typedef struct _tuple_t tuple_t;
 typedef struct _vec_t vec_t;
 typedef union _body_t body_t;
 typedef struct _prop_t prop_t;
@@ -94,6 +99,10 @@ typedef struct _plughandle_t plughandle_t;
 struct _chunk_t {
 	uint32_t size;
 	uint8_t *body;
+};
+
+struct _tuple_t {
+	struct nk_image img;
 };
 
 struct _vec_t {
@@ -109,6 +118,7 @@ union _body_t {
 	float f;
 	double d;
 	struct nk_text_edit editor;
+	tuple_t tuple;
 	chunk_t chunk;
 	vec_t vec;
 };
@@ -183,6 +193,11 @@ struct _plughandle_t {
 
 	nk_pugl_window_t win;
 	struct nk_style_button bst;
+
+#if defined(BUILD_INLINE_DISP)
+	LV2_Canvas_URID canvas_urid;
+	LV2_Canvas_Idisp canvas_idisp;
+#endif
 
 	LV2UI_Controller *controller;
 	LV2UI_Write_Function writer;
@@ -281,7 +296,7 @@ struct _plughandle_t {
 	prop_t controls_out [4];
 
 	lua_State *L;
-	
+
 	browser_t browser;
 	const char *bundle_path;
 	char *manual;
@@ -381,24 +396,24 @@ dir_list(const char *dir, int return_subdirs, int return_hidden,
 	size_t capacity = 32;
 	size_t size;
 	DIR *z;
-	
+
 	assert(dir);
 	assert(count);
 	strncpy(buffer, dir, MAX_PATH_LEN - 1);
 	n = strlen(buffer);
-	
+
 	if(n > 0 && (buffer[n-1] != SLASH_CHAR))
 		buffer[n++] = SLASH_CHAR;
-	
+
 	size = 0;
-	
+
 	z = opendir(dir);
 	if(z != NULL)
 	{
 		struct dirent *data = readdir(z);
 		if(data == NULL)
 			return NULL;
-		
+
 		do {
 			DIR *y;
 			char *p;
@@ -416,13 +431,13 @@ dir_list(const char *dir, int return_subdirs, int return_hidden,
 				if(strcmp(point, ".lua")) // no *.lua suffix
 					continue;
 			}
-			
+
 			strncpy(buffer + n, data->d_name, MAX_PATH_LEN-n);
 			y = opendir(buffer);
 			is_subdir = (y != NULL);
 			if (y != NULL)
 				closedir(y);
-			
+
 			if((return_subdirs && is_subdir) || (!is_subdir && !return_subdirs))
 			{
 				if(!size)
@@ -442,10 +457,10 @@ dir_list(const char *dir, int return_subdirs, int return_hidden,
 				results[size++] = p;
 			}
 		} while ((data = readdir(z)) != NULL);
-		
+
 		qsort(results, size, sizeof(char *), _cmp);
 	}
-	
+
 	if(z)
 		closedir(z);
 	*count = size;
@@ -468,7 +483,7 @@ file_browser_init(browser_t *browser, int return_hidden, int return_lua_only,
 	struct nk_image (*icon_load)(void *data, const char *filename), void *data)
 {
 	memset(browser, 0, sizeof(*browser));
-	
+
 	const char *home = getenv("HOME");
 #ifdef _WIN32
 	if (!home) home = getenv("USERPROFILE");
@@ -481,7 +496,7 @@ file_browser_init(browser_t *browser, int return_hidden, int return_lua_only,
 	l = strlen(browser->home);
 	strcpy(browser->home + l, SLASH_STRING);
 	strcpy(browser->directory, browser->home);
-	
+
 	browser->selected = -1;
 	browser->return_hidden = return_hidden;
 	browser->return_lua_only = return_lua_only;
@@ -563,13 +578,13 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, float dy,
 		browser->files = dir_list(browser->directory, 0, browser->return_hidden, browser->return_lua_only, &browser->file_count);
 	if(!browser->directories)
 		browser->directories = dir_list(browser->directory, 1, browser->return_hidden, 0, &browser->dir_count);
-	
+
 	if(nk_begin(ctx, title, bounds,
 		NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_CLOSABLE))
 	{
 		static float ratio[] = {0.75f, 0.25f};
 		float spacing_x = ctx->style.window.spacing.x;
-		
+
 		/* output path directory selector in the menubar */
 		ctx->style.window.spacing.x = 0;
 		nk_menubar_begin(ctx);
@@ -609,16 +624,16 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, float dy,
 		}
 		nk_menubar_end(ctx);
 		ctx->style.window.spacing.x = spacing_x;
-		
+
 		/* window layout */
 		struct nk_rect total_space = nk_window_get_content_region(ctx);
 		nk_layout_row(ctx, NK_DYNAMIC, total_space.h, 2, ratio);
-		
+
 		/* output directory content window */
 		nk_group_begin(ctx, "Content", 0);
 		{
 			ssize_t count = browser->dir_count + browser->file_count;
-			
+
 			nk_layout_row_dynamic(ctx, dy, 1);
 			for(ssize_t j = 0; j < count; j++)
 			{
@@ -649,7 +664,7 @@ file_browser_run(browser_t *browser, struct nk_context *ctx, float dy,
 				if(odd)
 					nk_style_pop_style_item(ctx);
 			}
-			
+
 			nk_group_end(ctx);
 		}
 
@@ -805,6 +820,50 @@ _prop_get_or_add(plughandle_t *handle, prop_t **properties, int *n_properties, L
 	return _prop_get(properties, n_properties, key);
 }
 
+static struct nk_image
+_image_new(plughandle_t *handle, unsigned w, unsigned h, const void *data)
+{
+	GLuint tex = 0;
+
+	puglEnterContext(handle->win.view);
+	{
+		glGenTextures(1, &tex);
+		glBindTexture(GL_TEXTURE_2D, tex);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		if(!handle->win.glGenerateMipmap) // for GL >= 1.4 && < 3.1
+			glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, data);
+		if(handle->win.glGenerateMipmap)
+			handle->win.glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	puglLeaveContext(handle->win.view, false);
+
+	return nk_image_id(tex);
+}
+
+static void
+_image_free(plughandle_t *handle, struct nk_image *img)
+{
+	if(img->handle.id)
+	{
+		puglEnterContext(handle->win.view);
+		{
+			glDeleteTextures(1, (const GLuint *)&img->handle.id);
+			img->handle.id = 0;
+		}
+		puglLeaveContext(handle->win.view, false);
+	}
+}
+
+static bool
+_image_empty(struct nk_image *img)
+{
+	return (img->handle.id == 0);
+}
+
 static void
 _prop_free(plughandle_t *handle, prop_t *prop)
 {
@@ -826,6 +885,10 @@ _prop_free(plughandle_t *handle, prop_t *prop)
 	{
 		if(prop->value.chunk.body)
 			free(prop->value.chunk.body);
+	}
+	else if(prop->range == handle->forge.Tuple)
+	{
+		_image_free(handle, &prop->value.tuple.img);
 	}
 	else if(prop->range == handle->forge.Vector)
 	{
@@ -1381,7 +1444,7 @@ _lex_protected(lua_State *L)
 					? luaL_checkinteger(L, -1)
 					: 0xdddddd;
 				token->color = nk_rgb(
-					(token_col >> 16) & 0xff, 
+					(token_col >> 16) & 0xff,
 					(token_col >>  8) & 0xff,
 					(token_col >>  0) & 0xff);
 				lua_pop(L, 1);
@@ -1962,6 +2025,24 @@ _parameter_widget_vector(plughandle_t *handle, struct nk_context *ctx, prop_t *p
 }
 
 static void
+_parameter_widget_tuple(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
+	bool editable, bool has_shift_enter, float dy, int ndy)
+{
+#if defined(BUILD_INLINE_DISP)
+	if(prop->key == handle->canvas_idisp.canvas.urid.Canvas_graph)
+	{
+		nk_layout_row_dynamic(ctx, dy*(ndy-1), 1);
+		nk_image(ctx, prop->value.tuple.img);
+	}
+	else
+#endif
+	{
+		nk_layout_row_dynamic(ctx, dy*(ndy-1), 1);
+		nk_label(ctx, "unsupported", NK_TEXT_CENTERED);
+	}
+}
+
+static void
 _parameter_widget_nil(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
 	bool editable, bool has_shift_enter, float dy, int ndy)
 {
@@ -2021,6 +2102,10 @@ _parameter_widget(plughandle_t *handle, struct nk_context *ctx, prop_t *prop,
 		else if(prop->range == handle->forge.Chunk)
 		{
 			_parameter_widget_chunk(handle, ctx, prop, editable, has_shift_enter, dy, ndy);
+		}
+		else if(prop->range == handle->forge.Tuple)
+		{
+			_parameter_widget_tuple(handle, ctx, prop, editable, has_shift_enter, dy, ndy);
 		}
 		else if(prop->range == handle->forge.Vector)
 		{
@@ -2903,7 +2988,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 
 	if(asprintf(&handle->manual, "%smanual.html", bundle_path) == -1)
 		handle->manual = NULL;
-	
+
 	*(intptr_t *)widget = nk_pugl_init(&handle->win);
 	nk_pugl_show(&handle->win);
 
@@ -3015,6 +3100,10 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 	struct nk_style_combo *cst = &handle->win.ctx.style.combo;
 	cst->label_hover = nk_white;
 
+#if defined(BUILD_INLINE_DISP)
+	lv2_canvas_idisp_init(&handle->canvas_idisp, NULL, handle->map);
+#endif
+
 	return handle;
 }
 
@@ -3022,6 +3111,10 @@ static void
 cleanup(LV2UI_Handle instance)
 {
 	plughandle_t *handle = instance;
+
+#if defined(BUILD_INLINE_DISP)
+	lv2_canvas_idisp_deinit(&handle->canvas_idisp);
+#endif
 
 	file_browser_free(&handle->browser, _icon_unload, handle);
 
@@ -3130,6 +3223,24 @@ _patch_set_parameter_value(plughandle_t *handle, LV2_URID property,
 			{
 				//TODO handle error
 			}
+		}
+		else if(prop->range == handle->forge.Tuple)
+		{
+#if defined(BUILD_INLINE_DISP)
+			const int w = 200; //FIXME
+			const int h = 200; //FIXME
+			const float aspect_ratio = 1.f; //FIXME
+
+			LV2_Inline_Display_Image_Surface *surf =
+				lv2_canvas_idisp_surf_configure(&handle->canvas_idisp, w, h, aspect_ratio);
+
+			lv2_canvas_idisp_render_body(&handle->canvas_idisp, prop->range,
+				value->size, (const LV2_Atom *)LV2_ATOM_BODY_CONST(value));
+
+			_image_free(handle, &prop->value.tuple.img);
+			prop->value.tuple.img = _image_new(handle, surf->width, surf->height,
+				surf->data);
+#endif
 		}
 		else if(prop->range == handle->forge.Vector)
 		{
@@ -3719,7 +3830,7 @@ ext_data(const char *uri)
 		return &idle_ext;
 	else if(!strcmp(uri, LV2_UI__resize))
 		return &resize_ext;
-		
+
 	return NULL;
 }
 

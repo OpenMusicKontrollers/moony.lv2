@@ -21,7 +21,7 @@ cairo_dep = dependency('cairo', version : '>=1.15.0',
 	static : static_link)
 
 dsp_deps = [m_dep, lv2_dep, cairo_dep]
-ui_deps = [m_dep, lv2_dep]
+ui_deps = [m_dep, lv2_dep, cairo_dep]
 
 if host_machine.system() == 'windows'
 	# nothing to do for DSP
