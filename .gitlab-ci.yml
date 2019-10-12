@@ -55,12 +55,28 @@ stages:
     - scan-build --status-bugs ninja -C scanbuild
     - scan-build --status-bugs ninja -C scanbuild test
 
-.universal_linux_template: &universal_linux_definition
-  image: ventosus/universal-linux-gnu
+.universal_linux_template_stretch: &universal_linux_definition_stretch
+  image: ventosus/universal-linux-gnu:stretch
+  <<: *test_definition
+
+.universal_linux_template_buster: &universal_linux_definition_buster
+  image: ventosus/universal-linux-gnu:buster
   <<: *analyze_definition
 
-.arm_linux_template: &arm_linux_definition
-  image: ventosus/arm-linux-gnueabihf
+.universal_linux_template_bullseye: &universal_linux_definition_bullseye
+  image: ventosus/universal-linux-gnu:bullseye
+  <<: *test_definition
+
+.arm_linux_template_stretch: &arm_linux_definition_stretch
+  image: ventosus/arm-linux-gnueabihf:stretch
+  <<: *test_definition
+
+.arm_linux_template_buster: &arm_linux_definition_buster
+  image: ventosus/arm-linux-gnueabihf:buster
+  <<: *test_definition
+
+.arm_linux_template_bullseye: &arm_linux_definition_bullseye
+  image: ventosus/arm-linux-gnueabihf:bullseye
   <<: *test_definition
 
 .universal_w64_template: &universal_w64_definition
@@ -72,17 +88,41 @@ stages:
   <<: *build_definition
 
 # building in docker
-x86_64-linux-gnu:
-  <<: *universal_linux_definition
+x86_64-linux-gnu-stretch:
+  <<: *universal_linux_definition_stretch
 
-i686-linux-gnu:
-  <<: *universal_linux_definition
+x86_64-linux-gnu-buster:
+  <<: *universal_linux_definition_buster
 
-arm-linux-gnueabihf:
-  <<: *arm_linux_definition
+x86_64-linux-gnu-bullseye:
+  <<: *universal_linux_definition_bullseye
 
-aarch64-linux-gnu:
-  <<: *arm_linux_definition
+i686-linux-gnu-stretch:
+  <<: *universal_linux_definition_stretch
+
+i686-linux-gnu-buster:
+  <<: *universal_linux_definition_buster
+
+i686-linux-gnu-bullseye:
+  <<: *universal_linux_definition_bullseye
+
+arm-linux-gnueabihf-stretch:
+  <<: *arm_linux_definition_stretch
+
+arm-linux-gnueabihf-buster:
+  <<: *arm_linux_definition_buster
+
+arm-linux-gnueabihf-bullseye:
+  <<: *arm_linux_definition_bullseye
+
+aarch64-linux-gnu-stretch:
+  <<: *arm_linux_definition_stretch
+
+aarch64-linux-gnu-buster:
+  <<: *arm_linux_definition_buster
+
+aarch64-linux-gnu-bullseye:
+  <<: *arm_linux_definition_bullseye
 
 x86_64-w64-mingw32:
   <<: *universal_w64_definition
