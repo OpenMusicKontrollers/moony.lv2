@@ -126,13 +126,11 @@ _show_cb(LV2UI_Handle instance)
 	const char *command = "open -nW";
 #else // Linux/BSD
 	//const char *command = "xdg-open";
-	const char *command = "xterm -e vim -o2";
+	const char *command = "xterm -e vi";
 #endif
 
 	// get default editor from environment
 	const char *moony_editor = getenv("MOONY_EDITOR");
-	if(!moony_editor)
-		moony_editor = getenv("EDITOR");
 	if(!moony_editor)
 		moony_editor = command;
 	char *dup = strdup(moony_editor);
