@@ -88,7 +88,6 @@ _strndup(const char *s, size_t n)
 #endif
 
 typedef struct _chunk_t chunk_t;
-typedef struct _tuple_t tuple_t;
 typedef struct _vec_t vec_t;
 typedef union _body_t body_t;
 typedef struct _prop_t prop_t;
@@ -99,10 +98,6 @@ typedef struct _plughandle_t plughandle_t;
 struct _chunk_t {
 	uint32_t size;
 	uint8_t *body;
-};
-
-struct _tuple_t {
-	struct nk_image img;
 };
 
 struct _vec_t {
@@ -118,7 +113,6 @@ union _body_t {
 	float f;
 	double d;
 	struct nk_text_edit editor;
-	tuple_t tuple;
 	chunk_t chunk;
 	vec_t vec;
 };
@@ -197,6 +191,11 @@ struct _plughandle_t {
 #if defined(BUILD_INLINE_DISP)
 	LV2_Canvas_URID canvas_urid;
 	LV2_Canvas_Idisp canvas_idisp;
+	struct nk_image canvas_img;
+	unsigned canvas_w;
+	unsigned canvas_h;
+	bool canvas_redraw;
+	LV2_Atom *canvas_value;
 #endif
 
 	LV2UI_Controller *controller;
@@ -821,11 +820,16 @@ _prop_get_or_add(plughandle_t *handle, prop_t **properties, int *n_properties, L
 }
 
 static struct nk_image
-_image_new(plughandle_t *handle, unsigned w, unsigned h, const void *data)
+_image_new(plughandle_t *handle, unsigned w, unsigned h, const void *data,
+	bool switch_context)
 {
 	GLuint tex = 0;
 
-	puglEnterContext(handle->win.view);
+	if(switch_context)
+	{
+		puglEnterContext(handle->win.view);
+	}
+
 	{
 		glGenTextures(1, &tex);
 		glBindTexture(GL_TEXTURE_2D, tex);
@@ -839,22 +843,34 @@ _image_new(plughandle_t *handle, unsigned w, unsigned h, const void *data)
 		if(handle->win.glGenerateMipmap)
 			handle->win.glGenerateMipmap(GL_TEXTURE_2D);
 	}
-	puglLeaveContext(handle->win.view, false);
+
+	if(switch_context)
+	{
+		puglLeaveContext(handle->win.view, false);
+	}
 
 	return nk_image_id(tex);
 }
 
 static void
-_image_free(plughandle_t *handle, struct nk_image *img)
+_image_free(plughandle_t *handle, struct nk_image *img, bool switch_context)
 {
 	if(img->handle.id)
 	{
-		puglEnterContext(handle->win.view);
+		if(switch_context)
+		{
+			puglEnterContext(handle->win.view);
+		}
+
 		{
 			glDeleteTextures(1, (const GLuint *)&img->handle.id);
 			img->handle.id = 0;
 		}
-		puglLeaveContext(handle->win.view, false);
+
+		if(switch_context)
+		{
+			puglLeaveContext(handle->win.view, false);
+		}
 	}
 }
 
@@ -885,10 +901,6 @@ _prop_free(plughandle_t *handle, prop_t *prop)
 	{
 		if(prop->value.chunk.body)
 			free(prop->value.chunk.body);
-	}
-	else if(prop->range == handle->forge.Tuple)
-	{
-		_image_free(handle, &prop->value.tuple.img);
 	}
 	else if(prop->range == handle->forge.Vector)
 	{
@@ -2036,8 +2048,9 @@ _parameter_widget_tuple(plughandle_t *handle, struct nk_context *ctx, prop_t *pr
 		nk_spacing(ctx, 1);
 
 		//FIXME implement aspect ratio
-		float w = bnd.w;
-		float h = bnd.h;
+		const float aspect_ratio = 1.f;
+		unsigned w = bnd.w;
+		unsigned h = bnd.h;
 
 		if(w < h)
 		{
@@ -2046,6 +2059,40 @@ _parameter_widget_tuple(plughandle_t *handle, struct nk_context *ctx, prop_t *pr
 		else
 		{
 			w = h;
+		}
+
+		if( (w != handle->canvas_w) || (h != handle->canvas_h) )
+		{
+			handle->canvas_w = w;
+			handle->canvas_h = h;
+			handle->canvas_redraw = true;
+		}
+
+		if(handle->canvas_redraw)
+		{
+			LV2_Inline_Display_Image_Surface *surf =
+				lv2_canvas_idisp_surf_configure(&handle->canvas_idisp, w, h, aspect_ratio);
+
+			const LV2_Atom *value = handle->canvas_value;
+
+			const LV2_Atom fake = {
+				.size = 0,
+				.type = handle->forge.Tuple
+			};
+
+			if(!value)
+			{
+				value = &fake;
+			}
+
+			lv2_canvas_idisp_render_body(&handle->canvas_idisp, value->type,
+				value->size, (const LV2_Atom *)LV2_ATOM_BODY_CONST(value));
+
+			_image_free(handle, &handle->canvas_img, false);
+			handle->canvas_img = _image_new(handle, surf->width, surf->height,
+				surf->data, false);
+
+			handle->canvas_redraw = false;
 		}
 
 		const struct nk_rect bnd2 = {
@@ -2058,7 +2105,7 @@ _parameter_widget_tuple(plughandle_t *handle, struct nk_context *ctx, prop_t *pr
 		struct nk_command_buffer *canvas = nk_window_get_canvas(ctx);
 		struct nk_style_button *style = &ctx->style.button;
 
-		nk_draw_image(canvas, bnd2, &prop->value.tuple.img, nk_rgb(0xff, 0xff, 0xff));
+		nk_draw_image(canvas, bnd2, &handle->canvas_img, nk_rgb(0xff, 0xff, 0xff));
 		nk_stroke_rect(canvas, bnd2, style->rounding, style->border, style->border_color);
 	}
 	else
@@ -3140,6 +3187,8 @@ cleanup(LV2UI_Handle instance)
 	plughandle_t *handle = instance;
 
 #if defined(BUILD_INLINE_DISP)
+	free(handle->canvas_value);
+	_image_free(handle, &handle->canvas_img, true);
 	lv2_canvas_idisp_deinit(&handle->canvas_idisp);
 #endif
 
@@ -3254,19 +3303,17 @@ _patch_set_parameter_value(plughandle_t *handle, LV2_URID property,
 		else if(prop->range == handle->forge.Tuple)
 		{
 #if defined(BUILD_INLINE_DISP)
-			const int w = 512; //FIXME
-			const int h = 512; //FIXME
-			const float aspect_ratio = 1.f; //FIXME
+			if(prop->key == handle->canvas_idisp.canvas.urid.Canvas_graph)
+			{
+				const size_t total_sz = lv2_atom_total_size(value);
 
-			LV2_Inline_Display_Image_Surface *surf =
-				lv2_canvas_idisp_surf_configure(&handle->canvas_idisp, w, h, aspect_ratio);
+				// copy graph atom tuple
+				handle->canvas_value = realloc(handle->canvas_value, total_sz);
+				memcpy(handle->canvas_value, value, total_sz);
 
-			lv2_canvas_idisp_render_body(&handle->canvas_idisp, prop->range,
-				value->size, (const LV2_Atom *)LV2_ATOM_BODY_CONST(value));
-
-			_image_free(handle, &prop->value.tuple.img);
-			prop->value.tuple.img = _image_new(handle, surf->width, surf->height,
-				surf->data);
+				// force redraw
+				handle->canvas_redraw = true;
+			}
 #endif
 		}
 		else if(prop->range == handle->forge.Vector)
