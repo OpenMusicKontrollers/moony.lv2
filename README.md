@@ -98,8 +98,7 @@ the underlying concepts of LV2 atom and atom forge in the official resources:
 
 ### API
 
-_Note: The Moony Lua API is not stable yet, expect changes to happen until
-an official release._ Preview the manual here:
+The manual can be accessed from within the plugin UI or previewed here:
 
 <https://openmusickontrollers.gitlab.io/moony.lv2>
 
@@ -181,7 +180,7 @@ is this here:
 
 	git clone https://git.open-music-kontrollers.ch/lv2/moony.lv2
 	cd moony.lv2
-	meson -Dbuild-zimple-ui=true -Dbuild-inline-disp=true build
+	meson -Dbuild-inline-disp=true build
 	cd build
 	ninja -j4
 	sudo ninja install
@@ -201,16 +200,17 @@ modification state.
 
 *The external GUI is optionally built only.*
 
-Currently, the editor has to be defined via an environment variable. You can
-use either the environment varialbe *EDITOR* or *MOONY_EDITOR*, whereby the
-latter will take precedence over the former.
+Currently, the editor has to be defined via an environment variable
+*MOONY_EDITOR*.
 
-    export MOONY_EDITOR='urxvt -e nvim -o2'
+    export MOONY_EDITOR='gedit'
+    export MOONY_EDITOR='xterm -e emacs'
+    export MOONY_EDITOR='urxvt -e nvim'
 
 If no environment variable is defined, the default fallback invocation commands
 are defined as follows:
 
-* 'xterm -e vim -o2' (Unix)
+* 'xterm -e vi' (Unix)
 * 'open -nW' (MacOS)
 * 'cmd /c start /wait' (Windows)
 
