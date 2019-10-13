@@ -220,7 +220,7 @@ _spawn_spawn(spawn_t *spawn, char **args)
 
 		if(spawn->logger)
 			lv2_log_error(spawn->logger, "execvp failed\n");
-		exit(-1);
+		_exit(-1);
 	}
 	else if(spawn->pid < 0)
 	{
