@@ -190,7 +190,7 @@ is this here:
 #### Compile options
 
 * build-opengl-ui (build OpenGl UI, default=on)
-* build-zimple-ui (build external UI, default=off)
+* build-simple-ui (build external UI, default=off)
 * build-inline-disp (build inline display, default=off)
 
 ### GUI

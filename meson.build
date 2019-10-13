@@ -6,8 +6,7 @@ project('moony.lv2', 'c', default_options : [
 	'c_std=c11'])
 
 build_opengl_ui = get_option('build-opengl-ui')
-build_zimple_ui = get_option('build-zimple-ui')
-build_canvas_ui = get_option('build-canvas-ui')
+build_simple_ui = get_option('build-simple-ui')
 build_inline_disp = get_option('build-inline-disp')
 
 static_link = meson.is_cross_build()
@@ -227,23 +226,15 @@ else
 	conf_data.set('UI_OPENGL', '#')
 endif
 
-if build_zimple_ui
-	message('building Zimple UI')
+if build_simple_ui
+	message('building Simple UI')
 	conf_data.set('UI', '')
-	conf_data.set('UI_ZIMPLE', '')
+	conf_data.set('UI_SIMPLE', '')
 else
-	conf_data.set('UI_ZIMPLE', '#')
+	conf_data.set('UI_SIMPLE', '#')
 endif
 
-if build_canvas_ui
-	message('building Canvas UI')
-	conf_data.set('UI', '')
-	conf_data.set('UI_CANVAS', '')
-else
-	conf_data.set('UI_CANVAS', '#')
-endif
-
-if build_opengl_ui or build_zimple_ui
+if build_opengl_ui or build_simple_ui
 	ui_srcs = [
 		join_paths('plugin', 'moony_ui.c'),
 		join_paths('plugin', 'simple_ui.c'),
@@ -524,7 +515,7 @@ endif
 
 if lv2lint.found()
 	test('LV2 lint', lv2lint,
-		args : ['-Ewarn',
+		args : [
 			'http://open-music-kontrollers.ch/lv2/moony#a1xa1',
 			'http://open-music-kontrollers.ch/lv2/moony#a2xa2',
 			'http://open-music-kontrollers.ch/lv2/moony#a4xa4',

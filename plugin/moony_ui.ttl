@@ -143,4 +143,5 @@ moony:moony_zimple_kx
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 	] ;
-	lv2:requiredFeature kx:Host , ui:portMap, urid:map, urid:unmap .
+	lv2:optionalFeature kx:Host ;
+	lv2:requiredFeature ui:portMap, urid:map, urid:unmap .

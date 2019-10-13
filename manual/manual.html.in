@@ -2099,33 +2099,8 @@ end</code></pre>
 		<h2 id="forge-canvas">Canvas</h2>
 		<p>Atom types that contain Canvas messages as part of their body.
 			Modeled after the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API">HTML5 Canvas API</a>.
-			Needs the author's <a href="https://gitlab.com/OpenMusicKontrollers/canvas.lv2">Canvas</a> LV2 plugin for rendering.</p>
+			But the vector drawing instructions into an atom:Tuple and store it as property Canvas:graph.
 		</div>
-
-			<!-- Forge Graph -->
-			<div class="api-section">
-			<h3 id="forge-graph">Graph</h3>
-			<p>Forge an atom object of type Patch.Set with an atom tuple as patch.property Canvas.graph.
-				Use this to start create a vector image.</p>
-
-			<dl>
-				<dt class="func">forge:graph(subject=0, sequenceNumber=0)</dt>
-				<dt>subject (integer)</dt>
-					<dd>patch subject as integer URID, defaults to 0</dd>
-				<dt>sequenceNumber (integer)</dt>
-					<dd>patch sequence number as integer, defaults to 0</dd>
-				<dt class="ret">(userdata)</dt>
-					<dd>derived container forge object, needs to be finalized with <a href="#forge-pop">Pop</a></dd>
-			</dl>
-
-			<pre><code data-ref="forge-graph">-- Forge Graph
-
-function stash(forge)
-	for ctx in forge:tuple():autopop() do
-		ctx:rectangle(0.1, 0.1, 0.8, 0.8):style(0xff000000):fill()
-	end
-end</code></pre>
-			</div>
 
 				<!-- Forge BeginPath -->
 				<div class="api-section">
