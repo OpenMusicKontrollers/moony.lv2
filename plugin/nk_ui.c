@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Hanspeter Portner (dev@open-music-kontrollers.ch)
+ * Copyright (c) 2015-2019 Hanspeter Portner (dev@open-music-kontrollers.ch)
  *
  * This is free software: you can redistribute it and/or modify
  * it under the terms of the Artistic License 2.0 as published by
@@ -2806,7 +2806,7 @@ _expose(struct nk_context *ctx, struct nk_rect wbounds, void *data)
 
 			nk_layout_row_dynamic(ctx, dy, 1);
 			nk_spacing(ctx, 1);
-			nk_label(ctx, "Copyright © 2015-2017 Hanspeter Portner", NK_TEXT_CENTERED);
+			nk_label(ctx, "Copyright © 2015-2019 Hanspeter Portner", NK_TEXT_CENTERED);
 
 			//nk_spacing(ctx, 1);
 			nk_label(ctx, "This is free, libre and open source software", NK_TEXT_CENTERED);
