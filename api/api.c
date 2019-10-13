@@ -1186,18 +1186,18 @@ _idisp_render(LV2_Handle instance, uint32_t w, uint32_t h)
 
 	value = moony->canvas_graph;
 
-	if(value)
-	{
-		tot_size = lv2_atom_total_size(value);
+	const LV2_Atom fake = {
+		.size = 0,
+		.type = moony->forge.Tuple
+	};
 
-		lv2_canvas_idisp_render_body(&moony->canvas_idisp, value->type, value->size,
-			LV2_ATOM_BODY_CONST(value));
-	}
-	else
+	if(!value)
 	{
-		lv2_canvas_idisp_render_body(&moony->canvas_idisp, moony->forge.Tuple, 0,
-			NULL);
+		value = &fake;
 	}
+
+	lv2_canvas_idisp_render_body(&moony->canvas_idisp, value->type, value->size,
+		LV2_ATOM_BODY_CONST(value));
 
 	return surf;
 }
@@ -2328,6 +2328,24 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 
 		if(ref)
 			ref = _moony_props_out(moony, 0, forge);
+
+#if defined(BUILD_INLINE_DISP)
+		// invalidate inline display
+		const LV2_Atom fake = {
+			.size = 0,
+			.type = moony->forge.Tuple
+		};
+
+		const uint32_t tot_size = lv2_atom_total_size(&fake);
+		void *dst;
+		if( (dst = varchunk_write_request(moony->to_idisp, tot_size)) )
+		{
+			memcpy(dst, &fake, tot_size);
+			varchunk_write_advance(moony->to_idisp, tot_size);
+
+			lv2_canvas_idisp_queue_draw(&moony->canvas_idisp);
+		}
+#endif
 	}
 
 	lua_State *L = moony_current(moony);
