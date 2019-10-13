@@ -2032,7 +2032,34 @@ _parameter_widget_tuple(plughandle_t *handle, struct nk_context *ctx, prop_t *pr
 	if(prop->key == handle->canvas_idisp.canvas.urid.Canvas_graph)
 	{
 		nk_layout_row_dynamic(ctx, dy*(ndy-1), 1);
-		nk_image(ctx, prop->value.tuple.img);
+		const struct nk_rect bnd = nk_widget_bounds(ctx);
+		nk_spacing(ctx, 1);
+
+		//FIXME implement aspect ratio
+		float w = bnd.w;
+		float h = bnd.h;
+
+		if(w < h)
+		{
+			h = w;
+		}
+		else
+		{
+			w = h;
+		}
+
+		const struct nk_rect bnd2 = {
+			.x = bnd.x + bnd.w/2 - w/2,
+			.y = bnd.y + bnd.h/2 - h/2,
+			.w = w,
+			.h = h
+		};
+
+		struct nk_command_buffer *canvas = nk_window_get_canvas(ctx);
+		struct nk_style_button *style = &ctx->style.button;
+
+		nk_draw_image(canvas, bnd2, &prop->value.tuple.img, nk_rgb(0xff, 0xff, 0xff));
+		nk_stroke_rect(canvas, bnd2, style->rounding, style->border, style->border_color);
 	}
 	else
 #endif
@@ -3227,8 +3254,8 @@ _patch_set_parameter_value(plughandle_t *handle, LV2_URID property,
 		else if(prop->range == handle->forge.Tuple)
 		{
 #if defined(BUILD_INLINE_DISP)
-			const int w = 200; //FIXME
-			const int h = 200; //FIXME
+			const int w = 512; //FIXME
+			const int h = 512; //FIXME
 			const float aspect_ratio = 1.f; //FIXME
 
 			LV2_Inline_Display_Image_Surface *surf =

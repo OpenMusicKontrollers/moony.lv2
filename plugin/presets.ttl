@@ -717,21 +717,10 @@ local graph = Parameter({
 	end
 })
 
--- define canvas aspect ratio parameter
-local aspect = Parameter({
-	[RDFS.label] = 'AspectRatio',
-	[RDFS.comment] = 'Aspect ratio of canvas graph',
-	[RDFS.range] = Atom.Float,
-	[LV2.minimum] = 1.0,
-	[LV2.maximum] = 1.0,
-	[RDF.value] = 1.0
-})
-
 -- define a StateResponder object
 local stateR = StateResponder({
 	[Patch.readable] = {
-		[Canvas.graph] = graph,
-		[Canvas.aspectRatio] = aspect
+		[Canvas.graph] = graph
 	}
 })
 
