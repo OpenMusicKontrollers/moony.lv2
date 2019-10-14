@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.30.0] - 14 Oct 2019
+
+### Added
+
+* preview of canvas graph via inline display extension
+* preview of canvas graph in UI property view
+* vim syntax comment to all presets
+
+### Fixed
+
+* various compiler warnings
+* use vfork instead of fork to run simple UI
+
 ## [0.28.0] - 15 Jul 2019
 
 ### Added
