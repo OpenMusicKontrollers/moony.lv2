@@ -5,6 +5,8 @@ project('moony.lv2', 'c', default_options : [
 	'b_lto=false',
 	'c_std=c11'])
 
+build_root = meson.build_root()
+
 build_opengl_ui = get_option('build-opengl-ui')
 build_simple_ui = get_option('build-simple-ui')
 build_inline_disp = get_option('build-inline-disp')
@@ -515,7 +517,7 @@ endif
 
 if lv2lint.found()
 	test('LV2 lint', lv2lint,
-		args : [
+		args : [ '-I', join_paths(build_root, ''),
 			'http://open-music-kontrollers.ch/lv2/moony#a1xa1',
 			'http://open-music-kontrollers.ch/lv2/moony#a2xa2',
 			'http://open-music-kontrollers.ch/lv2/moony#a4xa4',
