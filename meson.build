@@ -82,7 +82,6 @@ sord_validate = find_program('sord_validate', native : true, required : false)
 lv2lint = find_program('lv2lint', required : false)
 
 c_args = ['-fvisibility=hidden',
-	'-ffast-math',
 	'-Wno-attributes',
 	'-Wno-unused-function',
 	'-Wno-unused-variable']
