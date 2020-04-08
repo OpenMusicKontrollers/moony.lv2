@@ -140,7 +140,7 @@ pages:
   stage: deploy
   script:
     - mkdir -p public
-    - cp "${CI_PROJECT_NAME}-$(cat VERSION)/x86_64-linux-gnu-buster/${BASE_NAME}/manual.html" public/index.html
+    - cp "${CI_PROJECT_NAME}-$(cat VERSION)/x86_64-linux-gnu-buster/${CI_PROJECT_NAME}/manual.html" public/index.html
     - cp logo/moony_logo.png public/.
   artifacts:
     paths:
