@@ -1,0 +1,4 @@
+option('build-examples',
+	type : 'boolean',
+	value : false,
+	yield : true)
