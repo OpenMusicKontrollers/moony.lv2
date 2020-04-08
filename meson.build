@@ -3,8 +3,18 @@ project('moony.lv2', 'c', default_options : [
 	'warning_level=1',
 	'werror=false',
 	'b_lto=false',
-	'c_std=c11'])
+	'c_std=gnu11'])
 
+nk_pugl = subproject('nk_pugl')
+
+lv2libdir = get_option('lv2libdir')
+
+inst_dir = join_paths(lv2libdir, meson.project_name())
+
+nk_pugl_dep = nk_pugl.get_variable('nk_pugl_gl')
+cousine_regular_ttf = nk_pugl.get_variable('cousine_regular_ttf')
+
+source_root = meson.source_root()
 build_root = meson.build_root()
 
 build_opengl_ui = get_option('build-opengl-ui')
@@ -23,7 +33,7 @@ cairo_dep = dependency('cairo', version : '>=1.15.0',
 thread_dep = dependency('threads')
 
 dsp_deps = [m_dep, lv2_dep, cairo_dep, thread_dep]
-ui_deps = [m_dep, lv2_dep, cairo_dep, thread_dep]
+ui_deps = [m_dep, lv2_dep, cairo_dep, thread_dep, nk_pugl_dep]
 
 if host_machine.system() == 'windows'
 	# nothing to do for DSP
@@ -51,14 +61,12 @@ lpeg_inc = include_directories(lpeg_prefix)
 lrandom_inc = include_directories('lrandom')
 lua_inc = include_directories(lua_prefix)
 osc_inc = include_directories('osc.lv2')
-pugl_inc = include_directories('pugl')
 timely_inc = include_directories('timely.lv2')
 tlsf_inc = include_directories('tlsf-3.0')
 varchunk_inc = include_directories('varchunk')
 xpress_inc = include_directories('xpress.lv2')
-inc_dir = [canvas_inc, extui_inc, include_inc, api_inc, plugin_inc, laes128_inc, tinyaes_inc, lascii85_inc, lbase64_inc, lcomplex_inc, lmathx_inc, lpeg_inc, lrandom_inc, lua_inc, osc_inc, pugl_inc, timely_inc, tlsf_inc, varchunk_inc, xpress_inc]
-
-inst_dir = join_paths(get_option('libdir'), 'lv2', meson.project_name())
+nk_pugl_inc = include_directories(join_paths('subprojects', 'nk_pugl'))
+inc_dir = [canvas_inc, extui_inc, include_inc, api_inc, plugin_inc, laes128_inc, tinyaes_inc, lascii85_inc, lbase64_inc, lcomplex_inc, lmathx_inc, lpeg_inc, lrandom_inc, lua_inc, osc_inc, timely_inc, tlsf_inc, varchunk_inc, xpress_inc, nk_pugl_inc]
 
 rawvers = run_command('cat', 'VERSION').stdout().strip()
 version = rawvers.split('.')
@@ -72,7 +80,6 @@ add_project_arguments('-DMOONY_VERSION="'+rawvers+'"', language : 'c')
 add_project_arguments('-DMOONY_MINOR_VERSION='+version[1], language : 'c')
 add_project_arguments('-DMOONY_MICRO_VERSION='+version[2], language : 'c')
 add_project_arguments('-D_GNU_SOURCE', language : 'c')
-add_project_arguments('-DPUGL_HAVE_GL', language : 'c')
 if build_inline_disp
 	add_project_arguments('-DBUILD_INLINE_DISP', language : 'c')
 endif
@@ -81,10 +88,10 @@ lv2_validate = find_program('lv2_validate', native : true, required : false)
 sord_validate = find_program('sord_validate', native : true, required : false)
 lv2lint = find_program('lv2lint', required : false)
 
-c_args = ['-fvisibility=hidden',
+c_args = [
+	'-fvisibility=hidden',
 	'-Wno-attributes',
-	'-Wno-unused-function',
-	'-Wno-unused-variable']
+	'-Wno-unused-function']
 
 laes128_lib = static_library('laes128',
 	join_paths('laes128', 'laes128.c'),
@@ -188,7 +195,6 @@ api_lib = static_library('api',
 dsp_links = [laes128_lib, lascii85_lib, lbase64_lib, lcomplex_lib, lmathx_lib, lrandom_lib, lpeg_lib, lua_lib, tlsf_lib, api_lib]
 
 ui_with = [lpeg_lib, lua_lib]
-ui_links = []
 
 dsp_srcs = [
 	join_paths('plugin', 'moony.c'),
@@ -242,25 +248,11 @@ if build_opengl_ui or build_simple_ui
 		join_paths('plugin', 'nk_ui.c')]
 
 	if host_machine.system() == 'windows'
-		add_languages('cpp')
 		conf_data.set('UI_TYPE', 'WindowsUI')
-		ui_deps += cc.find_library('opengl32')
-		ui_deps += cc.find_library('gdi32')
-		ui_deps += cc.find_library('user32')
-		ui_srcs += 'pugl/pugl/pugl_win.cpp'
 	elif host_machine.system() == 'darwin'
-		add_languages('objc')
 		conf_data.set('UI_TYPE', 'CocoaUI')
-		ui_links += ['-framework', 'OpenGL']
-		ui_links += ['-framework', 'Cocoa']
-		ui_srcs += 'pugl/pugl/pugl_osx.m'
 	else
 		conf_data.set('UI_TYPE', 'X11UI')
-		dsp_deps += cc.find_library('rt')
-		ui_deps += dependency('gl')
-		ui_deps += dependency('x11', version : '>=1.6.0')
-		ui_deps += dependency('xext', version : '>=1.3.0')
-		ui_srcs += 'pugl/pugl/pugl_x11.c'
 	endif
 
 	ui = shared_module('moony_ui', ui_srcs,
@@ -269,7 +261,6 @@ if build_opengl_ui or build_simple_ui
 		name_prefix : '',
 		dependencies : ui_deps,
 		link_with : ui_with,
-		link_args : ui_links,
 		install : true,
 		install_dir : inst_dir)
 endif
@@ -311,7 +302,7 @@ pset_ttl = configure_file(
 	install_dir : inst_dir)
 
 configure_file(
-	input : join_paths('nuklear', 'extra_font', 'Cousine-Regular.ttf'),
+	input : cousine_regular_ttf,
 	output : 'Cousine-Regular.ttf',
 	copy : true,
 	install : true,

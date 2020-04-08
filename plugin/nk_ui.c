@@ -827,7 +827,10 @@ _image_new(plughandle_t *handle, unsigned w, unsigned h, const void *data,
 
 	if(switch_context)
 	{
-		puglEnterContext(handle->win.view);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+		puglEnterContext(handle->win.view, false);
+#pragma GCC diagnostic pop
 	}
 
 	{
@@ -846,7 +849,10 @@ _image_new(plughandle_t *handle, unsigned w, unsigned h, const void *data,
 
 	if(switch_context)
 	{
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 		puglLeaveContext(handle->win.view, false);
+#pragma GCC diagnostic pop
 	}
 
 	return nk_image_id(tex);
@@ -859,7 +865,10 @@ _image_free(plughandle_t *handle, struct nk_image *img, bool switch_context)
 	{
 		if(switch_context)
 		{
-			puglEnterContext(handle->win.view);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+			puglEnterContext(handle->win.view, false);
+#pragma GCC diagnostic pop
 		}
 
 		{
@@ -869,7 +878,10 @@ _image_free(plughandle_t *handle, struct nk_image *img, bool switch_context)
 
 		if(switch_context)
 		{
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 			puglLeaveContext(handle->win.view, false);
+#pragma GCC diagnostic pop
 		}
 	}
 }
