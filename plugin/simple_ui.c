@@ -67,7 +67,6 @@ struct _ui_t {
 static void
 _moony_message_send(ui_t *ui, LV2_URID key, const char *str, uint32_t size)
 {
-	LV2_Atom_Forge_Frame frame;
 	LV2_Atom_Object *obj = (LV2_Atom_Object *)ui->buf;
 
 	lv2_atom_forge_set_buffer(&ui->forge, ui->buf, 0x10000);

@@ -1149,10 +1149,8 @@ _work_response(LV2_Handle instance, uint32_t size, const void *body)
 }
 
 __realtime static LV2_Worker_Status
-_end_run(LV2_Handle instance)
+_end_run(LV2_Handle instance __attribute__((unused)))
 {
-	moony_t *moony = instance;
-
 	return LV2_WORKER_SUCCESS;
 }
 
@@ -2348,8 +2346,6 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 #endif
 	}
 
-	lua_State *L = moony_current(moony);
-
 	// read control sequence
 	LV2_ATOM_SEQUENCE_FOREACH(control, ev)
 	{
@@ -2617,7 +2613,7 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 
 			const LV2_URID subj = subject && (subject->atom.type == forge->URID)
 				? subject->body : 0;
-
+			(void)subj;
 			//FIXME check subj
 
 			const LV2_URID prop = property && (property->atom.type == forge->URID)
@@ -2650,7 +2646,7 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 
 			const LV2_URID subj = subject && (subject->atom.type == forge->URID)
 				? subject->body : 0;
-
+			(void)subj;
 			//FIXME check subj
 
 			if(  body

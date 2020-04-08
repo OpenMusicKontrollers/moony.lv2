@@ -274,7 +274,6 @@ _lforge_basic_midi(lua_State *L, int pos, LV2_Atom_Forge *forge)
 __realtime static int
 _lforge_basic_atom(lua_State *L, int pos, LV2_Atom_Forge *forge, LV2_URID range)
 {
-	moony_t *moony = lua_touserdata(L, lua_upvalueindex(1));
 	latom_t *latom = luaL_checkudata(L, pos, "latom");
 
 	if(latom->atom->type != range)

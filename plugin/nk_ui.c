@@ -1198,28 +1198,23 @@ _dial_bool(struct nk_context *ctx, int32_t *val, struct nk_color color, bool edi
 		}
 
 		const struct nk_style_item *fg = NULL;
-		const struct nk_style_item *bg = NULL;
 
 		switch(states)
 		{
 			case NK_WIDGET_STATE_HOVER:
 			{
-				bg = &ctx->style.progress.hover;
 				fg = &ctx->style.progress.cursor_hover;
 			}	break;
 			case NK_WIDGET_STATE_ACTIVED:
 			{
-				bg = &ctx->style.progress.active;
 				fg = &ctx->style.progress.cursor_active;
 			}	break;
 			default:
 			{
-				bg = &ctx->style.progress.normal;
 				fg = &ctx->style.progress.cursor_normal;
 			}	break;
 		}
 
-		const struct nk_color bg_color = bg->data.color;
 		struct nk_color fg_color = fg->data.color;
 
 		fg_color.r = (int)fg_color.r * color.r / 0xff;
@@ -3248,8 +3243,6 @@ static void
 _patch_set_parameter_value(plughandle_t *handle, LV2_URID property,
 	const LV2_Atom *value)
 {
-	const char *body = LV2_ATOM_BODY_CONST(value);
-
 	prop_t *prop = _prop_get(&handle->readables, &handle->n_readable, property);
 	if(!prop)
 		prop = _prop_get(&handle->writables, &handle->n_writable, property);
@@ -3361,8 +3354,6 @@ static void
 _patch_set_parameter_property(plughandle_t *handle, LV2_URID subject, LV2_URID property,
 	const LV2_Atom *value)
 {
-	const char *body = LV2_ATOM_BODY_CONST(value);
-
 	prop_t *prop = _prop_get(&handle->readables, &handle->n_readable, subject);
 	if(!prop)
 		prop = _prop_get(&handle->writables, &handle->n_writable, subject);
