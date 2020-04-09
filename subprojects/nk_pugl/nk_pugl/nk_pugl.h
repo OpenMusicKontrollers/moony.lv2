@@ -915,10 +915,14 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 		{
 			const PuglEventText *ev = (const PuglEventText *)e;
 
-			if(isprint(ev->character))
+			const bool control = ev->state & PUGL_MOD_CTRL;
+
+			const int ch = control ? ev->character | 0x60 : ev->character;
+
+			if(isprint(ch))
 			{
 				_nk_pugl_key_press(ctx, NK_KEY_TEXT_INSERT_MODE);
-				nk_input_unicode(ctx, ev->character);
+				nk_input_unicode(ctx, ch);
 			}
 		} break;
 
@@ -1368,13 +1372,12 @@ nk_pugl_is_shortcut_pressed(struct nk_input *in, char letter, bool clear)
 
 	if(control && (in->keyboard.text_len == 1) )
 	{
-		// unescape ASCII control chars + Control
-		const char ch = in->keyboard.text[0] | 0x60;
-
-		if(isalpha(ch) && (ch == letter) ) // pass non-alpha characters through
+		if(in->keyboard.text[0] == letter)
 		{
 			if(clear)
+			{
 				in->keyboard.text_len = 0;
+			}
 
 			return true; // matching shortcut
 		}
