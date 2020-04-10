@@ -104,13 +104,13 @@ struct _atom_ser_t {
 #define MOONY_LOG_FOLLOW_URI	MOONY_URI"#logFollow"
 #define MOONY_LOG_RESET_URI	MOONY_URI"#logReset"
 #define MOONY_PARAM_HIDDEN_URI	MOONY_URI"#paramHidden"
+#define MOONY_FONT_HEIGHT_URI	MOONY_URI"#fontHeight"
 
 #define MOONY_PARAM_COLS_URI	MOONY_URI"#paramCols"
 #define MOONY_PARAM_ROWS_URI	MOONY_URI"#paramRows"
 
 #define MOONY_NK_URI					MOONY_URI"#moony_ui"
-#define MOONY_SIMPLE_UI_URI		MOONY_URI"#moony_zimple_ui"
-#define MOONY_SIMPLE_KX_URI		MOONY_URI"#moony_zimple_kx"
+#define MOONY_D2TK_URI				MOONY_URI"#moony_d2tk"
 
 #define MOONY_C1XC1_URI				MOONY_URI"#c1xc1"
 #define MOONY_C2XC2_URI				MOONY_URI"#c2xc2"

@@ -37,8 +37,7 @@ moony:c1xc1
 	lv2:microVersion @MICRO_VERSION@ ;
 	lv2:binary <moony@MODULE_SUFFIX@> ;
 	@UI_OPENGL@ui:ui moony:moony_ui ;
-	#@UI_SIMPLE@ui:ui moony:moony_zimple_ui ;
-	@UI_SIMPLE@ui:ui moony:moony_zimple_kx ;
+	@UI_NEXT@ui:ui moony:moony_d2tk ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:c2xc2
@@ -47,8 +46,7 @@ moony:c2xc2
 	lv2:microVersion @MICRO_VERSION@ ;
 	lv2:binary <moony@MODULE_SUFFIX@> ;
 	@UI_OPENGL@ui:ui moony:moony_ui ;
-	#@UI_SIMPLE@ui:ui moony:moony_zimple_ui ;
-	@UI_SIMPLE@ui:ui moony:moony_zimple_kx ;
+	@UI_NEXT@ui:ui moony:moony_d2tk ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:c4xc4
@@ -57,8 +55,7 @@ moony:c4xc4
 	lv2:microVersion @MICRO_VERSION@ ;
 	lv2:binary <moony@MODULE_SUFFIX@> ;
 	@UI_OPENGL@ui:ui moony:moony_ui ;
-	#@UI_SIMPLE@ui:ui moony:moony_zimple_ui ;
-	@UI_SIMPLE@ui:ui moony:moony_zimple_kx ;
+	@UI_NEXT@ui:ui moony:moony_d2tk ;
 	rdfs:seeAlso <moony.ttl> .
 
 # atom in, atom out
@@ -68,8 +65,7 @@ moony:a1xa1
 	lv2:microVersion @MICRO_VERSION@ ;
 	lv2:binary <moony@MODULE_SUFFIX@> ;
 	@UI_OPENGL@ui:ui moony:moony_ui ;
-	#@UI_SIMPLE@ui:ui moony:moony_zimple_ui ;
-	@UI_SIMPLE@ui:ui moony:moony_zimple_kx ;
+	@UI_NEXT@ui:ui moony:moony_d2tk ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:a2xa2
@@ -78,8 +74,7 @@ moony:a2xa2
 	lv2:microVersion @MICRO_VERSION@ ;
 	lv2:binary <moony@MODULE_SUFFIX@> ;
 	@UI_OPENGL@ui:ui moony:moony_ui ;
-	#@UI_SIMPLE@ui:ui moony:moony_zimple_ui ;
-	@UI_SIMPLE@ui:ui moony:moony_zimple_kx ;
+	@UI_NEXT@ui:ui moony:moony_d2tk ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:a4xa4
@@ -88,8 +83,7 @@ moony:a4xa4
 	lv2:microVersion @MICRO_VERSION@ ;
 	lv2:binary <moony@MODULE_SUFFIX@> ;
 	@UI_OPENGL@ui:ui moony:moony_ui ;
-	#@UI_SIMPLE@ui:ui moony:moony_zimple_ui ;
-	@UI_SIMPLE@ui:ui moony:moony_zimple_kx ;
+	@UI_NEXT@ui:ui moony:moony_d2tk ;
 	rdfs:seeAlso <moony.ttl> .
 
 # control/atom in, control/atom out
@@ -99,8 +93,7 @@ moony:c1a1xc1a1
 	lv2:microVersion @MICRO_VERSION@ ;
 	lv2:binary <moony@MODULE_SUFFIX@> ;
 	@UI_OPENGL@ui:ui moony:moony_ui ;
-	#@UI_SIMPLE@ui:ui moony:moony_zimple_ui ;
-	@UI_SIMPLE@ui:ui moony:moony_zimple_kx ;
+	@UI_NEXT@ui:ui moony:moony_d2tk ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:c2a1xc2a1
@@ -109,8 +102,7 @@ moony:c2a1xc2a1
 	lv2:microVersion @MICRO_VERSION@ ;
 	lv2:binary <moony@MODULE_SUFFIX@> ;
 	@UI_OPENGL@ui:ui moony:moony_ui ;
-	#@UI_SIMPLE@ui:ui moony:moony_zimple_ui ;
-	@UI_SIMPLE@ui:ui moony:moony_zimple_kx ;
+	@UI_NEXT@ui:ui moony:moony_d2tk ;
 	rdfs:seeAlso <moony.ttl> .
 
 moony:c4a1xc4a1
@@ -119,8 +111,7 @@ moony:c4a1xc4a1
 	lv2:microVersion @MICRO_VERSION@ ;
 	lv2:binary <moony@MODULE_SUFFIX@> ;
 	@UI_OPENGL@ui:ui moony:moony_ui ;
-	#@UI_SIMPLE@ui:ui moony:moony_zimple_ui ;
-	@UI_SIMPLE@ui:ui moony:moony_zimple_kx ;
+	@UI_NEXT@ui:ui moony:moony_d2tk ;
 	rdfs:seeAlso <moony.ttl> .
 
 # UI
@@ -128,13 +119,9 @@ moony:c4a1xc4a1
 @UI@	a ui:@UI_TYPE@ ;
 @UI@	ui:binary <moony_ui@MODULE_SUFFIX@> ;
 @UI@	rdfs:seeAlso <moony_ui.ttl> .
-@UI@moony:moony_zimple_ui
-@UI@	a ui:UI ;
-@UI@	ui:binary <moony_ui@MODULE_SUFFIX@> ;
-@UI@	rdfs:seeAlso <moony_ui.ttl> .
-@UI@moony:moony_zimple_kx
-@UI@	a kx:Widget ;
-@UI@	ui:binary <moony_ui@MODULE_SUFFIX@> ;
+@UI@moony:moony_d2tk
+@UI@	a ui:@UI_TYPE@ ;
+@UI@	ui:binary <moony_d2tk@MODULE_SUFFIX@> ;
 @UI@	rdfs:seeAlso <moony_ui.ttl> .
 
 # Banks

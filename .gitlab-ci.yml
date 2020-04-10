@@ -5,7 +5,7 @@ stages:
 .variables_template: &variables_definition
   variables:
     PKG_CONFIG_PATH: "/opt/lv2/lib/pkgconfig:/opt/${CI_BUILD_NAME}/lib/pkgconfig:/usr/lib/${CI_BUILD_NAME}/pkgconfig"
-    BUILD_OPTS: "-Dbuild-inline-disp=true"
+    BUILD_OPTS: "-Dbuild-inline-disp=true -Dbuild-next-ui=false"
 
 .common_template: &common_definition
   <<: *variables_definition

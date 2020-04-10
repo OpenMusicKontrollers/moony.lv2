@@ -3918,3 +3918,15 @@ const LV2UI_Descriptor nk_ui= {
 	.port_event     = port_event,
 	.extension_data = ext_data
 };
+
+LV2_SYMBOL_EXPORT const LV2UI_Descriptor*
+lv2ui_descriptor(uint32_t index)
+{
+	switch(index)
+	{
+		case 0:
+			return &nk_ui;
+		default:
+			return NULL;
+	}
+}

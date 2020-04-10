@@ -5,11 +5,21 @@ project('moony.lv2', 'c', default_options : [
 	'b_lto=false',
 	'c_std=gnu11'])
 
+d2tk = subproject('d2tk')
 nk_pugl = subproject('nk_pugl')
 
 lv2libdir = get_option('lv2libdir')
+build_tests = get_option('build-tests')
 
 inst_dir = join_paths(lv2libdir, meson.project_name())
+
+if get_option('use-backend-nanovg').enabled()
+	d2tk_dep = d2tk.get_variable('d2tk_nanovg')
+elif get_option('use-backend-cairo').enabled()
+	d2tk_dep = d2tk.get_variable('d2tk_cairo')
+else
+	error('no valid UI backend given')
+endif
 
 nk_pugl_dep = nk_pugl.get_variable('nk_pugl_gl')
 cousine_regular_ttf = nk_pugl.get_variable('cousine_regular_ttf')
@@ -18,7 +28,7 @@ source_root = meson.source_root()
 build_root = meson.build_root()
 
 build_opengl_ui = get_option('build-opengl-ui')
-build_simple_ui = get_option('build-simple-ui')
+build_next_ui = get_option('build-next-ui')
 build_inline_disp = get_option('build-inline-disp')
 
 static_link = meson.is_cross_build()
@@ -33,7 +43,8 @@ cairo_dep = dependency('cairo', version : '>=1.15.0',
 thread_dep = dependency('threads')
 
 dsp_deps = [m_dep, lv2_dep, cairo_dep, thread_dep]
-ui_deps = [m_dep, lv2_dep, cairo_dep, thread_dep, nk_pugl_dep]
+nk_ui_deps = [m_dep, lv2_dep, cairo_dep, thread_dep, nk_pugl_dep]
+d2tk_ui_deps = [m_dep, lv2_dep, d2tk_dep]
 
 if host_machine.system() == 'windows'
 	# nothing to do for DSP
@@ -66,7 +77,10 @@ tlsf_inc = include_directories('tlsf-3.0')
 varchunk_inc = include_directories('varchunk')
 xpress_inc = include_directories('xpress.lv2')
 nk_pugl_inc = include_directories(join_paths('subprojects', 'nk_pugl'))
-inc_dir = [canvas_inc, extui_inc, include_inc, api_inc, plugin_inc, laes128_inc, tinyaes_inc, lascii85_inc, lbase64_inc, lcomplex_inc, lmathx_inc, lpeg_inc, lrandom_inc, lua_inc, osc_inc, timely_inc, tlsf_inc, varchunk_inc, xpress_inc, nk_pugl_inc]
+d2tk_inc = include_directories(join_paths('subprojects', 'd2tk'))
+props_inc = include_directories('props.lv2')
+ser_atom_inc = include_directories('ser_atom.lv2')
+inc_dir = [canvas_inc, extui_inc, include_inc, api_inc, plugin_inc, laes128_inc, tinyaes_inc, lascii85_inc, lbase64_inc, lcomplex_inc, lmathx_inc, lpeg_inc, lrandom_inc, lua_inc, osc_inc, timely_inc, tlsf_inc, varchunk_inc, xpress_inc, nk_pugl_inc, d2tk_inc, props_inc, ser_atom_inc]
 
 rawvers = run_command('cat', 'VERSION').stdout().strip()
 version = rawvers.split('.')
@@ -233,34 +247,45 @@ else
 	conf_data.set('UI_OPENGL', '#')
 endif
 
-if build_simple_ui
+if build_next_ui
 	message('building Simple UI')
 	conf_data.set('UI', '')
-	conf_data.set('UI_SIMPLE', '')
+	conf_data.set('UI_NEXT', '')
 else
-	conf_data.set('UI_SIMPLE', '#')
+	conf_data.set('UI_NEXT', '#')
 endif
 
-if build_opengl_ui or build_simple_ui
-	ui_srcs = [
-		join_paths('plugin', 'moony_ui.c'),
-		join_paths('plugin', 'simple_ui.c'),
+if host_machine.system() == 'windows'
+	conf_data.set('UI_TYPE', 'WindowsUI')
+elif host_machine.system() == 'darwin'
+	conf_data.set('UI_TYPE', 'CocoaUI')
+else
+	conf_data.set('UI_TYPE', 'X11UI')
+endif
+
+if build_opengl_ui
+	nk_ui_srcs = [
 		join_paths('plugin', 'nk_ui.c')]
 
-	if host_machine.system() == 'windows'
-		conf_data.set('UI_TYPE', 'WindowsUI')
-	elif host_machine.system() == 'darwin'
-		conf_data.set('UI_TYPE', 'CocoaUI')
-	else
-		conf_data.set('UI_TYPE', 'X11UI')
-	endif
-
-	ui = shared_module('moony_ui', ui_srcs,
+	nk_ui = shared_module('moony_ui', nk_ui_srcs,
 		c_args : c_args,
 		include_directories : inc_dir,
 		name_prefix : '',
-		dependencies : ui_deps,
+		dependencies : nk_ui_deps,
 		link_with : ui_with,
+		install : true,
+		install_dir : inst_dir)
+endif
+
+if build_next_ui
+	d2tk_ui_srcs = [
+		join_paths('plugin', 'd2tk_ui.c')]
+
+	d2tk_ui = shared_module('moony_d2tk', d2tk_ui_srcs,
+		c_args : c_args,
+		include_directories : inc_dir,
+		name_prefix : '',
+		dependencies : d2tk_ui_deps,
 		install : true,
 		install_dir : inst_dir)
 endif
