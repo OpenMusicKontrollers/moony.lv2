@@ -1,0 +1,75 @@
+stages:
+  - build
+  - test
+  - deploy
+
+.variables_template: &variables_definition
+  variables:
+    BASE_NAME: "props.lv2"
+    PKG_CONFIG_PATH: "/opt/lv2/lib/pkgconfig:/opt/${CI_BUILD_NAME}/lib/pkgconfig"
+
+.common_template: &common_definition
+  <<: *variables_definition
+  stage: build
+  artifacts:
+    name: "${BASE_NAME}-$(cat VERSION)-${CI_BUILD_NAME}"
+    paths:
+      - "${BASE_NAME}-$(cat VERSION)/"
+
+.build_template: &build_definition
+  <<: *common_definition
+  script:
+    - mkdir build
+    - pushd build
+    - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR} -DPLUGIN_DEST="${BASE_NAME}-$(cat ../VERSION)/${CI_BUILD_NAME}/${BASE_NAME}" -DCMAKE_CI_BUILD_NAME=${CI_BUILD_NAME} ..
+    - cmake .. # needed for darwin
+    - make
+    - make install
+
+.universal_linux_template: &universal_linux_definition
+  image: ventosus/universal-linux-gnu
+  <<: *build_definition
+
+.arm_linux_template: &arm_linux_definition
+  image: ventosus/arm-linux-gnueabihf
+  <<: *build_definition
+
+.universal_w64_template: &universal_w64_definition
+  image: ventosus/universal-w64-mingw32
+  <<: *build_definition
+
+.universal_apple_template: &universal_apple_definition
+  image: ventosus/universal-apple-darwin
+  <<: *build_definition
+
+# building in docker
+x86_64-linux-gnu:
+  <<: *universal_linux_definition
+
+i686-linux-gnu:
+  <<: *universal_linux_definition
+
+arm-linux-gnueabihf:
+  <<: *arm_linux_definition
+
+aarch64-linux-gnu:
+  <<: *arm_linux_definition
+
+x86_64-w64-mingw32:
+  <<: *universal_w64_definition
+
+i686-w64-mingw32:
+  <<: *universal_w64_definition
+
+universal-apple-darwin:
+  <<: *universal_apple_definition
+
+pack:
+  <<: *variables_definition
+  stage: deploy
+  script:
+    - echo 'packing up...'
+  artifacts:
+    name: "${BASE_NAME}-$(cat VERSION)"
+    paths:
+      - "${BASE_NAME}-$(cat VERSION)/"
