@@ -18,10 +18,10 @@ option('use-frontend-pugl',
 
 option('use-vterm',
 	type : 'feature',
-	value : 'enabled')
+	value : 'disabled')
 option('use-fontconfig',
 	type : 'feature',
-	value : 'enabled')
+	value : 'disabled')
 
 option('build-opengl-ui',
 	type : 'boolean',
