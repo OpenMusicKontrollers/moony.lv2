@@ -43,9 +43,16 @@
 #define FONT_CODE_MEDIUM  "FiraCode:medium"
 #define FONT_CODE_BOLD    "FiraCode:bold"
 
+typedef struct _col_t col_t;
 typedef struct _cell_t cell_t;
 typedef struct _d2tk_atom_body_pty_t d2tk_atom_body_pty_t;
 typedef struct _d2tk_pty_t d2tk_pty_t;
+
+struct _col_t {
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+};
 
 struct _cell_t {
 	char lbl [8];
@@ -78,9 +85,9 @@ struct _d2tk_atom_body_pty_t {
 	bool cursor_visible;
 	int cursor_shape;
 
-	uint32_t max_red;
-	uint32_t max_green;
-	uint32_t max_blue;
+	col_t max_red;
+	col_t max_green;
+	col_t max_blue;
 
 	cell_t cells [NROWS_MAX][NCOLS_MAX];
 };
@@ -474,53 +481,59 @@ _term_set_dark_light(d2tk_atom_body_pty_t *vpty, uint32_t fg,
 }
 
 static inline void
-_term_set_max_red(d2tk_atom_body_pty_t *vpty, uint32_t fg,
+_term_set_max_red(d2tk_atom_body_pty_t *vpty,
 	int32_t r1, int32_t g1, int32_t b1)
 {
-	const int32_t r0 = (vpty->max_red >> 24) & 0xff;
-	const int32_t g0 = (vpty->max_red >> 16) & 0xff;
-	const int32_t b0 = (vpty->max_red >>  8) & 0xff;
+	const int32_t r0 = vpty->max_red.r;
+	const int32_t g0 = vpty->max_red.g;
+	const int32_t b0 = vpty->max_red.b;
 	const int32_t d0 = (r0 - g0) + (r0 - b0);
 
 	const int32_t d1 = (r1 - g1) + (r1 - b1);
 
 	if(d1 > d0)
 	{
-		vpty->max_red = fg;
+		vpty->max_red.r = r1;
+		vpty->max_red.g = g1;
+		vpty->max_red.b = b1;
 	}
 }
 
 static inline void
-_term_set_max_green(d2tk_atom_body_pty_t *vpty, uint32_t fg,
+_term_set_max_green(d2tk_atom_body_pty_t *vpty,
 	int32_t r1, int32_t g1, int32_t b1)
 {
-	const int32_t r0 = (vpty->max_green >> 24) & 0xff;
-	const int32_t g0 = (vpty->max_green >> 16) & 0xff;
-	const int32_t b0 = (vpty->max_green >>  8) & 0xff;
+	const int32_t r0 = vpty->max_green.r;
+	const int32_t g0 = vpty->max_green.g;
+	const int32_t b0 = vpty->max_green.b;
 	const int32_t d0 = (g0 - r0) + (g0 - b0);
 
 	const int32_t d1 = (g1 - r1) + (g1 - b1);
 
 	if(d1 > d0)
 	{
-		vpty->max_green = fg;
+		vpty->max_green.r = r1;
+		vpty->max_green.g = g1;
+		vpty->max_green.b = b1;
 	}
 }
 
 static inline void
-_term_set_max_blue(d2tk_atom_body_pty_t *vpty, uint32_t fg,
+_term_set_max_blue(d2tk_atom_body_pty_t *vpty,
 	int32_t r1, int32_t g1, int32_t b1)
 {
-	const int32_t r0 = (vpty->max_blue >> 24) & 0xff;
-	const int32_t g0 = (vpty->max_blue >> 16) & 0xff;
-	const int32_t b0 = (vpty->max_blue >>  8) & 0xff;
+	const int32_t r0 = vpty->max_blue.r;
+	const int32_t g0 = vpty->max_blue.g;
+	const int32_t b0 = vpty->max_blue.b;
 	const int32_t d0 = (b0 - r0) + (b0 - g0);
 
 	const int32_t d1 = (b1 - r1) + (b1 - g1);
 
 	if(d1 > d0)
 	{
-		vpty->max_blue = fg;
+		vpty->max_blue.r = r1;
+		vpty->max_blue.g = g1;
+		vpty->max_blue.b = b1;
 	}
 }
 
@@ -532,9 +545,9 @@ _term_set_colors(d2tk_atom_body_pty_t *vpty, uint32_t fg)
 	const int32_t b1 = (fg >>  8) & 0xff;
 
 	_term_set_dark_light(vpty, fg, r1, g1, b1);
-	_term_set_max_red(vpty, fg, r1, g1, b1);
-	_term_set_max_green(vpty, fg, r1, g1, b1);
-	_term_set_max_blue(vpty, fg, r1, g1, b1);
+	_term_set_max_red(vpty, r1, g1, b1);
+	_term_set_max_green(vpty, r1, g1, b1);
+	_term_set_max_blue(vpty, r1, g1, b1);
 }
 
 static inline void
@@ -978,20 +991,51 @@ d2tk_pty_get_state(d2tk_pty_t *pty)
 	return pty->state;
 }
 
+static inline uint32_t
+_col_to_uint32(const col_t *col)
+{
+	return (col->r << 24)
+		| (col->g << 16)
+		| (col->b << 8)
+		| 0xff;
+}
+
+#define FALLBACK_MAX_RED   0x7f0000ff
+#define FALLBACK_MAX_GREEN 0x007f00ff
+#define FALLBACK_MAX_BLUE  0x00007fff
+
 D2TK_API uint32_t
 d2tk_pty_get_max_red(d2tk_pty_t *pty)
 {
-	return pty->vpty->max_red;
+	if(  (pty->vpty->max_red.r == pty->vpty->max_red.g)
+		&& (pty->vpty->max_red.r == pty->vpty->max_red.b) )
+	{
+		return FALLBACK_MAX_RED;
+	}
+
+	return _col_to_uint32(&pty->vpty->max_red);
 }
 
 D2TK_API uint32_t
 d2tk_pty_get_max_green(d2tk_pty_t *pty)
 {
-	return pty->vpty->max_green;
+	if(  (pty->vpty->max_green.g == pty->vpty->max_green.r)
+		&& (pty->vpty->max_green.g == pty->vpty->max_green.b) )
+	{
+		return FALLBACK_MAX_GREEN;
+	}
+
+	return _col_to_uint32(&pty->vpty->max_green);
 }
 
 D2TK_API uint32_t
 d2tk_pty_get_max_blue(d2tk_pty_t *pty)
 {
-	return pty->vpty->max_blue;
+	if(  (pty->vpty->max_blue.b == pty->vpty->max_blue.r)
+		&& (pty->vpty->max_blue.b == pty->vpty->max_blue.g) )
+	{
+		return FALLBACK_MAX_BLUE;
+	}
+
+	return _col_to_uint32(&pty->vpty->max_blue);
 }
