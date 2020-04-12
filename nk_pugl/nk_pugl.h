@@ -1031,6 +1031,8 @@ nk_pugl_init(nk_pugl_window_t *win)
 			{
 				dpi1 = atof(value.addr);
 			}
+
+			XrmDestroyDatabase(db);
 		}
 	}
 #endif
