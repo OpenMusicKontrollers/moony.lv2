@@ -929,13 +929,7 @@ _idle(LV2UI_Handle instance)
 
 	d2tk_base_t *base = d2tk_frontend_get_base(handle->dpugl);
 	d2tk_style_t style = *d2tk_base_get_default_style(base);
-	/*
-	style.fill_color[D2TK_TRIPLE_ACTIVE] = handle.dark_reddest;
-	style.fill_color[D2TK_TRIPLE_ACTIVE_HOT] = handle.light_reddest;
-	style.fill_color[D2TK_TRIPLE_ACTIVE_FOCUS] = handle.dark_reddest;
-	style.fill_color[D2TK_TRIPLE_ACTIVE_HOT_FOCUS] = handle.light_reddest;
-	*/
-	style.font_face = "FiraCode-Regular.ttf";
+	style.font_face = "FiraCode:regular";
 	d2tk_base_set_style(base, &style);
 
 	if(d2tk_frontend_step(handle->dpugl))
