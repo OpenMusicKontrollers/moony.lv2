@@ -171,10 +171,16 @@ is this here:
 #### mandatory
 
 * [LV2](http://lv2plug.in) (LV2 Plugin Standard)
+* [OpenGl](https://www.opengl.org) (OpenGl)
+* [GLEW](http://glew.sourceforge.net) (GLEW)
 
 #### optional (for inline display)
 
 * [cairo](https://www.cairographics.org) (2D graphics library)
+
+#### optional (for next ui)
+
+* [vterm](http://www.leonerd.org.uk/code/libvterm) (Virtual terminal emulator)
 
 ### Build / install
 
@@ -189,33 +195,35 @@ is this here:
 #### Compile options
 
 * build-opengl-ui (build OpenGl UI, default=on)
-* build-simple-ui (build external UI, default=off)
+* build-next-ui (build next UI, default=off)
+  * use-vterm (needed for next ui, default=disabled)
 * build-inline-disp (build inline display, default=off)
 
-### GUI
+### Next (alternative) UI
 
-This plugin features an external LV2 plugin GUI, which does nothing else than
-just opening the plugin's Lua source in your favorite editor and monitor its
-modification state.
+This plugin features a native LV2 plugin UI which embeds a terminal emulator
+which can run your favorite terminal editor to edit the plugin's FAUST source.
 
-*The external GUI is optionally built only.*
+Currently, the editor has to be defined via the environment variable *EDITOR*:
 
-Currently, the editor has to be defined via an environment variable
-*MOONY_EDITOR*.
+    export EDITOR='vim'
+    export EDITOR='emacs'
 
-    export MOONY_EDITOR='gedit'
-    export MOONY_EDITOR='xterm -e emacs'
-    export MOONY_EDITOR='urxvt -e nvim'
+If no environment variable is defined, the default fallback editor is 'vi', as
+it must be part of every POSIX system.
 
-If no environment variable is defined, the default fallback invocation commands
-are defined as follows:
+Whenever you save the FAUST source, the plugin will try to just-in-time compile and
+inject it. Potential warnings and errors are reported in the plugin host's log
+and the UI itself.
 
-* 'xterm -e vi' (Unix)
-* 'open -nW' (MacOS)
-* 'cmd /c start /wait' (Windows)
+On hi-DPI displays, the UI scales automatically if you have set the correct DPI
+in your ~/.Xresources.
 
-Whenever you save the Lua source, the plugin will try to just-in-time compile and
-inject it. Potential warnings and errors are reported in the plugin host's log.
+    Xft.dpi: 200
+
+If not, you can manually set your DPI via environmental variable *D2TK_SCALE*:
+
+    export D2TK_SCALE=200
 
 ### License
 
