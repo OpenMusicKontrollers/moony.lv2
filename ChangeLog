@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.32.0] - 13 Apr 2020
+
+### Deprecated
+
+* simple UI (replaced by next UI)
+
+### Added
+
+* next UI (not feature-complete, yet, replacement for simple UI)
+
+### Changed
+
+* to build with pugl master
+
 ## [0.30.0] - 14 Oct 2019
 
 ### Added
