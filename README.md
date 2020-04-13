@@ -201,6 +201,8 @@ is this here:
 
 ### Next (alternative) UI
 
+![Screenshot](https://git.open-music-kontrollers.ch/lv2/moony.lv2/plain/screenshots/screenshot_2.png)
+
 This plugin features a native LV2 plugin UI which embeds a terminal emulator
 which can run your favorite terminal editor to edit the plugin's FAUST source.
 
