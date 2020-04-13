@@ -387,6 +387,12 @@ moony_lua = configure_file(
 	install_dir : inst_dir)
 
 configure_file(
+	input : join_paths('png', 'libre-gui-exclamation-circle.png'),
+	output : 'libre-gui-exclamation-circle.png',
+	copy : true,
+	install : true,
+	install_dir : inst_dir)
+configure_file(
 	input : join_paths('png', 'bell.png'),
 	output : 'bell.png',
 	copy : true,

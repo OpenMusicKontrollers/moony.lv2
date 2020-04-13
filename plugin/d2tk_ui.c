@@ -47,7 +47,7 @@
 
 #define MAX(x, y) (x > y ? y : x)
 
-#define MAX_NPROPS 3
+#define MAX_NPROPS 4
 
 typedef struct _plugstate_t plugstate_t;
 typedef struct _plughandle_t plughandle_t;
@@ -56,6 +56,7 @@ struct _plugstate_t {
 	char code [MOONY_MAX_CHUNK_LEN];
 	char error [MOONY_MAX_ERROR_LEN];
 	int32_t font_height;
+	int32_t panic;
 };
 
 struct _plughandle_t {
@@ -80,9 +81,11 @@ struct _plughandle_t {
 
 	LV2_URID atom_eventTransfer;
 	LV2_URID midi_MidiEvent;
+
 	LV2_URID urid_code;
 	LV2_URID urid_error;
 	LV2_URID urid_fontHeight;
+	LV2_URID urid_panic;
 
 	bool reinit;
 	char template [24];
@@ -204,6 +207,11 @@ static const props_def_t defs [MAX_NPROPS] = {
 		.offset = offsetof(plugstate_t, font_height),
 		.type = LV2_ATOM__Int,
 		.event_cb = _intercept_font_height
+	},
+	{
+		.property = MOONY_PANIC_URI,
+		.offset = offsetof(plugstate_t, panic),
+		.type = LV2_ATOM__Bool
 	}
 };
 
@@ -426,16 +434,13 @@ _expose_panic(plughandle_t *handle, const d2tk_rect_t *rect)
 	d2tk_frontend_t *dpugl = handle->dpugl;
 	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
 
-#if 0
 	static const char path [] = "libre-gui-exclamation-circle.png";
 
 	if(d2tk_base_button_image_is_changed(base, D2TK_ID, sizeof(path), path, rect))
 	{
-		_message_midi_allnotesoff(handle);
+		handle->state.panic = 1;
+		_message_set_key(handle, handle->urid_panic);
 	}
-#else
-	(void)base;
-#endif
 }
 
 static inline void
@@ -455,7 +460,7 @@ _expose_footer(plughandle_t *handle, const d2tk_rect_t *rect)
 			case 0:
 			{
 				static const char *lbls [3] = {
-					NULL,
+					"panic",
 					NULL,
 					"font-height•px"
 				};
@@ -472,7 +477,7 @@ _expose_footer(plughandle_t *handle, const d2tk_rect_t *rect)
 				{
 					case 0:
 					{
-						// nothing to do
+						_expose_panic(handle, trect);
 					} break;
 					case 1:
 					{
@@ -790,6 +795,8 @@ instantiate(const LV2UI_Descriptor *descriptor,
 		MOONY_ERROR_URI);
 	handle->urid_fontHeight = handle->map->map(handle->map->handle,
 		MOONY_FONT_HEIGHT_URI);
+	handle->urid_panic = handle->map->map(handle->map->handle,
+		MOONY_PANIC_URI);
 
 	if(!props_init(&handle->props, plugin_uri,
 		defs, MAX_NPROPS, &handle->state, &handle->stash,
@@ -852,6 +859,7 @@ instantiate(const LV2UI_Descriptor *descriptor,
 	_message_get(handle, handle->urid_code);
 	_message_get(handle, handle->urid_error);
 	_message_get(handle, handle->urid_fontHeight);
+	_message_get(handle, handle->urid_panic);
 
 	return handle;
 }
