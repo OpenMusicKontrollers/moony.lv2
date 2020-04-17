@@ -30,14 +30,6 @@ check_for_font = find_program('check_for_font',
 	native : true,
 	required : use_fontconfig)
 
-prefix = get_option('prefix')
-datadir = get_option('datadir')
-bindir = get_option('bindir')
-
-pdatadir = join_paths(prefix, datadir, 'd2tk', '')
-
-add_project_arguments('-DD2TK_DATA_DIR="'+pdatadir+'"', language : 'c')
-
 cc = meson.get_compiler('c')
 
 # mandatory dependencies
@@ -179,6 +171,18 @@ if use_fontconfig.enabled()
 	conf_data.set('D2TK_FONTCONFIG', 1)
 else
 	conf_data.set('D2TK_FONTCONFIG', 0)
+endif
+
+if cc.has_function('vfork')
+	conf_data.set('D2TK_VFORK', 1)
+else
+	conf_data.set('D2TK_VFORK', 0)
+endif
+
+if cc.has_function('clone')
+	conf_data.set('D2TK_CLONE', 1)
+else
+	conf_data.set('D2TK_CLONE', 0)
 endif
 
 example_srcs = [
