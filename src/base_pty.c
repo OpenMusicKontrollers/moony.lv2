@@ -22,7 +22,10 @@
 #include <fcntl.h>
 #include <vterm.h>
 #include <pty.h>
+#include <utmp.h>
+#include <sched.h>
 #include <sys/wait.h>
+#include <sys/mman.h>
 #include <poll.h>
 
 #include "base_internal.h"
@@ -127,7 +130,7 @@ _term_read(d2tk_atom_body_pty_t *vpty,
 		{
 			if(errno != EAGAIN)
 			{
-				fprintf(stderr, "read failed '%s'\n", strerror(errno));
+				//FIXME fprintf(stderr, "read failed '%s'\n", strerror(errno));
 			}
 			break;
 		}
@@ -245,6 +248,107 @@ static const VTermScreenCallbacks screen_callbacks = {
   .resize = _screen_resize
 };
 
+typedef struct _clone_data_t clone_data_t;
+
+struct _clone_data_t {
+	int master;
+	int slave;
+	int stderr_save_fileno;
+	char **argv;
+};
+
+static int
+_clone(void *data)
+{
+	clone_data_t *clone_data = data;
+
+	close(clone_data->master);
+
+	if(login_tty(clone_data->slave) == -1)
+	{
+		_exit(1);
+	}
+
+	fcntl(clone_data->stderr_save_fileno, F_SETFD,
+		fcntl(clone_data->stderr_save_fileno, F_GETFD) | FD_CLOEXEC);
+	FILE *stderr_save = fdopen(clone_data->stderr_save_fileno, "a");
+
+	/* Restore the ISIG signals back to defaults */
+	signal(SIGINT,  SIG_DFL);
+	signal(SIGQUIT, SIG_DFL);
+	signal(SIGSTOP, SIG_DFL);
+	signal(SIGCONT, SIG_DFL);
+
+	putenv("TERM=xterm-256color");
+	//putenv("COLORTERM=truecolor");
+
+	execvp(clone_data->argv[0], clone_data->argv);
+	fprintf(stderr_save, "cannot exec(%s) - %s\n", clone_data->argv[0], strerror(errno));
+	_exit(EXIT_FAILURE);
+
+	return 0;
+}
+
+static int
+_forkpty(int *amaster, char *name, const struct termios *termp,
+	const struct winsize *winp, char **argv, int stderr_save_fileno)
+{
+	clone_data_t clone_data = {
+		.master = 0,
+		.slave = 0,
+		.argv = argv,
+		.stderr_save_fileno = stderr_save_fileno
+	};
+	
+	if(openpty(&clone_data.master, &clone_data.slave, name, termp, winp) == -1)
+	{
+    return -1;
+	}
+
+#if D2TK_CLONE == 1
+#	define STACK_SIZE (1024 * 1024)
+	uint8_t *stack = mmap(NULL, STACK_SIZE, PROT_READ | PROT_WRITE,
+		MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
+	if(stack == MAP_FAILED)
+	{
+		close(clone_data.master);
+		close(clone_data.slave);
+		return -1;
+	}
+
+	uint8_t *stack_top = stack + STACK_SIZE;
+	const int flags = CLONE_FS | CLONE_IO | CLONE_VFORK | CLONE_VM;
+	const int pid = clone(_clone, stack_top, flags, &clone_data);
+#	undef STACK_SIZE
+#elif D2TK_VFORK == 1
+	const int pid = vfork();
+#else
+	const int pid = fork();
+#endif
+
+	switch(pid)
+	{
+		case -1:
+		{
+			close(clone_data.master);
+			close(clone_data.slave);
+		} return -1;
+
+#if D2TK_CLONE == 0
+    case 0: //child
+		{
+			// everything is done in _clone
+		} return _clone(&clone_data);
+#endif
+
+		default: // parent
+		{
+			*amaster = clone_data.master;
+			close(clone_data.slave);
+		} return pid;
+	}
+}
+
 static int
 _term_init(d2tk_atom_body_pty_t *vpty, char **argv,
 	d2tk_coord_t height, d2tk_coord_t ncols, d2tk_coord_t nrows)
@@ -317,29 +421,11 @@ _term_init(d2tk_atom_body_pty_t *vpty, char **argv,
 
 	const int stderr_save_fileno = dup(STDERR_FILENO);
 
-	vpty->kid = forkpty(&vpty->fd, NULL, &termios, &winsize);
+	vpty->kid = _forkpty(&vpty->fd, NULL, &termios, &winsize, argv, stderr_save_fileno);
 	if(vpty->kid == -1)
 	{
 		vpty->kid = 0;
 		return 1;
-	}
-	else if(vpty->kid == 0) // child
-	{
-		fcntl(stderr_save_fileno, F_SETFD, fcntl(stderr_save_fileno, F_GETFD) | FD_CLOEXEC);
-		FILE *stderr_save = fdopen(stderr_save_fileno, "a");
-
-		/* Restore the ISIG signals back to defaults */
-		signal(SIGINT,  SIG_DFL);
-		signal(SIGQUIT, SIG_DFL);
-		signal(SIGSTOP, SIG_DFL);
-		signal(SIGCONT, SIG_DFL);
-
-		putenv("TERM=xterm-256color");
-		//putenv("COLORTERM=truecolor");
-
-		execvp(argv[0], argv);
-		fprintf(stderr_save, "cannot exec(%s) - %s\n", argv[0], strerror(errno));
-		_exit(EXIT_FAILURE);
 	}
 
   fcntl(vpty->fd, F_SETFL, fcntl(vpty->fd, F_GETFL) | O_NONBLOCK);
