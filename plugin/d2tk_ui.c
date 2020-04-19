@@ -49,8 +49,16 @@
 
 #define MAX_NPROPS 4
 
+typedef enum _console_t {
+	CONSOLE_EDITOR,
+	CONSOLE_MAN,
+
+	CONSOLE_MAX
+} console_t;
+
 typedef struct _plugstate_t plugstate_t;
 typedef struct _plughandle_t plughandle_t;
+typedef void (*console_cb_t)(plughandle_t *handle, const d2tk_rect_t *rect);
 
 struct _plugstate_t {
 	char code [MOONY_MAX_CHUNK_LEN];
@@ -89,6 +97,7 @@ struct _plughandle_t {
 
 	bool reinit;
 	char template [24];
+	char manual [PATH_MAX] ;
 	int fd;
 	time_t modtime;
 
@@ -103,6 +112,8 @@ struct _plughandle_t {
 	uint32_t control;
 
 	int done;
+
+	console_t console;
 };
 
 static inline void
@@ -562,6 +573,27 @@ _expose_term(plughandle_t *handle, const d2tk_rect_t *rect)
 	handle->reinit = false;
 }
 
+static inline void
+_expose_man(plughandle_t *handle, const d2tk_rect_t *rect)
+{
+	d2tk_frontend_t *dpugl = handle->dpugl;
+	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
+
+	char *browser = getenv("BROWSER");
+
+	char *args [] = {
+		browser ? browser : "elinks",
+		handle->manual,
+		NULL
+	};
+
+	D2TK_BASE_PTY(base, D2TK_ID, args,
+		handle->font_height, rect, false, pty)
+	{
+		// nothing to do
+	}
+}
+
 static inline unsigned
 _num_lines(const char *err)
 {
@@ -634,6 +666,54 @@ _expose_editor(plughandle_t *handle, const d2tk_rect_t *rect)
 }
 
 static inline void
+_expose_console(plughandle_t *handle, const d2tk_rect_t *rect)
+{
+	d2tk_frontend_t *dpugl = handle->dpugl;
+	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
+
+	const d2tk_coord_t frac [2] = { 0, handle->header_height };
+	D2TK_BASE_LAYOUT(rect, 2, frac, D2TK_FLAG_LAYOUT_Y_ABS, lay)
+	{
+		const unsigned k = d2tk_layout_get_index(lay);
+		const d2tk_rect_t *lrect = d2tk_layout_get_rect(lay);
+
+		switch(k)
+		{
+			case 1:
+			{
+				static const char *console_lbl [CONSOLE_MAX] = {
+					[CONSOLE_EDITOR] = "Editor",
+					[CONSOLE_MAN]    = "Manual"
+				};
+
+				D2TK_BASE_TABLE(lrect, CONSOLE_MAX, 1, D2TK_FLAG_TABLE_REL, tab)
+				{
+					const d2tk_rect_t *hrect = d2tk_table_get_rect(tab);
+					const unsigned b = d2tk_table_get_index(tab);
+
+					bool val = (b == handle->console);
+					d2tk_base_toggle_label(base, D2TK_ID_IDX(b), -1, console_lbl[b],
+						D2TK_ALIGN_CENTERED, hrect, &val);
+					if(val)
+					{
+						handle->console = b;
+					}
+				}
+			} break;
+			case 0:
+			{
+				static const console_cb_t console_cb [CONSOLE_MAX] = {
+					[CONSOLE_EDITOR] = _expose_editor,
+					[CONSOLE_MAN] = _expose_man
+				};
+
+				console_cb[handle->console](handle, lrect);
+			} break;
+		}
+	}
+}
+
+static inline void
 _expose_sidebar_left(plughandle_t *handle, const d2tk_rect_t *rect)
 {
 	const d2tk_coord_t frac [2] = { 0, handle->footer_height };
@@ -646,7 +726,7 @@ _expose_sidebar_left(plughandle_t *handle, const d2tk_rect_t *rect)
 		{
 			case 0:
 			{
-				_expose_editor(handle, lrect);
+				_expose_console(handle, lrect);
 			} break;
 			case 1:
 			{
@@ -725,8 +805,7 @@ _expose(void *data, d2tk_coord_t w, d2tk_coord_t h)
 
 static LV2UI_Handle
 instantiate(const LV2UI_Descriptor *descriptor,
-	const char *plugin_uri,
-	const char *bundle_path __attribute__((unused)),
+	const char *plugin_uri, const char *bundle_path,
 	LV2UI_Write_Function write_function,
 	LV2UI_Controller controller, LV2UI_Widget *widget,
 	const LV2_Feature *const *features)
@@ -853,6 +932,9 @@ instantiate(const LV2UI_Descriptor *descriptor,
 		free(handle);
 		return NULL;
 	}
+
+	snprintf(handle->manual, sizeof(handle->manual), "%s%s",
+		bundle_path, "manual.html");
 
 	lv2_log_note(&handle->logger, "template: %s\n", handle->template);
 
