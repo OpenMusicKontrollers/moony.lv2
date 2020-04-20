@@ -104,7 +104,7 @@ The manual can be accessed from within the plugin UI or previewed here:
 
 ### Plugins
 
-![Screenshot](https://git.open-music-kontrollers.ch/lv2/moony.lv2/plain/screenshots/screenshot_1.png)
+![Screenshot](/screenshots/screenshot_1.png)
 
 #### Control to control port
 
@@ -201,7 +201,7 @@ is this here:
 
 ### Next (alternative) UI
 
-![Screenshot](https://git.open-music-kontrollers.ch/lv2/moony.lv2/plain/screenshots/screenshot_2.png)
+![Screenshot](/screenshots/screenshot_2.png)
 
 This plugin features a native LV2 plugin UI which embeds a terminal emulator
 which can run your favorite terminal editor to edit the plugin's Lua source.
