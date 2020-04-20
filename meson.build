@@ -10,6 +10,7 @@ nk_pugl = subproject('nk_pugl')
 
 lv2libdir = get_option('lv2libdir')
 build_tests = get_option('build-tests')
+gc_method = get_option('gc-method')
 
 inst_dir = join_paths(lv2libdir, meson.project_name())
 
@@ -55,7 +56,7 @@ else
 endif
 
 lpeg_prefix = 'lpeg-1.0.2'
-lua_prefix = 'lua-5.3.5'
+lua_prefix = 'lua-5.4.0'
 
 canvas_inc = include_directories('canvas.lv2')
 extui_inc = include_directories('ext_ui.lv2')
@@ -96,6 +97,19 @@ add_project_arguments('-DMOONY_MICRO_VERSION='+version[2], language : 'c')
 add_project_arguments('-D_GNU_SOURCE', language : 'c')
 if build_inline_disp
 	add_project_arguments('-DBUILD_INLINE_DISP', language : 'c')
+endif
+
+if gc_method == 'manual'
+	message('using manual gc method')
+	add_project_arguments('-DUSE_MANUAL_GC', language : 'c')
+elif gc_method == 'incremental'
+	message('using incremental gc method')
+	add_project_arguments('-DUSE_INCREMENTAL_GC', language : 'c')
+elif gc_method == 'generational'
+	message('using generational gc method')
+	add_project_arguments('-DUSE_GENERATIONAL_GC', language : 'c')
+else
+	error('gc method invalid')
 endif
 
 lv2_validate = find_program('lv2_validate', native : true, required : false)

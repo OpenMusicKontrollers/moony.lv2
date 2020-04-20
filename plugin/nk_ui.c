@@ -3110,10 +3110,11 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		//luaL_requiref(handle->L, "bit32", luaopen_bit32, 1);
 		luaL_requiref(handle->L, "package", luaopen_package, 1);
 
-		// automatic garbage collector
+		// generational garbage collector
 		lua_gc(handle->L, LUA_GCRESTART, 0); // enable automatic garbage collection
-		lua_gc(handle->L, LUA_GCSETPAUSE, 105); // next step when memory increased by 5%
-		lua_gc(handle->L, LUA_GCSETSTEPMUL, 105); // run 5% faster than memory allocation
+		// next minor collection when memory increased by 5%
+		// next major collection when memory increased by 100% 
+		lua_gc(handle->L, LUA_GCGEN, 5, 100);
 
 		// set package.path
 		lua_getglobal(handle->L, "package");

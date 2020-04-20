@@ -233,16 +233,25 @@ moony_vm_new(size_t mem_size, bool testing, void *data)
 
 	lua_pop(L, 1); // math
 
-#ifdef USE_MANUAL_GC
+#if USE_MANUAL_GC
 	// manual garbage collector
 	lua_gc(L, LUA_GCSTOP, 0); // disable automatic garbage collection
-	lua_gc(L, LUA_GCSETPAUSE, 0); // don't wait to start a new cycle
-	lua_gc(L, LUA_GCSETSTEPMUL, 100); // set step size to run 'as fast a memory allocation'
-#else
-	// automatic garbage collector
+	// set step size to run 'as fast as memory allocation'
+	lua_gc(L, LUA_GCINC, 0, 100, 13);
+#elif USE_INCREMENTAL_GC
+	// incremental garbage collector
 	lua_gc(L, LUA_GCRESTART, 0); // enable automatic garbage collection
-	lua_gc(L, LUA_GCSETPAUSE, 105); // next step when memory increased by 5%
-	lua_gc(L, LUA_GCSETSTEPMUL, 105); // run 5% faster than memory allocation
+	// next step when memory increased by 5%
+	// run 5% faster than memory allocation
+	lua_gc(L, LUA_GCINC, 105, 105, 13);
+#elif USE_GENERATIONAL_GC
+	// generational garbage collector
+	lua_gc(L, LUA_GCRESTART, 0); // enable automatic garbage collection
+	// next minor collection when memory increased by 5%
+	// next major collection when memory increased by 100% 
+	lua_gc(L, LUA_GCGEN, 5, 100);
+#else
+#	error "GC method invalid"
 #endif
 
 	return vm;
