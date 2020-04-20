@@ -204,7 +204,7 @@ is this here:
 ![Screenshot](https://git.open-music-kontrollers.ch/lv2/moony.lv2/plain/screenshots/screenshot_2.png)
 
 This plugin features a native LV2 plugin UI which embeds a terminal emulator
-which can run your favorite terminal editor to edit the plugin's FAUST source.
+which can run your favorite terminal editor to edit the plugin's Lua source.
 
 Currently, the editor has to be defined via the environment variable *EDITOR*:
 
@@ -214,7 +214,7 @@ Currently, the editor has to be defined via the environment variable *EDITOR*:
 If no environment variable is defined, the default fallback editor is 'vi', as
 it must be part of every POSIX system.
 
-Whenever you save the FAUST source, the plugin will try to just-in-time compile and
+Whenever you save the Lua source, the plugin will try to just-in-time compile and
 inject it. Potential warnings and errors are reported in the plugin host's log
 and the UI itself.
 
