@@ -28,21 +28,21 @@ and on-demand rendered sprites.
 
 ### Screenshots
 
-![Screenshot 1](https://git.open-music-kontrollers.ch/lad/d2tk/plain/screenshots/screenshot_1.png)
+![Screenshot 1](/screenshots/screenshot_1.png)
 
-![Screenshot 2](https://git.open-music-kontrollers.ch/lad/d2tk/plain/screenshots/screenshot_2.png)
+![Screenshot 2](/screenshots/screenshot_2.png)
 
-![Screenshot 3](https://git.open-music-kontrollers.ch/lad/d2tk/plain/screenshots/screenshot_3.png)
+![Screenshot 3](/screenshots/screenshot_3.png)
 
-![Screenshot 4](https://git.open-music-kontrollers.ch/lad/d2tk/plain/screenshots/screenshot_4.png)
+![Screenshot 4](/screenshots/screenshot_4.png)
 
-![Screenshot 5](https://git.open-music-kontrollers.ch/lad/d2tk/plain/screenshots/screenshot_5.png)
+![Screenshot 5](/screenshots/screenshot_5.png)
 
-![Screenshot 6](https://git.open-music-kontrollers.ch/lad/d2tk/plain/screenshots/screenshot_6.png)
+![Screenshot 6](/screenshots/screenshot_6.png)
 
-![Screenshot 7](https://git.open-music-kontrollers.ch/lad/d2tk/plain/screenshots/screenshot_7.png)
+![Screenshot 7](/screenshots/screenshot_7.png)
 
-![Screenshot 8](https://git.open-music-kontrollers.ch/lad/d2tk/plain/screenshots/screenshot_8.png)
+![Screenshot 8](/screenshots/screenshot_8.png)
 
 ### License
 

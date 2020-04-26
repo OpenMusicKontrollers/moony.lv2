@@ -243,13 +243,9 @@ d2tk_nanovg_pre(void *data, d2tk_core_t *core, d2tk_coord_t w, d2tk_coord_t h,
 }
 
 static inline bool
-#ifdef D2TK_DEBUG
-d2tk_nanovg_post(void *data, d2tk_core_t *core,
-	d2tk_coord_t w, d2tk_coord_t h, unsigned pass)
-#else
 d2tk_nanovg_post(void *data, d2tk_core_t *core __attribute__((unused)),
-	d2tk_coord_t w, d2tk_coord_t h, unsigned pass)
-#endif
+	d2tk_coord_t w __attribute__((unused)), d2tk_coord_t h __attribute__((unused)),
+	unsigned pass)
 {
 	if(pass == 0) // is this 1st pass?
 	{
@@ -264,6 +260,19 @@ d2tk_nanovg_post(void *data, d2tk_core_t *core __attribute__((unused)),
 
 	nvgluBindFramebuffer(NULL);
 
+	// switch foreground and background framebuffer objects
+	backend->fbop = !backend->fbop;
+
+	return false; // do NOT enter 3rd pass
+}
+
+static inline void
+d2tk_nanovg_end(void *data __attribute__((unused)),
+	d2tk_core_t *core, d2tk_coord_t w, d2tk_coord_t h)
+{
+	d2tk_backend_nanovg_t *backend = data;
+	NVGcontext *ctx = backend->ctx;;
+
 	glViewport(0, 0, w, h);
 	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -271,8 +280,8 @@ d2tk_nanovg_post(void *data, d2tk_core_t *core __attribute__((unused)),
 	nvgBeginFrame(ctx, w, h, 1.f);
 	nvgSave(ctx);
 
-	// draw foreground framebuffer object to main framebuffer
-	NVGLUframebuffer *fbo_fg = backend->fbo[backend->fbop];
+	// draw former foreground framebuffer object to main framebuffer
+	NVGLUframebuffer *fbo_fg = backend->fbo[!backend->fbop];
 	const NVGpaint fg = nvgImagePattern(ctx, 0, 0, w, h, 0, fbo_fg->image, 1.0f);
 	nvgBeginPath(ctx);
 	nvgRect(ctx, 0, 0, w, h);
@@ -314,23 +323,12 @@ d2tk_nanovg_post(void *data, d2tk_core_t *core __attribute__((unused)),
 		nvgFillPaint(ctx, bg);
 		nvgFill(ctx);
 	}
+#else
+	(void)core;
 #endif
 
 	nvgRestore(ctx);
 	nvgEndFrame(ctx);
-
-	// switch foreground and background framebuffer objects
-	backend->fbop = !backend->fbop;
-
-	return false; // do NOT enter 3rd pass
-}
-
-static inline void
-d2tk_nanovg_end(void *data __attribute__((unused)),
-	d2tk_core_t *core __attribute__((unused)),
-	d2tk_coord_t w __attribute__((unused)), d2tk_coord_t h __attribute__((unused)))
-{
-	// nothing to do
 }
 
 static inline void
