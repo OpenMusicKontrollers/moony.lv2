@@ -624,7 +624,7 @@ d2tk_pugl_new(const d2tk_pugl_config_t *config, uintptr_t *widget)
 			config->w, config->h);
 	}
 	puglSetViewHint(dpugl->view, PUGL_RESIZABLE, !config->fixed_size);
-	puglSetViewHint(dpugl->view, PUGL_DOUBLE_BUFFER, false);
+	puglSetViewHint(dpugl->view, PUGL_DOUBLE_BUFFER, true);
 	puglSetViewHint(dpugl->view, PUGL_SWAP_INTERVAL, 1);
 	puglSetHandle(dpugl->view, dpugl);
 	puglSetEventFunc(dpugl->view, _d2tk_frontend_event_func);
