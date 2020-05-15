@@ -96,6 +96,7 @@ struct _nk_pugl_config_t {
 	} font;
 
 	intptr_t parent;
+	bool threads;
 
 	LV2UI_Resize *host_resize;
 
@@ -427,10 +428,8 @@ _nk_pugl_render_gl2(nk_pugl_window_t *win)
 }
 
 static void
-_nk_pugl_font_init(nk_pugl_window_t *win)
+_nk_pugl_glew_init()
 {
-	nk_pugl_config_t *cfg = &win->cfg;
-
 #if defined(__APPLE__)
 //FIXME
 #else
@@ -442,6 +441,12 @@ _nk_pugl_font_init(nk_pugl_window_t *win)
 		return;
 	}
 #endif
+}
+
+static void
+_nk_pugl_font_init(nk_pugl_window_t *win)
+{
+	nk_pugl_config_t *cfg = &win->cfg;
 
 	const int font_size = cfg->font.size * win->scale;
 
@@ -515,32 +520,6 @@ _nk_pugl_host_resize(nk_pugl_window_t *win)
 	{
 		cfg->host_resize->ui_resize(cfg->host_resize->handle,
 			cfg->width, cfg->height);
-	}
-}
-
-static void
-_nk_pugl_reconfigure(nk_pugl_window_t *win)
-{
-	_nk_pugl_font_deinit(win);
-	_nk_pugl_font_init(win);
-}
-
-static void
-_nk_pugl_zoom_in(nk_pugl_window_t *win)
-{
-	win->scale += 0.1;
-
-	_nk_pugl_reconfigure(win);
-}
-
-static void
-_nk_pugl_zoom_out(nk_pugl_window_t *win)
-{
-	if(win->scale >= 0.6)
-	{
-		win->scale -= 0.1;
-
-		_nk_pugl_reconfigure(win);
 	}
 }
 
@@ -694,14 +673,6 @@ _nk_pugl_key_down(nk_pugl_window_t *win, const PuglEventKey *ev)
 			{
 				switch(ev->key)
 				{
-					case KEY_PLUS:
-					{
-						_nk_pugl_zoom_in(win);
-					} break;
-					case KEY_MINUS:
-					{
-						_nk_pugl_zoom_out(win);
-					} break;
 					case KEY_C:
 					{
 						_nk_pugl_key_press(ctx, NK_KEY_COPY);
@@ -868,21 +839,7 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 			const PuglEventScroll *ev = (const PuglEventScroll *)e;
 
 			_nk_pugl_modifiers(win, ev->state);
-			if(win->state & PUGL_MOD_CTRL)
-			{
-				if(ev->dy > 0)
-				{
-					_nk_pugl_zoom_in(win);
-				}
-				else
-				{
-					_nk_pugl_zoom_out(win);
-				}
-			}
-			else
-			{
-				nk_input_scroll(ctx, nk_vec2(0.f, ev->dy));
-			}
+			nk_input_scroll(ctx, nk_vec2(0.f, ev->dy));
 
 			puglPostRedisplay(win->view);
 		} break;
@@ -928,6 +885,9 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 
 		case PUGL_CREATE:
 		{
+			// init glew
+			_nk_pugl_glew_init();
+
 			// init font system
 			_nk_pugl_font_init(win);
 
@@ -1050,7 +1010,8 @@ nk_pugl_init(nk_pugl_window_t *win)
 	cfg->min_height *= win->scale;
 
 	// init pugl
-	win->world = puglNewWorld(cfg->parent ? PUGL_MODULE : PUGL_PROGRAM, 0);
+	win->world = puglNewWorld(cfg->parent ? PUGL_MODULE : PUGL_PROGRAM,
+		cfg->threads ? PUGL_WORLD_THREADS : 0);
 
 #if defined(__APPLE__) || defined(_WIN32)
 	uint8_t bytes [0x10];
@@ -1126,7 +1087,7 @@ nk_pugl_init(nk_pugl_window_t *win)
 			cfg->width, cfg->height);
 	}
 	puglSetViewHint(win->view, PUGL_RESIZABLE, cfg->resizable);
-	puglSetViewHint(win->view, PUGL_DOUBLE_BUFFER, false);
+	puglSetViewHint(win->view, PUGL_DOUBLE_BUFFER, true);
 	puglSetViewHint(win->view, PUGL_SWAP_INTERVAL, 1);
 	puglSetHandle(win->view, win);
 	puglSetEventFunc(win->view, _nk_pugl_event_func);

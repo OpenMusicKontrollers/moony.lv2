@@ -57,6 +57,7 @@ main(int argc __attribute__((unused)), char **argv __attribute__((unused)))
 	cfg->height = 720;
 	cfg->resizable = true;
 	cfg->parent = 0;
+	cfg->threads = false;
 	cfg->ignore = false;
 	cfg->class = "nk_pugl_example";
 	cfg->title = "Nk Pugl Example";
