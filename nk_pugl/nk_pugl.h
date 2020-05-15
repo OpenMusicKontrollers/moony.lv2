@@ -211,7 +211,10 @@ extern C {
 #define NK_SQRT sqrtf
 
 #define NK_IMPLEMENTATION
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #include "nuklear/nuklear.h"
+#pragma GCC diagnostic pop
 
 #define STB_IMAGE_IMPLEMENTATION
 #pragma GCC diagnostic push
