@@ -35,6 +35,10 @@ option('build-inline-disp',
 	type : 'boolean',
 	value : false)
 
+option('gc-method',
+	type : 'string',
+	value : 'generational')
+
 option('lv2libdir',
 	type : 'string',
 	value : 'lib/lv2')
