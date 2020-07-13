@@ -201,7 +201,7 @@ _d2tk_base_spinner_inc(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect)
 
 D2TK_API d2tk_state_t
 d2tk_base_spinner_int32(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
-	int32_t min, int32_t *value, int32_t max)
+	ssize_t lbl_len, const char *lbl, int32_t min, int32_t *value, int32_t max)
 {
 	d2tk_state_t state = D2TK_STATE_NONE;
 	const d2tk_style_t *style = d2tk_base_get_style(base);
@@ -247,14 +247,43 @@ d2tk_base_spinner_int32(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect
 				d2tk_style_t style = *old_style;
 				style.font_face = FONT_CODE_MEDIUM;
 
-				d2tk_base_set_style(base, &style);
+				const bool grow = d2tk_state_is_focused(substate)
+					|| d2tk_state_is_hot(substate);
 
-				char lbl [16];
-				const ssize_t lbl_len = snprintf(lbl, sizeof(lbl), "%+"PRIi32, *value);
-				d2tk_base_label(base, lbl_len, lbl, 0.75f, &bnd,
-					D2TK_ALIGN_MIDDLE | D2TK_ALIGN_RIGHT);
+				if(grow)
+				{
+					d2tk_base_set_style(base, &style);
 
-				d2tk_base_set_style(base, old_style);
+					char lbl2 [16];
+					const ssize_t lbl2_len = snprintf(lbl2, sizeof(lbl2), "%+"PRIi32, *value);
+					d2tk_base_label(base, lbl2_len, lbl2, 0.66f, &bnd,
+						D2TK_ALIGN_BOTTOM | D2TK_ALIGN_RIGHT);
+
+					d2tk_base_set_style(base, old_style);
+
+					if(lbl_len && lbl)
+					{
+						d2tk_base_label(base, lbl_len, lbl, 0.33f, &bnd,
+							D2TK_ALIGN_TOP | D2TK_ALIGN_LEFT);
+					}
+				}
+				else
+				{
+					d2tk_base_set_style(base, &style);
+
+					char lbl2 [16];
+					const ssize_t lbl2_len = snprintf(lbl2, sizeof(lbl2), "%+"PRIi32, *value);
+					d2tk_base_label(base, lbl2_len, lbl2, 0.33f, &bnd,
+						D2TK_ALIGN_BOTTOM | D2TK_ALIGN_RIGHT);
+
+					d2tk_base_set_style(base, old_style);
+
+					if(lbl_len && lbl)
+					{
+						d2tk_base_label(base, lbl_len, lbl, 0.66f, &bnd,
+							D2TK_ALIGN_TOP| D2TK_ALIGN_LEFT);
+					}
+				}
 			} break;
 			case 2:
 			{
@@ -281,7 +310,7 @@ d2tk_base_spinner_int32(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect
 
 D2TK_API d2tk_state_t
 d2tk_base_spinner_float(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
-	float min, float *value, float max)
+	ssize_t lbl_len, const char *lbl, float min, float *value, float max)
 {
 	d2tk_state_t state = D2TK_STATE_NONE;
 	const d2tk_style_t *style = d2tk_base_get_style(base);
@@ -327,14 +356,43 @@ d2tk_base_spinner_float(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect
 				d2tk_style_t style = *old_style;
 				style.font_face = FONT_CODE_MEDIUM;
 
-				d2tk_base_set_style(base, &style);
+				const bool grow = d2tk_state_is_focused(substate)
+					|| d2tk_state_is_hot(substate);
 
-				char lbl [16];
-				const ssize_t lbl_len = snprintf(lbl, sizeof(lbl), "%+.4f", *value);
-				d2tk_base_label(base, lbl_len, lbl, 0.75f, &bnd,
-					D2TK_ALIGN_MIDDLE | D2TK_ALIGN_RIGHT);
+				if(grow)
+				{
+					d2tk_base_set_style(base, &style);
 
-				d2tk_base_set_style(base, old_style);
+					char lbl2 [16];
+					const ssize_t lbl2_len = snprintf(lbl2, sizeof(lbl2), "%+.4f", *value);
+					d2tk_base_label(base, lbl2_len, lbl2, 0.66f, &bnd,
+						D2TK_ALIGN_BOTTOM | D2TK_ALIGN_RIGHT);
+
+					d2tk_base_set_style(base, old_style);
+
+					if(lbl_len && lbl)
+					{
+						d2tk_base_label(base, lbl_len, lbl, 0.33f, &bnd,
+							D2TK_ALIGN_TOP | D2TK_ALIGN_LEFT);
+					}
+				}
+				else
+				{
+					d2tk_base_set_style(base, &style);
+
+					char lbl2 [16];
+					const ssize_t lbl2_len = snprintf(lbl2, sizeof(lbl2), "%+.4f", *value);
+					d2tk_base_label(base, lbl2_len, lbl2, 0.33f, &bnd,
+						D2TK_ALIGN_BOTTOM | D2TK_ALIGN_RIGHT);
+
+					d2tk_base_set_style(base, old_style);
+
+					if(lbl_len && lbl)
+					{
+						d2tk_base_label(base, lbl_len, lbl, 0.66f, &bnd,
+							D2TK_ALIGN_TOP | D2TK_ALIGN_LEFT);
+					}
+				}
 			} break;
 			case 2:
 			{
@@ -352,6 +410,91 @@ d2tk_base_spinner_float(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect
 						state |= D2TK_STATE_CHANGED;
 					}
 				}
+			} break;
+		}
+	}
+
+	return state;
+}
+
+D2TK_API d2tk_state_t
+d2tk_base_spinner_bool(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
+	ssize_t lbl_len, const char *lbl, bool *value)
+{
+	d2tk_state_t state = D2TK_STATE_NONE;
+	const d2tk_style_t *style = d2tk_base_get_style(base);
+	const d2tk_coord_t h2 = rect->h/2 + style->padding*3;
+	const d2tk_coord_t fract [3] = { h2, 0, rect->h };
+	D2TK_BASE_LAYOUT(rect, 3, fract, D2TK_FLAG_LAYOUT_X_ABS, lay)
+	{
+		const unsigned k = d2tk_layout_get_index(lay);
+		const d2tk_rect_t *lrect= d2tk_layout_get_rect(lay);
+		const d2tk_id_t itrid = D2TK_ID_IDX(k);
+		const d2tk_id_t subid = (itrid << 32) | id;
+
+		switch(k)
+		{
+			case 1:
+			{
+				d2tk_rect_t bnd;
+				d2tk_rect_shrink(&bnd, lrect, style->padding*5);
+
+				if(lbl_len && lbl)
+				{
+					d2tk_base_label(base, lbl_len, lbl, 0.66f, &bnd,
+						D2TK_ALIGN_TOP | D2TK_ALIGN_LEFT);
+				}
+			} break;
+			case 2:
+			{
+				state = d2tk_base_dial_bool(base, subid, lrect, value);
+			} break;
+		}
+	}
+
+	return state;
+}
+
+D2TK_API d2tk_state_t
+d2tk_base_spinner_wave_float(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
+	ssize_t lbl_len, const char *lbl, float min, const float *value, int32_t nelem, float max)
+{
+	d2tk_state_t state = D2TK_STATE_NONE;
+	const d2tk_style_t *style = d2tk_base_get_style(base);
+	const d2tk_coord_t h2 = rect->h/2 + style->padding*3;
+	const d2tk_coord_t fract [3] = { h2, 0, h2 };
+	D2TK_BASE_LAYOUT(rect, 3, fract, D2TK_FLAG_LAYOUT_X_ABS, lay)
+	{
+		const unsigned k = d2tk_layout_get_index(lay);
+		const d2tk_rect_t *lrect= d2tk_layout_get_rect(lay);
+		const d2tk_id_t itrid = D2TK_ID_IDX(k);
+		const d2tk_id_t subid = (itrid << 32) | id;
+
+		switch(k)
+		{
+			case 0:
+			{
+				//FIXME decrease viewport
+			} break;
+			case 1:
+			{
+				const d2tk_state_t substate = d2tk_base_wave_float(base, subid, lrect,
+					min, value, nelem, max);
+
+				state |= substate;
+
+				d2tk_rect_t bnd;
+				d2tk_rect_shrink(&bnd, lrect, style->padding*5);
+
+				if(lbl_len && lbl)
+				{
+					d2tk_base_label(base, lbl_len, lbl, 0.66f, &bnd,
+						D2TK_ALIGN_TOP | D2TK_ALIGN_LEFT);
+				}
+			} break;
+			case 2:
+			{
+				//FIXME increase viewport
 			} break;
 		}
 	}

@@ -316,8 +316,9 @@ _d2tk_cairo_surf_draw(cairo_t *ctx, cairo_surface_t *surf, d2tk_coord_t xo,
 
 	if(w > rect->w)
 	{
-		scale = (float)rect->w / w;
-		h *= scale;
+		const float scale_t = (float)rect->w / w;
+		scale *= scale_t;
+		h *= scale_t;
 		w = rect->w;
 	}
 
@@ -729,15 +730,17 @@ d2tk_cairo_process(void *data, d2tk_core_t *core, const d2tk_com_t *com,
 				// bitswap and premultiply pixel data
 				for(unsigned i = 0; i < W*H*sizeof(uint32_t); i += sizeof(uint32_t))
 				{
+					// get alpha channel
 					const uint8_t a = pixels[i+3];
+
+					// premultiply with alpha channel
 					const uint8_t r = ( (uint16_t)pixels[i+0] * a ) >> 8;
 					const uint8_t g = ( (uint16_t)pixels[i+1] * a ) >> 8;
 					const uint8_t b = ( (uint16_t)pixels[i+2] * a ) >> 8;
 
-					pixels[i+0] = b;
-					pixels[i+1] = g;
-					pixels[i+2] = r;
-					pixels[i+3] = a;
+					// merge and byteswap to correct endianness
+					uint32_t *pix = (uint32_t *)&pixels[i];
+					*pix = (a << 24) | (r << 16) | (g << 8) | b;
 				}
 
 				cairo_surface_t *surf = cairo_image_surface_create_for_data(pixels,

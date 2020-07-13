@@ -143,6 +143,7 @@ lib_srcs = [
 	join_paths('src', 'base_dial.c'),
 	join_paths('src', 'base_spinner.c'),
 	join_paths('src', 'base_bar.c'),
+	join_paths('src', 'base_wave.c'),
 	join_paths('src', 'base_flowmatrix.c')
 ]
 
