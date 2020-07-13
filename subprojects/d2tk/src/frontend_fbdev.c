@@ -213,16 +213,11 @@ _d2tk_frontend_expose(d2tk_frontend_t *fbdev)
 D2TK_API int
 d2tk_frontend_step(d2tk_frontend_t *fbdev)
 {
-	while(true)
+	libinput_dispatch(fbdev->li);
+
+	struct libinput_event *ev;
+	while ( ( ev = libinput_get_event(fbdev->li) ) )
 	{
-		libinput_dispatch(fbdev->li);
-		struct libinput_event *ev = libinput_get_event(fbdev->li);
-
-		if(!ev)
-		{
-			break;
-		}
-
 		switch(libinput_event_get_type(ev))
 		{
 			case LIBINPUT_EVENT_NONE:

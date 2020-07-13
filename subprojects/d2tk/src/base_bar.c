@@ -92,13 +92,11 @@ _d2tk_base_draw_bar(d2tk_core_t *core, const d2tk_rect_t *rect,
 			d2tk_core_begin_path(core);
 			d2tk_core_rect(core, &bnd_inner_inactive);
 			d2tk_core_color(core, style->fill_color[triple_inactive]);
-			d2tk_core_stroke_width(core, 0);
 			d2tk_core_fill(core);
 
 			d2tk_core_begin_path(core);
 			d2tk_core_rect(core, &bnd_inner_active);
 			d2tk_core_color(core, style->fill_color[triple_active]);
-			d2tk_core_stroke_width(core, 0);
 			d2tk_core_fill(core);
 
 			d2tk_core_begin_path(core);

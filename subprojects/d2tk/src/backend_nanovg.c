@@ -382,8 +382,9 @@ _d2tk_nanovg_surf_draw(NVGcontext *ctx, int img, d2tk_coord_t xo,
 
 	if(w > rect->w)
 	{
-		scale = (float)rect->w / w;
-		h *= scale;
+		const float scale_t = (float)rect->w / w;
+		scale *= scale_t;
+		h *= scale_t;
 		w = rect->w;
 	}
 
