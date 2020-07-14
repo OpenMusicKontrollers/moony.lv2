@@ -18,7 +18,6 @@
 @prefix atom: <http://lv2plug.in/ns/ext/atom#> .
 @prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .
 @prefix urid: <http://lv2plug.in/ns/ext/urid#> .
-@prefix kx:		<http://kxstudio.sf.net/ns/lv2ext/external-ui#> .
 
 @prefix moony:	<http://open-music-kontrollers.ch/lv2/moony#> .
 

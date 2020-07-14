@@ -18,17 +18,9 @@
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix ui: <http://lv2plug.in/ns/extensions/ui#> .
 @prefix pset:	<http://lv2plug.in/ns/ext/presets#> .
-@prefix kx: <http://kxstudio.sf.net/ns/lv2ext/external-ui#> .
 
 @prefix canvas:   <http://open-music-kontrollers.ch/lv2/canvas#> .
 @prefix moony: <http://open-music-kontrollers.ch/lv2/moony#> .
-
-# to please sord_validate
-kx:Widget
-	a rdfs:Class, owl:Class ;
-	rdfs:subClassOf ui:UI .
-kx:Host
-	a lv2:Feature .
 
 # control in, control out
 moony:c1xc1

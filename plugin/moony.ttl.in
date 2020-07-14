@@ -29,7 +29,6 @@
 @prefix opts: <http://lv2plug.in/ns/ext/options#> .
 @prefix param: <http://lv2plug.in/ns/ext/parameters#> .
 @prefix ui: <http://lv2plug.in/ns/extensions/ui#> .
-@prefix kx:		<http://kxstudio.sf.net/ns/lv2ext/external-ui#> .
 @prefix idisp: <http://harrisonconsoles.com/lv2/inlinedisplay#> .
 
 @prefix xpress: <http://open-music-kontrollers.ch/lv2/xpress#> .
