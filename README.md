@@ -20,7 +20,7 @@ folder out of the platform folder of the downloaded package into your
 
 #### Stable release
 
-* [moony.lv2-0.32.0.zip](https://dl.open-music-kontrollers.ch/moony.lv2/stable/moony.lv2-0.32.0.zip) ([sig](https://dl.open-music-kontrollers.ch/moony.lv2/stable/moony.lv2-0.32.0.zip.sig))
+* [moony.lv2-0.34.0.zip](https://dl.open-music-kontrollers.ch/moony.lv2/stable/moony.lv2-0.34.0.zip) ([sig](https://dl.open-music-kontrollers.ch/moony.lv2/stable/moony.lv2-0.34.0.zip.sig))
 
 #### Unstable (nightly) release
 
@@ -30,7 +30,7 @@ folder out of the platform folder of the downloaded package into your
 
 #### Stable release
 
-* [moony.lv2-0.32.0.tar.xz](https://git.open-music-kontrollers.ch/lv2/moony.lv2/snapshot/moony.lv2-0.32.0.tar.xz) ([sig](https://git.open-music-kontrollers.ch/lv2/moony.lv2/snapshot/moony.lv2-0.32.0.tar.xz.asc))
+* [moony.lv2-0.34.0.tar.xz](https://git.open-music-kontrollers.ch/lv2/moony.lv2/snapshot/moony.lv2-0.34.0.tar.xz) ([sig](https://git.open-music-kontrollers.ch/lv2/moony.lv2/snapshot/moony.lv2-0.34.0.tar.xz.asc))
 
 #### Git repository
 

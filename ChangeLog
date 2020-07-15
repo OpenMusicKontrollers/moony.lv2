@@ -5,6 +5,7 @@
 ### Added
 
 * embedded text browser for rapid manual lookups
+* support for GL double buffering
 
 ### Changed
 
