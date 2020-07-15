@@ -30,7 +30,7 @@ folder out of the platform folder of the downloaded package into your
 
 #### Stable release
 
-* [moony.lv2-0.32.0.tar.xz](https://git.open-music-kontrollers.ch/lv2/moony.lv2/snapshot/moony.lv2-0.32.0.tar.xz)
+* [moony.lv2-0.32.0.tar.xz](https://git.open-music-kontrollers.ch/lv2/moony.lv2/snapshot/moony.lv2-0.32.0.tar.xz) ([sig](https://git.open-music-kontrollers.ch/lv2/moony.lv2/snapshot/moony.lv2-0.32.0.tar.xz.asc))
 
 #### Git repository
 
@@ -189,8 +189,8 @@ is this here:
 	meson -Dbuild-inline-disp=true build
 	cd build
 	ninja -j4
-	sudo ninja install
 	ninja test
+	sudo ninja install
 
 #### Compile options
 
@@ -198,6 +198,7 @@ is this here:
 * build-next-ui (build next UI, default=off)
   * use-vterm (needed for next ui, default=disabled)
 * build-inline-disp (build inline display, default=off)
+* gc-method (garbage collector method, default=generational|incremental|manual)
 
 ### Next (alternative) UI
 
@@ -217,6 +218,18 @@ it must be part of every POSIX system.
 Whenever you save the Lua source, the plugin will try to just-in-time compile and
 inject it. Potential warnings and errors are reported in the plugin host's log
 and the UI itself.
+
+The plugin also embeds a console browser to look up moony's HTML manual
+directly inside the plugin UI.
+
+Currently the console browser has to be defined via the environment varialbe
+*BROWSER*":
+
+    export BROWSER='elinks'
+    export BROWSER='lynx'
+    export BROWSER='links'
+
+If no environment variable is defined, the default fallback is 'elinks'.
 
 On hi-DPI displays, the UI scales automatically if you have set the correct DPI
 in your ~/.Xresources.
