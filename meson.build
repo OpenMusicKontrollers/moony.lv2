@@ -344,14 +344,6 @@ if build_next_ui
 	endif
 endif
 
-app = executable('moony_test', app_srcs,
-	c_args : c_args,
-	include_directories : inc_dir,
-	name_prefix : '',
-	dependencies : dsp_deps,
-	link_with : dsp_links,
-	install : false)
-
 manifest_ttl = configure_file(
 	input : join_paths('plugin', 'manifest.ttl.in'),
 	output : 'manifest.ttl',
@@ -565,41 +557,51 @@ hilight_lua = configure_file(
 	copy : true,
 	install : false)
 
-if host_machine.system() != 'darwin'
-	custom_target('manual_html',
-		input : hilight_lua,
-		output : 'manual.html',
-		capture : true,
-		command : [app, '@INPUT@'],
-		#depends : [lexer_lua, moony_lua, manual_html_in], FIXME
-		install : true,
-		install_dir : inst_dir)
+if build_tests
+	app = executable('moony_test', app_srcs,
+		c_args : c_args,
+		include_directories : inc_dir,
+		name_prefix : '',
+		dependencies : dsp_deps,
+		link_with : dsp_links,
+		install : false)
 
-	test('API', app,
-		args : [moony_test_lua])
-	test('Overflow', app,
-		args : [moony_overflow_lua, '0'])
-	test('Manual', app,
-		args : [moony_manual_lua])
-	test('Presets', app,
-		args : [moony_presets_lua])
-endif
+	if host_machine.system() != 'darwin'
+		custom_target('manual_html',
+			input : hilight_lua,
+			output : 'manual.html',
+			capture : true,
+			command : [app, '@INPUT@'],
+			#depends : [lexer_lua, moony_lua, manual_html_in], FIXME
+			install : true,
+			install_dir : inst_dir)
 
-if lv2_validate.found() and sord_validate.found()
-	test('LV2 validate', lv2_validate,
-		args : [manifest_ttl, dsp_ttl, ui_ttl, pset_ttl])
-endif
+		test('API', app,
+			args : [moony_test_lua])
+		test('Overflow', app,
+			args : [moony_overflow_lua, '0'])
+		test('Manual', app,
+			args : [moony_manual_lua])
+		test('Presets', app,
+			args : [moony_presets_lua])
+	endif
 
-if lv2lint.found()
-	test('LV2 lint', lv2lint,
-		args : [ '-I', join_paths(build_root, ''),
-			'http://open-music-kontrollers.ch/lv2/moony#a1xa1',
-			'http://open-music-kontrollers.ch/lv2/moony#a2xa2',
-			'http://open-music-kontrollers.ch/lv2/moony#a4xa4',
-			'http://open-music-kontrollers.ch/lv2/moony#c1a1xc1a1',
-			'http://open-music-kontrollers.ch/lv2/moony#c1xc1',
-			'http://open-music-kontrollers.ch/lv2/moony#c2a1xc2a1',
-			'http://open-music-kontrollers.ch/lv2/moony#c2xc2',
-			'http://open-music-kontrollers.ch/lv2/moony#c4a1xc4a1',
-			'http://open-music-kontrollers.ch/lv2/moony#c4xc4'])
+	if lv2_validate.found() and sord_validate.found()
+		test('LV2 validate', lv2_validate,
+			args : [manifest_ttl, dsp_ttl, ui_ttl, pset_ttl])
+	endif
+
+	if lv2lint.found()
+		test('LV2 lint', lv2lint,
+			args : [ '-I', join_paths(build_root, ''),
+				'http://open-music-kontrollers.ch/lv2/moony#a1xa1',
+				'http://open-music-kontrollers.ch/lv2/moony#a2xa2',
+				'http://open-music-kontrollers.ch/lv2/moony#a4xa4',
+				'http://open-music-kontrollers.ch/lv2/moony#c1a1xc1a1',
+				'http://open-music-kontrollers.ch/lv2/moony#c1xc1',
+				'http://open-music-kontrollers.ch/lv2/moony#c2a1xc2a1',
+				'http://open-music-kontrollers.ch/lv2/moony#c2xc2',
+				'http://open-music-kontrollers.ch/lv2/moony#c4a1xc4a1',
+				'http://open-music-kontrollers.ch/lv2/moony#c4xc4'])
+	endif
 endif
