@@ -1894,7 +1894,6 @@ moony_open(moony_t *moony, moony_vm_t *vm, lua_State *L)
 	lua_pushlightuserdata(L, moony); // @ upvalueindex 1
 	luaL_setfuncs (L, lmidiresponder_mt, 1);
 	_protect_metatable(L, -1);
-	_index_metatable(L, -1);
 	lua_pop(L, 1);
 
 	// MIDIResponder factory

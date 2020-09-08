@@ -85,6 +85,43 @@ _lmidiresponder__call(lua_State *L)
 	return 1;
 }
 
+__realtime static int
+_lmidiresponder__index(lua_State *L)
+{
+	const bool *through = lua_touserdata(L, 1);
+	const char *key = luaL_checkstring(L, 2);
+	// 1: self
+	// 2: key
+
+	if(!strcmp(key, "through"))
+	{
+		lua_pushboolean(L, *through);
+	}
+	else
+	{
+		lua_pushnil(L);
+	}
+	
+	return 1;
+}
+
+__realtime static int
+_lmidiresponder__newindex(lua_State *L)
+{
+	// 1: self
+	// 2: key
+	// 3: val
+	bool *through = lua_touserdata(L, 1);
+	const char *key = luaL_checkstring(L, 2);
+
+	if(!strcmp(key, "through"))
+	{
+		*through = lua_toboolean(L, 3);
+	}
+	
+	return 0;
+}
+
 __realtime int
 _lmidiresponder(lua_State *L)
 {
@@ -113,6 +150,8 @@ _lmidiresponder(lua_State *L)
 
 const luaL_Reg lmidiresponder_mt [] = {
 	{"__call", _lmidiresponder__call},
+	{"__index", _lmidiresponder__index},
+	{"__newindex", _lmidiresponder__newindex},
 	{NULL, NULL}
 };
 

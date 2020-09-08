@@ -3921,6 +3921,12 @@ end</code></pre>
 				<dd>flag whether the event was handled, e.g. whether is was any MIDI at all</dd>
 		</dl>
 
+		<dl>
+			<dt class="attr">midiR.through</dt>
+			<dt class="ret">(boolean)</dt>
+				<dd>flag whether to let unhandled messages through</dd>
+		</dl>
+
 		<pre><code data-ref="responder-midi">-- MIDIResponder
 
 -- define MIDI responder object with callbacks
@@ -3946,6 +3952,12 @@ local midiR = MIDIResponder({
 		forge:time(frames):midi(MIDI.NoteOff | chan, note + 1, vel) -- increase note by 1
 	end
 }, false) -- block all MIDI messages not explicitly handled by responder
+
+-- check dynamically changing through flag
+assert(midiR.through == false)
+midiR.through = true -- route all MIDI messages not explicitely handled by responder
+assert(midiR.through == true)
+midiR.through = false -- block again
 
 -- forge test messages
 function stash_sequence(forge)

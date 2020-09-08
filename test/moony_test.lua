@@ -445,6 +445,10 @@ do
 		end
 	}, true)
 
+	assert(midi_responder.through == true)
+	midi_responder.through = false
+	assert(midi_responder.through == false)
+
 	local function consumer(seq, forge)
 		for frames, atom in seq:foreach() do
 			local handled = midi_responder(frames, forge, atom)
