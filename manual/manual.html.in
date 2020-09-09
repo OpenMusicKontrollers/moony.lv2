@@ -4009,6 +4009,12 @@ end</code></pre>
 				<dd>flag whether any path could be matched</dd>
 		</dl>
 
+		<dl>
+			<dt class="attr">oscR.through</dt>
+			<dt class="ret">(boolean)</dt>
+				<dd>flag whether to let unhandled messages through</dd>
+		</dl>
+
 		<pre><code data-ref="responder-osc">-- OSCResponder
 
 -- define OSC responder object with callbacks
@@ -4024,6 +4030,12 @@ local oscR = OSCResponder({
 		forge:time(frames):message('/pong', fmt, var1, var2)
 	end
 }, true) -- route through not matched OSC messages
+
+-- check dynamically changing through flag
+assert(oscR.through == true)
+oscR.through = false -- block all OSC messages not explicitely handled by responder
+assert(oscR.through == false)
+oscR.through = true -- route again
 
 -- forge test messages
 function stash_sequence(forge)

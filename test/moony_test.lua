@@ -1012,6 +1012,10 @@ do
 		end
 	}, true)
 
+	assert(osc_responder.through == true)
+	osc_responder.through = false
+	assert(osc_responder.through == false)
+
 	local function consumer(seq, forge)
 		for frames, atom in seq:foreach() do
 			local handled, matched = osc_responder(frames, forge, atom)
