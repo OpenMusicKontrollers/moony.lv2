@@ -459,48 +459,25 @@ _expose_panic(plughandle_t *handle, const d2tk_rect_t *rect)
 static inline void
 _expose_footer(plughandle_t *handle, const d2tk_rect_t *rect)
 {
-	d2tk_frontend_t *dpugl = handle->dpugl;
-	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
-
-	D2TK_BASE_TABLE(rect, 3, 2, D2TK_FLAG_TABLE_REL, tab)
+	const d2tk_coord_t frac [3] = { 1, 1, 1 };
+	D2TK_BASE_LAYOUT(rect, 3, frac, D2TK_FLAG_LAYOUT_X_REL, lay)
 	{
-		const unsigned x = d2tk_table_get_index_x(tab);
-		const unsigned y = d2tk_table_get_index_y(tab);
-		const d2tk_rect_t *trect = d2tk_table_get_rect(tab);
+		const unsigned k = d2tk_layout_get_index(lay);
+		const d2tk_rect_t *lrect = d2tk_layout_get_rect(lay);
 
-		switch(y)
+		switch(k)
 		{
 			case 0:
 			{
-				static const char *lbls [3] = {
-					"panic",
-					NULL,
-					"font-height•px"
-				};
-
-				if(lbls[x])
-				{
-					d2tk_base_label(base, -1, lbls[x], 0.5f, trect,
-						D2TK_ALIGN_MIDDLE | D2TK_ALIGN_RIGHT);
-				}
+				_expose_panic(handle, lrect);
 			} break;
 			case 1:
 			{
-				switch(x)
-				{
-					case 0:
-					{
-						_expose_panic(handle, trect);
-					} break;
-					case 1:
-					{
-						// nothing to do
-					} break;
-					case 2:
-					{
-						_expose_font_height(handle, trect);
-					} break;
-				}
+				// nothing to do
+			} break;
+			case 2:
+			{
+				_expose_font_height(handle, lrect);
 			} break;
 		}
 	}
@@ -915,7 +892,7 @@ instantiate(const LV2UI_Descriptor *descriptor,
 
 	handle->scale = d2tk_frontend_get_scale(handle->dpugl);
 	handle->header_height = 32 * handle->scale;
-	handle->footer_height = 64 * handle->scale;
+	handle->footer_height = 32 * handle->scale;
 	handle->sidebar_width = 1 * handle->scale;
 	handle->item_height = 32 * handle->scale;
 
