@@ -219,49 +219,6 @@ _intercept_control(void *data __attribute__((unused)),
 	// nothing to do, yet
 }
 
-static void
-_dyn_add(void *data, LV2_URID prop)
-{
-	plughandle_t *handle = data;
-
-	lv2_log_note(&handle->logger, "[%s] %u\n", __func__, prop);
-}
-
-static void
-_dyn_del(void *data, LV2_URID prop)
-{
-	plughandle_t *handle = data;
-
-	lv2_log_note(&handle->logger, "[%s] %u\n", __func__, prop);
-}
-
-static void *
-_dyn_get(void *data, LV2_URID prop, uint32_t *size, LV2_URID *type)
-{
-	plughandle_t *handle = data;
-	(void)size;
-	(void)type;
-
-	lv2_log_note(&handle->logger, "[%s] %u\n", __func__, prop);
-
-	return NULL;
-}
-
-static void
-_dyn_set(void *data, LV2_URID prop, uint32_t size, LV2_URID type, const void *body)
-{
-	plughandle_t *handle = data;
-
-	lv2_log_note(&handle->logger, "[%s] %u %u %u %p\n", __func__, prop, size, type, body);
-}
-
-static const props_dyn_t dyn = {
-	.add = _dyn_add,
-	.del = _dyn_del,
-	.get = _dyn_get,
-	.set = _dyn_set,
-};
-
 static const props_def_t defs [MAX_NPROPS] = {
 	{
 		.property = MOONY_CODE_URI,
@@ -718,15 +675,15 @@ _expose_editor(plughandle_t *handle, const d2tk_rect_t *rect)
 static void
 _render_graph(void *_ctx, const d2tk_rect_t *rect, const void *data)
 {
-	plughandle_t *handle = data;
+	plughandle_t *handle = (plughandle_t *)data;
 	NVGcontext *ctx = _ctx;
 
 	nvgSave(ctx);
 	nvgTranslate(ctx, -rect->x, -rect->y);
 	nvgScale(ctx, rect->w, rect->h);
 
-	lv2_canvas_render_body(&handle->canvas, ctx,
-		handle->forge.Tuple, handle->graph_size, handle->state.graph_body);
+	lv2_canvas_render_body(&handle->canvas, ctx, handle->forge.Tuple,
+		handle->graph_size, (const LV2_Atom *)handle->state.graph_body);
 
 	nvgRestore(ctx);
 }
@@ -970,8 +927,6 @@ instantiate(const LV2UI_Descriptor *descriptor,
 		free(handle);
 		return NULL;
 	}
-
-	props_dyn_set(&handle->props, &dyn);
 
 	handle->controller = controller;
 	handle->writer = write_function;
