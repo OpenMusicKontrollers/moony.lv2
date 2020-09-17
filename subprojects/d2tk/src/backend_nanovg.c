@@ -289,7 +289,7 @@ d2tk_nanovg_end(void *data __attribute__((unused)),
 	nvgFillPaint(ctx, fg);
 	nvgFill(ctx);
 
-#ifdef D2TK_DEBUG
+#if D2TK_DEBUG
 	{
 		d2tk_rect_t rect;
 		uint32_t *pixels = d2tk_core_get_pixels(core, &rect);
@@ -565,7 +565,7 @@ d2tk_nanovg_process(void *data, d2tk_core_t *core, const d2tk_com_t *com,
 
 					if(!*sprite)
 					{
-#ifdef D2TK_DEBUG
+#if D2TK_DEBUG
 						//fprintf(stderr, "\tcreating sprite\n");
 #endif
 						NVGLUframebuffer *fbo = nvgluCreateFramebuffer(ctx, body->clip.w, body->clip.h, NVG_IMAGE_NEAREST);
@@ -594,7 +594,7 @@ d2tk_nanovg_process(void *data, d2tk_core_t *core, const d2tk_com_t *com,
 					}
 					else
 					{
-#ifdef D2TK_DEBUG
+#if D2TK_DEBUG
 						//fprintf(stderr, "\texisting sprite\n");
 #endif
 					}
@@ -683,7 +683,7 @@ d2tk_nanovg_process(void *data, d2tk_core_t *core, const d2tk_com_t *com,
 				*sprite = (uintptr_t)face;
 			}
 
-			nvgFontFace(ctx, body->face);
+			nvgFontFaceId(ctx, *sprite);
 		} break;
 		case D2TK_INSTR_FONT_SIZE:
 		{
@@ -783,77 +783,11 @@ d2tk_nanovg_process(void *data, d2tk_core_t *core, const d2tk_com_t *com,
 		case D2TK_INSTR_CUSTOM:
 		{
 			const d2tk_body_custom_t *body = &com->body->custom;
-			const uint64_t hash = d2tk_hash(body->data, body->size);
 
-			if(pass == 0)
-			{
-				if(true) // cached
-				{
-					uintptr_t *sprite = d2tk_core_get_sprite(core, hash, SPRITE_TYPE_FBO);
-					assert(sprite);
-
-					if(!*sprite)
-					{
-#ifdef D2TK_DEBUG
-						//fprintf(stderr, "\tcreating sprite\n");
-#endif
-						NVGLUframebuffer *fbo = nvgluCreateFramebuffer(ctx, body->w, body->h, NVG_IMAGE_NEAREST);
-						assert(fbo);
-
-						nvgluBindFramebuffer(fbo);
-
-						glViewport(0, 0, body->w, body->h);
-						glClearColor(0.f, 0.f, 0.f, 0.f);
-						glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-						nvgBeginFrame(ctx, body->w, body->h, 1.f);
-						nvgSave(ctx);
-
-						body->custom(ctx, body->size, body->data);
-
-						nvgRestore(ctx);
-						nvgEndFrame(ctx);
-
-						nvgluBindFramebuffer(NULL);
-
-						*sprite = (uintptr_t )fbo;
-					}
-					else
-					{
-#ifdef D2TK_DEBUG
-						//fprintf(stderr, "\texisting sprite\n");
-#endif
-					}
-				}
-			}
-			else if(pass == 1)
-			{
-				nvgSave(ctx);
-				if(clip)
-				{
-					nvgScissor(ctx, clip->x0, clip->y0, clip->w, clip->h);
-				}
-
-				if(true) // cached
-				{
-					uintptr_t *sprite = d2tk_core_get_sprite(core, hash, SPRITE_TYPE_FBO);
-					assert(sprite && *sprite);
-
-					NVGLUframebuffer *fbo = (NVGLUframebuffer *)*sprite;
-					assert(fbo);
-
-					// paint pre-rendered sprite
-					const NVGpaint pat = nvgImagePattern(ctx, body->x, body->y,
-						body->w, body->h, 0, fbo->image, 1.0f);
-					nvgBeginPath(ctx);
-					nvgRect(ctx, body->x, body->y, body->w, body->h);
-					nvgStrokeWidth(ctx, 0);
-					nvgFillPaint(ctx, pat);
-					nvgFill(ctx);
-				}
-
-				nvgRestore(ctx);
-			}
+			nvgSave(ctx);
+			body->custom(ctx, &D2TK_RECT(body->x + xo, body->y + yo, body->w, body->h),
+				body->size, body->data);
+			nvgRestore(ctx);
 		} break;
 		case D2TK_INSTR_STROKE_WIDTH:
 		{

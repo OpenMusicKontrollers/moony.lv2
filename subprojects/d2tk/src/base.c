@@ -19,6 +19,9 @@
 #include <math.h>
 #include <string.h>
 #include <inttypes.h>
+#if !defined(_WIN32)
+#	include <poll.h>
+#endif
 
 #include "base_internal.h"
 
@@ -609,7 +612,7 @@ d2tk_base_is_active_hot(d2tk_base_t *base, d2tk_id_t id,
 		{
 			state |= D2TK_STATE_FOCUS_OUT;
 			_d2tk_flip_clear_old(&base->focusitem); // clear previous focus
-#ifdef D2TK_DEBUG
+#if D2TK_DEBUG
 			fprintf(stderr, "\tfocus out 0x%016"PRIx64"\n", id);
 #endif
 		}
@@ -622,7 +625,7 @@ d2tk_base_is_active_hot(d2tk_base_t *base, d2tk_id_t id,
 			else
 			{
 				state |= D2TK_STATE_FOCUS_IN;
-#ifdef D2TK_DEBUG
+#if D2TK_DEBUG
 				fprintf(stderr, "\tfocus in 0x%016"PRIx64"\n", id);
 #endif
 				_d2tk_base_change_focus(base);
@@ -821,6 +824,42 @@ d2tk_base_post(d2tk_base_t *base)
 	d2tk_core_post(base->core);
 }
 
+static int
+_d2tk_base_probe(int fd)
+{
+	if(fd <= 0)
+	{
+		return 0;
+	}
+
+#if !defined(_WIN32)
+	struct pollfd fds = {
+		.fd = fd,
+		.events = POLLIN,
+		.revents = 0
+	};
+
+	switch(poll(&fds, 1, 0))
+	{
+		case -1:
+		{
+			//printf("[%s] error: %s\n", __func__, strerror(errno));
+		} return 0;
+		case 0:
+		{
+			//printf("[%s] timeout\n", __func__);
+		} return 0;
+
+		default:
+		{
+			//printf("[%s] ready\n", __func__);
+		} return 1;
+	}
+#else
+	return 0;
+#endif
+}
+
 D2TK_API void
 d2tk_base_probe(d2tk_base_t *base)
 {
@@ -830,13 +869,38 @@ d2tk_base_probe(d2tk_base_t *base)
 
 		if(atom->id && atom->type && atom->event)
 		{
-			if(atom->event(D2TK_ATOM_EVENT_PROBE, atom->body))
+			const int fd = atom->event(D2TK_ATOM_EVENT_FD, atom->body);
+
+			if(_d2tk_base_probe(fd))
 			{
 				d2tk_base_set_again(base);
 				break;
 			}
 		}
 	}
+}
+
+D2TK_API int
+d2tk_base_get_file_descriptors(d2tk_base_t *base, int *fds, int numfds)
+{
+	int idx = 0;
+
+	for(unsigned i = 0; i < _D2TK_MAX_ATOM; i++)
+	{
+		d2tk_atom_t *atom = &base->atoms[i];
+
+		if(atom->id && atom->type && atom->event)
+		{
+			const int fd = atom->event(D2TK_ATOM_EVENT_FD, atom->body);
+
+			if( (fd > 0) && (idx < numfds) )
+			{
+				fds[idx++] = fd;
+			}
+		}
+	}
+
+	return idx;
 }
 
 D2TK_API void

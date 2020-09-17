@@ -41,7 +41,7 @@ typedef enum _d2tk_atom_type_t {
 
 typedef enum _d2tk_atom_event_type_t {
 	D2TK_ATOM_EVENT_NONE,
-	D2TK_ATOM_EVENT_PROBE,
+	D2TK_ATOM_EVENT_FD,
 	D2TK_ATOM_EVENT_DEINIT
 } d2tk_atom_event_type_t;
 

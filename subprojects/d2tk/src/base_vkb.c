@@ -566,7 +566,7 @@ _vkb_event(d2tk_atom_event_type_t event, void *data)
 			return _vkb_deinit(vkb);
 		} break;
 
-		case D2TK_ATOM_EVENT_PROBE:
+		case D2TK_ATOM_EVENT_FD:
 			// fall-through
 		case D2TK_ATOM_EVENT_NONE:
 			// fall-through

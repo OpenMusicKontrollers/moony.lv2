@@ -50,6 +50,7 @@ typedef enum _bar_t {
 	BAR_METER,
 	BAR_FRAME,
 	BAR_UTF8,
+	BAR_CUSTOM,
 #if D2TK_PTY
 	BAR_PTY,
 #endif
@@ -76,6 +77,7 @@ static const char *bar_lbl [BAR_MAX] = {
 	[BAR_FLOWMATRIX] = "Flowmatrix",
 	[BAR_METER]      = "Meter",
 	[BAR_FRAME]      = "Frame",
+	[BAR_CUSTOM]     = "Custom",
 	[BAR_UTF8]       = "UTF-8",
 #if D2TK_PTY
 	[BAR_PTY]       = "PTY",
@@ -919,6 +921,16 @@ _render_c_utf8(d2tk_base_t *base, const d2tk_rect_t *rect)
 #undef N
 }
 
+extern d2tk_core_custom_t draw_custom;
+
+static inline void
+_render_c_custom(d2tk_base_t *base, const d2tk_rect_t *rect)
+{
+	static uint32_t dummy [1] = { 0 };
+
+	d2tk_base_custom(base, sizeof(dummy), dummy, rect, draw_custom);
+}
+
 #if D2TK_PTY
 static inline void
 _render_c_pty(d2tk_base_t *base, const d2tk_rect_t *rect)
@@ -1329,6 +1341,10 @@ d2tk_example_run(d2tk_base_t *base, d2tk_coord_t w, d2tk_coord_t h)
 					case BAR_UTF8:
 					{
 						_render_c_utf8(base, vrect);
+					} break;
+					case BAR_CUSTOM:
+					{
+						_render_c_custom(base, vrect);
 					} break;
 #if D2TK_PTY
 					case BAR_PTY:

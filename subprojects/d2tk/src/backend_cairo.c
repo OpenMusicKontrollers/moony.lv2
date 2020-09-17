@@ -180,7 +180,7 @@ d2tk_cairo_post(void *data, d2tk_core_t *core __attribute__((unused)),
 		return true; // do enter 2nd pass
 	}
 
-#ifdef D2TK_DEBUG //FIXME needs multiple buffers to work
+#if D2TK_DEBUG //FIXME needs multiple buffers to work
 	{
 		d2tk_rect_t rect;
 		uint32_t *pixels = d2tk_core_get_pixels(core, &rect);
@@ -531,7 +531,7 @@ d2tk_cairo_process(void *data, d2tk_core_t *core, const d2tk_com_t *com,
 
 					if(!*sprite)
 					{
-#ifdef D2TK_DEBUG
+#if D2TK_DEBUG
 						//fprintf(stderr, "\tcreating sprite\n");
 #endif
 						const size_t stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32,
@@ -560,7 +560,7 @@ d2tk_cairo_process(void *data, d2tk_core_t *core, const d2tk_com_t *com,
 					}
 					else
 					{
-#ifdef D2TK_DEBUG
+#if D2TK_DEBUG
 					//fprintf(stderr, "\texisting sprite\n");
 #endif
 					}
@@ -785,38 +785,10 @@ d2tk_cairo_process(void *data, d2tk_core_t *core, const d2tk_com_t *com,
 		{
 			const d2tk_body_custom_t *body = &com->body->custom;
 
-			const uint64_t hash = d2tk_hash(body->data, body->size);
-			uintptr_t *sprite = d2tk_core_get_sprite(core, hash, SPRITE_TYPE_SURF);
-			assert(sprite);
-
-			if(!*sprite)
-			{
-				const size_t stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32,
-					body->w);
-				const size_t bufsz = stride * body->h;
-				void *buf = calloc(1, bufsz);
-				cairo_surface_t *surf = cairo_image_surface_create_for_data(buf,
-					CAIRO_FORMAT_ARGB32, body->w, body->h, stride);
-				assert(surf);
-
-				const cairo_user_data_key_t key = { 0 };
-				cairo_surface_set_user_data(surf, &key, buf, _d2tk_cairo_buf_free);
-
-				cairo_t *ctx2 = cairo_create(surf);
-
-				body->custom(ctx2, body->size, body->data);
-
-				cairo_surface_flush(surf);
-				cairo_destroy(ctx2);
-
-				*sprite = (uintptr_t)surf;
-			}
-
-			cairo_surface_t *surf = (cairo_surface_t *)*sprite;
-			assert(surf);
-
-			_d2tk_cairo_surf_draw(ctx, surf, xo, yo, D2TK_ALIGN_LEFT | D2TK_ALIGN_TOP,
-				&D2TK_RECT(body->x, body->y, body->w, body->h));
+			cairo_save(ctx);
+			body->custom(ctx, &D2TK_RECT(body->x + xo, body->y + yo, body->w, body->h),
+				body->size, body->data);
+			cairo_restore(ctx);
 		} break;
 		case D2TK_INSTR_STROKE_WIDTH:
 		{

@@ -486,6 +486,32 @@ d2tk_frontend_poll(d2tk_frontend_t *dpugl, double timeout)
 }
 
 D2TK_API int
+d2tk_frontend_get_file_descriptors(d2tk_frontend_t *dpugl, int *fds, int numfds)
+{
+	int idx = 0;
+
+#if defined(__APPLE__) || de
+	//FIXME
+	(void)dpugl;
+	return -1;
+#elif defined(_WIN32)
+	//FIXME
+	(void)dpugl;
+	return -1;
+#else
+	Display *disp = puglGetNativeWorld(dpugl->world);
+	const int fd = disp ? ConnectionNumber(disp) : 0;
+
+	if( (fd > 0) && (idx < numfds) )
+	{
+		fds[idx++] = fd;
+	}
+#endif
+
+	return idx + d2tk_base_get_file_descriptors(dpugl->base, &fds[idx], numfds-idx);
+}
+
+D2TK_API int
 d2tk_frontend_step(d2tk_frontend_t *dpugl)
 {
 	return d2tk_frontend_poll(dpugl, 0.0);

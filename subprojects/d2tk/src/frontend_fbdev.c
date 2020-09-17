@@ -633,6 +633,12 @@ d2tk_frontend_poll(d2tk_frontend_t *fbdev __attribute__((unused)),
 	return 0;
 }
 
+D2TK_API int
+d2tk_frontend_get_file_descriptors(d2tk_frontend_t *fbdev, int *fds, int numfds)
+{
+	return d2tk_base_get_file_descriptors(fbdev->base, fds, numfds);
+}
+
 D2TK_API void
 d2tk_frontend_run(d2tk_frontend_t *fbdev, const sig_atomic_t *done)
 {
