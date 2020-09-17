@@ -34,6 +34,11 @@
 #include <d2tk/hash.h>
 #include <d2tk/frontend_pugl.h>
 
+#include <nanovg.h>
+
+#define LV2_CANVAS_RENDER_NANOVG
+#include <canvas.lv2/render.h>
+
 #define GLYPH_W 7
 #define GLYPH_H (GLYPH_W * 2)
 
@@ -47,11 +52,13 @@
 
 #define MAX(x, y) (x > y ? y : x)
 
-#define MAX_NPROPS 4
+#define MAX_NPROPS 5
+#define MAX_GRAPH 2048 //FIXME
 
 typedef enum _console_t {
 	CONSOLE_EDITOR,
 	CONSOLE_MAN,
+	CONSOLE_GRAPH,
 
 	CONSOLE_MAX
 } console_t;
@@ -65,6 +72,7 @@ struct _plugstate_t {
 	char error [MOONY_MAX_ERROR_LEN];
 	int32_t font_height;
 	int32_t panic;
+	uint8_t graph_body [MAX_GRAPH];
 };
 
 struct _plughandle_t {
@@ -114,6 +122,10 @@ struct _plughandle_t {
 	int done;
 
 	console_t console;
+
+	LV2_Canvas canvas;
+
+	uint32_t graph_size;
 };
 
 static inline void
@@ -183,6 +195,15 @@ _intercept_code(void *data, int64_t frames __attribute__((unused)),
 }
 
 static void
+_intercept_graph(void *data, int64_t frames __attribute__((unused)),
+	props_impl_t *impl)
+{
+	plughandle_t *handle = data;
+
+	handle->graph_size = impl->value.size;
+}
+
+static void
 _intercept_font_height(void *data, int64_t frames __attribute__((unused)),
 	props_impl_t *impl __attribute__((unused)))
 {
@@ -197,6 +218,49 @@ _intercept_control(void *data __attribute__((unused)),
 {
 	// nothing to do, yet
 }
+
+static void
+_dyn_add(void *data, LV2_URID prop)
+{
+	plughandle_t *handle = data;
+
+	lv2_log_note(&handle->logger, "[%s] %u\n", __func__, prop);
+}
+
+static void
+_dyn_del(void *data, LV2_URID prop)
+{
+	plughandle_t *handle = data;
+
+	lv2_log_note(&handle->logger, "[%s] %u\n", __func__, prop);
+}
+
+static void *
+_dyn_get(void *data, LV2_URID prop, uint32_t *size, LV2_URID *type)
+{
+	plughandle_t *handle = data;
+	(void)size;
+	(void)type;
+
+	lv2_log_note(&handle->logger, "[%s] %u\n", __func__, prop);
+
+	return NULL;
+}
+
+static void
+_dyn_set(void *data, LV2_URID prop, uint32_t size, LV2_URID type, const void *body)
+{
+	plughandle_t *handle = data;
+
+	lv2_log_note(&handle->logger, "[%s] %u %u %u %p\n", __func__, prop, size, type, body);
+}
+
+static const props_dyn_t dyn = {
+	.add = _dyn_add,
+	.del = _dyn_del,
+	.get = _dyn_get,
+	.set = _dyn_set,
+};
 
 static const props_def_t defs [MAX_NPROPS] = {
 	{
@@ -223,6 +287,13 @@ static const props_def_t defs [MAX_NPROPS] = {
 		.property = MOONY_PANIC_URI,
 		.offset = offsetof(plugstate_t, panic),
 		.type = LV2_ATOM__Bool
+	},
+	{
+		.property = CANVAS__graph,
+		.offset = offsetof(plugstate_t, graph_body),
+		.type = LV2_ATOM__Tuple,
+		.event_cb = _intercept_graph,
+		.max_size = MAX_GRAPH
 	}
 };
 
@@ -644,6 +715,37 @@ _expose_editor(plughandle_t *handle, const d2tk_rect_t *rect)
 	}
 }
 
+static void
+_render_graph(void *_ctx, const d2tk_rect_t *rect, const void *data)
+{
+	plughandle_t *handle = data;
+	NVGcontext *ctx = _ctx;
+
+	nvgSave(ctx);
+	nvgTranslate(ctx, -rect->x, -rect->y);
+	nvgScale(ctx, rect->w, rect->h);
+
+	lv2_canvas_render_body(&handle->canvas, ctx,
+		handle->forge.Tuple, handle->graph_size, handle->state.graph_body);
+
+	nvgRestore(ctx);
+}
+
+static inline void
+_expose_canvas_graph(plughandle_t *handle, const d2tk_rect_t *rect)
+{
+	d2tk_base_t *base = d2tk_frontend_get_base(handle->dpugl);
+
+	if(handle->graph_size == 0)
+	{
+		return;
+	}
+
+	const uint64_t dhash = d2tk_hash(handle->state.graph_body, handle->graph_size);
+
+	d2tk_base_custom(base, dhash, handle, rect, _render_graph);
+}
+
 static inline void
 _expose_console(plughandle_t *handle, const d2tk_rect_t *rect)
 {
@@ -662,7 +764,8 @@ _expose_console(plughandle_t *handle, const d2tk_rect_t *rect)
 			{
 				static const char *console_lbl [CONSOLE_MAX] = {
 					[CONSOLE_EDITOR] = "Editor",
-					[CONSOLE_MAN]    = "Manual"
+					[CONSOLE_MAN]    = "Manual",
+					[CONSOLE_GRAPH]  = "Graph"
 				};
 
 				D2TK_BASE_TABLE(lrect, CONSOLE_MAX, 1, D2TK_FLAG_TABLE_REL, tab)
@@ -683,7 +786,8 @@ _expose_console(plughandle_t *handle, const d2tk_rect_t *rect)
 			{
 				static const console_cb_t console_cb [CONSOLE_MAX] = {
 					[CONSOLE_EDITOR] = _expose_editor,
-					[CONSOLE_MAN] = _expose_man
+					[CONSOLE_MAN] = _expose_man,
+					[CONSOLE_GRAPH] = _expose_canvas_graph
 				};
 
 				console_cb[handle->console](handle, lrect);
@@ -839,6 +943,8 @@ instantiate(const LV2UI_Descriptor *descriptor,
 		lv2_log_logger_init(&handle->logger, handle->map, handle->log);
 	}
 
+	lv2_canvas_init(&handle->canvas, handle->map);
+
 	handle->control = port_map->port_index(port_map->handle, "control");
 
 	lv2_atom_forge_init(&handle->forge, handle->map);
@@ -864,6 +970,8 @@ instantiate(const LV2UI_Descriptor *descriptor,
 		free(handle);
 		return NULL;
 	}
+
+	props_dyn_set(&handle->props, &dyn);
 
 	handle->controller = controller;
 	handle->writer = write_function;
@@ -893,7 +1001,7 @@ instantiate(const LV2UI_Descriptor *descriptor,
 	handle->scale = d2tk_frontend_get_scale(handle->dpugl);
 	handle->header_height = 32 * handle->scale;
 	handle->footer_height = 32 * handle->scale;
-	handle->sidebar_width = 1 * handle->scale;
+	handle->sidebar_width = 128 * handle->scale;
 	handle->item_height = 32 * handle->scale;
 
 	handle->state.font_height = 16;
