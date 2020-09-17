@@ -36,7 +36,7 @@ typedef struct _d2tk_point_t d2tk_point_t;
 typedef struct _d2tk_core_t d2tk_core_t;
 typedef struct _d2tk_core_driver_t d2tk_core_driver_t;
 typedef void (*d2tk_core_custom_t)(void *ctx, const d2tk_rect_t *rect,
-	uint32_t size, const void *data);
+	const void *data);
 
 typedef enum _d2tk_align_t {
 	D2TK_ALIGN_NONE 				= 0,
@@ -182,7 +182,7 @@ d2tk_core_bitmap(d2tk_core_t *core, const d2tk_rect_t *rect, uint32_t w,
 	d2tk_align_t align);
 
 D2TK_API void
-d2tk_core_custom(d2tk_core_t *core, const d2tk_rect_t *rect, uint32_t size,
+d2tk_core_custom(d2tk_core_t *core, const d2tk_rect_t *rect, uint64_t dhash,
 	const void *data, d2tk_core_custom_t custom);
 
 D2TK_API void

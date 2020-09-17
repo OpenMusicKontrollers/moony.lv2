@@ -1836,7 +1836,7 @@ _test_bitmap()
 static const uint32_t custom_data;
 
 static void
-_custom(void *ctx, const d2tk_rect_t *rect, uint32_t size, const void *data)
+_custom(void *ctx, const d2tk_rect_t *rect, const void *data)
 {
 	assert(ctx == NULL);
 	assert(rect != NULL);
@@ -1844,7 +1844,6 @@ _custom(void *ctx, const d2tk_rect_t *rect, uint32_t size, const void *data)
 	assert(rect->y == 0);
 	assert(rect->w == DIM_W);
 	assert(rect->h == DIM_H);
-	assert(size == sizeof(custom_data));
 	assert(data == &custom_data);
 }
 
@@ -1859,7 +1858,9 @@ _test_custom()
 	const d2tk_rect_t rect = D2TK_RECT(0, 0, DIM_W, DIM_H);
 	assert(base);
 
-	d2tk_base_custom(base, sizeof(custom_data), &custom_data, &rect, _custom);
+	const uint64_t dhash = d2tk_hash(&custom_data, sizeof(custom_data));
+
+	d2tk_base_custom(base, dhash, &custom_data, &rect, _custom);
 
 	d2tk_base_free(base);
 }

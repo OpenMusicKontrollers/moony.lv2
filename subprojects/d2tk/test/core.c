@@ -1242,11 +1242,11 @@ _test_bitmap()
 #define CUSTOM_Y 20
 #define CUSTOM_W 30
 #define CUSTOM_H 40
-#define CUSTOM_SIZE 0
-#define CUSTOM_DATA NULL
+static const uint32_t _data = 12;
+#define CUSTOM_DATA (&_data)
 
 static void
-_custom(void *ctx, const d2tk_rect_t *rect, uint32_t size, const void *data)
+_custom(void *ctx, const d2tk_rect_t *rect, const void *data)
 {
 	assert(ctx == NULL);
 	assert(rect != NULL);
@@ -1254,7 +1254,6 @@ _custom(void *ctx, const d2tk_rect_t *rect, uint32_t size, const void *data)
 	assert(rect->y == CUSTOM_Y);
 	assert(rect->w == CUSTOM_W);
 	assert(rect->h == CUSTOM_H);
-	assert(size == CUSTOM_SIZE);
 	assert(data == CUSTOM_DATA);
 }
 
@@ -1268,13 +1267,15 @@ _check_custom(const d2tk_com_t *com, const d2tk_clip_t *clip)
 	assert(clip->w == CLIP_W);
 	assert(clip->h == CLIP_H);
 
+	const uint64_t dhash = d2tk_hash(CUSTOM_DATA, sizeof(uint32_t));
+
 	assert(com->size == sizeof(d2tk_body_custom_t));
 	assert(com->instr == D2TK_INSTR_CUSTOM);
 	assert(com->body->custom.x == CUSTOM_X - CLIP_X);
 	assert(com->body->custom.y == CUSTOM_Y - CLIP_Y);
 	assert(com->body->custom.w == CUSTOM_W);
 	assert(com->body->custom.h == CUSTOM_H);
-	assert(com->body->custom.size == CUSTOM_SIZE);
+	assert(com->body->custom.dhash == dhash);
 	assert(com->body->custom.data == CUSTOM_DATA);
 	assert(com->body->custom.custom == _custom);
 }
@@ -1296,8 +1297,10 @@ _test_custom()
 		&D2TK_RECT(CLIP_X, CLIP_Y, CLIP_W, CLIP_H));
 	assert(ref >= 0);
 
+	const uint64_t dhash = d2tk_hash(CUSTOM_DATA, sizeof(uint32_t));
+
 	d2tk_core_custom(core, &D2TK_RECT(CUSTOM_X, CUSTOM_Y, CUSTOM_W, CUSTOM_H),
-		CUSTOM_SIZE, CUSTOM_DATA, _custom);
+		dhash, CUSTOM_DATA, _custom);
 
 	d2tk_core_bbox_pop(core, ref);
 	d2tk_core_post(core);

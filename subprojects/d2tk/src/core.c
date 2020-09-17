@@ -1196,7 +1196,7 @@ d2tk_core_bitmap(d2tk_core_t *core, const d2tk_rect_t *rect, uint32_t w,
 }
 
 D2TK_API void
-d2tk_core_custom(d2tk_core_t *core, const d2tk_rect_t *rect, uint32_t size,
+d2tk_core_custom(d2tk_core_t *core, const d2tk_rect_t *rect, uint64_t dhash,
 	const void *data, d2tk_core_custom_t custom)
 {
 	const size_t len = sizeof(d2tk_body_custom_t);
@@ -1208,7 +1208,7 @@ d2tk_core_custom(d2tk_core_t *core, const d2tk_rect_t *rect, uint32_t size,
 		body->custom.y = rect->y;
 		body->custom.w = rect->w;
 		body->custom.h = rect->h;
-		body->custom.size = size;
+		body->custom.dhash = dhash;
 		body->custom.data = data;
 		body->custom.custom = custom;
 
