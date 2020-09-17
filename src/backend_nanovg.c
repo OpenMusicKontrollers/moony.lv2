@@ -786,7 +786,7 @@ d2tk_nanovg_process(void *data, d2tk_core_t *core, const d2tk_com_t *com,
 
 			nvgSave(ctx);
 			body->custom(ctx, &D2TK_RECT(body->x + xo, body->y + yo, body->w, body->h),
-				body->size, body->data);
+				body->data);
 			nvgRestore(ctx);
 		} break;
 		case D2TK_INSTR_STROKE_WIDTH:

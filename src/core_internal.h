@@ -195,7 +195,7 @@ struct _d2tk_body_custom_t {
 	d2tk_coord_t y;
 	d2tk_coord_t w;
 	d2tk_coord_t h;
-	uint32_t size;
+	uint64_t dhash;
 	const void *data;
 	d2tk_core_custom_t custom;
 };

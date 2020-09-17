@@ -5,10 +5,9 @@
 #include <cairo.h>
 
 static void
-_draw_custom(void *_ctx, const d2tk_rect_t *rect, uint32_t size, const void *data)
+_draw_custom(void *_ctx, const d2tk_rect_t *rect, const void *data)
 {
 	cairo_t *ctx = _ctx;
-	(void)size;
 	(void)data;
 
 	d2tk_rect_t bnd = *rect;

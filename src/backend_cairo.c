@@ -787,7 +787,7 @@ d2tk_cairo_process(void *data, d2tk_core_t *core, const d2tk_com_t *com,
 
 			cairo_save(ctx);
 			body->custom(ctx, &D2TK_RECT(body->x + xo, body->y + yo, body->w, body->h),
-				body->size, body->data);
+				body->data);
 			cairo_restore(ctx);
 		} break;
 		case D2TK_INSTR_STROKE_WIDTH:

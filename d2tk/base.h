@@ -447,7 +447,7 @@ d2tk_base_bitmap(d2tk_base_t *base, uint32_t w, uint32_t h, uint32_t stride,
 	d2tk_align_t align);
 
 D2TK_API void
-d2tk_base_custom(d2tk_base_t *base, uint32_t size, const void *data,
+d2tk_base_custom(d2tk_base_t *base, uint64_t dhash, const void *data,
 	const d2tk_rect_t *rect, d2tk_core_custom_t custom);
 
 D2TK_API d2tk_state_t
