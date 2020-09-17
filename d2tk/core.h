@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include "config.h"
 #include <d2tk/d2tk.h>
@@ -34,7 +35,8 @@ typedef struct _d2tk_widget_t d2tk_widget_t;
 typedef struct _d2tk_point_t d2tk_point_t;
 typedef struct _d2tk_core_t d2tk_core_t;
 typedef struct _d2tk_core_driver_t d2tk_core_driver_t;
-typedef void (*d2tk_core_custom_t)(void *ctx, uint32_t size, const void *data);
+typedef void (*d2tk_core_custom_t)(void *ctx, const d2tk_rect_t *rect,
+	uint32_t size, const void *data);
 
 typedef enum _d2tk_align_t {
 	D2TK_ALIGN_NONE 				= 0,

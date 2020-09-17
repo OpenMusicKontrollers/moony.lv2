@@ -1246,9 +1246,14 @@ _test_bitmap()
 #define CUSTOM_DATA NULL
 
 static void
-_custom(void *ctx, uint32_t size, const void *data)
+_custom(void *ctx, const d2tk_rect_t *rect, uint32_t size, const void *data)
 {
 	assert(ctx == NULL);
+	assert(rect != NULL);
+	assert(rect->x == CUSTOM_X);
+	assert(rect->y == CUSTOM_Y);
+	assert(rect->w == CUSTOM_W);
+	assert(rect->h == CUSTOM_H);
 	assert(size == CUSTOM_SIZE);
 	assert(data == CUSTOM_DATA);
 }

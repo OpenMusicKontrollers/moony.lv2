@@ -28,6 +28,10 @@ option('use-frontend-pugl',
 	type : 'feature',
 	value : 'disabled',
 	yield : true)
+option('use-frontend-glfw',
+	type : 'feature',
+	value : 'disabled',
+	yield : true)
 
 option('use-vterm',
 	type : 'feature',

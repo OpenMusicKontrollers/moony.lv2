@@ -713,6 +713,9 @@ d2tk_base_post(d2tk_base_t *base);
 D2TK_API void
 d2tk_base_probe(d2tk_base_t *base);
 
+D2TK_API int
+d2tk_base_get_file_descriptors(d2tk_base_t *base, int *fds, int numfds);
+
 D2TK_API bool
 d2tk_base_set_again(d2tk_base_t *base);
 

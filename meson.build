@@ -14,7 +14,8 @@ build_tests = get_option('build-tests')
 use_backend_cairo = get_option('use-backend-cairo')
 use_backend_nanovg = get_option('use-backend-nanovg')
 use_frontend_fbdev = get_option('use-frontend-fbdev')
-use_frontend_pugl= get_option('use-frontend-pugl')
+use_frontend_pugl = get_option('use-frontend-pugl')
+use_frontend_glfw = get_option('use-frontend-glfw')
 
 use_vterm = get_option('use-vterm')
 use_evdev = get_option('use-evdev')
@@ -70,6 +71,10 @@ evdev_dep = dependency('libevdev',
 	required : use_frontend_fbdev)
 
 # dependencies for backend_nanovg
+glu_dep = dependency('glu',
+	version : '>=9.0.0',
+	static : static_link,
+	required : use_backend_nanovg)
 glew_dep = dependency('glew',
 	version : '>=2.1.0',
 	static : static_link,
@@ -80,6 +85,12 @@ if use_backend_nanovg.enabled() and not glew_dep.found()
 		compile_args : '-DGLEW_STATIC',
 		include_directories : include_directories('glew-2.1.0'),
 		sources : join_paths('glew-2.1.0', 'glew.c'))
+endif
+if use_frontend_glfw.enabled()
+	glfw_dep = dependency('glfw3',
+		version : '>=3.3.0',
+		static : static_link,
+		required : use_backend_nanovg)
 endif
 
 # optional dependencies
@@ -118,7 +129,9 @@ conf_data.set('MICRO_VERSION', version[2])
 add_project_arguments('-D_GNU_SOURCE', language : 'c')
 
 if build_debug_overlay
-	add_project_arguments('-DD2TK_DEBUG', language : 'c')
+	conf_data.set('D2TK_DEBUG', 1)
+else
+	conf_data.set('D2TK_DEBUG', 0)
 endif
 
 lib_srcs = [
@@ -190,12 +203,24 @@ example_srcs = [
 	join_paths('example', 'example.c')
 ]
 
+example_cairo_srcs = [
+	join_paths('example', 'custom_cairo.c')
+]
+
+example_nanovg_srcs = [
+	join_paths('example', 'custom_nanovg.c')
+]
+
 example_pugl_srcs = [
 	join_paths('example', 'd2tk_pugl.c')
 ]
 
 example_fbdev_srcs = [
 	join_paths('example', 'd2tk_fbdev.c')
+]
+
+example_glfw_srcs = [
+	join_paths('example', 'd2tk_glfw.c')
 ]
 
 pugl_srcs = [
@@ -218,6 +243,10 @@ cairo_srcs = [
 
 fbdev_srcs = [
 	join_paths('src', 'frontend_fbdev.c')
+]
+
+glfw_srcs = [
+	join_paths('src', 'frontend_glfw.c')
 ]
 
 test_core_srcs = [
@@ -266,7 +295,7 @@ if use_backend_cairo.enabled()
 			sources : [lib_srcs, cairo_srcs, pugl_srcs, pugl_cairo_srcs])
 
 		if build_examples
-			executable('d2tk.cairo', [example_srcs, example_pugl_srcs],
+			executable('d2tk.cairo', [example_srcs, example_pugl_srcs, example_cairo_srcs],
 				c_args : c_args,
 				include_directories : inc_dir,
 				dependencies: d2tk_cairo,
@@ -282,7 +311,7 @@ if use_backend_cairo.enabled()
 			sources : [lib_srcs, cairo_srcs, fbdev_srcs])
 
 		if build_examples
-			executable('d2tk.fbdev', [example_srcs, example_fbdev_srcs],
+			executable('d2tk.fbdev', [example_srcs, example_fbdev_srcs, example_cairo_srcs],
 				c_args : c_args,
 				include_directories : inc_dir,
 				dependencies: d2tk_fbdev,
@@ -295,15 +324,31 @@ if use_backend_nanovg.enabled()
 	if use_frontend_pugl.enabled()
 		d2tk_nanovg = declare_dependency(
 			include_directories : inc_dir,
-			dependencies : [deps, glew_dep],
+			dependencies : [deps, glu_dep, glew_dep],
 			link_args : links,
 			sources : [lib_srcs, nanovg_srcs, pugl_srcs, pugl_gl_srcs])
 
 		if build_examples
-			executable('d2tk.nanovg', [example_srcs, example_pugl_srcs],
+			executable('d2tk.nanovg', [example_srcs, example_pugl_srcs, example_nanovg_srcs],
 				c_args : c_args,
 				include_directories : inc_dir,
 				dependencies: d2tk_nanovg,
+				install : false)
+		endif
+	endif
+
+	if use_frontend_glfw.enabled()
+		d2tk_glfw = declare_dependency(
+			include_directories : inc_dir,
+			dependencies : [deps, glfw_dep, glew_dep],
+			link_args : links,
+			sources : [lib_srcs, nanovg_srcs, glfw_srcs])
+
+		if build_examples
+			executable('d2tk.glfw', [example_srcs, example_glfw_srcs, example_nanovg_srcs],
+				c_args : c_args,
+				include_directories : inc_dir,
+				dependencies: d2tk_glfw,
 				install : false)
 		endif
 	endif
