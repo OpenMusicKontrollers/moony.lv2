@@ -52,7 +52,7 @@
 
 #define MAX(x, y) (x > y ? y : x)
 
-#define MAX_NPROPS 5
+#define MAX_NPROPS 6
 #define MAX_GRAPH 2048 //FIXME
 
 typedef enum _console_t {
@@ -73,6 +73,7 @@ struct _plugstate_t {
 	int32_t font_height;
 	int32_t panic;
 	uint8_t graph_body [MAX_GRAPH];
+	float aspect_ratio;
 };
 
 struct _plughandle_t {
@@ -251,6 +252,11 @@ static const props_def_t defs [MAX_NPROPS] = {
 		.type = LV2_ATOM__Tuple,
 		.event_cb = _intercept_graph,
 		.max_size = MAX_GRAPH
+	},
+	{
+		.property = CANVAS__aspectRatio,
+		.offset = offsetof(plugstate_t, aspect_ratio),
+		.type = LV2_ATOM__Float
 	}
 };
 
@@ -678,9 +684,42 @@ _render_graph(void *_ctx, const d2tk_rect_t *rect, const void *data)
 	plughandle_t *handle = (plughandle_t *)data;
 	NVGcontext *ctx = _ctx;
 
+	float aspect_ratio = handle->state.aspect_ratio;
+
+	const d2tk_coord_t lon = rect->w >= rect->h
+		? rect->w
+		: rect->h;
+	const d2tk_coord_t sho = rect->w < rect->h
+		? rect->w
+		: rect->h;
+
+	d2tk_coord_t W;
+	d2tk_coord_t H;
+
+	if(aspect_ratio <= 0.f)
+	{
+		W = rect->w;
+		H = rect->h;
+	}
+	else if(aspect_ratio < 1.f)
+	{
+		W = sho * aspect_ratio;
+		H = sho;
+	}
+	else if(aspect_ratio == 1.f)
+	{
+		W = sho;
+		H = sho;
+	}
+	else //if(aspect_ratio > 1.f)
+	{
+		W = lon;
+		H = lon / aspect_ratio;
+	}
+
 	nvgSave(ctx);
 	nvgTranslate(ctx, -rect->x, -rect->y);
-	nvgScale(ctx, rect->w, rect->h);
+	nvgScale(ctx, W, H);
 
 	lv2_canvas_render_body(&handle->canvas, ctx, handle->forge.Tuple,
 		handle->graph_size, (const LV2_Atom *)handle->state.graph_body);
