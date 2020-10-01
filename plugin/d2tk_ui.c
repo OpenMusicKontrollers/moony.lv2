@@ -698,10 +698,10 @@ _render_graph(void *_ctx, const d2tk_rect_t *rect, const void *data)
 
 	if(aspect_ratio <= 0.f)
 	{
-		W = rect->w;
-		H = rect->h;
+		aspect_ratio = 1.f;
 	}
-	else if(aspect_ratio < 1.f)
+
+	if(aspect_ratio < 1.f)
 	{
 		W = sho * aspect_ratio;
 		H = sho;
