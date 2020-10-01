@@ -1,5 +1,5 @@
 /*
-  Copyright 2012-2020 David Robillard <http://drobilla.net>
+  Copyright 2012-2020 David Robillard <d@drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,8 @@
 */
 
 /**
-   @file implementation.c Platform-independent implementation.
+   @file implementation.c
+   @brief Platform-independent implementation.
 */
 
 #include "pugl/detail/implementation.h"
@@ -60,6 +61,7 @@ puglStrerror(const PuglStatus status)
 	case PUGL_FAILURE:               return "Non-fatal failure";
 	case PUGL_UNKNOWN_ERROR:         return "Unknown system error";
 	case PUGL_BAD_BACKEND:           return "Invalid or missing backend";
+	case PUGL_BAD_CONFIGURATION:     return "Invalid view configuration";
 	case PUGL_BAD_PARAMETER:         return "Invalid parameter";
 	case PUGL_BACKEND_FAILED:        return "Backend initialisation failed";
 	case PUGL_REGISTRATION_FAILED:   return "Class registration failed";
@@ -188,9 +190,9 @@ puglNewView(PuglWorld* const world)
 		return NULL;
 	}
 
-	view->world        = world;
-	view->frame.width  = 640;
-	view->frame.height = 480;
+	view->world     = world;
+	view->minWidth  = 1;
+	view->minHeight = 1;
 
 	puglSetDefaultHints(view->hints);
 
@@ -226,6 +228,7 @@ puglFreeView(PuglView* view)
 
 	free(view->title);
 	free(view->clipboard.data);
+	free(view->clipboardType.data);
 	puglFreeViewInternals(view);
 	free(view);
 }
@@ -309,7 +312,7 @@ PuglStatus
 puglEnterContext(PuglView* view, bool drawing)
 {
 	const PuglEventExpose expose = {
-	        PUGL_EXPOSE, 0, 0, 0, view->frame.width, view->frame.height, 0};
+	    PUGL_EXPOSE, 0, 0.0, 0.0, view->frame.width, view->frame.height};
 
 	view->backend->enter(view, drawing ? &expose : NULL);
 
@@ -320,7 +323,7 @@ PuglStatus
 puglLeaveContext(PuglView* view, bool drawing)
 {
 	const PuglEventExpose expose = {
-	        PUGL_EXPOSE, 0, 0, 0, view->frame.width, view->frame.height, 0};
+	    PUGL_EXPOSE, 0, 0.0, 0.0, view->frame.width, view->frame.height};
 
 	view->backend->leave(view, drawing ? &expose : NULL);
 
@@ -336,7 +339,7 @@ puglSetEventFunc(PuglView* view, PuglEventFunc eventFunc)
 	return PUGL_SUCCESS;
 }
 
-/** Return the code point for buf, or the replacement character on error. */
+/// Return the code point for buf, or the replacement character on error
 uint32_t
 puglDecodeUTF8(const uint8_t* buf)
 {
@@ -445,7 +448,7 @@ puglGetInternalClipboard(const PuglView* const view,
 	}
 
 	if (type) {
-		*type = "text/plain";
+		*type = view->clipboardType.data;
 	}
 
 	return view->clipboard.data;
@@ -457,10 +460,11 @@ puglSetInternalClipboard(PuglView* const   view,
                          const void* const data,
                          const size_t      len)
 {
-	if (type && strcmp(type, "text/plain")) {
+	if (!type) {
 		return PUGL_UNSUPPORTED_TYPE;
 	}
 
+	puglSetBlob(&view->clipboardType, type, strlen(type) + 1);
 	puglSetBlob(&view->clipboard, data, len);
 	return PUGL_SUCCESS;
 }

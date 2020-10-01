@@ -780,3 +780,24 @@ d2tk_frontend_get_scale()
 {
 	return 1.f;
 }
+
+D2TK_API int
+d2tk_frontend_set_clipboard(d2tk_frontend_t *dpugl, const char *type,
+	const void *buf, size_t buf_len)
+{
+	(void)dpugl;
+	(void)type;
+	(void)buf;
+	(void)buf_len;
+	return 1; //FIXME
+}
+
+D2TK_API const void *
+d2tk_frontend_get_clipboard(d2tk_frontend_t *dpugl, const char **type,
+	size_t *buf_len)
+{
+	(void)dpugl;
+	(void)type;
+	(void)buf_len;
+	return NULL; //FIXME
+}

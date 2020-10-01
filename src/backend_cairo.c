@@ -369,6 +369,23 @@ _d2tk_cairo_surf_draw(cairo_t *ctx, cairo_surface_t *surf, d2tk_coord_t xo,
 	cairo_paint(ctx);
 }
 
+static inline char *
+_absolute_path(d2tk_backend_cairo_t *backend, const char *rel)
+{
+	char *abs = NULL;
+
+	if(rel[0] == '/')
+	{
+		assert(asprintf(&abs, "%s", rel) != -1);
+	}
+	else
+	{
+		assert(asprintf(&abs, "%s%s", backend->bundle_path, rel) != -1);
+	}
+
+	return abs;
+}
+
 static inline void
 d2tk_cairo_process(void *data, d2tk_core_t *core, const d2tk_com_t *com,
 	d2tk_coord_t xo, d2tk_coord_t yo, const d2tk_clip_t *clip, unsigned pass)
@@ -716,40 +733,48 @@ d2tk_cairo_process(void *data, d2tk_core_t *core, const d2tk_com_t *com,
 
 			if(!*sprite)
 			{
-				char *img_path = NULL;
-				assert(asprintf(&img_path, "%s%s", backend->bundle_path, body->path) != -1);
+				char *img_path = _absolute_path(backend, body->path);
 				assert(img_path);
 
-				int W, H, N;
-				stbi_set_unpremultiply_on_load(1);
-				stbi_convert_iphone_png_to_rgb(1);
-				uint8_t *pixels = stbi_load(img_path, &W, &H, &N, 4);
-				free(img_path);
-				assert(pixels );
-
-				// bitswap and premultiply pixel data
-				for(unsigned i = 0; i < W*H*sizeof(uint32_t); i += sizeof(uint32_t))
+				struct stat st;
+				if(stat(img_path, &st) == 0)
 				{
-					// get alpha channel
-					const uint8_t a = pixels[i+3];
+					int W, H, N;
+					uint8_t *pixels = NULL;
 
-					// premultiply with alpha channel
-					const uint8_t r = ( (uint16_t)pixels[i+0] * a ) >> 8;
-					const uint8_t g = ( (uint16_t)pixels[i+1] * a ) >> 8;
-					const uint8_t b = ( (uint16_t)pixels[i+2] * a ) >> 8;
+					stbi_set_unpremultiply_on_load(1);
+					stbi_convert_iphone_png_to_rgb(1);
+					pixels = stbi_load(img_path, &W, &H, &N, 4);
 
-					// merge and byteswap to correct endianness
-					uint32_t *pix = (uint32_t *)&pixels[i];
-					*pix = (a << 24) | (r << 16) | (g << 8) | b;
+					if(pixels)
+					{
+						// bitswap and premultiply pixel data
+						for(unsigned i = 0; i < W*H*sizeof(uint32_t); i += sizeof(uint32_t))
+						{
+							// get alpha channel
+							const uint8_t a = pixels[i+3];
+
+							// premultiply with alpha channel
+							const uint8_t r = ( (uint16_t)pixels[i+0] * a ) >> 8;
+							const uint8_t g = ( (uint16_t)pixels[i+1] * a ) >> 8;
+							const uint8_t b = ( (uint16_t)pixels[i+2] * a ) >> 8;
+
+							// merge and byteswap to correct endianness
+							uint32_t *pix = (uint32_t *)&pixels[i];
+							*pix = (a << 24) | (r << 16) | (g << 8) | b;
+						}
+
+						cairo_surface_t *surf = cairo_image_surface_create_for_data(pixels,
+							CAIRO_FORMAT_ARGB32, W, H, W*sizeof(uint32_t));
+
+						const cairo_user_data_key_t key = { 0 };
+						cairo_surface_set_user_data(surf, &key, pixels, _d2tk_cairo_img_free);
+
+						*sprite = (uintptr_t)surf;
+					}
 				}
 
-				cairo_surface_t *surf = cairo_image_surface_create_for_data(pixels,
-					CAIRO_FORMAT_ARGB32, W, H, W*sizeof(uint32_t));
-
-				const cairo_user_data_key_t key = { 0 };
-				cairo_surface_set_user_data(surf, &key, pixels, _d2tk_cairo_img_free);
-
-				*sprite = (uintptr_t)surf;
+				free(img_path);
 			}
 
 			cairo_surface_t *surf = (cairo_surface_t *)*sprite;

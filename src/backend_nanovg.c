@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <sys/stat.h>
 
 #include <nanovg.h>
 
@@ -429,6 +430,23 @@ _d2tk_nanovg_surf_draw(NVGcontext *ctx, int img, d2tk_coord_t xo,
 	nvgFill(ctx);
 }
 
+static inline char *
+_absolute_path(d2tk_backend_nanovg_t *backend, const char *rel)
+{
+	char *abs = NULL;
+
+	if(rel[0] == '/')
+	{
+		assert(asprintf(&abs, "%s", rel) != -1);
+	}
+	else
+	{
+		assert(asprintf(&abs, "%s%s", backend->bundle_path, rel) != -1);
+	}
+
+	return abs;
+}
+
 static inline void
 d2tk_nanovg_process(void *data, d2tk_core_t *core, const d2tk_com_t *com,
 	d2tk_coord_t xo, d2tk_coord_t yo, const d2tk_clip_t *clip, unsigned pass)
@@ -744,19 +762,25 @@ d2tk_nanovg_process(void *data, d2tk_core_t *core, const d2tk_com_t *com,
 
 			if(!*sprite)
 			{
-				char *img_path = NULL;
-				assert(asprintf(&img_path, "%s%s", backend->bundle_path, body->path) != -1);
+				char *img_path = _absolute_path(backend, body->path);
 				assert(img_path);
 
-				*sprite = nvgCreateImage(ctx, img_path, NVG_IMAGE_GENERATE_MIPMAPS);
+				struct stat st;
+				if(stat(img_path, &st) == 0)
+				{
+					*sprite = nvgCreateImage(ctx, img_path, NVG_IMAGE_GENERATE_MIPMAPS);
+				}
+
 				free(img_path);
 			}
 
 			const int img = *sprite;
-			assert(img);
 
-			_d2tk_nanovg_surf_draw(ctx, img, xo, yo, body->align,
-					&D2TK_RECT(body->x, body->y, body->w, body->h));
+			if(img)
+			{
+				_d2tk_nanovg_surf_draw(ctx, img, xo, yo, body->align,
+						&D2TK_RECT(body->x, body->y, body->w, body->h));
+			}
 		} break;
 		case D2TK_INSTR_BITMAP:
 		{

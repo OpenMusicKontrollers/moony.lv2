@@ -15,28 +15,29 @@
  * http://www.perlfoundation.org/artistic_license_2_0.
  */
 
-#ifndef _D2TK_EXAMPLE_H
-#define _D2TK_EXAMPLE_H
-
-#include <d2tk/base.h>
-#include <d2tk/frontend.h>
+#ifndef _D2TK_UTIL_H
+#define _D2TK_UTIL_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#include "config.h"
+#include <d2tk/d2tk.h>
+
+#if D2TK_SPAWN
 D2TK_API int
-d2tk_example_init(void);
+d2tk_util_spawn(char **argv);
 
-D2TK_API void
-d2tk_example_deinit();
+D2TK_API int
+d2tk_util_kill(int *kid);
 
-D2TK_API void
-d2tk_example_run(d2tk_frontend_t *frontend, d2tk_base_t *base,
-	d2tk_coord_t w, d2tk_coord_t h);
+D2TK_API int
+d2tk_util_wait(int *kid);
+#endif
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // _D2TK_EXAMPLE_H
+#endif // _D2TK_UTIL_H
