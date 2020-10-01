@@ -47,7 +47,7 @@ _expose(void *data, d2tk_coord_t w, d2tk_coord_t h)
 	d2tk_frontend_t *dglfw = app->dglfw;
 	d2tk_base_t *base = d2tk_frontend_get_base(dglfw);
 
-	d2tk_example_run(base, w, h);
+	d2tk_example_run(dglfw, base, w, h);
 
 	return EXIT_SUCCESS;
 }

@@ -24,6 +24,7 @@
 #include <pty.h>
 #include <utmp.h>
 #include <sched.h>
+#include <limits.h>
 #include <sys/wait.h>
 #include <sys/mman.h>
 
@@ -278,10 +279,21 @@ _clone(void *data)
 	signal(SIGSTOP, SIG_DFL);
 	signal(SIGCONT, SIG_DFL);
 
-	putenv("TERM=xterm-256color");
-	//putenv("COLORTERM=truecolor");
+	char envh [PATH_MAX];
+	char envu [PATH_MAX];
+	char *home = getenv("HOME");
+	char *user = getenv("USER");
+	snprintf(envh, sizeof(envh), "HOME=%s", home ? home : "");
+	snprintf(envu, sizeof(envu), "USER=%s", user ? user : "");
 
-	execvp(clone_data->argv[0], clone_data->argv);
+	char *envp [] = {
+		"TERM=xterm-256color",
+		envh,
+		envu,
+		NULL
+	};
+
+	execvpe(clone_data->argv[0], clone_data->argv, envp);
 	fprintf(stderr_save, "cannot exec(%s) - %s\n", clone_data->argv[0], strerror(errno));
 	_exit(EXIT_FAILURE);
 

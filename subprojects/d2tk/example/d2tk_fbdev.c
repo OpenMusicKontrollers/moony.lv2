@@ -51,7 +51,7 @@ _expose(void *data, d2tk_coord_t w, d2tk_coord_t h)
 	d2tk_frontend_t *fbdev = app->fbdev;
 	d2tk_base_t *base = d2tk_frontend_get_base(fbdev);
 
-	d2tk_example_run(base, w, h);
+	d2tk_example_run(fbdev, base, w, h);
 
 	if(app->show_cursor)
 	{

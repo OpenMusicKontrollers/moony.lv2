@@ -199,6 +199,15 @@ else
 	conf_data.set('D2TK_CLONE', 0)
 endif
 
+if host_machine.system() == 'windows'
+	conf_data.set('D2TK_SPAWN', 0)
+elif host_machine.system() == 'darwin'
+	conf_data.set('D2TK_SPAWN', 0)
+else
+	conf_data.set('D2TK_SPAWN', 1)
+	lib_srcs += join_paths('src', 'util_spawn.c')
+endif
+
 example_srcs = [
 	join_paths('example', 'example.c')
 ]
