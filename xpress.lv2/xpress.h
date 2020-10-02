@@ -163,7 +163,6 @@ struct _xpress_t {
 	void *data;
 
 	unsigned max_nvoices;
-	unsigned mask_nvoices;
 	unsigned nvoices;
 	xpress_voice_t voices [1];
 };
@@ -175,56 +174,15 @@ struct _xpress_t {
 	xpress_t (XPRESS); \
 	xpress_voice_t XPRESS_CONCAT(_voices, __COUNTER__) [(MAX_NVOICES - 1)]
 
-// rt-safe
-static inline bool
-_xpress_voice_not_end(xpress_t *xpress, xpress_voice_t *voice)
-{
-	return (unsigned)(voice - xpress->voices) < xpress->max_nvoices;
-}
-
-// rt-safe
-static inline xpress_voice_t *
-_xpress_voice_begin(xpress_t *xpress)
-{
-	for(xpress_voice_t *voice = xpress->voices;
-		_xpress_voice_not_end(xpress, voice);
-		voice = voice + 1)
-	{
-		if(voice->uuid)
-		{
-			return voice;
-		}
-	}
-
-	return NULL;
-}
-
-// rt-safe
-static inline xpress_voice_t *
-_xpress_voice_next(xpress_t *xpress, xpress_voice_t *voice)
-{
-	for( ;
-		_xpress_voice_not_end(xpress, voice);
-		voice = voice + 1)
-	{
-		if(voice->uuid)
-		{
-			return voice;
-		}
-	}
-
-	return NULL;
-}
-
 #define XPRESS_VOICE_FOREACH(XPRESS, VOICE) \
-	for(xpress_voice_t *(VOICE) = _xpress_voice_begin((XPRESS)); \
-		(VOICE); \
-		(VOICE) = _xpress_voice_next((XPRESS), (VOICE)))
+	for(xpress_voice_t *(VOICE) = &(XPRESS)->voices[(int)(XPRESS)->nvoices - 1]; \
+		(VOICE) >= (XPRESS)->voices; \
+		(VOICE)--)
 
 #define XPRESS_VOICE_FREE(XPRESS, VOICE) \
-	for(xpress_voice_t *(VOICE) = _xpress_voice_begin((XPRESS)); \
-		(VOICE); \
-		(VOICE)->uuid = 0, (VOICE) = _xpress_voice_next((XPRESS), (VOICE)))
+	for(xpress_voice_t *(VOICE) = &(XPRESS)->voices[(int)(XPRESS)->nvoices - 1]; \
+		(VOICE) >= (XPRESS)->voices; \
+		(VOICE)->uuid = 0, (VOICE)--, (XPRESS)->nvoices--)
 
 // non rt-safe
 static inline int
@@ -315,54 +273,91 @@ _xpress_urn_uuid(LV2_URID_Map *map)
 	return map->map(map->handle, uuid);
 }
 
-__attribute__((always_inline))
-static inline unsigned
-_xpress_probe(xpress_t *xpress, xpress_uuid_t uuid, unsigned i)
+static inline void
+_xpress_qsort(xpress_voice_t *A, int n)
 {
-	const unsigned offset = (i*i + i) >> 1;
+	if(n < 2)
+		return;
 
-	return (uuid + offset) & xpress->mask_nvoices;
+	const xpress_voice_t *p = A;
+
+	int i = -1;
+	int j = n;
+
+	while(true)
+	{
+		do {
+			i += 1;
+		} while(A[i].uuid > p->uuid);
+
+		do {
+			j -= 1;
+		} while(A[j].uuid < p->uuid);
+
+		if(i >= j)
+			break;
+
+		const xpress_voice_t tmp = A[i];
+		A[i] = A[j];
+		A[j] = tmp;
+	}
+
+	_xpress_qsort(A, j + 1);
+	_xpress_qsort(A + j + 1, n - j - 1);
+}
+
+static inline xpress_voice_t *
+_xpress_bsearch(xpress_uuid_t p, xpress_voice_t *a, int n)
+{
+	xpress_voice_t *base = a;
+
+	for(int N = n, half; N > 1; N -= half)
+	{
+		half = N/2;
+		xpress_voice_t *dst = &base[half];
+		base = (dst->uuid < p) ? base : dst;
+	}
+
+	return (base->uuid == p) ? base : NULL;
+}
+
+static inline void
+_xpress_sort(xpress_t *xpress)
+{
+	_xpress_qsort(xpress->voices, xpress->nvoices);
 }
 
 static inline xpress_voice_t *
 _xpress_voice_get(xpress_t *xpress, xpress_uuid_t uuid)
 {
-	for(unsigned i = 0, idx = _xpress_probe(xpress, uuid, i);
-		i < xpress->max_nvoices;
-		idx = _xpress_probe(xpress, uuid, ++i))
-	{
-		xpress_voice_t *voice = &xpress->voices[idx];
-
-		if(voice->uuid == uuid)
-		{
-			return voice;
-		}
-	}
-
-	return NULL;
+	return _xpress_bsearch(uuid, xpress->voices, xpress->nvoices);
 }
 
 static inline void *
 _xpress_voice_add(xpress_t *xpress, LV2_URID source, xpress_uuid_t uuid, bool alive)
 {
-	for(unsigned i = 0, idx = _xpress_probe(xpress, uuid, i);
-		i < xpress->max_nvoices;
-		idx = _xpress_probe(xpress, uuid, ++i))
-	{
-		xpress_voice_t *voice = &xpress->voices[idx];
+	if(xpress->nvoices >= xpress->max_nvoices)
+		return NULL; // failed
 
-		if(voice->uuid == 0)
-		{
-			voice->source = source;
-			voice->uuid = uuid;
-			voice->alive = alive;
-			void *target = voice->target;
+	xpress_voice_t *voice = &xpress->voices[xpress->nvoices++];
+	voice->source = source;
+	voice->uuid = uuid;
+	voice->alive = alive;
+	void *target = voice->target;
 
-			return target;
-		}
-	}
+	_xpress_sort(xpress);
 
-	return NULL;
+	return target;
+}
+
+static inline void
+_xpress_voice_free(xpress_t *xpress, xpress_voice_t *voice)
+{
+	voice->uuid = 0;
+
+	_xpress_sort(xpress);
+
+	xpress->nvoices--;
 }
 
 static xpress_shm_t *
@@ -417,26 +412,16 @@ _xpress_shm_deinit(xpress_shm_t *xpress_shm)
 #endif
 }
 
-static inline bool
-_xpress_is_power_of_2(unsigned x)
-{
-	return x && !(x & (x-1));
-}
-
 static inline int
 xpress_init(xpress_t *xpress, unsigned max_nvoices, LV2_URID_Map *map,
 	xpress_map_t *voice_map, xpress_event_t event_mask, const xpress_iface_t *iface,
 	void *target, void *data)
 {
-	if(  !map
-		|| !_xpress_is_power_of_2(max_nvoices)
-		|| ( (event_mask != XPRESS_EVENT_NONE) && !iface))
-	{
+	if(!map || ( (event_mask != XPRESS_EVENT_NONE) && !iface))
 		return 0;
-	}
 
+	xpress->nvoices = 0;
 	xpress->max_nvoices = max_nvoices;
-	xpress->mask_nvoices = max_nvoices - 1;
 	xpress->map = map;
 	xpress->voice_map = voice_map;
 	xpress->event_mask = event_mask;
@@ -630,6 +615,8 @@ xpress_advance(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
 			}
 		}
 
+		unsigned freed = 0;
+
 		XPRESS_VOICE_FOREACH(xpress, voice)
 		{
 			if(  (voice->source == source->body)
@@ -638,8 +625,15 @@ xpress_advance(xpress_t *xpress, LV2_Atom_Forge *forge, uint32_t frames,
 				if( (xpress->event_mask & XPRESS_EVENT_DEL) && xpress->iface->del)
 					xpress->iface->del(xpress->data, frames, voice->uuid, voice->target);
 
+				freed += 1;
 				voice->uuid = 0; // invalidate
 			}
+		}
+
+		if(freed > 0)
+		{
+			_xpress_sort(xpress);
+			xpress->nvoices -= freed;
 		}
 
 		return 1;
@@ -672,6 +666,8 @@ xpress_synced(xpress_t *xpress)
 static inline void
 xpress_post(xpress_t *xpress, int64_t frames)
 {
+	unsigned freed = 0;
+
 	XPRESS_VOICE_FOREACH(xpress, voice)
 	{
 		if(!voice->alive)
@@ -679,8 +675,15 @@ xpress_post(xpress_t *xpress, int64_t frames)
 			if( (xpress->event_mask & XPRESS_EVENT_DEL) && xpress->iface->del)
 				xpress->iface->del(xpress->data, frames, voice->uuid, voice->target);
 
+			freed += 1;
 			voice->uuid = 0; // invalidate
 		}
+	}
+
+	if(freed > 0)
+	{
+		_xpress_sort(xpress);
+		xpress->nvoices -= freed;
 	}
 }
 
@@ -705,7 +708,7 @@ xpress_free(xpress_t *xpress, xpress_uuid_t uuid)
 	if(!voice)
 		return 0; // failed
 
-	voice->uuid = 0; // invalidate
+	_xpress_voice_free(xpress, voice);
 
 	return 1;
 }
