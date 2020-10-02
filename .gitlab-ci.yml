@@ -71,14 +71,6 @@ stages:
   image: ventosus/arm-linux-gnueabihf:bullseye
   <<: *test_definition
 
-.universal_w64_template: &universal_w64_definition
-  image: ventosus/universal-w64-mingw32
-  <<: *test_definition
-
-.universal_apple_template: &universal_apple_definition
-  image: ventosus/universal-apple-darwin
-  <<: *build_definition
-
 # building in docker
 x86_64-linux-gnu-stretch:
   <<: *universal_linux_definition_stretch
@@ -115,15 +107,6 @@ aarch64-linux-gnu-buster:
 
 aarch64-linux-gnu-bullseye:
   <<: *arm_linux_definition_bullseye
-
-x86_64-w64-mingw32:
-  <<: *universal_w64_definition
-
-i686-w64-mingw32:
-  <<: *universal_w64_definition
-
-universal-apple-darwin:
-  <<: *universal_apple_definition
 
 pack:
   <<: *variables_definition
