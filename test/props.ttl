@@ -147,6 +147,6 @@ props:test
 		props:statInt 4 ;
 		props:statFloat "0.4"^^xsd:float ;
 		props:statString "Hello world" ;
-		props:statPath <props.ttl> ;
+		props:statPath <> ;
 		props:statChunk "AQIDBAUGBw=="^^xsd:base64Binary ;
 	] .
