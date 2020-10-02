@@ -18,7 +18,7 @@ stages:
 .build_template: &build_definition
   <<: *common_definition
   script:
-    - meson --prefix="/opt/${CI_BUILD_NAME}" --libdir="lib" --cross-file "${CI_BUILD_NAME}" -Db_lto=false build
+    - meson --prefix="/opt/${CI_BUILD_NAME}" --libdir="lib" --cross-file "${CI_BUILD_NAME}" build
     - sed -i -e '/framework/s/-Wl,-O1//g' -e '/framework/s/-Wl,--start-group//g' -e '/framework/s/-Wl,--end-group//g' -e '/framework/s/-Wl,-soname,.*dylib//g' build/build.ninja
     - ninja -C build
     - DESTDIR="${CI_PROJECT_DIR}/${BASE_NAME}-$(cat VERSION)/${CI_BUILD_NAME}" ninja -C build install
@@ -47,6 +47,9 @@ i686-linux-gnu:
   <<: *universal_linux_definition
 
 arm-linux-gnueabihf:
+  <<: *arm_linux_definition
+
+aarch64-linux-gnu:
   <<: *arm_linux_definition
 
 x86_64-w64-mingw32:
