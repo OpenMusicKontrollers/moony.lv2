@@ -111,6 +111,8 @@ struct _props_t {
 		LV2_URID atom_vector;
 		LV2_URID atom_object;
 		LV2_URID atom_sequence;
+
+		LV2_URID state_StateChanged;
 	} urid;
 
 	void *data;
@@ -316,6 +318,13 @@ _props_patch_set(props_t *props, LV2_Atom_Forge *forge, uint32_t frames,
 		if(ref)
 			ref = lv2_atom_forge_write(forge, impl->value.body, impl->value.size);
 	}
+	if(ref)
+		lv2_atom_forge_pop(forge, &obj_frame);
+
+	if(ref)
+		ref = lv2_atom_forge_frame_time(forge, frames);
+	if(ref)
+		ref = lv2_atom_forge_object(forge, &obj_frame, 0, props->urid.state_StateChanged);
 	if(ref)
 		lv2_atom_forge_pop(forge, &obj_frame);
 
@@ -575,6 +584,8 @@ props_init(props_t *props, const char *subject,
 	props->urid.atom_object = map->map(map->handle, LV2_ATOM__Object);
 	props->urid.atom_sequence = map->map(map->handle, LV2_ATOM__Sequence);
 
+	props->urid.state_StateChanged = map->map(map->handle, LV2_STATE__StateChanged);
+
 	atomic_init(&props->restoring, false);
 
 	int status = 1;
@@ -734,6 +745,10 @@ props_advance(props_t *props, LV2_Atom_Forge *forge, uint32_t frames,
 			_props_impl_set(props, impl, value->type, value->size,
 				LV2_ATOM_BODY_CONST(value));
 
+			// send on (e.g. to UI)
+			if(*ref && !impl->def->hidden)
+				*ref = _props_patch_set(props, forge, frames, impl, sequence_num);
+
 			const props_def_t *def = impl->def;
 			if(def->event_cb)
 				def->event_cb(props->data, frames, impl);
@@ -799,6 +814,10 @@ props_advance(props_t *props, LV2_Atom_Forge *forge, uint32_t frames,
 			{
 				_props_impl_set(props, impl, value->type, value->size,
 					LV2_ATOM_BODY_CONST(value));
+
+				// send on (e.g. to UI)
+				if(*ref && !impl->def->hidden)
+					*ref = _props_patch_set(props, forge, frames, impl, sequence_num);
 
 				const props_def_t *def = impl->def;
 				if(def->event_cb)

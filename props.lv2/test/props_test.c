@@ -552,6 +552,12 @@ _test_2(handle_t *handle)
 
 		const LV2_Atom_Object *obj = (const LV2_Atom_Object *)atom;
 		assert(obj->body.id == 0);
+
+		if(obj->body.otype == props->urid.state_StateChanged)
+		{
+			continue;
+		}
+
 		assert(obj->body.otype == props->urid.patch_set);
 
 		unsigned nprops = 0;
