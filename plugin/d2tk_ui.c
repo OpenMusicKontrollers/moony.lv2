@@ -32,6 +32,7 @@
 #include <ser_atom.lv2/ser_atom.h>
 
 #include <d2tk/hash.h>
+#include <d2tk/util.h>
 #include <d2tk/frontend_pugl.h>
 
 #include <nanovg.h>
@@ -57,7 +58,6 @@
 
 typedef enum _console_t {
 	CONSOLE_EDITOR,
-	CONSOLE_MAN,
 	CONSOLE_GRAPH,
 
 	CONSOLE_MAX
@@ -127,6 +127,7 @@ struct _plughandle_t {
 	LV2_Canvas canvas;
 
 	uint32_t graph_size;
+	int kid;
 };
 
 static inline void
@@ -592,19 +593,27 @@ _expose_man(plughandle_t *handle, const d2tk_rect_t *rect)
 	d2tk_frontend_t *dpugl = handle->dpugl;
 	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
 
-	char *browser = getenv("BROWSER");
+	char lbl [] = "Manual";
 
-	char *args [] = {
-		browser ? browser : "elinks",
-		handle->manual,
-		NULL
-	};
-
-	D2TK_BASE_PTY(base, D2TK_ID, args,
-		handle->font_height, rect, false, pty)
+	if(d2tk_base_link_is_changed(base, D2TK_ID, sizeof(lbl), lbl, .5f,
+		rect, D2TK_ALIGN_MIDDLE | D2TK_ALIGN_LEFT))
 	{
-		// nothing to do
+		char *argv [] = {
+			"xdg-open",
+			handle->manual,
+			NULL
+		};
+
+		d2tk_util_kill(&handle->kid);
+		handle->kid = d2tk_util_spawn(argv);
+		if(handle->kid <= 0)
+		{
+			lv2_log_error(&handle->logger, "[%s] failed to spawn: %s '%s'", __func__,
+				argv[0], argv[1]);
+		}
 	}
+
+	d2tk_util_wait(&handle->kid);
 }
 
 static inline unsigned
@@ -760,7 +769,6 @@ _expose_console(plughandle_t *handle, const d2tk_rect_t *rect)
 			{
 				static const char *console_lbl [CONSOLE_MAX] = {
 					[CONSOLE_EDITOR] = "Editor",
-					[CONSOLE_MAN]    = "Manual",
 					[CONSOLE_GRAPH]  = "Graph"
 				};
 
@@ -782,7 +790,6 @@ _expose_console(plughandle_t *handle, const d2tk_rect_t *rect)
 			{
 				static const console_cb_t console_cb [CONSOLE_MAX] = {
 					[CONSOLE_EDITOR] = _expose_editor,
-					[CONSOLE_MAN] = _expose_man,
 					[CONSOLE_GRAPH] = _expose_canvas_graph
 				};
 
@@ -1032,6 +1039,7 @@ cleanup(LV2UI_Handle instance)
 {
 	plughandle_t *handle = instance;
 
+	d2tk_util_kill(&handle->kid);
 	d2tk_frontend_free(handle->dpugl);
 
 	unlink(handle->template);
