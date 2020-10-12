@@ -2,13 +2,11 @@ stages:
   - build
   - deploy
 
-.variables_template: &variables_definition
-  variables:
-    PKG_CONFIG_PATH: "/opt/lv2/lib/pkgconfig:/opt/${CI_BUILD_NAME}/lib/pkgconfig:/usr/lib/${CI_BUILD_NAME}/pkgconfig"
-    #BUILD_OPTS: "-Dbuild-inline-disp=true -Dbuild-next-ui=false -Duse-fontconfig=disabled -Duse-vterm=disabled"
+variables:
+  PKG_CONFIG_PATH: "/opt/lv2/lib/pkgconfig:/opt/${CI_BUILD_NAME}/lib/pkgconfig:/usr/lib/${CI_BUILD_NAME}/pkgconfig"
+  BUILD_OPTS : ""
 
 .native_template: &native_definition
-  <<: *variables_definition
   stage: build
   script:
     - meson --prefix="${CI_PROJECT_DIR}/${CI_PROJECT_NAME}-$(cat VERSION)/${CI_BUILD_NAME}" -Dlv2libdir="" --cross-file "${CI_BUILD_NAME}" ${BUILD_OPTS} build
@@ -25,7 +23,6 @@ stages:
       - "${CI_PROJECT_NAME}-$(cat VERSION)/${CI_BUILD_NAME}/"
 
 .cross_template: &cross_definition
-  <<: *variables_definition
   stage: build
   script:
     - meson --prefix="${CI_PROJECT_DIR}/${CI_PROJECT_NAME}-$(cat VERSION)/${CI_BUILD_NAME}" -Dlv2libdir="" --cross-file "${CI_BUILD_NAME}" ${BUILD_OPTS} build
@@ -100,7 +97,6 @@ aarch64-linux-gnu-bullseye:
   <<: *arm_linux_definition_bullseye
 
 pack:
-  <<: *variables_definition
   stage: deploy
   script:
     - echo 'packing up'
