@@ -15,24 +15,16 @@ m_dep = cc.find_library('m')
 lv2_dep = dependency('lv2',
 	version : '>=1.14.0')
 glew_dep = dependency('glew',
-	version : '>=2.1.0',
-	static : static_link,
-	required : false)
+	version : '>=2.0.0',
+	static : static_link)
 glu_dep = dependency('glu',
 	version : '>=9.0.0',
-	static : static_link,
-	required : false)
-if not glew_dep.found()
-	glew_dep = declare_dependency(
-		compile_args : '-DGLEW_STATIC',
-		include_directories : include_directories('glew-2.1.0'),
-		sources : join_paths('glew-2.1.0', 'glew.c'))
-endif
+	static : static_link)
 
 deps = [m_dep, lv2_dep, glu_dep, glew_dep]
 links = []
 
-pugl_inc = include_directories('pugl')
+pugl_inc = include_directories(join_paths('pugl', 'include'))
 inc_dir = [pugl_inc]
 
 add_project_arguments('-D_GNU_SOURCE', language : 'c')
@@ -42,7 +34,7 @@ bin_srcs = [
 ]
 
 lib_srcs = [
-	join_paths('pugl', 'pugl', 'detail', 'implementation.c')
+	join_paths('pugl', 'src', 'implementation.c')
 ]
 
 c_args = ['-fvisibility=hidden',
@@ -52,20 +44,20 @@ if host_machine.system() == 'windows'
 	deps += cc.find_library('opengl32')
 	deps += cc.find_library('gdi32')
 	deps += cc.find_library('ws2_32')
-	lib_srcs += 'pugl/pugl/detail/win.c'
-	lib_srcs += 'pugl/pugl/detail/win_gl.c'
+	lib_srcs += join_paths('pugl', 'src', 'win.c')
+	lib_srcs += join_paths('pugl', 'src', 'win_gl.c')
 elif host_machine.system() == 'darwin'
 	add_languages('objc')
 	links += ['-framework', 'OpenGL']
 	links += ['-framework', 'Cocoa']
-	lib_srcs += 'pugl/pugl/detail/mac.m'
-	lib_srcs += 'pugl/pugl/detail/mac_gl.m'
+	lib_srcs += join_paths('pugl', 'src', 'mac.m')
+	lib_srcs += join_paths('pugl', 'src', 'mac_gl.m')
 else
 	deps += dependency('gl')
 	deps += dependency('x11', version : '>=1.6.0')
 	deps += dependency('xext', version : '>=1.3.0')
-	lib_srcs += 'pugl/pugl/detail/x11.c'
-	lib_srcs += 'pugl/pugl/detail/x11_gl.c'
+	lib_srcs += join_paths('pugl', 'src', 'x11.c')
+	lib_srcs += join_paths('pugl', 'src', 'x11_gl.c')
 endif
 
 nk_pugl_gl = declare_dependency(

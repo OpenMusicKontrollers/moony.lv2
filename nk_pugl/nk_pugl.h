@@ -26,11 +26,6 @@
 extern C {
 #endif
 
-#include "pugl/pugl.h"
-#include "pugl/pugl_gl.h"
-
-#include <lv2/ui/ui.h>
-
 #if defined(__APPLE__)
 #	include <OpenGL/gl.h>
 #	include <OpenGL/glext.h>
@@ -42,6 +37,11 @@ extern C {
 #		include <X11/Xresource.h>
 #	endif
 #endif
+
+#include "pugl/pugl.h"
+#include "pugl/gl.h"
+
+#include <lv2/ui/ui.h>
 
 #define KEY_TAB '\t'
 #define KEY_NEWLINE '\n'
@@ -763,6 +763,14 @@ _nk_pugl_event_func(PuglView *view, const PuglEvent *e)
 
 	switch(e->type)
 	{
+		case PUGL_LOOP_ENTER:
+		{
+			// TODO
+		} break;
+		case PUGL_LOOP_LEAVE:
+		{
+			// TODO
+		} break;
 		case PUGL_BUTTON_PRESS:
 		{
 			const PuglEventButton *ev = (const PuglEventButton *)e;
@@ -1112,7 +1120,7 @@ nk_pugl_show(nk_pugl_window_t *win)
 		return;
 	}
 
-	puglShowWindow(win->view);
+	puglShow(win->view);
 	_nk_pugl_host_resize(win);
 }
 
@@ -1124,7 +1132,7 @@ nk_pugl_hide(nk_pugl_window_t *win)
 		return;
 	}
 
-	puglHideWindow(win->view);
+	puglHide(win->view);
 }
 
 NK_PUGL_API void
@@ -1277,7 +1285,7 @@ nk_pugl_icon_load(nk_pugl_window_t *win, const char *filename)
 	{
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-		puglEnterContext(win->view, false);
+		puglEnterContext(win->view);
 #pragma GCC diagnostic pop
 		{
 			glGenTextures(1, &tex);
@@ -1298,7 +1306,7 @@ nk_pugl_icon_load(nk_pugl_window_t *win, const char *filename)
 		}
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-		puglLeaveContext(win->view, false);
+		puglLeaveContext(win->view);
 #pragma GCC diagnostic pop
 
 		stbi_image_free(data);
@@ -1319,14 +1327,14 @@ nk_pugl_icon_unload(nk_pugl_window_t *win, struct nk_image img)
 	{
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-		puglEnterContext(win->view, false);
+		puglEnterContext(win->view);
 #pragma GCC diagnostic pop
 		{
 			glDeleteTextures(1, (const GLuint *)&img.handle.id);
 		}
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-		puglLeaveContext(win->view, false);
+		puglLeaveContext(win->view);
 #pragma GCC diagnostic pop
 	}
 }
