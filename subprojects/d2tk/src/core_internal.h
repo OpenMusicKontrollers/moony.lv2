@@ -42,6 +42,8 @@ typedef void (*d2tk_core_process_t)(void *data, d2tk_core_t *core,
 	const d2tk_com_t *com, d2tk_coord_t xo, d2tk_coord_t yo,
 	const d2tk_clip_t *clip, unsigned pass);
 typedef void (*d2tk_core_sprite_free_t)(void *data, uint8_t type, uintptr_t body);
+typedef int (*d2tk_core_text_extent_t)(void *data, size_t len, const char *buf,
+	d2tk_coord_t h);
 
 typedef struct _d2tk_body_move_to_t d2tk_body_move_to_t;
 typedef struct _d2tk_body_line_to_t d2tk_body_line_to_t;
@@ -82,6 +84,7 @@ struct _d2tk_core_driver_t {
 	d2tk_core_post_t post;
 	d2tk_core_end_t end;
 	d2tk_core_sprite_free_t sprite_free;
+	d2tk_core_text_extent_t text_extent;
 };
 
 struct _d2tk_body_move_to_t {

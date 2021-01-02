@@ -14,11 +14,63 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#ifndef EXAMPLES_CUBE_VIEW_H
+#define EXAMPLES_CUBE_VIEW_H
+
 #define GL_SILENCE_DEPRECATION 1
 
 #include "demo_utils.h"
 
 #include "pugl/gl.h"
+
+// clang-format off
+
+static const float cubeStripVertices[] = {
+	-1.0f,  1.0f,  1.0f, // Front top left
+	 1.0f,  1.0f,  1.0f, // Front top right
+	-1.0f, -1.0f,  1.0f, // Front bottom left
+	 1.0f, -1.0f,  1.0f, // Front bottom right
+	 1.0f, -1.0f, -1.0f, // Back bottom right
+	 1.0f,  1.0f,  1.0f, // Front top right
+	 1.0f,  1.0f, -1.0f, // Back top right
+	-1.0f,  1.0f,  1.0f, // Front top left
+	-1.0f,  1.0f, -1.0f, // Back top left
+	-1.0f, -1.0f,  1.0f, // Front bottom left
+	-1.0f, -1.0f, -1.0f, // Back bottom left
+	 1.0f, -1.0f, -1.0f, // Back bottom right
+	-1.0f,  1.0f, -1.0f, // Back top left
+	 1.0f,  1.0f, -1.0f  // Back top right
+};
+
+static const float cubeFrontLineLoop[] = {
+	-1.0f,  1.0f,  1.0f, // Front top left
+	 1.0f,  1.0f,  1.0f, // Front top right
+	 1.0f, -1.0f,  1.0f, // Front bottom right
+	-1.0f, -1.0f,  1.0f, // Front bottom left
+};
+
+static const float cubeBackLineLoop[] = {
+	-1.0f,  1.0f, -1.0f, // Back top left
+	 1.0f,  1.0f, -1.0f, // Back top right
+	 1.0f, -1.0f, -1.0f, // Back bottom right
+	-1.0f, -1.0f, -1.0f, // Back bottom left
+};
+
+static const float cubeSideLines[] = {
+	-1.0f,  1.0f,  1.0f, // Front top left
+	-1.0f,  1.0f, -1.0f, // Back top left
+
+	-1.0f, -1.0f,  1.0f, // Front bottom left
+	-1.0f, -1.0f, -1.0f, // Back bottom left
+
+	 1.0f,  1.0f,  1.0f, // Front top right
+	 1.0f,  1.0f, -1.0f, // Back top right
+
+	 1.0f, -1.0f,  1.0f, // Front bottom right
+	 1.0f, -1.0f, -1.0f, // Back bottom right
+};
+
+// clang-format on
 
 static inline void
 reshapeCube(const float width, const float height)
@@ -80,3 +132,5 @@ displayCube(PuglView* const view,
 	glDrawArrays(GL_LINES, 0, 8);
 	glDisableClientState(GL_VERTEX_ARRAY);
 }
+
+#endif // EXAMPLES_CUBE_VIEW_H

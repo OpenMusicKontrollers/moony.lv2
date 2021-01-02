@@ -777,6 +777,13 @@ d2tk_base_get_dimensions(d2tk_base_t *base, d2tk_coord_t *w, d2tk_coord_t *h);
 D2TK_API void
 d2tk_base_set_full_refresh(d2tk_base_t *base);
 
+D2TK_API void 
+d2tk_base_set_tooltip(d2tk_base_t *base, ssize_t lbl_len, const char *lbl,
+	d2tk_coord_t h);
+
+D2TK_API void
+d2tk_base_clear_tooltip(d2tk_base_t *base);
+
 #ifdef __cplusplus
 }
 #endif

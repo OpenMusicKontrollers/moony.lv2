@@ -68,6 +68,8 @@ struct _d2tk_base_t {
 	d2tk_id_t lastitem;
 
 	bool not_first_time;
+	bool unicode_mode;
+	uint32_t unicode_acc;
 
 	struct {
 		d2tk_coord_t x;
@@ -100,6 +102,12 @@ struct _d2tk_base_t {
 		char text_in [1024];
 		char text_out [1024];
 	} edit;
+
+	struct {
+		char buf [1024];
+		size_t len;
+		d2tk_coord_t h;
+	} tooltip;
 
 	const d2tk_style_t *style;
 
@@ -134,3 +142,7 @@ _d2tk_base_is_active_hot_horizontal_scroll(d2tk_base_t *base);
 
 void
 _d2tk_base_clear_chars(d2tk_base_t *base);
+
+d2tk_state_t
+_d2tk_base_tooltip_draw(d2tk_base_t *base, ssize_t lbl_len, const char *lbl,
+	d2tk_coord_t h);

@@ -76,16 +76,9 @@ glu_dep = dependency('glu',
 	static : static_link,
 	required : use_backend_nanovg)
 glew_dep = dependency('glew',
-	version : '>=2.1.0',
+	version : '>=2.0.0',
 	static : static_link,
-	required : false)
-if use_backend_nanovg.enabled() and not glew_dep.found()
-	# use embedded glew
-	glew_dep = declare_dependency(
-		compile_args : '-DGLEW_STATIC',
-		include_directories : include_directories('glew-2.1.0'),
-		sources : join_paths('glew-2.1.0', 'glew.c'))
-endif
+	required : use_backend_nanovg)
 if use_frontend_glfw.enabled()
 	glfw_dep = dependency('glfw3',
 		version : '>=3.3.0',
@@ -114,7 +107,7 @@ fontconfig_dep = dependency('fontconfig',
 deps = [m_dep, evdev_dep, vterm_dep, fontconfig_dep]
 links = []
 
-pugl_inc = include_directories('pugl')
+pugl_inc = include_directories('pugl/include')
 nanovg_inc = include_directories('nanovg/src')
 inc_dir = [pugl_inc, nanovg_inc]
 
@@ -152,6 +145,7 @@ lib_srcs = [
 	join_paths('src', 'base_combo.c'),
 	join_paths('src', 'base_textfield.c'),
 	join_paths('src', 'base_label.c'),
+	join_paths('src', 'base_tooltip.c'),
 	join_paths('src', 'base_link.c'),
 	join_paths('src', 'base_dial.c'),
 	join_paths('src', 'base_spinner.c'),
@@ -234,7 +228,7 @@ example_glfw_srcs = [
 
 pugl_srcs = [
 	join_paths('src', 'frontend_pugl.c'),
-	join_paths('pugl', 'pugl', 'detail', 'implementation.c')
+	join_paths('pugl', 'src', 'implementation.c')
 ]
 
 pugl_gl_srcs = []
@@ -275,23 +269,24 @@ if host_machine.system() == 'windows'
 	deps += cc.find_library('opengl32', required : use_frontend_pugl)
 	deps += cc.find_library('gdi32', required : use_frontend_pugl)
 	deps += cc.find_library('ws2_32', required : true)
-	pugl_srcs += 'pugl/pugl/detail/win.c'
-	pugl_gl_srcs += 'pugl/pugl/detail/win_gl.c'
-	pugl_cairo_srcs += 'pugl/pugl/detail/win_cairo.c'
+	pugl_srcs += join_paths('pugl', 'src', 'win.c')
+	pugl_gl_srcs += join_paths('pugl', 'src', 'win_gl.c')
+	pugl_cairo_srcs += join_paths('pugl', 'src', 'win_cairo.c')
 elif host_machine.system() == 'darwin'
 	add_languages('objc')
 	links += ['-framework', 'OpenGL']
 	links += ['-framework', 'Cocoa']
-	pugl_srcs += 'pugl/pugl/detail/mac.m'
-	pugl_gl_srcs += 'pugl/pugl/detail/mac_gl.m'
-	pugl_cairo_srcs += 'pugl/pugl/detail/mac_cairo.m'
+	pugl_srcs += join_paths('pugl','src', 'mac.m')
+	pugl_gl_srcs += join_paths('pugl', 'src', 'mac_gl.m')
+	pugl_cairo_srcs += join_paths('pugl', 'src', 'mac_cairo.m')
 else
 	deps += dependency('gl', required : use_frontend_pugl)
 	deps += dependency('x11', version : '>=1.6.0', required : use_frontend_pugl)
 	deps += dependency('xext', version : '>=1.3.0', required : use_frontend_pugl)
-	pugl_srcs += 'pugl/pugl/detail/x11.c'
-	pugl_gl_srcs += 'pugl/pugl/detail/x11_gl.c'
-	pugl_cairo_srcs += 'pugl/pugl/detail/x11_cairo.c'
+	pugl_srcs += join_paths('pugl', 'src', 'x11.c')
+	pugl_srcs += join_paths('pugl', 'src', 'x11_stub.c')
+	pugl_gl_srcs += join_paths('pugl', 'src', 'x11_gl.c')
+	pugl_cairo_srcs += join_paths('pugl', 'src', 'x11_cairo.c')
 endif
 
 if use_backend_cairo.enabled()

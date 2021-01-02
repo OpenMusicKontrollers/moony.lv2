@@ -288,6 +288,24 @@ d2tk_cairo_sprite_free(void *data __attribute__((unused)),
 	}
 }
 
+static inline int
+d2tk_cairo_text_extent(void *data, size_t len, const char *buf, d2tk_coord_t h)
+{
+	d2tk_backend_cairo_t *backend = data;
+	cairo_t *ctx = backend->ctx;
+
+	char *lbl = alloca(len + 1);
+	strncpy(lbl, buf, len); 
+
+	cairo_set_font_size(ctx, h);
+	//FIXME we need to take font face into account, too
+
+	cairo_text_extents_t extents;
+	cairo_text_extents(ctx, lbl, &extents);
+
+	return extents.width;
+}
+
 static inline void
 _d2tk_cairo_free_font_face(void *data)
 {
@@ -836,5 +854,6 @@ const d2tk_core_driver_t d2tk_core_driver = {
 	.process = d2tk_cairo_process,
 	.post = d2tk_cairo_post,
 	.end = d2tk_cairo_end,
-	.sprite_free = d2tk_cairo_sprite_free
+	.sprite_free = d2tk_cairo_sprite_free,
+	.text_extent = d2tk_cairo_text_extent
 };

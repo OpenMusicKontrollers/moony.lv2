@@ -336,7 +336,7 @@ static inline void
 d2tk_nanovg_sprite_free(void *data, uint8_t type, uintptr_t body)
 {
 	d2tk_backend_nanovg_t *backend = data;
-	NVGcontext *ctx = backend->ctx;;
+	NVGcontext *ctx = backend->ctx;
 
 	switch((sprite_type_t)type)
 	{
@@ -361,6 +361,18 @@ d2tk_nanovg_sprite_free(void *data, uint8_t type, uintptr_t body)
 			// nothing to do
 		} break;
 	}
+}
+
+static inline int 
+d2tk_nanovg_text_extent(void *data, size_t len, const char *buf, d2tk_coord_t h)
+{
+	d2tk_backend_nanovg_t *backend = data;
+	NVGcontext *ctx = backend->ctx;
+
+	nvgFontSize(ctx, h);
+	//FIXME we need to take font face into account, too
+
+	return nvgTextBounds(ctx, 0, 0, buf, &buf[len], NULL);
 }
 
 static inline void
@@ -834,5 +846,6 @@ const d2tk_core_driver_t d2tk_core_driver = {
 	.process = d2tk_nanovg_process,
 	.post = d2tk_nanovg_post,
 	.end = d2tk_nanovg_end,
-	.sprite_free = d2tk_nanovg_sprite_free
+	.sprite_free = d2tk_nanovg_sprite_free,
+	.text_extent = d2tk_nanovg_text_extent
 };
