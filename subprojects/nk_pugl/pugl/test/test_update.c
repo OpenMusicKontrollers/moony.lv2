@@ -24,7 +24,7 @@
 #include "test_utils.h"
 
 #include "pugl/pugl.h"
-#include "pugl/pugl_stub.h"
+#include "pugl/stub.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -105,7 +105,7 @@ main(int argc, char** argv)
 
 	// Create and show window
 	assert(!puglRealize(app.view));
-	assert(!puglShowWindow(app.view));
+	assert(!puglShow(app.view));
 
 	// Tick until an expose happens
 	while (app.state < EXPOSED1) {

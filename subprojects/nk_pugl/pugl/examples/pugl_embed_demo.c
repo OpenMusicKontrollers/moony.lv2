@@ -14,18 +14,12 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-/**
-   @file pugl_embed_demo.c
-   @brief An example of embedding a view in another.
-*/
-
 #include "cube_view.h"
 #include "demo_utils.h"
 #include "test/test_utils.h"
 
 #include "pugl/gl.h"
 #include "pugl/pugl.h"
-#include "pugl/pugl_gl.h"
 
 #include <math.h>
 #include <stdbool.h>
@@ -336,8 +330,8 @@ main(int argc, char** argv)
 		                puglStrerror(st));
 	}
 
-	puglShowWindow(app.parent);
-	puglShowWindow(app.child);
+	puglShow(app.parent);
+	puglShow(app.child);
 
 	puglStartTimer(app.child, reverseTimerId, 3.6);
 

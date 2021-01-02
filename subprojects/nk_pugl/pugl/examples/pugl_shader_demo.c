@@ -14,28 +14,28 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-/**
-   @file pugl_shader_demo.c
-   @brief An example of drawing with OpenGL 3/4.
+/*
+  An example of drawing with OpenGL 3/4.
 
-   This is an example of using OpenGL for pixel-perfect 2D drawing.  It uses
-   pixel coordinates for positions and sizes so that things work roughly like a
-   typical 2D graphics API.
+  This is an example of using OpenGL for pixel-perfect 2D drawing.  It uses
+  pixel coordinates for positions and sizes so that things work roughly like a
+  typical 2D graphics API.
 
-   The program draws a bunch of rectangles with borders, using instancing.
-   Each rectangle has origin, size, and fill color attributes, which are shared
-   for all four vertices.  On each frame, a single buffer with all the
-   rectangle data is sent to the GPU, and everything is drawn with a single
-   draw call.
+  The program draws a bunch of rectangles with borders, using instancing.
+  Each rectangle has origin, size, and fill color attributes, which are shared
+  for all four vertices.  On each frame, a single buffer with all the
+  rectangle data is sent to the GPU, and everything is drawn with a single
+  draw call.
 
-   This is not particularly realistic or optimal, but serves as a decent rough
-   benchmark for how much simple geometry you can draw.  The number of
-   rectangles can be given on the command line.  For reference, it begins to
-   struggle to maintain 60 FPS on my machine (1950x + Vega64) with more than
-   about 100000 rectangles.
+  This is not particularly realistic or optimal, but serves as a decent rough
+  benchmark for how much simple geometry you can draw.  The number of
+  rectangles can be given on the command line.  For reference, it begins to
+  struggle to maintain 60 FPS on my machine (1950x + Vega64) with more than
+  about 100000 rectangles.
 */
 
 #include "demo_utils.h"
+#include "file_utils.h"
 #include "rects.h"
 #include "shader_utils.h"
 #include "test/test_utils.h"
@@ -44,15 +44,17 @@
 
 #include "pugl/gl.h"
 #include "pugl/pugl.h"
-#include "pugl/pugl_gl.h"
 
+#include <math.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-static const int defaultWidth  = 512;
-static const int defaultHeight = 512;
+static const int       defaultWidth  = 512;
+static const int       defaultHeight = 512;
+static const uintptr_t resizeTimerId = 1u;
 
 typedef struct
 {
@@ -61,6 +63,7 @@ typedef struct
 
 typedef struct
 {
+	const char*     programPath;
 	PuglWorld*      world;
 	PuglView*       view;
 	PuglTestOptions opts;
@@ -71,6 +74,8 @@ typedef struct
 	GLuint          vbo;
 	GLuint          instanceVbo;
 	GLuint          ibo;
+	double          lastDrawDuration;
+	double          lastFrameEndTime;
 	unsigned        framesDrawn;
 	int             glMajorVersion;
 	int             glMinorVersion;
@@ -137,6 +142,9 @@ onExpose(PuglView* view)
 	                        (GLsizei)(app->numRects * 4));
 
 	++app->framesDrawn;
+
+	app->lastFrameEndTime = puglGetTime(puglGetWorld(view));
+	app->lastDrawDuration = app->lastFrameEndTime - time;
 }
 
 static PuglStatus
@@ -161,9 +169,22 @@ onEvent(PuglView* view, const PuglEvent* event)
 		break;
 	case PUGL_EXPOSE: onExpose(view); break;
 	case PUGL_CLOSE: app->quit = 1; break;
+	case PUGL_LOOP_ENTER:
+		puglStartTimer(view,
+		               resizeTimerId,
+		               1.0 / (double)puglGetViewHint(view, PUGL_REFRESH_RATE));
+		break;
+	case PUGL_LOOP_LEAVE:
+		puglStopTimer(view, resizeTimerId);
+		break;
 	case PUGL_KEY_PRESS:
 		if (event->key.key == 'q' || event->key.key == PUGL_KEY_ESCAPE) {
 			app->quit = 1;
+		}
+		break;
+	case PUGL_TIMER:
+		if (event->timer.id == resizeTimerId) {
+			puglPostRedisplay(view);
 		}
 		break;
 	default: break;
@@ -184,14 +205,18 @@ makeRects(const size_t numRects)
 }
 
 static char*
-loadShader(const char* const path)
+loadShader(const char* const programPath, const char* const name)
 {
+	char* const path = resourcePath(programPath, name);
+	fprintf(stderr, "Loading shader %s\n", path);
+
 	FILE* const file = fopen(path, "r");
 	if (!file) {
 		logError("Failed to open '%s'\n", path);
 		return NULL;
 	}
 
+	free(path);
 	fseek(file, 0, SEEK_END);
 	const size_t fileSize = (size_t)ftell(file);
 
@@ -284,9 +309,14 @@ setupGl(PuglTestApp* app)
 	                                : "shaders/header_420.glsl");
 
 	// Load shader sources
-	char* const headerSource   = loadShader(headerFile);
-	char* const vertexSource   = loadShader("shaders/rect.vert");
-	char* const fragmentSource = loadShader("shaders/rect.frag");
+	char* const headerSource = loadShader(app->programPath, headerFile);
+
+	char* const vertexSource = loadShader(app->programPath,
+	                                      "shaders/rect.vert");
+
+	char* const fragmentSource = loadShader(app->programPath,
+	                                        "shaders/rect.frag");
+
 	if (!vertexSource || !fragmentSource) {
 		logError("Failed to load shader sources\n");
 		return PUGL_FAILURE;
@@ -386,6 +416,7 @@ main(int argc, char** argv)
 {
 	PuglTestApp app = {0};
 
+	app.programPath    = argv[0];
 	app.glMajorVersion = 3;
 	app.glMinorVersion = 3;
 
@@ -405,12 +436,39 @@ main(int argc, char** argv)
 	}
 
 	// Show window
-	puglShowWindow(app.view);
+	printViewHints(app.view);
+	puglShow(app.view);
+
+	// Calculate ideal frame duration to drive the main loop at a good rate
+	const int    refreshRate   = puglGetViewHint(app.view, PUGL_REFRESH_RATE);
+	const double frameDuration = 1.0 / (double)refreshRate;
 
 	// Grind away, drawing continuously
-	PuglFpsPrinter fpsPrinter = {puglGetTime(app.world)};
+	const double   startTime  = puglGetTime(app.world);
+	PuglFpsPrinter fpsPrinter = {startTime};
 	while (!app.quit) {
-		puglUpdate(app.world, 0.0);
+		/* To minimize input latency and get smooth performance during window
+		   resizing, we want to poll for events as long as possible before
+		   starting to draw the next frame.  This ensures that as many events
+		   are consumed as possible before starting to draw, or, equivalently,
+		   that the next rendered frame represents the latest events possible.
+		   This is particularly important for mouse input and "live" window
+		   resizing, where many events tend to pile up within a frame.
+
+		   To do this, we keep track of the time when the last frame was
+		   finished drawing, and how long it took to expose (and assume this is
+		   relatively stable).  Then, we can calculate how much time there is
+		   from now until the time when we should start drawing to not miss the
+		   deadline, and use that as the timeout for puglUpdate().
+		*/
+
+		const double now              = puglGetTime(app.world);
+		const double nextFrameEndTime = app.lastFrameEndTime + frameDuration;
+		const double nextExposeTime   = nextFrameEndTime - app.lastDrawDuration;
+		const double timeUntilNext    = nextExposeTime - now;
+		const double timeout          = app.opts.sync ? timeUntilNext : 0.0;
+
+		puglUpdate(app.world, fmax(0.0, timeout));
 		puglPrintFps(app.world, &fpsPrinter, &app.framesDrawn);
 	}
 
