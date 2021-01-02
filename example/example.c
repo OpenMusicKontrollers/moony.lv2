@@ -89,7 +89,7 @@ static const char *bar_lbl [BAR_MAX] = {
 	[BAR_PTY]        = "PTY",
 #endif
 #if D2TK_SPAWN
-	[BAR_SPAWN]      = "SPAWN",
+	[BAR_SPAWN]      = "Spawn",
 #endif
 #if !defined(_WIN32) && !defined(__APPLE__)
 	[BAR_BROWSER]    = "Browser",
@@ -551,7 +551,15 @@ _render_c_table_abs(d2tk_base_t *base, const d2tk_rect_t *rect)
 		const d2tk_rect_t *rect = d2tk_table_get_rect(tab);
 		const unsigned k = d2tk_table_get_index(tab);
 
-		d2tk_base_button(base, D2TK_ID_IDX(k), rect);
+		const d2tk_state_t state = d2tk_base_button(base, D2TK_ID_IDX(k), rect);
+
+		if(d2tk_state_is_over(state))
+		{
+			char lbl [32];
+			const size_t lbl_len = snprintf(lbl, sizeof(lbl), "tooltip-%u", k);
+
+			d2tk_base_set_tooltip(base, lbl_len, lbl, 20); //FIXME
+		}
 	}
 }
 

@@ -14,13 +14,8 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-/**
-   @file rects.h
-   @brief Utilities for rectangle animation demos.
-
-   This file contains common definitions for demos that show an animation of
-   many 2D rectangles.
-*/
+#ifndef EXAMPLES_RECTS_H
+#define EXAMPLES_RECTS_H
 
 #include <math.h>
 #include <stddef.h>
@@ -80,3 +75,5 @@ moveRect(Rect* const  rect,
 	               (cosf((float)time * rect->size[1] / 64.0f + normal) + 1.0f) /
 	               2.0f;
 }
+
+#endif // EXAMPLES_RECTS_H

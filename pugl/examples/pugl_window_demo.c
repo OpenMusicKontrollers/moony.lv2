@@ -14,17 +14,16 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-/**
-   @file pugl_window_demo.c
-   @brief A demonstration of multiple Pugl windows.
+/*
+  A demonstration of using multiple top-level windows.
 */
 
 #include "cube_view.h"
 #include "demo_utils.h"
 #include "test/test_utils.h"
 
+#include "pugl/gl.h"
 #include "pugl/pugl.h"
-#include "pugl/pugl_gl.h"
 
 #include <math.h>
 #include <stdbool.h>
@@ -236,7 +235,7 @@ main(int argc, char** argv)
 			return logError("Failed to create window (%s)\n", puglStrerror(st));
 		}
 
-		puglShowWindow(view);
+		puglShow(view);
 	}
 
 	PuglFpsPrinter fpsPrinter  = {puglGetTime(app.world)};

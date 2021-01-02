@@ -1684,3 +1684,10 @@ d2tk_core_get_font_path(d2tk_core_t *core, const char *bundle_path,
 
 	return ret;
 }
+
+D2TK_API int
+d2tk_core_text_extent(d2tk_core_t *core, size_t len, const char *buf,
+	d2tk_coord_t h)
+{
+	return core->driver->text_extent(core->data, len, buf, h);
+}

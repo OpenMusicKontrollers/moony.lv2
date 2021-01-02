@@ -212,6 +212,10 @@ d2tk_core_get_dimensions(d2tk_core_t *core, d2tk_coord_t *w, d2tk_coord_t *h);
 D2TK_API void
 d2tk_core_set_full_refresh(d2tk_core_t *core);
 
+D2TK_API int
+d2tk_core_text_extent(d2tk_core_t *core, size_t len, const char *buf,
+	d2tk_coord_t h);
+
 #ifdef __cplusplus
 }
 #endif

@@ -29,9 +29,9 @@
 
 #include <pugl/pugl.h>
 #if defined(PUGL_HAVE_CAIRO)
-#	include <pugl/pugl_cairo.h>
+#	include <pugl/cairo.h>
 #else
-#	include <pugl/pugl_gl.h>
+#	include <pugl/gl.h>
 #endif
 
 #include "core_internal.h"
@@ -96,6 +96,14 @@ _d2tk_frontend_event_func(PuglView *view, const PuglEvent *e)
 
 	switch(e->type)
 	{
+		case PUGL_LOOP_ENTER:
+		{
+			// TODO
+		} break;
+		case PUGL_LOOP_LEAVE:
+		{
+			// TODO
+		} break;
 		case PUGL_CONFIGURE:
 		{
 			d2tk_coord_t w, h;
@@ -538,7 +546,7 @@ d2tk_frontend_free(d2tk_frontend_t *dpugl)
 		{
 			if(puglGetVisible(dpugl->view))
 			{
-				puglHideWindow(dpugl->view);
+				puglHide(dpugl->view);
 			}
 			puglFreeView(dpugl->view);
 		}
@@ -668,7 +676,7 @@ d2tk_pugl_new(const d2tk_pugl_config_t *config, uintptr_t *widget)
 		fprintf(stderr, "puglCreateWindow failed\n");
 		goto fail;
 	}
-	puglShowWindow(dpugl->view);
+	puglShow(dpugl->view);
 
 	if(widget)
 	{

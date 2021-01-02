@@ -391,12 +391,46 @@ _d2tk_base_clear_chars(d2tk_base_t *base)
 	base->keys.nchars = 0;
 }
 
-D2TK_API void
-d2tk_base_append_utf8(d2tk_base_t *base, utf8_int32_t utf8)
+static void
+_d2tk_base_append_utf8(d2tk_base_t *base, utf8_int32_t utf8)
 {
 	if(base->keys.nchars < sizeof(base->keys.nchars))
 	{
 		base->keys.chars[base->keys.nchars++] = utf8;
+	}
+}
+
+D2TK_API void
+d2tk_base_append_utf8(d2tk_base_t *base, utf8_int32_t utf8)
+{
+	if(  !base->unicode_mode
+		&& d2tk_base_get_modmask(base, D2TK_MODMASK_CTRL, false)
+		&& d2tk_base_get_modmask(base, D2TK_MODMASK_SHIFT, false)
+		&& (utf8 == 'u' - 0x60) ) // FIXME where the hello does the offset come from?
+	{
+		base->unicode_acc = 0;
+		base->unicode_mode = true;
+	}
+	else if(base->unicode_mode)
+	{
+		if(utf8 == ' ')
+		{
+			_d2tk_base_append_utf8(base, base->unicode_acc);
+
+			base->unicode_mode = false;
+		}
+		else
+		{
+			char str [2] = { utf8, 0x0 };
+			const uint32_t fig = strtol(str, NULL, 16);
+
+			base->unicode_acc <<= 4;
+			base->unicode_acc |= fig;
+		}
+	}
+	else
+	{
+		_d2tk_base_append_utf8(base, utf8);
 	}
 }
 
@@ -792,6 +826,9 @@ d2tk_base_pre(d2tk_base_t *base, void *pctx)
 	// reset clear-focus flag
 	base->clear_focus = false;
 
+	// reset tooltip
+	d2tk_base_clear_tooltip(base);
+
 	const d2tk_style_t *style = d2tk_base_get_style(base);
 	d2tk_core_set_bg_color(base->core, style->bg_color);
 
@@ -801,6 +838,13 @@ d2tk_base_pre(d2tk_base_t *base, void *pctx)
 D2TK_API void
 d2tk_base_post(d2tk_base_t *base)
 {
+	// draw tooltip
+	if(base->tooltip.len > 0)
+	{
+		_d2tk_base_tooltip_draw(base, base->tooltip.len, base->tooltip.buf,
+			base->tooltip.h);
+	}
+
 	// clear scroll
 	base->scroll.dx = 0.f;
 	base->scroll.dy = 0.f;

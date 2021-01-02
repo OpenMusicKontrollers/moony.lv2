@@ -14,16 +14,11 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-/**
-   @file pugl_cairo_demo.c
-   @brief An example of drawing with Cairo.
-*/
-
 #include "demo_utils.h"
 #include "test/test_utils.h"
 
+#include "pugl/cairo.h"
 #include "pugl/pugl.h"
-#include "pugl/pugl_cairo.h"
 
 #include <cairo.h>
 
@@ -252,7 +247,7 @@ main(int argc, char** argv)
 		return logError("Failed to create window (%s)\n", puglStrerror(st));
 	}
 
-	puglShowWindow(view);
+	puglShow(view);
 
 	PuglFpsPrinter fpsPrinter = { puglGetTime(app.world) };
 	const double   timeout    = app.opts.continuous ? (1 / 60.0) : -1.0;
