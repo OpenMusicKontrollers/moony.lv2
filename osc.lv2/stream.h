@@ -124,7 +124,7 @@ static const char *ser_prefix = "osc.serial://";
 //FIXME serial
 
 
-static int
+static inline int
 _lv2_osc_stream_interface_attribs(int fd, int speed)
 {
 	struct termios tty;
@@ -163,7 +163,7 @@ _lv2_osc_stream_interface_attribs(int fd, int speed)
 
 #define LV2_OSC_STREAM_ERRNO(EV, ERRNO) ( (EV & (~LV2_OSC_ERR)) | (ERRNO) )
 
-static void
+static inline void
 _close_socket(int *fd)
 {
 	if(fd)
@@ -177,7 +177,7 @@ _close_socket(int *fd)
 	}
 }
 
-static int
+static inline int
 lv2_osc_stream_deinit(LV2_OSC_Stream *stream)
 {
 	_close_socket(&stream->fd);
@@ -186,7 +186,7 @@ lv2_osc_stream_deinit(LV2_OSC_Stream *stream)
 	return 0;
 }
 
-static int
+static inline int
 _lv2_osc_stream_reinit(LV2_OSC_Stream *stream)
 {
 	LV2_OSC_Enum ev = LV2_OSC_NONE;
@@ -661,7 +661,7 @@ fail:
 	return ev;
 }
 
-static int
+static inline int
 lv2_osc_stream_init(LV2_OSC_Stream *stream, const char *url,
 	const LV2_OSC_Driver *driv, void *data)
 {
@@ -682,7 +682,7 @@ lv2_osc_stream_init(LV2_OSC_Stream *stream, const char *url,
 #define SLIP_ESC_REPLACE	0335	// 0xDD, 221, ESC ESC_ESC means ESC data byte
 
 // SLIP encoding
-static size_t
+static inline size_t
 lv2_osc_slip_encode_inline(uint8_t *dst, size_t len)
 {
 	if(len == 0)
@@ -732,7 +732,7 @@ lv2_osc_slip_encode_inline(uint8_t *dst, size_t len)
 }
 
 // SLIP decoding
-static size_t 
+static inline size_t 
 lv2_osc_slip_decode_inline(uint8_t *dst, size_t len, size_t *size)
 {
 	const uint8_t *src = dst;
@@ -778,7 +778,7 @@ lv2_osc_slip_decode_inline(uint8_t *dst, size_t len, size_t *size)
 	return 0;
 }
 
-static LV2_OSC_Enum
+static inline LV2_OSC_Enum
 _lv2_osc_stream_run_udp(LV2_OSC_Stream *stream)
 {
 	LV2_OSC_Enum ev = LV2_OSC_NONE;
@@ -859,7 +859,7 @@ _lv2_osc_stream_run_udp(LV2_OSC_Stream *stream)
 	return ev;
 }
 
-static LV2_OSC_Enum
+static inline LV2_OSC_Enum
 _lv2_osc_stream_run_tcp(LV2_OSC_Stream *stream)
 {
 	LV2_OSC_Enum ev = LV2_OSC_NONE;
@@ -1148,7 +1148,7 @@ _lv2_osc_stream_run_tcp(LV2_OSC_Stream *stream)
 	return ev;
 }
 
-static LV2_OSC_Enum
+static inline LV2_OSC_Enum
 _lv2_osc_stream_run_ser(LV2_OSC_Stream *stream)
 {
 	LV2_OSC_Enum ev = LV2_OSC_NONE;
@@ -1350,7 +1350,7 @@ _lv2_osc_stream_run_ser(LV2_OSC_Stream *stream)
 	return ev;
 }
 
-static LV2_OSC_Enum
+static inline LV2_OSC_Enum
 lv2_osc_stream_run(LV2_OSC_Stream *stream)
 {
 	LV2_OSC_Enum ev = LV2_OSC_NONE;
@@ -1374,7 +1374,7 @@ lv2_osc_stream_run(LV2_OSC_Stream *stream)
 	return ev;
 }
 
-static int
+static inline int
 lv2_osc_stream_get_file_descriptors(LV2_OSC_Stream *stream, int fds [2])
 {
 	if(!fds)
@@ -1388,7 +1388,7 @@ lv2_osc_stream_get_file_descriptors(LV2_OSC_Stream *stream, int fds [2])
 	return 0;
 }
 
-static LV2_OSC_Enum
+static inline LV2_OSC_Enum
 lv2_osc_stream_pollin(LV2_OSC_Stream *stream, int timeout_ms)
 {
 	int fd [2];
