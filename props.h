@@ -899,11 +899,58 @@ props_unmap(props_t *props, LV2_URID property)
 	return NULL;
 }
 
+static inline int
+_copy_file(const char *to, const char *from)
+{
+	FILE *dst = NULL;
+	FILE *src = NULL;
+	int ch;
+
+	dst = fopen(to, "wb");
+	if(!dst)
+	{
+		return 1;
+	}
+
+	src = fopen(from, "rb");
+	if(!src)
+	{
+		fclose(dst);
+
+		return 1;
+	}
+
+	while( (ch = fgetc(src)) != EOF)
+	{
+		fputc(ch, dst);
+	}
+
+	fclose(dst);
+	fclose(src);
+
+	return 0;
+}
+
+static inline void
+_free_path(const LV2_State_Free_Path *free_path, char *path)
+{
+	if(free_path && free_path->free_path)
+	{
+		free_path->free_path(free_path->handle, path);
+	}
+	else
+	{
+		free(path);
+	}
+}
+
 static inline LV2_State_Status
 props_save(props_t *props, LV2_State_Store_Function store,
 	LV2_State_Handle state, uint32_t flags, const LV2_Feature *const *features)
 {
 	const LV2_State_Map_Path *map_path = NULL;
+	const LV2_State_Make_Path *make_path = NULL;
+	const LV2_State_Free_Path *free_path = NULL;
 
 	// set POD flag if not already set by host
 	flags |= LV2_STATE_IS_POD;
@@ -913,7 +960,14 @@ props_save(props_t *props, LV2_State_Store_Function store,
 		if(!strcmp(features[i]->URI, LV2_STATE__mapPath))
 		{
 			map_path = features[i]->data;
-			break;
+		}
+		else if(!strcmp(features[i]->URI, LV2_STATE__makePath))
+		{
+			make_path = features[i]->data;
+		}
+		else if(!strcmp(features[i]->URI, LV2_STATE__freePath))
+		{
+			free_path = features[i]->data;
 		}
 	}
 
@@ -935,18 +989,41 @@ props_save(props_t *props, LV2_State_Store_Function store,
 
 			_props_impl_unlock(impl, PROP_STATE_NONE);
 
-			if( map_path && (impl->type == props->urid.atom_path) )
+			if(  map_path && map_path->abstract_path
+				&& (impl->type == props->urid.atom_path) )
 			{
-				const char *path = strstr(body, "file://")
+				const char *path = strstr(body, "file://") == body
 					? (char *)body + 7 // skip "file://"
 					: (char *)body;
-				char *abstract = map_path->abstract_path(map_path->handle, path);
+
+				char *abstract = NULL;
+
+				if(  make_path && make_path->path
+					&& (strstr(path, "/tmp") == path) )
+				{
+					char *absolute = make_path->path(make_path->handle, basename(path));
+
+					if(absolute)
+					{
+						if(_copy_file(absolute, path) == 0)
+						{
+							abstract = map_path->abstract_path(map_path->handle, absolute);
+						}
+
+						_free_path(free_path, absolute);
+					}
+				}
+				else
+				{
+					abstract = map_path->abstract_path(map_path->handle, path);
+				}
+
 				if(abstract)
 				{
 					const uint32_t sz = strlen(abstract) + 1;
 					store(state, impl->property, abstract, sz, impl->type, flags);
 
-					free(abstract);
+					_free_path(free_path, abstract);
 				}
 			}
 			else // !Path
@@ -967,11 +1044,18 @@ props_restore(props_t *props, LV2_State_Retrieve_Function retrieve,
 	const LV2_Feature *const *features)
 {
 	const LV2_State_Map_Path *map_path = NULL;
+	const LV2_State_Free_Path *free_path = NULL;
 
 	for(unsigned i = 0; features[i]; i++)
 	{
 		if(!strcmp(features[i]->URI, LV2_STATE__mapPath))
+		{
 			map_path = features[i]->data;
+		}
+		if(!strcmp(features[i]->URI, LV2_STATE__freePath))
+		{
+			free_path = features[i]->data;
+		}
 	}
 
 	for(unsigned i = 0; i < props->nimpls; i++)
@@ -990,7 +1074,8 @@ props_restore(props_t *props, LV2_State_Retrieve_Function retrieve,
 			&& (type == impl->type)
 			&& ( (impl->def->max_size == 0) || (size <= impl->def->max_size) ) )
 		{
-			if(map_path && (type == props->urid.atom_path) )
+			if(  map_path && map_path->absolute_path
+				&& (type == props->urid.atom_path) )
 			{
 				char *absolute = map_path->absolute_path(map_path->handle, body);
 				if(absolute)
@@ -1004,7 +1089,7 @@ props_restore(props_t *props, LV2_State_Retrieve_Function retrieve,
 
 					_props_impl_unlock(impl, PROP_STATE_RESTORE);
 
-					free(absolute);
+					_free_path(free_path, absolute);
 				}
 			}
 			else // !Path
