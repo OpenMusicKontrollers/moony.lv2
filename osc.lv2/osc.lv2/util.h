@@ -72,7 +72,7 @@ static const char valid_format_chars [] = {
 	'\0'
 };
 
-static bool
+static inline bool
 lv2_osc_pattern_match(const char *from, const char *name, size_t len)
 {
 #if !defined(_WIN32)
@@ -146,7 +146,7 @@ lv2_osc_pattern_match(const char *from, const char *name, size_t len)
 #endif
 }
 
-static void
+static inline void
 _lv2_osc_hooks_internal(const char *path, const char *from,
 	const LV2_Atom_Tuple *arguments, const LV2_OSC_Hook *hooks)
 {
@@ -177,7 +177,7 @@ _lv2_osc_hooks_internal(const char *path, const char *from,
 /**
    TODO
 */
-static void
+static inline void
 lv2_osc_hooks(const char *path, const LV2_Atom_Tuple *arguments, void *data)
 {
 	const LV2_OSC_Hook *hooks = data;
