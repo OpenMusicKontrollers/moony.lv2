@@ -47,6 +47,12 @@ dsp_deps = [m_dep, lv2_dep, cairo_dep, thread_dep]
 nk_ui_deps = [m_dep, lv2_dep, cairo_dep, thread_dep, nk_pugl_dep]
 d2tk_ui_deps = [m_dep, lv2_dep, d2tk_dep]
 
+if cc.has_member('LV2UI_Request_Value', 'request',
+		prefix : '#include <lv2/lv2plug.in/ns/extensions/ui/ui.h>')
+	add_project_arguments('-D_LV2_HAS_REQUEST_VALUE', language : 'c')
+	message('building with ui:requestValue support')
+endif
+
 if host_machine.system() == 'windows'
 	# nothing to do for DSP
 elif host_machine.system() == 'darwin'
@@ -522,6 +528,49 @@ configure_file(
 	input : join_paths('logo', 'moony_logo.png'),
 	output : 'moony_logo.png',
 	copy : true,
+	install : true,
+	install_dir : inst_dir)
+
+alert_triangle_png = configure_file(
+	input : join_paths('png2', 'alert-triangle.png'),
+	output : 'alert-triangle.png',
+	copy : true,
+	install : true,
+	install_dir : inst_dir)
+clipboard_png = configure_file(
+	input : join_paths('png2', 'clipboard.png'),
+	output : 'clipboard.png',
+	copy: true,
+	install : true,
+	install_dir : inst_dir)
+copy_png = configure_file(
+	input : join_paths('png2', 'copy.png'),
+	output : 'copy.png',
+	copy: true,
+	install : true,
+	install_dir : inst_dir)
+delete_png = configure_file(
+	input : join_paths('png2', 'delete.png'),
+	output : 'delete.png',
+	copy: true,
+	install : true,
+	install_dir : inst_dir)
+eye_off_png = configure_file(
+	input : join_paths('png2', 'eye-off.png'),
+	output : 'eye-off.png',
+	copy: true,
+	install : true,
+	install_dir : inst_dir)
+eye_png = configure_file(
+	input : join_paths('png2', 'eye.png'),
+	output : 'eye.png',
+	copy: true,
+	install : true,
+	install_dir : inst_dir)
+save_png = configure_file(
+	input : join_paths('png2', 'save.png'),
+	output : 'save.png',
+	copy: true,
 	install : true,
 	install_dir : inst_dir)
 

@@ -100,6 +100,7 @@ struct _atom_ser_t {
 #define MOONY__syntax					MOONY_URI"#syntax"
 
 #define MOONY_EDITOR_HIDDEN_URI	MOONY_URI"#editorHidden"
+#define MOONY_GRAPH_HIDDEN_URI	MOONY_URI"#graphHidden"
 #define MOONY_LOG_HIDDEN_URI	MOONY_URI"#logHidden"
 #define MOONY_LOG_FOLLOW_URI	MOONY_URI"#logFollow"
 #define MOONY_LOG_RESET_URI	MOONY_URI"#logReset"
@@ -230,6 +231,7 @@ struct _moony_t {
 		LV2_URID moony_panic;
 		LV2_URID moony_state;
 		LV2_URID moony_editorHidden;
+		LV2_URID moony_graphHidden;
 		LV2_URID moony_logHidden;
 		LV2_URID moony_logFollow;
 		LV2_URID moony_logReset;
@@ -321,6 +323,7 @@ struct _moony_t {
 	bool testing;
 
 	atomic_int editor_hidden;
+	atomic_int graph_hidden;
 	atomic_int log_hidden;
 	atomic_int log_follow;
 	atomic_int log_reset;

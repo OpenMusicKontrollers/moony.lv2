@@ -40,20 +40,7 @@
 #define LV2_CANVAS_RENDER_NANOVG
 #include <canvas.lv2/render.h>
 
-#define GLYPH_W 7
-#define GLYPH_H (GLYPH_W * 2)
-
-#define FPS 25
-
-#define DEFAULT_FG 0xddddddff
-#define DEFAULT_BG 0x222222ff
-
-#define NROWS_MAX 512
-#define NCOLS_MAX 512
-
-#define MAX(x, y) (x > y ? y : x)
-
-#define MAX_NPROPS 6
+#define MAX_NPROPS 8
 #define MAX_GRAPH 2048 //FIXME
 
 typedef enum _console_t {
@@ -72,6 +59,8 @@ struct _plugstate_t {
 	char error [MOONY_MAX_ERROR_LEN];
 	int32_t font_height;
 	int32_t panic;
+	int32_t graph_hidden;
+	int32_t editor_hidden;
 	uint8_t graph_body [MAX_GRAPH];
 	float aspect_ratio;
 };
@@ -82,6 +71,10 @@ struct _plughandle_t {
 
 	LV2_Log_Log *log;
 	LV2_Log_Logger logger;
+
+#ifdef _LV2_HAS_REQUEST_VALUE
+	LV2UI_Request_Value *request_code;
+#endif
 
 	d2tk_pugl_config_t config;
 	d2tk_frontend_t *dpugl;
@@ -103,6 +96,10 @@ struct _plughandle_t {
 	LV2_URID urid_error;
 	LV2_URID urid_fontHeight;
 	LV2_URID urid_panic;
+	LV2_URID urid_editorHidden;
+	LV2_URID urid_graphHidden;
+	LV2_URID urid_canvasGraph;
+	LV2_URID urid_canvasAspectRatio;
 
 	bool reinit;
 	char template [24];
@@ -113,6 +110,7 @@ struct _plughandle_t {
 	float scale;
 	d2tk_coord_t header_height;
 	d2tk_coord_t footer_height;
+	d2tk_coord_t tip_height;
 	d2tk_coord_t sidebar_width;
 	d2tk_coord_t item_height;
 	d2tk_coord_t font_height;
@@ -130,7 +128,7 @@ struct _plughandle_t {
 	int kid;
 };
 
-static inline void
+static void
 _update_font_height(plughandle_t *handle)
 {
 	handle->font_height = handle->state.font_height * handle->scale;
@@ -248,6 +246,16 @@ static const props_def_t defs [MAX_NPROPS] = {
 		.type = LV2_ATOM__Bool
 	},
 	{
+		.property = MOONY_EDITOR_HIDDEN_URI,
+		.offset = offsetof(plugstate_t, editor_hidden),
+		.type = LV2_ATOM__Bool
+	},
+	{
+		.property = MOONY_GRAPH_HIDDEN_URI,
+		.offset = offsetof(plugstate_t, graph_hidden),
+		.type = LV2_ATOM__Bool
+	},
+	{
 		.property = CANVAS__graph,
 		.offset = offsetof(plugstate_t, graph_body),
 		.type = LV2_ATOM__Tuple,
@@ -338,7 +346,7 @@ _message_get(plughandle_t *handle, LV2_URID key)
 	ser_atom_deinit(&ser);
 }
 
-static inline void
+static void
 _expose_header(plughandle_t *handle, const d2tk_rect_t *rect)
 {
 	d2tk_frontend_t *dpugl = handle->dpugl;
@@ -372,7 +380,7 @@ _expose_header(plughandle_t *handle, const d2tk_rect_t *rect)
 }
 
 #if 0
-static inline void
+static void
 _expose_vkb(plughandle_t *handle, const d2tk_rect_t *rect)
 {
 	d2tk_frontend_t *dpugl = handle->dpugl;
@@ -460,7 +468,7 @@ _expose_vkb(plughandle_t *handle, const d2tk_rect_t *rect)
 }
 #endif
 
-static inline void
+static void
 _expose_font_height(plughandle_t *handle, const d2tk_rect_t *rect)
 {
 	d2tk_frontend_t *dpugl = handle->dpugl;
@@ -476,45 +484,26 @@ _expose_font_height(plughandle_t *handle, const d2tk_rect_t *rect)
 	}
 }
 
-static inline void
+static void
 _expose_panic(plughandle_t *handle, const d2tk_rect_t *rect)
 {
 	d2tk_frontend_t *dpugl = handle->dpugl;
 	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
 
-	static const char path [] = "libre-gui-exclamation-circle.png";
+	static const char path [] = "alert-triangle.png";
+	static const char tip [] = "panic";
 
-	if(d2tk_base_button_image_is_changed(base, D2TK_ID, sizeof(path), path, rect))
+	const d2tk_state_t state = d2tk_base_button_image(base, D2TK_ID,
+		sizeof(path), path, rect);
+
+	if(d2tk_state_is_changed(state))
 	{
 		handle->state.panic = 1;
 		_message_set_key(handle, handle->urid_panic);
 	}
-}
-
-static inline void
-_expose_footer(plughandle_t *handle, const d2tk_rect_t *rect)
-{
-	const d2tk_coord_t frac [3] = { 1, 1, 1 };
-	D2TK_BASE_LAYOUT(rect, 3, frac, D2TK_FLAG_LAYOUT_X_REL, lay)
+	if(d2tk_state_is_over(state))
 	{
-		const unsigned k = d2tk_layout_get_index(lay);
-		const d2tk_rect_t *lrect = d2tk_layout_get_rect(lay);
-
-		switch(k)
-		{
-			case 0:
-			{
-				_expose_panic(handle, lrect);
-			} break;
-			case 1:
-			{
-				// nothing to do
-			} break;
-			case 2:
-			{
-				_expose_font_height(handle, lrect);
-			} break;
-		}
+		d2tk_base_set_tooltip(base, sizeof(tip), tip, handle->tip_height);
 	}
 }
 
@@ -552,7 +541,7 @@ _expose_footer(plughandle_t *handle, const d2tk_rect_t *rect)
  * sublime3      (needs to be started with -w)
  */
 
-static inline void
+static void
 _expose_term(plughandle_t *handle, const d2tk_rect_t *rect)
 {
 	d2tk_frontend_t *dpugl = handle->dpugl;
@@ -587,7 +576,7 @@ _expose_term(plughandle_t *handle, const d2tk_rect_t *rect)
 	handle->reinit = false;
 }
 
-static inline void
+static void
 _expose_man(plughandle_t *handle, const d2tk_rect_t *rect)
 {
 	d2tk_frontend_t *dpugl = handle->dpugl;
@@ -616,7 +605,7 @@ _expose_man(plughandle_t *handle, const d2tk_rect_t *rect)
 	d2tk_util_wait(&handle->kid);
 }
 
-static inline unsigned
+static unsigned
 _num_lines(const char *err)
 {
 	unsigned nlines = 1;
@@ -632,7 +621,7 @@ _num_lines(const char *err)
 	return nlines;
 }
 
-static inline void
+static void
 _expose_error(plughandle_t *handle, const d2tk_rect_t *rect)
 {
 	d2tk_frontend_t *dpugl = handle->dpugl;
@@ -662,7 +651,7 @@ _expose_error(plughandle_t *handle, const d2tk_rect_t *rect)
 	}
 }
 
-static inline void
+static void
 _expose_editor(plughandle_t *handle, const d2tk_rect_t *rect)
 {
 	const size_t err_len = strlen(handle->state.error);
@@ -736,7 +725,7 @@ _render_graph(void *_ctx, const d2tk_rect_t *rect, const void *data)
 	nvgRestore(ctx);
 }
 
-static inline void
+static void
 _expose_canvas_graph(plughandle_t *handle, const d2tk_rect_t *rect)
 {
 	d2tk_base_t *base = d2tk_frontend_get_base(handle->dpugl);
@@ -751,81 +740,37 @@ _expose_canvas_graph(plughandle_t *handle, const d2tk_rect_t *rect)
 	d2tk_base_custom(base, dhash, handle, rect, _render_graph);
 }
 
-static inline void
-_expose_console(plughandle_t *handle, const d2tk_rect_t *rect)
+static void
+_expose_graph_minimize(plughandle_t *handle, const d2tk_rect_t *rect)
 {
-	d2tk_frontend_t *dpugl = handle->dpugl;
-	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
+	d2tk_base_t *base = d2tk_frontend_get_base(handle->dpugl);
 
-	const d2tk_coord_t frac [2] = { 0, handle->header_height };
-	D2TK_BASE_LAYOUT(rect, 2, frac, D2TK_FLAG_LAYOUT_Y_ABS, lay)
+	static const char *path [2] = { "eye-off.png", "eye.png" };
+	static const char tip [2][5] = { "show", "hide" };
+
+	bool visible = !handle->state.graph_hidden;
+	const d2tk_state_t state = d2tk_base_toggle_label_image(base, D2TK_ID,
+		0, NULL, D2TK_ALIGN_CENTERED, -1, path[visible], rect, &visible);
+
+	if(d2tk_state_is_changed(state))
 	{
-		const unsigned k = d2tk_layout_get_index(lay);
-		const d2tk_rect_t *lrect = d2tk_layout_get_rect(lay);
-
-		switch(k)
-		{
-			case 1:
-			{
-				static const char *console_lbl [CONSOLE_MAX] = {
-					[CONSOLE_EDITOR] = "Editor",
-					[CONSOLE_GRAPH]  = "Graph"
-				};
-
-				D2TK_BASE_TABLE(lrect, CONSOLE_MAX, 1, D2TK_FLAG_TABLE_REL, tab)
-				{
-					const d2tk_rect_t *hrect = d2tk_table_get_rect(tab);
-					const unsigned b = d2tk_table_get_index(tab);
-
-					bool val = (b == handle->console);
-					d2tk_base_toggle_label(base, D2TK_ID_IDX(b), -1, console_lbl[b],
-						D2TK_ALIGN_CENTERED, hrect, &val);
-					if(val)
-					{
-						handle->console = b;
-					}
-				}
-			} break;
-			case 0:
-			{
-				static const console_cb_t console_cb [CONSOLE_MAX] = {
-					[CONSOLE_EDITOR] = _expose_editor,
-					[CONSOLE_GRAPH] = _expose_canvas_graph
-				};
-
-				console_cb[handle->console](handle, lrect);
-			} break;
-		}
+		handle->state.graph_hidden = !handle->state.graph_hidden;
+		_message_set_key(handle, handle->urid_graphHidden);
+	}
+	if(d2tk_state_is_over(state))
+	{
+		d2tk_base_set_tooltip(base, sizeof(tip[visible]), tip[visible], handle->tip_height);
 	}
 }
 
-static inline void
-_expose_sidebar_left(plughandle_t *handle, const d2tk_rect_t *rect)
+static void
+_expose_graph_footer(plughandle_t *handle, const d2tk_rect_t *rect)
 {
-	const d2tk_coord_t frac [2] = { 0, handle->footer_height };
-	D2TK_BASE_LAYOUT(rect, 2, frac, D2TK_FLAG_LAYOUT_Y_ABS, lay)
-	{
-		const unsigned k = d2tk_layout_get_index(lay);
-		const d2tk_rect_t *lrect = d2tk_layout_get_rect(lay);
+	d2tk_base_t *base = d2tk_frontend_get_base(handle->dpugl);
 
-		switch(k)
-		{
-			case 0:
-			{
-				_expose_console(handle, lrect);
-			} break;
-			case 1:
-			{
-				_expose_footer(handle, lrect);
-			} break;
-		}
-	}
-}
-
-static inline void
-_expose_body(plughandle_t *handle, const d2tk_rect_t *rect)
-{
-	const d2tk_coord_t frac [2] = { 0, handle->sidebar_width };
+	const d2tk_coord_t frac [2] = {
+		0, rect->h
+	};
 	D2TK_BASE_LAYOUT(rect, 2, frac, D2TK_FLAG_LAYOUT_X_ABS, lay)
 	{
 		const unsigned k = d2tk_layout_get_index(lay);
@@ -835,11 +780,307 @@ _expose_body(plughandle_t *handle, const d2tk_rect_t *rect)
 		{
 			case 0:
 			{
-				_expose_sidebar_left(handle, lrect);
+				static char lbl [] = "canvas•graph";
+
+				d2tk_base_label(base, sizeof(lbl), lbl, 0.5f, lrect,
+					D2TK_ALIGN_LEFT | D2TK_ALIGN_MIDDLE);
 			} break;
 			case 1:
 			{
-				//FIXME
+				_expose_graph_minimize(handle, lrect);
+			} break;
+		}
+	}
+}
+
+static void
+_expose_body(plughandle_t *handle, const d2tk_rect_t *rect)
+{
+	const d2tk_coord_t frac [2] = {
+		handle->state.graph_hidden ? 1 : 0,
+		handle->state.editor_hidden ? 1 : 0
+	};
+	D2TK_BASE_LAYOUT(rect, 2, frac, D2TK_FLAG_LAYOUT_Y_ABS, lay)
+	{
+		const unsigned k = d2tk_layout_get_index(lay);
+		const d2tk_rect_t *lrect = d2tk_layout_get_rect(lay);
+
+		switch(k)
+		{
+			case 0:
+			{
+				if(!handle->state.graph_hidden)
+				{
+					_expose_canvas_graph(handle, lrect);
+				}
+			} break;
+			case 1:
+			{
+				if(!handle->state.editor_hidden)
+				{
+					_expose_editor(handle, lrect);
+				}
+			} break;
+		}
+	}
+}
+
+static const char *
+_text_basename(plughandle_t *handle)
+{
+	return basename(handle->template);
+}
+
+static void
+_expose_text_link(plughandle_t *handle, const d2tk_rect_t *rect)
+{
+	d2tk_base_t *base = d2tk_frontend_get_base(handle->dpugl);
+
+	static const char tip [] = "open externally";
+	char lbl [PATH_MAX];
+	const size_t lbl_len = snprintf(lbl, sizeof(lbl), "%s",
+		_text_basename(handle));
+
+	const d2tk_state_t state = d2tk_base_link(base, D2TK_ID, lbl_len, lbl, .5f,
+		rect, D2TK_ALIGN_MIDDLE | D2TK_ALIGN_LEFT);
+
+	if(d2tk_state_is_changed(state))
+	{
+		char *argv [] = {
+			"xdg-open",
+			handle->template,
+			NULL
+		};
+
+		d2tk_util_kill(&handle->kid);
+		handle->kid = d2tk_util_spawn(argv);
+		if(handle->kid <= 0)
+		{
+			lv2_log_error(&handle->logger, "[%s] failed to spawn: %s '%s'", __func__,
+				argv[0], argv[1]);
+		}
+	}
+	if(d2tk_state_is_over(state))
+	{
+		d2tk_base_set_tooltip(base, sizeof(tip), tip, handle->tip_height);
+	}
+
+	d2tk_util_wait(&handle->kid);
+}
+
+static void
+_update_code(plughandle_t *handle, const char *txt, size_t txt_len)
+{
+	ser_atom_t ser;
+	ser_atom_init(&ser);
+	ser_atom_reset(&ser, &handle->forge);
+
+	lv2_atom_forge_string(&handle->forge, txt, txt_len);
+
+	const LV2_Atom *atom = ser_atom_get(&ser);
+
+	props_impl_t *impl = _props_impl_get(&handle->props, handle->urid_code);
+	_props_impl_set(&handle->props, impl, atom->type, atom->size,
+		LV2_ATOM_BODY_CONST(atom));
+
+	ser_atom_deinit(&ser);
+
+	_message_set_key(handle, handle->urid_code);
+}
+
+static void
+_expose_text_clear(plughandle_t *handle, const d2tk_rect_t *rect)
+{
+	d2tk_frontend_t *dpugl = handle->dpugl;
+	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
+
+	static const char path [] = "delete.png";
+	static const char none [] = "";
+	static const char tip [] = "clear";
+
+	const d2tk_state_t state = d2tk_base_button_image(base, D2TK_ID,
+		sizeof(path), path, rect);
+
+	if(d2tk_state_is_changed(state))
+	{
+		_update_code(handle, none, sizeof(none) - 1);
+	}
+	if(d2tk_state_is_over(state))
+	{
+		d2tk_base_set_tooltip(base, sizeof(tip), tip, handle->tip_height);
+	}
+}
+
+static void
+_expose_text_copy(plughandle_t *handle, const d2tk_rect_t *rect)
+{
+	d2tk_frontend_t *dpugl = handle->dpugl;
+	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
+
+	static const char path [] = "copy.png";
+	static const char tip [] = "copy to clipboard";
+
+	const d2tk_state_t state = d2tk_base_button_image(base, D2TK_ID,
+		sizeof(path), path, rect);
+
+	if(d2tk_state_is_changed(state))
+	{
+		d2tk_frontend_set_clipboard(dpugl, "UTF8_STRING",
+			handle->state.code, strlen(handle->state.code) + 1);
+	}
+	if(d2tk_state_is_over(state))
+	{
+		d2tk_base_set_tooltip(base, sizeof(tip), tip, handle->tip_height);
+	}
+}
+
+static void
+_expose_text_paste(plughandle_t *handle, const d2tk_rect_t *rect)
+{
+	d2tk_frontend_t *dpugl = handle->dpugl;
+	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
+
+	static const char path [] = "clipboard.png";
+	static const char tip [] = "paste from clipboard";
+
+	const d2tk_state_t state = d2tk_base_button_image(base, D2TK_ID,
+		sizeof(path), path, rect);
+
+	if(d2tk_state_is_changed(state))
+	{
+		size_t txt_len = 0;
+		const char *mime = "UTF8_STRING";
+		const char *txt = d2tk_frontend_get_clipboard(dpugl, &mime, &txt_len);
+
+		if(txt && txt_len && mime && !strcmp(mime, "UTF8_STRING"))
+		{
+			_update_code(handle, txt, txt_len);
+		}
+		else
+		{
+			lv2_log_error(&handle->logger, "[%s] failed to paste text: %s", __func__,
+				mime);
+		}
+	}
+	if(d2tk_state_is_over(state))
+	{
+		d2tk_base_set_tooltip(base, sizeof(tip), tip, handle->tip_height);
+	}
+}
+
+#ifdef _LV2_HAS_REQUEST_VALUE
+static void
+_expose_text_load(plughandle_t *handle, const d2tk_rect_t *rect)
+{
+	d2tk_frontend_t *dpugl = handle->dpugl;
+	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
+
+	static const char path [] = "save.png";
+	static const char tip [] = "load from file";
+
+	if(!handle->request_code)
+	{
+		return;
+	}
+
+	const d2tk_state_t state = d2tk_base_button_image(base, D2TK_ID,
+		sizeof(path), path, rect);
+
+	if(d2tk_state_is_changed(state))
+	{
+		const LV2_URID key = handle->urid_code;
+		const LV2_URID type = handle->forge.String;
+
+		const LV2UI_Request_Value_Status status = handle->request_code->request(
+			handle->request_code->handle, key, type, NULL);
+
+		if(  (status != LV2UI_REQUEST_VALUE_SUCCESS)
+			&& (status != LV2UI_REQUEST_VALUE_BUSY) )
+		{
+			lv2_log_error(&handle->logger, "[%s] requestValue failed: %i", __func__, status);
+
+			if(status == LV2UI_REQUEST_VALUE_ERR_UNSUPPORTED)
+			{
+				handle->request_code = NULL;
+			}
+		}
+	}
+	if(d2tk_state_is_over(state))
+	{
+		d2tk_base_set_tooltip(base, sizeof(tip), tip, handle->tip_height);
+	}
+}
+#endif
+
+static void
+_expose_text_minimize(plughandle_t *handle, const d2tk_rect_t *rect)
+{
+	d2tk_base_t *base = d2tk_frontend_get_base(handle->dpugl);
+
+	static const char *path [2] = { "eye-off.png", "eye.png" };
+	static const char tip [2][5] = { "show", "hide" };
+
+	bool visible = !handle->state.editor_hidden;
+	const d2tk_state_t state = d2tk_base_toggle_label_image(base, D2TK_ID,
+		0, NULL, D2TK_ALIGN_CENTERED, -1, path[visible], rect, &visible);
+
+	if(d2tk_state_is_changed(state))
+	{
+		handle->state.editor_hidden = !handle->state.editor_hidden;
+		_message_set_key(handle, handle->urid_editorHidden);
+	}
+	if(d2tk_state_is_over(state))
+	{
+		d2tk_base_set_tooltip(base, sizeof(tip[visible]), tip[visible], handle->tip_height);
+	}
+}
+
+static void
+_expose_text_footer(plughandle_t *handle, const d2tk_rect_t *rect)
+{
+	const d2tk_coord_t frac [8] = {
+		rect->h, 0, 0, rect->h, rect->h, rect->h, rect->h, rect->h
+	};
+	D2TK_BASE_LAYOUT(rect, 8, frac, D2TK_FLAG_LAYOUT_X_ABS, lay)
+	{
+		const unsigned k = d2tk_layout_get_index(lay);
+		const d2tk_rect_t *lrect = d2tk_layout_get_rect(lay);
+
+		switch(k)
+		{
+			case 0:
+			{
+				_expose_panic(handle, lrect);
+			} break;
+			case 1:
+			{
+				_expose_text_link(handle, lrect);
+			} break;
+			case 2:
+			{
+				_expose_font_height(handle, lrect);
+			} break;
+			case 3:
+			{
+				_expose_text_clear(handle, lrect);
+			} break;
+			case 4:
+			{
+				_expose_text_copy(handle, lrect);
+			} break;
+			case 5:
+			{
+				_expose_text_paste(handle, lrect);
+			} break;
+			case 6:
+			{
+#ifdef _LV2_HAS_REQUEST_VALUE
+				_expose_text_load(handle, lrect);
+#endif
+			} break;
+			case 7:
+			{
+				_expose_text_minimize(handle, lrect);
 			} break;
 		}
 	}
@@ -865,8 +1106,13 @@ _expose(void *data, d2tk_coord_t w, d2tk_coord_t h)
 
 	d2tk_base_set_style(base, &style);
 
-	const d2tk_coord_t frac [2] = { handle->header_height, 0 };
-	D2TK_BASE_LAYOUT(&rect, 2, frac, D2TK_FLAG_LAYOUT_Y_ABS, lay)
+	const d2tk_coord_t frac [4] = {
+		handle->header_height,
+		handle->footer_height,
+		0,
+		handle->footer_height
+	};
+	D2TK_BASE_LAYOUT(&rect, 4, frac, D2TK_FLAG_LAYOUT_Y_ABS, lay)
 	{
 		const unsigned k = d2tk_layout_get_index(lay);
 		const d2tk_rect_t *lrect = d2tk_layout_get_rect(lay);
@@ -879,7 +1125,15 @@ _expose(void *data, d2tk_coord_t w, d2tk_coord_t h)
 			} break;
 			case 1:
 			{
+				_expose_graph_footer(handle, lrect);
+			} break;
+			case 2:
+			{
 				_expose_body(handle, lrect);
+			} break;
+			case 3:
+			{
+				_expose_text_footer(handle, lrect);
 			} break;
 		}
 	}
@@ -930,6 +1184,12 @@ instantiate(const LV2UI_Descriptor *descriptor,
 		{
 			opts = features[i]->data;
 		}
+#ifdef _LV2_HAS_REQUEST_VALUE
+		else if(!strcmp(features[i]->URI, LV2_UI__requestValue))
+		{
+			handle->request_code = features[i]->data;
+		}
+#endif
 	}
 
 	if(!parent)
@@ -971,6 +1231,7 @@ instantiate(const LV2UI_Descriptor *descriptor,
 		LV2_ATOM__eventTransfer);
 	handle->midi_MidiEvent = handle->map->map(handle->map->handle,
 		LV2_MIDI__MidiEvent);
+
 	handle->urid_code = handle->map->map(handle->map->handle,
 		MOONY_CODE_URI);
 	handle->urid_error = handle->map->map(handle->map->handle,
@@ -979,6 +1240,10 @@ instantiate(const LV2UI_Descriptor *descriptor,
 		MOONY_FONT_HEIGHT_URI);
 	handle->urid_panic = handle->map->map(handle->map->handle,
 		MOONY_PANIC_URI);
+	handle->urid_editorHidden = handle->map->map(handle->map->handle,
+		MOONY_EDITOR_HIDDEN_URI);
+	handle->urid_graphHidden = handle->map->map(handle->map->handle,
+		MOONY_GRAPH_HIDDEN_URI);
 
 	if(!props_init(&handle->props, plugin_uri,
 		defs, MAX_NPROPS, &handle->state, &handle->stash,
@@ -1035,6 +1300,7 @@ instantiate(const LV2UI_Descriptor *descriptor,
 	handle->scale = d2tk_frontend_get_scale(handle->dpugl);
 	handle->header_height = 32 * handle->scale;
 	handle->footer_height = 32 * handle->scale;
+	handle->tip_height = 20 * handle->scale;
 	handle->sidebar_width = 128 * handle->scale;
 	handle->item_height = 32 * handle->scale;
 
@@ -1063,6 +1329,10 @@ instantiate(const LV2UI_Descriptor *descriptor,
 	_message_get(handle, handle->urid_error);
 	_message_get(handle, handle->urid_fontHeight);
 	_message_get(handle, handle->urid_panic);
+	_message_get(handle, handle->urid_editorHidden);
+	_message_get(handle, handle->urid_graphHidden);
+	_message_get(handle, handle->canvas.urid.Canvas_graph);
+	_message_get(handle, handle->canvas.urid.Canvas_aspectRatio);
 
 	return handle;
 }
@@ -1138,11 +1408,6 @@ _idle(LV2UI_Handle instance)
 
 		handle->modtime = st.st_mtime;
 	}
-
-	d2tk_base_t *base = d2tk_frontend_get_base(handle->dpugl);
-	d2tk_style_t style = *d2tk_base_get_default_style(base);
-	style.font_face = "FiraCode:regular";
-	d2tk_base_set_style(base, &style);
 
 	if(d2tk_frontend_step(handle->dpugl))
 	{

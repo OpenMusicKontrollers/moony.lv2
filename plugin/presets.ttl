@@ -40,6 +40,10 @@ moony:editorHidden
 	a lv2:Parameter ;
 	rdfs:range atom:Bool ;
 	rdfs:label "Editor tab hidden state" .
+moony:graphHidden
+	a lv2:Parameter ;
+	rdfs:range atom:Bool ;
+	rdfs:label "Graph tab hidden state" .
 moony:logHidden
 	a lv2:Parameter ;
 	rdfs:range atom:Bool ;
@@ -99,6 +103,7 @@ moony:bank-through_control-through
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -117,6 +122,7 @@ moony:bank-through_atom-through
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -139,6 +145,7 @@ moony:bank-through_atom-through2
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -163,6 +170,7 @@ moony:bank-through_atom-through4
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -195,6 +203,7 @@ moony:bank-multiplex_atom-multiplex2
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -216,6 +225,7 @@ moony:bank-multiplex_atom-multiplex4
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -239,6 +249,7 @@ moony:bank-midi_midi-responder
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -268,6 +279,7 @@ moony:bank-time_midi-sequencer
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -321,6 +333,7 @@ moony:bank-time_lindenmayer-system
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden false ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -424,6 +437,7 @@ moony:bank-osc_osc-responder
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -453,6 +467,7 @@ moony:bank-state_state-responder
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -623,6 +638,7 @@ moony:bank-canvas_lv2-logo
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -774,6 +790,7 @@ moony:bank-tutorial_part-1
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -819,6 +836,7 @@ moony:bank-tutorial_part-2
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -864,6 +882,7 @@ moony:bank-tutorial_part-3
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -960,6 +979,7 @@ moony:bank-tutorial_part-4
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -1051,6 +1071,7 @@ moony:bank-tutorial_part-5
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -1113,6 +1134,7 @@ moony:bank-tutorial_part-6
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -1216,6 +1238,7 @@ moony:bank-template_part-1
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -1301,6 +1324,7 @@ moony:bank-template_part-2
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -1367,6 +1391,7 @@ moony:bank-template_part-3
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -1399,6 +1424,7 @@ moony:bank-template_part-4
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -1460,6 +1486,7 @@ moony:bank-template_part-5
 	doap:license lic:Artistic-2.0 ;
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;

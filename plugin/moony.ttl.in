@@ -80,6 +80,12 @@ moony:editorHidden
 	rdfs:comment "hidden state of editor tab" ;
 	rdfs:range atom:Bool .
 
+moony:graphHidden
+	a lv2:Parameter ;
+	rdfs:label "Graph hidden" ;
+	rdfs:comment "hidden state of graph tab" ;
+	rdfs:range atom:Bool .
+
 moony:logHidden
 	a lv2:Parameter ;
 	rdfs:label "Log hidden" ;
@@ -192,6 +198,7 @@ moony:c1xc1
 	
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -284,6 +291,7 @@ moony:c2xc2
 	
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -406,6 +414,7 @@ moony:c4xc4
 	
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -488,6 +497,7 @@ moony:a1xa1
 
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -592,6 +602,7 @@ moony:a2xa2
 
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -740,6 +751,7 @@ moony:a4xa4
 
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -853,6 +865,7 @@ moony:c1a1xc1a1
 
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -971,6 +984,7 @@ moony:c2a1xc2a1
 
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
@@ -1119,6 +1133,7 @@ moony:c4a1xc4a1
 
 	state:state [
 		moony:editorHidden false ;
+		moony:graphHidden true ;
 		moony:logHidden true ;
 		moony:logFollow true ;
 		moony:logReset false ;
