@@ -40,7 +40,7 @@
 #define LV2_CANVAS_RENDER_NANOVG
 #include <canvas.lv2/render.h>
 
-#define MAX_NPROPS 8
+#define MAX_NPROPS 16
 #define MAX_GRAPH 2048 //FIXME
 
 typedef enum _console_t {
@@ -63,6 +63,14 @@ struct _plugstate_t {
 	int32_t editor_hidden;
 	uint8_t graph_body [MAX_GRAPH];
 	float aspect_ratio;
+	bool mouse_button_left;
+	bool mouse_button_middle;
+	bool mouse_button_right;
+	double mouse_wheel_x;
+	double mouse_wheel_y;
+	double mouse_position_x;
+	double mouse_position_y;
+	bool mouse_focus;
 };
 
 struct _plughandle_t {
@@ -255,6 +263,7 @@ static const props_def_t defs [MAX_NPROPS] = {
 		.offset = offsetof(plugstate_t, graph_hidden),
 		.type = LV2_ATOM__Bool
 	},
+
 	{
 		.property = CANVAS__graph,
 		.offset = offsetof(plugstate_t, graph_body),
@@ -266,6 +275,46 @@ static const props_def_t defs [MAX_NPROPS] = {
 		.property = CANVAS__aspectRatio,
 		.offset = offsetof(plugstate_t, aspect_ratio),
 		.type = LV2_ATOM__Float
+	},
+	{
+		.property = CANVAS__mouseButtonLeft,
+		.offset = offsetof(plugstate_t, mouse_button_left),
+		.type = LV2_ATOM__Bool
+	},
+	{
+		.property = CANVAS__mouseButtonMiddle,
+		.offset = offsetof(plugstate_t, mouse_button_middle),
+		.type = LV2_ATOM__Bool
+	},
+	{
+		.property = CANVAS__mouseButtonRight,
+		.offset = offsetof(plugstate_t, mouse_button_right),
+		.type = LV2_ATOM__Bool
+	},
+	{
+		.property = CANVAS__mouseWheelX,
+		.offset = offsetof(plugstate_t, mouse_wheel_x),
+		.type = LV2_ATOM__Double
+	},
+	{
+		.property = CANVAS__mouseWheelY,
+		.offset = offsetof(plugstate_t, mouse_wheel_y),
+		.type = LV2_ATOM__Double
+	},
+	{
+		.property = CANVAS__mousePositionX,
+		.offset = offsetof(plugstate_t, mouse_position_x),
+		.type = LV2_ATOM__Double
+	},
+	{
+		.property = CANVAS__mousePositionY,
+		.offset = offsetof(plugstate_t, mouse_position_y),
+		.type = LV2_ATOM__Double
+	},
+	{
+		.property = CANVAS__mouseFocus,
+		.offset = offsetof(plugstate_t, mouse_focus),
+		.type = LV2_ATOM__Bool
 	}
 };
 
@@ -677,22 +726,14 @@ _expose_editor(plughandle_t *handle, const d2tk_rect_t *rect)
 }
 
 static void
-_render_graph(void *_ctx, const d2tk_rect_t *rect, const void *data)
+_aspect_correction(d2tk_rect_t *rect, float aspect_ratio)
 {
-	plughandle_t *handle = (plughandle_t *)data;
-	NVGcontext *ctx = _ctx;
-
-	float aspect_ratio = handle->state.aspect_ratio;
-
 	const d2tk_coord_t lon = rect->w >= rect->h
 		? rect->w
 		: rect->h;
 	const d2tk_coord_t sho = rect->w < rect->h
 		? rect->w
 		: rect->h;
-
-	d2tk_coord_t W;
-	d2tk_coord_t H;
 
 	if(aspect_ratio <= 0.f)
 	{
@@ -701,23 +742,30 @@ _render_graph(void *_ctx, const d2tk_rect_t *rect, const void *data)
 
 	if(aspect_ratio < 1.f)
 	{
-		W = sho * aspect_ratio;
-		H = sho;
+		rect->w = sho * aspect_ratio;
+		rect->h = sho;
 	}
 	else if(aspect_ratio == 1.f)
 	{
-		W = sho;
-		H = sho;
+		rect->w = sho;
+		rect->h = sho;
 	}
 	else //if(aspect_ratio > 1.f)
 	{
-		W = lon;
-		H = lon / aspect_ratio;
+		rect->w = lon;
+		rect->h = lon / aspect_ratio;
 	}
+}
+
+static void
+_render_graph(void *_ctx, const d2tk_rect_t *rect, const void *data)
+{
+	plughandle_t *handle = (plughandle_t *)data;
+	NVGcontext *ctx = _ctx;
 
 	nvgSave(ctx);
 	nvgTranslate(ctx, -rect->x, -rect->y);
-	nvgScale(ctx, W, H);
+	nvgScale(ctx, rect->w, rect->h);
 
 	lv2_canvas_render_body(&handle->canvas, ctx, handle->forge.Tuple,
 		handle->graph_size, (const LV2_Atom *)handle->state.graph_body);
@@ -726,7 +774,7 @@ _render_graph(void *_ctx, const d2tk_rect_t *rect, const void *data)
 }
 
 static void
-_expose_canvas_graph(plughandle_t *handle, const d2tk_rect_t *rect)
+_expose_canvas_graph(plughandle_t *handle, const d2tk_rect_t *_rect)
 {
 	d2tk_base_t *base = d2tk_frontend_get_base(handle->dpugl);
 
@@ -735,9 +783,87 @@ _expose_canvas_graph(plughandle_t *handle, const d2tk_rect_t *rect)
 		return;
 	}
 
+	d2tk_rect_t rect = *_rect;
+	_aspect_correction(&rect, handle->state.aspect_ratio);
+
 	const uint64_t dhash = d2tk_hash(handle->state.graph_body, handle->graph_size);
 
-	d2tk_base_custom(base, dhash, handle, rect, _render_graph);
+	d2tk_base_custom(base, dhash, handle, &rect, _render_graph);
+
+	const d2tk_state_t state = d2tk_base_is_active_hot(base, D2TK_ID, &rect,
+		D2TK_FLAG_SCROLL);
+
+	// user mouse feedback
+	if(d2tk_state_is_over(state))
+	{
+		if(!handle->state.mouse_focus)
+		{
+			handle->state.mouse_focus = true;
+			_message_set_key(handle, handle->canvas.urid.Canvas_mouseFocus);
+		}
+
+		d2tk_coord_t mx, my;
+		d2tk_base_get_mouse_pos(base, &mx, &my);
+
+		double x = (double)(mx - rect.x) / rect.w;
+		double y = (double)(my - rect.y) / rect.h;
+
+		d2tk_clip_double(0.0, &x, 1.0);
+		d2tk_clip_double(0.0, &y, 1.0);
+
+		if(x != handle->state.mouse_position_x)
+		{
+			handle->state.mouse_position_x = x;
+			_message_set_key(handle, handle->canvas.urid.Canvas_mousePositionX);
+		}
+
+		if(y != handle->state.mouse_position_y)
+		{
+			handle->state.mouse_position_y = y;
+			_message_set_key(handle, handle->canvas.urid.Canvas_mousePositionY);
+		}
+	}
+	else
+	{
+		if(handle->state.mouse_focus)
+		{
+			handle->state.mouse_focus = false;
+			_message_set_key(handle, handle->canvas.urid.Canvas_mouseFocus);
+		}
+	}
+
+	if(d2tk_state_is_scroll_up(state))
+	{
+		handle->state.mouse_wheel_y = -1.0;
+		_message_set_key(handle, handle->canvas.urid.Canvas_mouseWheelY);
+	}
+	if(d2tk_state_is_scroll_down(state))
+	{
+		handle->state.mouse_wheel_y = +1.0;
+		_message_set_key(handle, handle->canvas.urid.Canvas_mouseWheelY);
+	}
+
+	if(d2tk_state_is_scroll_left(state))
+	{
+		handle->state.mouse_wheel_x = -1.0;
+		_message_set_key(handle, handle->canvas.urid.Canvas_mouseWheelX);
+	}
+	if(d2tk_state_is_scroll_right(state))
+	{
+		handle->state.mouse_wheel_x = +1.0;
+		_message_set_key(handle, handle->canvas.urid.Canvas_mouseWheelX);
+	}
+
+	if(d2tk_state_is_down(state))
+	{
+		handle->state.mouse_button_left = true;
+		_message_set_key(handle, handle->canvas.urid.Canvas_mouseButtonLeft);
+	}
+	if(d2tk_state_is_up(state))
+	{
+		handle->state.mouse_button_left = false;
+		_message_set_key(handle, handle->canvas.urid.Canvas_mouseButtonLeft);
+	}
 }
 
 static void
