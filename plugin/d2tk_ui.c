@@ -43,6 +43,14 @@
 #define MAX_NPROPS 16
 #define MAX_GRAPH 2048 //FIXME
 
+#define RDF_PREFIX    "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+#define RDFS_PREFIX   "http://www.w3.org/2000/01/rdf-schema#"
+
+#define RDF__value    RDF_PREFIX"value"
+#define RDFS__label   RDFS_PREFIX"label"
+#define RDFS__range   RDFS_PREFIX"range"
+#define RDFS__comment RDFS_PREFIX"comment"
+
 typedef enum _console_t {
 	CONSOLE_EDITOR,
 	CONSOLE_GRAPH,
@@ -53,6 +61,34 @@ typedef enum _console_t {
 typedef struct _plugstate_t plugstate_t;
 typedef struct _plughandle_t plughandle_t;
 typedef void (*console_cb_t)(plughandle_t *handle, const d2tk_rect_t *rect);
+typedef union _dynvalue_t dynvalue_t;
+typedef struct _dynparam_t dynparam_t;
+
+union _dynvalue_t {
+	uint32_t urid;
+	int32_t i32;
+	int64_t i64;
+	float f32;
+	double f64;
+};
+
+struct _dynparam_t {
+	uint32_t prop;
+	const char *uri;
+
+	bool writable;
+
+	LV2_URID unit;
+	LV2_URID range;
+
+	uint32_t size;
+	void *val;
+
+	char *label;
+	char *comment;
+	void *min;
+	void *max;
+};
 
 struct _plugstate_t {
 	char code [MOONY_MAX_CHUNK_LEN];
@@ -75,6 +111,7 @@ struct _plugstate_t {
 
 struct _plughandle_t {
 	LV2_URID_Map *map;
+	LV2_URID_Unmap *unmap;
 	LV2_Atom_Forge forge;
 
 	LV2_Log_Log *log;
@@ -106,8 +143,13 @@ struct _plughandle_t {
 	LV2_URID urid_panic;
 	LV2_URID urid_editorHidden;
 	LV2_URID urid_graphHidden;
-	LV2_URID urid_canvasGraph;
-	LV2_URID urid_canvasAspectRatio;
+
+	LV2_URID urid_rdfs_range;
+	LV2_URID urid_rdfs_label;
+	LV2_URID urid_rdfs_comment;
+
+	LV2_URID urid_lv2_minimum;
+	LV2_URID urid_lv2_maximum;
 
 	bool reinit;
 	char template [24];
@@ -134,6 +176,9 @@ struct _plughandle_t {
 
 	uint32_t graph_size;
 	int kid;
+
+	dynparam_t *dynparams;
+	size_t ndynparams;
 };
 
 static void
@@ -316,6 +361,237 @@ static const props_def_t defs [MAX_NPROPS] = {
 		.offset = offsetof(plugstate_t, mouse_focus),
 		.type = LV2_ATOM__Bool
 	}
+};
+
+static int
+_dynparam_cmp(const void *_a, const void *_b)
+{
+	const dynparam_t *a = _a;
+	const dynparam_t *b = _b;
+
+	return strcmp(a->uri, b->uri);
+
+	return 0;
+}
+
+static void
+_dynparam_free(dynparam_t *dynparam)
+{
+	free(dynparam->label);
+	free(dynparam->comment);
+	free(dynparam->val);
+	free(dynparam->min);
+	free(dynparam->max);
+}
+
+static dynparam_t *
+_dynparams_get(plughandle_t *handle, LV2_URID prop)
+{
+	const dynparam_t key = {
+		.uri = handle->unmap->unmap(handle->unmap->handle, prop)
+	};
+
+	return bsearch(&key, handle->dynparams, handle->ndynparams,
+		sizeof(dynparam_t), _dynparam_cmp);
+}
+
+static dynparam_t *
+_dynparams_add(plughandle_t *handle, LV2_URID prop)
+{
+	const size_t new_sz = sizeof(dynparam_t) * ++handle->ndynparams;
+
+	handle->dynparams = realloc(handle->dynparams, new_sz); //TODO check
+
+	dynparam_t *dynparam = &handle->dynparams[handle->ndynparams - 1];
+	memset(dynparam, 0x0, sizeof(dynparam_t));
+	handle->dynparams[handle->ndynparams - 1].prop = prop;
+	handle->dynparams[handle->ndynparams - 1].uri = handle->unmap->unmap(
+		handle->unmap->handle, prop);
+
+	qsort(handle->dynparams, handle->ndynparams,
+		sizeof(dynparam_t), _dynparam_cmp);
+
+	return _dynparams_get(handle, prop);
+}
+
+static void
+_dynparams_clr(plughandle_t *handle)
+{
+	if(handle->dynparams)
+	{
+		for(unsigned i = 0; i < handle->ndynparams; i++)
+		{
+			dynparam_t *dynparam = &handle->dynparams[i];
+
+			_dynparam_free(dynparam);
+		}
+
+		free(handle->dynparams);
+		handle->dynparams = NULL;
+	}
+
+	handle->ndynparams = 0;
+}
+
+static void
+_dyn_prop_add(plughandle_t *handle, LV2_URID subj, LV2_URID prop,
+	const LV2_Atom *atom)
+{
+	if(prop == handle->props.urid.patch_writable)
+	{
+		const LV2_URID tar = ((const LV2_Atom_URID *)(atom))->body; //FIXME check
+		dynparam_t *dynparam = _dynparams_add(handle, tar);
+
+		if(dynparam)
+		{
+			dynparam->writable = true;
+		}
+	}
+	else if(prop == handle->props.urid.patch_readable)
+	{
+		const LV2_URID tar = ((const LV2_Atom_URID *)(atom))->body; //FIXME check
+		dynparam_t *dynparam = _dynparams_add(handle, tar);
+
+		if(dynparam)
+		{
+			dynparam->writable = false;
+		}
+	}
+	else if(subj)
+	{
+		dynparam_t *dynparam = _dynparams_get(handle, subj);
+
+		if(dynparam)
+		{
+			if(prop == handle->urid_rdfs_range)
+			{
+				const LV2_URID tar = ((const LV2_Atom_URID *)(atom))->body; //FIXME check
+				dynparam->range = tar;
+			}
+			else if(prop == handle->urid_rdfs_label)
+			{
+				dynparam->label = realloc(dynparam->label, atom->size); //FIXME check
+				memcpy(dynparam->label, LV2_ATOM_BODY_CONST(atom), atom->size);
+			}
+			else if(prop == handle->urid_rdfs_comment)
+			{
+				dynparam->comment = realloc(dynparam->comment, atom->size); //FIXME check
+				memcpy(dynparam->comment, LV2_ATOM_BODY_CONST(atom), atom->size);
+			}
+			else if(prop == handle->urid_lv2_minimum)
+			{
+				dynparam->min = realloc(dynparam->min, atom->size); //FIXME check
+				memcpy(dynparam->min, LV2_ATOM_BODY_CONST(atom), atom->size);
+			}
+			else if(prop == handle->urid_lv2_maximum)
+			{
+				dynparam->max = realloc(dynparam->max, atom->size); //FIXME check
+				memcpy(dynparam->max, LV2_ATOM_BODY_CONST(atom), atom->size);
+			}
+			//TODO more attributes
+		}
+	}
+}
+
+static void
+_dyn_prop_rem(plughandle_t *handle, LV2_URID subj, LV2_URID prop,
+	const LV2_Atom *atom)
+{
+	if(!atom || (atom->type != handle->props.urid.atom_urid) )
+	{
+		return;
+	}
+
+	const LV2_URID tar = ((const LV2_Atom_URID *)(atom))->body;
+
+	if(prop == handle->props.urid.patch_writable)
+	{
+		if(tar == handle->props.urid.patch_wildcard)
+		{
+			_dynparams_clr(handle); //FIXME seperate for writables
+		}
+		else
+		{
+			//TODO
+		}
+	}
+	else if(prop == handle->props.urid.patch_readable)
+	{
+		if(tar == handle->props.urid.patch_wildcard)
+		{
+			_dynparams_clr(handle); //FIXME seperate for readables
+		}
+		else
+		{
+			//TODO
+		}
+	}
+	else if(subj)
+	{
+		dynparam_t *dynparam = _dynparams_get(handle, subj);
+
+		if(dynparam)
+		{
+			//TODO
+		}
+	}
+}
+
+static void
+_dyn_prop_set(plughandle_t *handle, LV2_URID subj, LV2_URID prop,
+	const LV2_Atom *atom)
+{
+	dynparam_t *dynparam = _dynparams_get(handle, prop);
+
+	if(!dynparam)
+	{
+		return; //TODO log
+	}
+
+	if(dynparam->range != atom->type)
+	{
+		return; //TODO log
+	}
+
+	dynparam->size = atom->size;
+	dynparam->val = realloc(dynparam->val, atom->size); //FIXME check
+	memcpy(dynparam->val, LV2_ATOM_BODY_CONST(atom), atom->size);
+}
+
+static void
+_dyn_prop(void *data, props_dyn_ev_t ev, LV2_URID subj, LV2_URID prop,
+	const LV2_Atom *atom)
+{
+	plughandle_t *handle = data;
+
+#if 1
+	const char *subject = handle->unmap->unmap(handle->unmap->handle, subj);
+	const char *property = handle->unmap->unmap(handle->unmap->handle, prop);
+	const char *range = handle->unmap->unmap(handle->unmap->handle, atom->type);
+
+	lv2_log_note(&handle->logger, "[%s] (%u) <%s> <%s> <%s>", __func__,
+		ev, subject, property, range);
+#endif
+
+	switch(ev)
+	{
+		case PROPS_DYN_EV_ADD:
+		{
+			_dyn_prop_add(handle, subj, prop, atom);
+		} break;
+		case PROPS_DYN_EV_REM:
+		{
+			_dyn_prop_rem(handle, subj, prop, atom);
+		} break;
+		case PROPS_DYN_EV_SET:
+		{
+			_dyn_prop_set(handle, subj, prop, atom);
+		} break;
+	}
+}
+
+static const props_dyn_t dyn = {
+	.prop = _dyn_prop
 };
 
 static void
@@ -920,7 +1196,7 @@ _expose_graph_footer(plughandle_t *handle, const d2tk_rect_t *rect)
 }
 
 static void
-_expose_body(plughandle_t *handle, const d2tk_rect_t *rect)
+_expose_left(plughandle_t *handle, const d2tk_rect_t *rect)
 {
 	const d2tk_coord_t frac [2] = {
 		handle->state.graph_hidden ? 1 : 0,
@@ -946,6 +1222,165 @@ _expose_body(plughandle_t *handle, const d2tk_rect_t *rect)
 				{
 					_expose_editor(handle, lrect);
 				}
+			} break;
+		}
+	}
+}
+
+static void
+_expose_slot_bool(plughandle_t *handle, dynparam_t *dynparam,
+	const d2tk_rect_t *rect, unsigned k)
+{
+	d2tk_frontend_t *dpugl = handle->dpugl;
+	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
+
+	if(!dynparam->val || !dynparam->label)
+	{
+		return;
+	}
+
+	bool val = *(int32_t *)dynparam->val;
+
+	const d2tk_state_t state = d2tk_base_spinner_bool(base,
+		D2TK_ID_IDX(k), rect, -1, dynparam->label, &val);
+
+	if(d2tk_state_is_changed(state))
+	{
+		*(int32_t *)dynparam->val = val;
+		//TODO send patch:Set
+	}
+	if(d2tk_state_is_over(state) && dynparam->comment)
+	{
+		d2tk_base_set_tooltip(base, -1, dynparam->comment, handle->tip_height);
+	}
+}
+
+static void
+_expose_slot_int(plughandle_t *handle, dynparam_t *dynparam,
+	const d2tk_rect_t *rect, unsigned k)
+{
+	d2tk_frontend_t *dpugl = handle->dpugl;
+	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
+
+	if(!dynparam->val || !dynparam->label || !dynparam->min || !dynparam->max)
+	{
+		return;
+	}
+
+	const int32_t min = *(int32_t *)dynparam->min;
+	const int32_t max = *(int32_t *)dynparam->max;
+	int32_t *val = dynparam->val;
+
+	const d2tk_state_t state = d2tk_base_spinner_int32(base,
+		D2TK_ID_IDX(k), rect, -1, dynparam->label, min, val, max);
+
+	if(d2tk_state_is_changed(state))
+	{
+		//TODO send patch:Set
+	}
+	if(d2tk_state_is_over(state) && dynparam->comment)
+	{
+		d2tk_base_set_tooltip(base, -1, dynparam->comment, handle->tip_height);
+	}
+}
+
+static void
+_expose_slot(plughandle_t *handle, const d2tk_rect_t *rect, unsigned k)
+{
+	d2tk_frontend_t *dpugl = handle->dpugl;
+	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
+
+	dynparam_t *dynparam = &handle->dynparams[k];
+
+	//FIXME 
+	if(!dynparam->label)
+	{
+		return;
+	}
+
+	if(dynparam->range == handle->props.urid.atom_bool)
+	{
+		_expose_slot_bool(handle, dynparam, rect, k);
+	}
+	else if(dynparam->range == handle->props.urid.atom_int)
+	{
+		_expose_slot_int(handle, dynparam, rect, k);
+	}
+	/*
+	else if(dynparam->range == handle->props.urid.atom_long)
+	{
+		//TODO
+	}
+	else if(dynparam->range == handle->props.urid.atom_float)
+	{
+		//TODO
+	}
+	else if(dynparam->range == handle->props.urid.atom_double)
+	{
+		//TODO
+	}
+	else if(dynparam->range == handle->props.urid.atom_urid)
+	{
+		//TODO
+	}
+	*/
+	else
+	{
+		if(d2tk_base_button_label_is_changed(base, D2TK_ID_IDX(k),
+			-1, dynparam->label, D2TK_ALIGN_LEFT | D2TK_ALIGN_MIDDLE, rect))
+		{
+			//TODO
+		}
+	}
+}
+
+static void
+_expose_right(plughandle_t *handle, const d2tk_rect_t *rect)
+{
+	d2tk_frontend_t *dpugl = handle->dpugl;
+	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
+
+	const uint32_t numv = rect->h / handle->item_height;
+	const uint32_t max [2] = { 0, handle->ndynparams};
+	const uint32_t num [2] = { 0, numv };
+	D2TK_BASE_SCROLLBAR(base, rect, D2TK_ID, D2TK_FLAG_SCROLL_Y, max, num, vscroll)
+	{
+		const unsigned offy = d2tk_scrollbar_get_offset_y(vscroll);
+		const d2tk_rect_t *vrect = d2tk_scrollbar_get_rect(vscroll);
+
+		D2TK_BASE_TABLE(vrect, 1, numv,  D2TK_FLAG_TABLE_REL, tab)
+		{
+			const unsigned k = d2tk_table_get_index(tab) + offy;
+			const d2tk_rect_t *trect = d2tk_table_get_rect(tab);
+
+			if(k >= handle->ndynparams)
+			{
+				break;
+			}
+
+			_expose_slot(handle, trect, k);
+		}
+	}
+}
+
+static void
+_expose_body(plughandle_t *handle, const d2tk_rect_t *rect)
+{
+	const d2tk_coord_t frac [2] = { 0, handle->sidebar_width };
+	D2TK_BASE_LAYOUT(rect, 2, frac, D2TK_FLAG_LAYOUT_X_ABS, lay)
+	{
+		const unsigned k = d2tk_layout_get_index(lay);
+		const d2tk_rect_t *lrect = d2tk_layout_get_rect(lay);
+
+		switch(k)
+		{
+			case 0:
+			{
+				_expose_left(handle, lrect);
+			} break;
+			case 1:
+			{
+				_expose_right(handle, lrect);
 			} break;
 		}
 	}
@@ -1298,6 +1733,10 @@ instantiate(const LV2UI_Descriptor *descriptor,
 		{
 			handle->map = features[i]->data;
 		}
+		else if(!strcmp(features[i]->URI, LV2_URID__unmap))
+		{
+			handle->unmap = features[i]->data;
+		}
 		else if(!strcmp(features[i]->URI, LV2_LOG__log))
 		{
 			handle->log = features[i]->data;
@@ -1371,6 +1810,18 @@ instantiate(const LV2UI_Descriptor *descriptor,
 	handle->urid_graphHidden = handle->map->map(handle->map->handle,
 		MOONY_GRAPH_HIDDEN_URI);
 
+	handle->urid_rdfs_label = handle->map->map(handle->map->handle,
+		RDFS__label);
+	handle->urid_rdfs_range= handle->map->map(handle->map->handle,
+		RDFS__range);
+	handle->urid_rdfs_comment = handle->map->map(handle->map->handle,
+		RDFS__comment);
+
+	handle->urid_lv2_minimum = handle->map->map(handle->map->handle,
+		LV2_CORE__minimum);
+	handle->urid_lv2_maximum = handle->map->map(handle->map->handle,
+		LV2_CORE__maximum);
+
 	if(!props_init(&handle->props, plugin_uri,
 		defs, MAX_NPROPS, &handle->state, &handle->stash,
 		handle->map, handle))
@@ -1380,11 +1831,13 @@ instantiate(const LV2UI_Descriptor *descriptor,
 		return NULL;
 	}
 
+	props_dyn(&handle->props, &dyn);
+
 	handle->controller = controller;
 	handle->writer = write_function;
 
-	const d2tk_coord_t w = 800;
-	const d2tk_coord_t h = 800;
+	const d2tk_coord_t w = 1024;
+	const d2tk_coord_t h = 720;
 
 	d2tk_pugl_config_t *config = &handle->config;
 	config->parent = (uintptr_t)parent;
@@ -1427,8 +1880,8 @@ instantiate(const LV2UI_Descriptor *descriptor,
 	handle->header_height = 32 * handle->scale;
 	handle->footer_height = 32 * handle->scale;
 	handle->tip_height = 20 * handle->scale;
-	handle->sidebar_width = 128 * handle->scale;
-	handle->item_height = 32 * handle->scale;
+	handle->sidebar_width = 256 * handle->scale;
+	handle->item_height = 40 * handle->scale;
 
 	handle->state.font_height = 16;
 	_update_font_height(handle);
@@ -1467,6 +1920,8 @@ static void
 cleanup(LV2UI_Handle instance)
 {
 	plughandle_t *handle = instance;
+
+	_dynparams_clr(handle);
 
 	d2tk_util_kill(&handle->kid);
 	d2tk_frontend_free(handle->dpugl);
