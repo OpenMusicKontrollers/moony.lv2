@@ -40,13 +40,27 @@ extern "C" {
 // structures
 typedef struct _props_def_t props_def_t;
 typedef struct _props_impl_t props_impl_t;
+typedef struct _props_dyn_t props_dyn_t;
 typedef struct _props_t props_t;
+
+typedef enum _props_dyn_ev_t {
+	PROPS_DYN_EV_ADD,
+	PROPS_DYN_EV_REM,
+	PROPS_DYN_EV_SET
+} props_dyn_ev_t;
 
 // function callbacks
 typedef void (*props_event_cb_t)(
 	void *data,
 	int64_t frames,
 	props_impl_t *impl);
+
+typedef void (*props_dyn_prop_cb_t)(
+	void *data,
+	props_dyn_ev_t ev,
+	LV2_URID subj,
+	LV2_URID prop,
+	const LV2_Atom *body);
 
 struct _props_def_t {
 	const char *property;
@@ -77,6 +91,10 @@ struct _props_impl_t {
 
 	atomic_int state;
 	bool stashing;
+};
+
+struct _props_dyn_t {
+	props_dyn_prop_cb_t prop;
 };
 
 struct _props_t {
@@ -122,6 +140,8 @@ struct _props_t {
 
 	uint32_t max_size;
 
+	const props_dyn_t *dyn;
+
 	unsigned nimpls;
 	props_impl_t impls [1];
 };
@@ -136,6 +156,10 @@ props_init(props_t *props, const char *subject,
 	const props_def_t *defs, int nimpls,
 	void *value_base, void *stash_base,
 	LV2_URID_Map *map, void *data);
+
+// rt-safe
+static inline void
+props_dyn(props_t *props, const props_dyn_t *dyn);
 
 // rt-safe
 static inline void
@@ -603,6 +627,12 @@ props_init(props_t *props, const char *subject,
 }
 
 static inline void
+props_dyn(props_t *props, const props_dyn_t *dyn)
+{
+	props->dyn = dyn;
+}
+
+static inline void
 props_idle(props_t *props, LV2_Atom_Forge *forge, uint32_t frames,
 	LV2_Atom_Forge_Ref *ref)
 {
@@ -761,6 +791,14 @@ props_advance(props_t *props, LV2_Atom_Forge *forge, uint32_t frames,
 
 			return 1;
 		}
+		else if(props->dyn && props->dyn->prop)
+		{
+			const LV2_URID subj = subject ? subject->body : 0;
+
+			props->dyn->prop(props->data, PROPS_DYN_EV_SET, subj, property->body, value);
+
+			//TODO send ack
+		}
 		else if(sequence_num)
 		{
 			if(*ref)
@@ -823,12 +861,81 @@ props_advance(props_t *props, LV2_Atom_Forge *forge, uint32_t frames,
 				if(def->event_cb)
 					def->event_cb(props->data, frames, impl);
 			}
+			else if(props->dyn && props->dyn->prop)
+			{
+				const LV2_URID subj = subject ? subject->body : 0;
+
+				props->dyn->prop(props->data, PROPS_DYN_EV_SET, subj, property, value);
+
+			//TODO send ack
+			}
 		}
 
 		if(sequence_num)
 		{
 			if(*ref)
 				*ref = _props_patch_ack(props, forge, frames, sequence_num);
+		}
+
+		return 1;
+	}
+	else if(obj->body.otype == props->urid.patch_patch)
+	{
+		const LV2_Atom_URID *subject = NULL;
+		const LV2_Atom_Int *sequence = NULL;
+		const LV2_Atom_Object *add = NULL;
+		const LV2_Atom_Object *rem = NULL;
+
+		lv2_atom_object_get(obj,
+			props->urid.patch_subject, &subject,
+			props->urid.patch_sequence, &sequence,
+			props->urid.patch_add, &add,
+			props->urid.patch_remove, &rem,
+			0);
+
+		LV2_URID subj = 0;
+		if(subject && (subject->atom.type == props->urid.atom_urid))
+		{
+			subj = subject->body;
+		}
+
+		int32_t sequence_num = 0;
+		if(sequence && (sequence->atom.type == props->urid.atom_int))
+		{
+			sequence_num = sequence->body;
+		}
+
+		if(rem && lv2_atom_forge_is_object_type(forge, rem->atom.type))
+		{
+			LV2_ATOM_OBJECT_FOREACH(rem, prop)
+			{
+				const LV2_URID property = prop->key;
+				const LV2_Atom *value = &prop->value;
+
+				if(props->dyn && props->dyn->prop)
+				{
+					props->dyn->prop(props->data, PROPS_DYN_EV_REM, subj, property, value);
+				}
+			}
+		}
+
+		if(add && lv2_atom_forge_is_object_type(forge, add->atom.type))
+		{
+			LV2_ATOM_OBJECT_FOREACH(add, prop)
+			{
+				const LV2_URID property = prop->key;
+				const LV2_Atom *value = &prop->value;
+
+				if(props->dyn && props->dyn->prop)
+				{
+					props->dyn->prop(props->data, PROPS_DYN_EV_ADD, subj, property, value);
+				}
+			}
+		}
+
+		if(sequence_num && *ref)
+		{
+			*ref = _props_patch_ack(props, forge, frames, sequence_num);
 		}
 
 		return 1;
