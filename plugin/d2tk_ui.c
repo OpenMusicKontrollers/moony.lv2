@@ -78,7 +78,6 @@ struct _dynparam_t {
 
 	bool writable;
 
-	LV2_URID unit;
 	LV2_URID range;
 
 	uint32_t size;
@@ -88,6 +87,7 @@ struct _dynparam_t {
 	char *comment;
 	void *min;
 	void *max;
+	char *unit;
 };
 
 struct _plugstate_t {
@@ -150,6 +150,32 @@ struct _plughandle_t {
 
 	LV2_URID urid_lv2_minimum;
 	LV2_URID urid_lv2_maximum;
+
+	LV2_URID urid_units_unit;
+	LV2_URID urid_units_symbol;
+	LV2_URID urid_units_bar;
+	LV2_URID urid_units_beat;
+	LV2_URID urid_units_bpm;
+	LV2_URID urid_units_cent;
+	LV2_URID urid_units_cm;
+	LV2_URID urid_units_db;
+	LV2_URID urid_units_degree;
+	LV2_URID urid_units_frame;
+	LV2_URID urid_units_hz;
+	LV2_URID urid_units_inch;
+	LV2_URID urid_units_khz;
+	LV2_URID urid_units_km;
+	LV2_URID urid_units_m;
+	LV2_URID urid_units_mhz;
+	LV2_URID urid_units_midiNote;
+	LV2_URID urid_units_mile;
+	LV2_URID urid_units_min;
+	LV2_URID urid_units_mm;
+	LV2_URID urid_units_ms;
+	LV2_URID urid_units_oct;
+	LV2_URID urid_units_pc;
+	LV2_URID urid_units_s;
+	LV2_URID urid_units_semitone12TET;
 
 	bool reinit;
 	char template [24];
@@ -382,6 +408,7 @@ _dynparam_free(dynparam_t *dynparam)
 	free(dynparam->val);
 	free(dynparam->min);
 	free(dynparam->max);
+	free(dynparam->unit);
 }
 
 static dynparam_t *
@@ -487,6 +514,72 @@ _dyn_prop_add(plughandle_t *handle, LV2_URID subj, LV2_URID prop,
 			{
 				dynparam->max = realloc(dynparam->max, atom->size); //FIXME check
 				memcpy(dynparam->max, LV2_ATOM_BODY_CONST(atom), atom->size);
+			}
+			else if(prop == handle->urid_units_symbol)
+			{
+				dynparam->unit = realloc(dynparam->unit, atom->size); //FIXME check
+				memcpy(dynparam->unit, LV2_ATOM_BODY_CONST(atom), atom->size);
+			}
+			else if(prop == handle->urid_units_unit)
+			{
+				const LV2_URID tar = ((const LV2_Atom_URID *)(atom))->body; //FIXME check
+				const char *symbol = NULL;
+
+				//TODO use binary lookup
+				if(tar == handle->urid_units_bar)
+					symbol = "bars";
+				else if(tar == handle->urid_units_beat)
+					symbol = "beats";
+				else if(tar == handle->urid_units_bpm)
+					symbol = "BPM";
+				else if(tar == handle->urid_units_cent)
+					symbol = "ct";
+				else if(tar == handle->urid_units_cm)
+					symbol = "cm";
+				else if(tar == handle->urid_units_db)
+					symbol = "dB";
+				else if(tar == handle->urid_units_degree)
+					symbol = "deg";
+				else if(tar == handle->urid_units_frame)
+					symbol = "frames";
+				else if(tar == handle->urid_units_hz)
+					symbol = "Hz";
+				else if(tar == handle->urid_units_inch)
+					symbol = "in";
+				else if(tar == handle->urid_units_khz)
+					symbol = "kHz";
+				else if(tar == handle->urid_units_km)
+					symbol = "km";
+				else if(tar == handle->urid_units_m)
+					symbol = "m";
+				else if(tar == handle->urid_units_mhz)
+					symbol = "MHz";
+				else if(tar == handle->urid_units_midiNote)
+					symbol = "note";
+				else if(tar == handle->urid_units_mile)
+					symbol = "mi";
+				else if(tar == handle->urid_units_min)
+					symbol = "min";
+				else if(tar == handle->urid_units_mm)
+					symbol = "mm";
+				else if(tar == handle->urid_units_ms)
+					symbol = "ms";
+				else if(tar == handle->urid_units_oct)
+					symbol = "oct";
+				else if(tar == handle->urid_units_pc)
+					symbol = "%";
+				else if(tar == handle->urid_units_s)
+					symbol = "s";
+				else if(tar == handle->urid_units_semitone12TET)
+					symbol = "semi";
+
+				if(symbol)
+				{
+					const size_t symbol_len = strlen(symbol) + 1;
+
+					dynparam->unit = realloc(dynparam->unit, symbol_len); //FIXME check
+					memcpy(dynparam->unit, symbol, symbol_len);
+				}
 			}
 			//TODO more attributes
 		}
@@ -1230,12 +1323,12 @@ _expose_left(plughandle_t *handle, const d2tk_rect_t *rect)
 
 static void
 _expose_slot_bool(plughandle_t *handle, dynparam_t *dynparam,
-	const d2tk_rect_t *rect, unsigned k)
+	const d2tk_rect_t *rect, size_t lbl_len, const char *lbl, unsigned k)
 {
 	d2tk_frontend_t *dpugl = handle->dpugl;
 	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
 
-	if(!dynparam->val || !dynparam->label)
+	if(!dynparam->val)
 	{
 		return;
 	}
@@ -1243,7 +1336,7 @@ _expose_slot_bool(plughandle_t *handle, dynparam_t *dynparam,
 	bool val = *(int32_t *)dynparam->val;
 
 	const d2tk_state_t state = d2tk_base_spinner_bool(base,
-		D2TK_ID_IDX(k), rect, -1, dynparam->label, &val);
+		D2TK_ID_IDX(k), rect, lbl_len, lbl, &val);
 
 	if(d2tk_state_is_changed(state))
 	{
@@ -1258,12 +1351,12 @@ _expose_slot_bool(plughandle_t *handle, dynparam_t *dynparam,
 
 static void
 _expose_slot_int(plughandle_t *handle, dynparam_t *dynparam,
-	const d2tk_rect_t *rect, unsigned k)
+	const d2tk_rect_t *rect, size_t lbl_len, const char *lbl, unsigned k)
 {
 	d2tk_frontend_t *dpugl = handle->dpugl;
 	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
 
-	if(!dynparam->val || !dynparam->label || !dynparam->min || !dynparam->max)
+	if(!dynparam->val || !dynparam->min || !dynparam->max)
 	{
 		return;
 	}
@@ -1273,7 +1366,7 @@ _expose_slot_int(plughandle_t *handle, dynparam_t *dynparam,
 	int32_t *val = dynparam->val;
 
 	const d2tk_state_t state = d2tk_base_spinner_int32(base,
-		D2TK_ID_IDX(k), rect, -1, dynparam->label, min, val, max);
+		D2TK_ID_IDX(k), rect, lbl_len, lbl, min, val, max);
 
 	if(d2tk_state_is_changed(state))
 	{
@@ -1287,12 +1380,12 @@ _expose_slot_int(plughandle_t *handle, dynparam_t *dynparam,
 
 static void
 _expose_slot_long(plughandle_t *handle, dynparam_t *dynparam,
-	const d2tk_rect_t *rect, unsigned k)
+	const d2tk_rect_t *rect, size_t lbl_len, const char *lbl, unsigned k)
 {
 	d2tk_frontend_t *dpugl = handle->dpugl;
 	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
 
-	if(!dynparam->val || !dynparam->label || !dynparam->min || !dynparam->max)
+	if(!dynparam->val || !dynparam->min || !dynparam->max)
 	{
 		return;
 	}
@@ -1302,7 +1395,7 @@ _expose_slot_long(plughandle_t *handle, dynparam_t *dynparam,
 	int64_t *val = dynparam->val;
 
 	const d2tk_state_t state = d2tk_base_spinner_int64(base,
-		D2TK_ID_IDX(k), rect, -1, dynparam->label, min, val, max);
+		D2TK_ID_IDX(k), rect, lbl_len, lbl, min, val, max);
 
 	if(d2tk_state_is_changed(state))
 	{
@@ -1316,12 +1409,12 @@ _expose_slot_long(plughandle_t *handle, dynparam_t *dynparam,
 
 static void
 _expose_slot_float(plughandle_t *handle, dynparam_t *dynparam,
-	const d2tk_rect_t *rect, unsigned k)
+	const d2tk_rect_t *rect, size_t lbl_len, const char *lbl, unsigned k)
 {
 	d2tk_frontend_t *dpugl = handle->dpugl;
 	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
 
-	if(!dynparam->val || !dynparam->label || !dynparam->min || !dynparam->max)
+	if(!dynparam->val || !dynparam->min || !dynparam->max)
 	{
 		return;
 	}
@@ -1331,7 +1424,7 @@ _expose_slot_float(plughandle_t *handle, dynparam_t *dynparam,
 	float *val = dynparam->val;
 
 	const d2tk_state_t state = d2tk_base_spinner_float(base,
-		D2TK_ID_IDX(k), rect, -1, dynparam->label, min, val, max);
+		D2TK_ID_IDX(k), rect, lbl_len, lbl, min, val, max);
 
 	if(d2tk_state_is_changed(state))
 	{
@@ -1345,12 +1438,12 @@ _expose_slot_float(plughandle_t *handle, dynparam_t *dynparam,
 
 static void
 _expose_slot_double(plughandle_t *handle, dynparam_t *dynparam,
-	const d2tk_rect_t *rect, unsigned k)
+	const d2tk_rect_t *rect, size_t lbl_len, const char *lbl, unsigned k)
 {
 	d2tk_frontend_t *dpugl = handle->dpugl;
 	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
 
-	if(!dynparam->val || !dynparam->label || !dynparam->min || !dynparam->max)
+	if(!dynparam->val || !dynparam->min || !dynparam->max)
 	{
 		return;
 	}
@@ -1360,7 +1453,7 @@ _expose_slot_double(plughandle_t *handle, dynparam_t *dynparam,
 	double *val = dynparam->val;
 
 	const d2tk_state_t state = d2tk_base_spinner_double(base,
-		D2TK_ID_IDX(k), rect, -1, dynparam->label, min, val, max);
+		D2TK_ID_IDX(k), rect, lbl_len, lbl, min, val, max);
 
 	if(d2tk_state_is_changed(state))
 	{
@@ -1380,31 +1473,45 @@ _expose_slot(plughandle_t *handle, const d2tk_rect_t *rect, unsigned k)
 
 	dynparam_t *dynparam = &handle->dynparams[k];
 
-	//FIXME 
 	if(!dynparam->label)
 	{
 		return;
 	}
 
+	char buf[256];
+	const char *lbl;
+	size_t lbl_len;
+
+	if(dynparam->unit)
+	{
+		lbl_len = snprintf(buf, sizeof(buf), "%s•%s", dynparam->label, dynparam->unit);
+		lbl = buf;
+	}
+	else
+	{
+		lbl_len = -1;
+		lbl = dynparam->label;
+	}
+
 	if(dynparam->range == handle->props.urid.atom_bool)
 	{
-		_expose_slot_bool(handle, dynparam, rect, k);
+		_expose_slot_bool(handle, dynparam, rect, lbl_len, lbl, k);
 	}
 	else if(dynparam->range == handle->props.urid.atom_int)
 	{
-		_expose_slot_int(handle, dynparam, rect, k);
+		_expose_slot_int(handle, dynparam, rect, lbl_len, lbl, k);
 	}
 	else if(dynparam->range == handle->props.urid.atom_long)
 	{
-		_expose_slot_long(handle, dynparam, rect, k);
+		_expose_slot_long(handle, dynparam, rect, lbl_len, lbl, k);
 	}
 	else if(dynparam->range == handle->props.urid.atom_float)
 	{
-		_expose_slot_float(handle, dynparam, rect, k);
+		_expose_slot_float(handle, dynparam, rect, lbl_len, lbl, k);
 	}
 	else if(dynparam->range == handle->props.urid.atom_double)
 	{
-		_expose_slot_double(handle, dynparam, rect, k);
+		_expose_slot_double(handle, dynparam, rect, lbl_len, lbl, k);
 	}
 	/*
 	else if(dynparam->range == handle->props.urid.atom_urid)
@@ -1909,6 +2016,32 @@ instantiate(const LV2UI_Descriptor *descriptor,
 		LV2_CORE__minimum);
 	handle->urid_lv2_maximum = handle->map->map(handle->map->handle,
 		LV2_CORE__maximum);
+
+	handle->urid_units_symbol = handle->map->map(handle->map->handle, LV2_UNITS__symbol);
+	handle->urid_units_unit = handle->map->map(handle->map->handle, LV2_UNITS__unit);
+	handle->urid_units_bar = handle->map->map(handle->map->handle, LV2_UNITS__bar);
+	handle->urid_units_beat = handle->map->map(handle->map->handle, LV2_UNITS__beat);
+	handle->urid_units_bpm = handle->map->map(handle->map->handle, LV2_UNITS__bpm);
+	handle->urid_units_cent = handle->map->map(handle->map->handle, LV2_UNITS__cent);
+	handle->urid_units_cm = handle->map->map(handle->map->handle, LV2_UNITS__cm);
+	handle->urid_units_db = handle->map->map(handle->map->handle, LV2_UNITS__db);
+	handle->urid_units_degree = handle->map->map(handle->map->handle, LV2_UNITS__degree);
+	handle->urid_units_frame = handle->map->map(handle->map->handle, LV2_UNITS__frame);
+	handle->urid_units_hz = handle->map->map(handle->map->handle, LV2_UNITS__hz);
+	handle->urid_units_inch = handle->map->map(handle->map->handle, LV2_UNITS__inch);
+	handle->urid_units_khz = handle->map->map(handle->map->handle, LV2_UNITS__khz);
+	handle->urid_units_km = handle->map->map(handle->map->handle, LV2_UNITS__km);
+	handle->urid_units_m = handle->map->map(handle->map->handle, LV2_UNITS__m);
+	handle->urid_units_mhz = handle->map->map(handle->map->handle, LV2_UNITS__mhz);
+	handle->urid_units_midiNote = handle->map->map(handle->map->handle, LV2_UNITS__midiNote);
+	handle->urid_units_mile = handle->map->map(handle->map->handle, LV2_UNITS__mile);
+	handle->urid_units_min = handle->map->map(handle->map->handle, LV2_UNITS__min);
+	handle->urid_units_mm = handle->map->map(handle->map->handle, LV2_UNITS__mm);
+	handle->urid_units_ms = handle->map->map(handle->map->handle, LV2_UNITS__ms);
+	handle->urid_units_oct = handle->map->map(handle->map->handle, LV2_UNITS__oct);
+	handle->urid_units_pc = handle->map->map(handle->map->handle, LV2_UNITS__pc);
+	handle->urid_units_s = handle->map->map(handle->map->handle, LV2_UNITS__s);
+	handle->urid_units_semitone12TET = handle->map->map(handle->map->handle, LV2_UNITS__semitone12TET);
 
 	if(!props_init(&handle->props, plugin_uri,
 		defs, MAX_NPROPS, &handle->state, &handle->stash,
