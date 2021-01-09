@@ -99,6 +99,16 @@ D2TK_API void
 d2tk_base_set_tooltip(d2tk_base_t *base, ssize_t lbl_len, const char *lbl,
 	d2tk_coord_t h)
 {
+	if(!lbl)
+	{
+		return;
+	}
+
+	if(lbl_len == -1) // zero terminated string
+	{
+		lbl_len = strlen(lbl);
+	}
+
 	strncpy(base->tooltip.buf, lbl, lbl_len);
 	base->tooltip.len = lbl_len;
 	base->tooltip.h = h;
