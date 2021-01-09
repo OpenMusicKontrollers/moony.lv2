@@ -595,33 +595,6 @@ static const props_dyn_t dyn = {
 };
 
 static void
-_message_set_code(plughandle_t *handle, size_t len)
-{
-	ser_atom_t ser;
-	props_impl_t *impl = _props_impl_get(&handle->props, handle->urid_code);
-	if(!impl)
-	{
-		return;
-	}
-
-	impl->value.size = len;
-
-	ser_atom_init(&ser);
-	ser_atom_reset(&ser, &handle->forge);
-
-	LV2_Atom_Forge_Ref ref = 1;
-
-	props_set(&handle->props, &handle->forge, 0, handle->urid_code, &ref);
-
-	const LV2_Atom_Event *ev = (const LV2_Atom_Event *)ser_atom_get(&ser);
-	const LV2_Atom *atom = &ev->body;
-	handle->writer(handle->controller, handle->control, lv2_atom_total_size(atom),
-		handle->atom_eventTransfer, atom);
-
-	ser_atom_deinit(&ser);
-}
-
-static void
 _message_set_key(plughandle_t *handle, LV2_URID key)
 {
 	ser_atom_t ser;
@@ -640,6 +613,34 @@ _message_set_key(plughandle_t *handle, LV2_URID key)
 
 	const LV2_Atom_Event *ev = (const LV2_Atom_Event *)ser_atom_get(&ser);
 	const LV2_Atom *atom = &ev->body;
+	handle->writer(handle->controller, handle->control, lv2_atom_total_size(atom),
+		handle->atom_eventTransfer, atom);
+
+	ser_atom_deinit(&ser);
+}
+
+static void
+_message_set_dynparam(plughandle_t *handle, const dynparam_t *dynparam)
+{
+	ser_atom_t ser;
+
+	ser_atom_init(&ser);
+	ser_atom_reset(&ser, &handle->forge);
+
+	LV2_Atom_Forge_Frame frame;
+
+	lv2_atom_forge_object(&handle->forge, &frame, 0, handle->props.urid.patch_set);
+	lv2_atom_forge_key(&handle->forge, handle->props.urid.patch_subject);
+	lv2_atom_forge_urid(&handle->forge, handle->props.urid.subject);
+	lv2_atom_forge_key(&handle->forge, handle->props.urid.patch_property);
+	lv2_atom_forge_urid(&handle->forge, dynparam->prop);
+	lv2_atom_forge_key(&handle->forge, handle->props.urid.patch_value);
+	lv2_atom_forge_atom(&handle->forge, dynparam->size, dynparam->range);
+	lv2_atom_forge_write(&handle->forge, dynparam->val, dynparam->size);
+	lv2_atom_forge_pop(&handle->forge, &frame);
+
+
+	const LV2_Atom *atom = (const LV2_Atom *)ser_atom_get(&ser);
 	handle->writer(handle->controller, handle->control, lv2_atom_total_size(atom),
 		handle->atom_eventTransfer, atom);
 
@@ -1247,7 +1248,7 @@ _expose_slot_bool(plughandle_t *handle, dynparam_t *dynparam,
 	if(d2tk_state_is_changed(state))
 	{
 		*(int32_t *)dynparam->val = val;
-		//TODO send patch:Set
+		_message_set_dynparam(handle, dynparam);
 	}
 	if(d2tk_state_is_over(state) && dynparam->comment)
 	{
@@ -1276,7 +1277,94 @@ _expose_slot_int(plughandle_t *handle, dynparam_t *dynparam,
 
 	if(d2tk_state_is_changed(state))
 	{
-		//TODO send patch:Set
+		_message_set_dynparam(handle, dynparam);
+	}
+	if(d2tk_state_is_over(state) && dynparam->comment)
+	{
+		d2tk_base_set_tooltip(base, -1, dynparam->comment, handle->tip_height);
+	}
+}
+
+static void
+_expose_slot_long(plughandle_t *handle, dynparam_t *dynparam,
+	const d2tk_rect_t *rect, unsigned k)
+{
+	d2tk_frontend_t *dpugl = handle->dpugl;
+	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
+
+	if(!dynparam->val || !dynparam->label || !dynparam->min || !dynparam->max)
+	{
+		return;
+	}
+
+	const int64_t min = *(int64_t *)dynparam->min;
+	const int64_t max = *(int64_t *)dynparam->max;
+	int64_t *val = dynparam->val;
+
+	const d2tk_state_t state = d2tk_base_spinner_int64(base,
+		D2TK_ID_IDX(k), rect, -1, dynparam->label, min, val, max);
+
+	if(d2tk_state_is_changed(state))
+	{
+		_message_set_dynparam(handle, dynparam);
+	}
+	if(d2tk_state_is_over(state) && dynparam->comment)
+	{
+		d2tk_base_set_tooltip(base, -1, dynparam->comment, handle->tip_height);
+	}
+}
+
+static void
+_expose_slot_float(plughandle_t *handle, dynparam_t *dynparam,
+	const d2tk_rect_t *rect, unsigned k)
+{
+	d2tk_frontend_t *dpugl = handle->dpugl;
+	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
+
+	if(!dynparam->val || !dynparam->label || !dynparam->min || !dynparam->max)
+	{
+		return;
+	}
+
+	const float min = *(float *)dynparam->min;
+	const float max = *(float *)dynparam->max;
+	float *val = dynparam->val;
+
+	const d2tk_state_t state = d2tk_base_spinner_float(base,
+		D2TK_ID_IDX(k), rect, -1, dynparam->label, min, val, max);
+
+	if(d2tk_state_is_changed(state))
+	{
+		_message_set_dynparam(handle, dynparam);
+	}
+	if(d2tk_state_is_over(state) && dynparam->comment)
+	{
+		d2tk_base_set_tooltip(base, -1, dynparam->comment, handle->tip_height);
+	}
+}
+
+static void
+_expose_slot_double(plughandle_t *handle, dynparam_t *dynparam,
+	const d2tk_rect_t *rect, unsigned k)
+{
+	d2tk_frontend_t *dpugl = handle->dpugl;
+	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
+
+	if(!dynparam->val || !dynparam->label || !dynparam->min || !dynparam->max)
+	{
+		return;
+	}
+
+	const double min = *(double *)dynparam->min;
+	const double max = *(double *)dynparam->max;
+	double *val = dynparam->val;
+
+	const d2tk_state_t state = d2tk_base_spinner_double(base,
+		D2TK_ID_IDX(k), rect, -1, dynparam->label, min, val, max);
+
+	if(d2tk_state_is_changed(state))
+	{
+		_message_set_dynparam(handle, dynparam);
 	}
 	if(d2tk_state_is_over(state) && dynparam->comment)
 	{
@@ -1306,19 +1394,19 @@ _expose_slot(plughandle_t *handle, const d2tk_rect_t *rect, unsigned k)
 	{
 		_expose_slot_int(handle, dynparam, rect, k);
 	}
-	/*
 	else if(dynparam->range == handle->props.urid.atom_long)
 	{
-		//TODO
+		_expose_slot_long(handle, dynparam, rect, k);
 	}
 	else if(dynparam->range == handle->props.urid.atom_float)
 	{
-		//TODO
+		_expose_slot_float(handle, dynparam, rect, k);
 	}
 	else if(dynparam->range == handle->props.urid.atom_double)
 	{
-		//TODO
+		_expose_slot_double(handle, dynparam, rect, k);
 	}
+	/*
 	else if(dynparam->range == handle->props.urid.atom_urid)
 	{
 		//TODO
@@ -1961,15 +2049,21 @@ _file_read(plughandle_t *handle)
 {
 	lseek(handle->fd, 0, SEEK_SET);
 	const size_t len = lseek(handle->fd, 0, SEEK_END);
-
 	lseek(handle->fd, 0, SEEK_SET);
 
-	read(handle->fd, handle->state.code, len);
-	handle->state.code[len] = '\0';
+	char *txt = alloca(len + 1);
+	if(!txt)
+	{
+		lv2_log_error(&handle->logger, "alloca failed\n");
+		return;
+	}
 
-	handle->hash = d2tk_hash(handle->state.code, len);
+	read(handle->fd, txt, len);
+	txt[len] = '\0';
 
-	_message_set_code(handle, len + 1);
+	handle->hash = d2tk_hash(txt, len);
+
+	_update_code(handle, txt, len);
 }
 
 static int
