@@ -309,6 +309,115 @@ d2tk_base_spinner_int32(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect
 }
 
 D2TK_API d2tk_state_t
+d2tk_base_spinner_int64(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
+	ssize_t lbl_len, const char *lbl, int64_t min, int64_t *value, int64_t max)
+{
+	d2tk_state_t state = D2TK_STATE_NONE;
+	const d2tk_style_t *style = d2tk_base_get_style(base);
+	const d2tk_coord_t h2 = rect->h/2 + style->padding*3;
+	const d2tk_coord_t fract [3] = { h2, 0, h2 };
+	D2TK_BASE_LAYOUT(rect, 3, fract, D2TK_FLAG_LAYOUT_X_ABS, lay)
+	{
+		const unsigned k = d2tk_layout_get_index(lay);
+		const d2tk_rect_t *lrect= d2tk_layout_get_rect(lay);
+		const d2tk_id_t itrid = D2TK_ID_IDX(k);
+		const d2tk_id_t subid = (itrid << 32) | id;
+
+		switch(k)
+		{
+			case 0:
+			{
+				const d2tk_state_t substate = _d2tk_base_spinner_dec(base, subid, lrect);
+
+				if(d2tk_state_is_changed(substate))
+				{
+					const int64_t old_value = *value;
+
+					*value -= 1;
+					d2tk_clip_int64(min, value, max);
+
+					if(old_value != *value)
+					{
+						state |= D2TK_STATE_CHANGED;
+					}
+				}
+			} break;
+			case 1:
+			{
+				const d2tk_state_t substate = d2tk_base_bar_int64(base, subid, lrect,
+					min, value, max);
+
+				state |= substate;
+
+				d2tk_rect_t bnd;
+				d2tk_rect_shrink(&bnd, lrect, style->padding*5);
+
+				const d2tk_style_t *old_style = d2tk_base_get_style(base);
+				d2tk_style_t style = *old_style;
+				style.font_face = FONT_CODE_MEDIUM;
+
+				const bool grow = d2tk_state_is_focused(substate)
+					|| d2tk_state_is_hot(substate);
+
+				if(grow)
+				{
+					d2tk_base_set_style(base, &style);
+
+					char lbl2 [16];
+					const ssize_t lbl2_len = snprintf(lbl2, sizeof(lbl2), "%+"PRIi64, *value);
+					d2tk_base_label(base, lbl2_len, lbl2, 0.66f, &bnd,
+						D2TK_ALIGN_BOTTOM | D2TK_ALIGN_RIGHT);
+
+					d2tk_base_set_style(base, old_style);
+
+					if(lbl_len && lbl)
+					{
+						d2tk_base_label(base, lbl_len, lbl, 0.33f, &bnd,
+							D2TK_ALIGN_TOP | D2TK_ALIGN_LEFT);
+					}
+				}
+				else
+				{
+					d2tk_base_set_style(base, &style);
+
+					char lbl2 [16];
+					const ssize_t lbl2_len = snprintf(lbl2, sizeof(lbl2), "%+"PRIi64, *value);
+					d2tk_base_label(base, lbl2_len, lbl2, 0.33f, &bnd,
+						D2TK_ALIGN_BOTTOM | D2TK_ALIGN_RIGHT);
+
+					d2tk_base_set_style(base, old_style);
+
+					if(lbl_len && lbl)
+					{
+						d2tk_base_label(base, lbl_len, lbl, 0.66f, &bnd,
+							D2TK_ALIGN_TOP| D2TK_ALIGN_LEFT);
+					}
+				}
+			} break;
+			case 2:
+			{
+				const d2tk_state_t substate = _d2tk_base_spinner_inc(base, subid, lrect);
+
+				if(d2tk_state_is_changed(substate))
+				{
+					const int64_t old_value = *value;
+
+					*value += 1;
+					d2tk_clip_int64(min, value, max);
+
+					if(old_value != *value)
+					{
+						state |= D2TK_STATE_CHANGED;
+					}
+				}
+			} break;
+		}
+	}
+
+	return state;
+}
+
+D2TK_API d2tk_state_t
 d2tk_base_spinner_float(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
 	ssize_t lbl_len, const char *lbl, float min, float *value, float max)
 {
@@ -404,6 +513,115 @@ d2tk_base_spinner_float(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect
 
 					*value += 0.01f; //FIXME
 					d2tk_clip_float(min, value, max);
+
+					if(old_value != *value)
+					{
+						state |= D2TK_STATE_CHANGED;
+					}
+				}
+			} break;
+		}
+	}
+
+	return state;
+}
+
+D2TK_API d2tk_state_t
+d2tk_base_spinner_double(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
+	ssize_t lbl_len, const char *lbl, double min, double *value, double max)
+{
+	d2tk_state_t state = D2TK_STATE_NONE;
+	const d2tk_style_t *style = d2tk_base_get_style(base);
+	const d2tk_coord_t h2 = rect->h/2 + style->padding*3;
+	const d2tk_coord_t fract [3] = { h2, 0, h2 };
+	D2TK_BASE_LAYOUT(rect, 3, fract, D2TK_FLAG_LAYOUT_X_ABS, lay)
+	{
+		const unsigned k = d2tk_layout_get_index(lay);
+		const d2tk_rect_t *lrect= d2tk_layout_get_rect(lay);
+		const d2tk_id_t itrid = D2TK_ID_IDX(k);
+		const d2tk_id_t subid = (itrid << 32) | id;
+
+		switch(k)
+		{
+			case 0:
+			{
+				const d2tk_state_t substate = _d2tk_base_spinner_dec(base, subid, lrect);
+
+				if(d2tk_state_is_changed(substate))
+				{
+					const double old_value = *value;
+
+					*value -= 0.01f; //FIXME
+					d2tk_clip_double(min, value, max);
+
+					if(old_value != *value)
+					{
+						state |= D2TK_STATE_CHANGED;
+					}
+				}
+			} break;
+			case 1:
+			{
+				const d2tk_state_t substate = d2tk_base_bar_double(base, subid, lrect,
+					min, value, max);
+
+				state |= substate;
+
+				d2tk_rect_t bnd;
+				d2tk_rect_shrink(&bnd, lrect, style->padding*5);
+
+				const d2tk_style_t *old_style = d2tk_base_get_style(base);
+				d2tk_style_t style = *old_style;
+				style.font_face = FONT_CODE_MEDIUM;
+
+				const bool grow = d2tk_state_is_focused(substate)
+					|| d2tk_state_is_hot(substate);
+
+				if(grow)
+				{
+					d2tk_base_set_style(base, &style);
+
+					char lbl2 [16];
+					const ssize_t lbl2_len = snprintf(lbl2, sizeof(lbl2), "%+.4f", *value);
+					d2tk_base_label(base, lbl2_len, lbl2, 0.66f, &bnd,
+						D2TK_ALIGN_BOTTOM | D2TK_ALIGN_RIGHT);
+
+					d2tk_base_set_style(base, old_style);
+
+					if(lbl_len && lbl)
+					{
+						d2tk_base_label(base, lbl_len, lbl, 0.33f, &bnd,
+							D2TK_ALIGN_TOP | D2TK_ALIGN_LEFT);
+					}
+				}
+				else
+				{
+					d2tk_base_set_style(base, &style);
+
+					char lbl2 [16];
+					const ssize_t lbl2_len = snprintf(lbl2, sizeof(lbl2), "%+.4f", *value);
+					d2tk_base_label(base, lbl2_len, lbl2, 0.33f, &bnd,
+						D2TK_ALIGN_BOTTOM | D2TK_ALIGN_RIGHT);
+
+					d2tk_base_set_style(base, old_style);
+
+					if(lbl_len && lbl)
+					{
+						d2tk_base_label(base, lbl_len, lbl, 0.66f, &bnd,
+							D2TK_ALIGN_TOP | D2TK_ALIGN_LEFT);
+					}
+				}
+			} break;
+			case 2:
+			{
+				const d2tk_state_t substate = _d2tk_base_spinner_inc(base, subid, lrect);
+
+				if(d2tk_state_is_changed(substate))
+				{
+					const double old_value = *value;
+
+					*value += 0.01f; //FIXME
+					d2tk_clip_double(min, value, max);
 
 					if(old_value != *value)
 					{
