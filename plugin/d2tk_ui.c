@@ -896,7 +896,7 @@ _expose_font_height(plughandle_t *handle, const d2tk_rect_t *rect)
 	static const char lbl [] = "font-height•px";
 
 	if(d2tk_base_spinner_int32_is_changed(base, D2TK_ID, rect,
-		sizeof(lbl), lbl, 10, &handle->state.font_height, 25))
+		sizeof(lbl), lbl, 10, &handle->state.font_height, 25, D2TK_FLAG_NONE))
 	{
 		_message_set_key(handle, handle->urid_fontHeight);
 		_update_font_height(handle);
@@ -1321,6 +1321,14 @@ _expose_left(plughandle_t *handle, const d2tk_rect_t *rect)
 	}
 }
 
+static d2tk_flag_t
+_dynparam_flag(dynparam_t *dynparam)
+{
+	return dynparam->writable
+		? D2TK_FLAG_NONE
+		: D2TK_FLAG_INACTIVE;
+}
+
 static void
 _expose_slot_bool(plughandle_t *handle, dynparam_t *dynparam,
 	const d2tk_rect_t *rect, size_t lbl_len, const char *lbl, unsigned k)
@@ -1336,7 +1344,7 @@ _expose_slot_bool(plughandle_t *handle, dynparam_t *dynparam,
 	bool val = *(int32_t *)dynparam->val;
 
 	const d2tk_state_t state = d2tk_base_spinner_bool(base,
-		D2TK_ID_IDX(k), rect, lbl_len, lbl, &val);
+		D2TK_ID_IDX(k), rect, lbl_len, lbl, &val, _dynparam_flag(dynparam));
 
 	if(d2tk_state_is_changed(state))
 	{
@@ -1366,7 +1374,7 @@ _expose_slot_int(plughandle_t *handle, dynparam_t *dynparam,
 	int32_t *val = dynparam->val;
 
 	const d2tk_state_t state = d2tk_base_spinner_int32(base,
-		D2TK_ID_IDX(k), rect, lbl_len, lbl, min, val, max);
+		D2TK_ID_IDX(k), rect, lbl_len, lbl, min, val, max, _dynparam_flag(dynparam));
 
 	if(d2tk_state_is_changed(state))
 	{
@@ -1395,7 +1403,7 @@ _expose_slot_long(plughandle_t *handle, dynparam_t *dynparam,
 	int64_t *val = dynparam->val;
 
 	const d2tk_state_t state = d2tk_base_spinner_int64(base,
-		D2TK_ID_IDX(k), rect, lbl_len, lbl, min, val, max);
+		D2TK_ID_IDX(k), rect, lbl_len, lbl, min, val, max, _dynparam_flag(dynparam));
 
 	if(d2tk_state_is_changed(state))
 	{
@@ -1424,7 +1432,7 @@ _expose_slot_float(plughandle_t *handle, dynparam_t *dynparam,
 	float *val = dynparam->val;
 
 	const d2tk_state_t state = d2tk_base_spinner_float(base,
-		D2TK_ID_IDX(k), rect, lbl_len, lbl, min, val, max);
+		D2TK_ID_IDX(k), rect, lbl_len, lbl, min, val, max, _dynparam_flag(dynparam));
 
 	if(d2tk_state_is_changed(state))
 	{
@@ -1453,7 +1461,7 @@ _expose_slot_double(plughandle_t *handle, dynparam_t *dynparam,
 	double *val = dynparam->val;
 
 	const d2tk_state_t state = d2tk_base_spinner_double(base,
-		D2TK_ID_IDX(k), rect, lbl_len, lbl, min, val, max);
+		D2TK_ID_IDX(k), rect, lbl_len, lbl, min, val, max, _dynparam_flag(dynparam));
 
 	if(d2tk_state_is_changed(state))
 	{
