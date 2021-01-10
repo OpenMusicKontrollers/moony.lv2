@@ -152,6 +152,7 @@ typedef enum _d2tk_flag_t {
 	D2TK_FLAG_LAYOUT_Y_ABS  = D2TK_FLAG_LAYOUT_Y | D2TK_FLAG_LAYOUT_ABS,
 	D2TK_FLAG_TABLE_ABS     = (1 << 8),
 	D2TK_FLAG_TABLE_REL     = (1 << 9),
+	D2TK_FLAG_INACTIVE      = (1 << 10)
 } d2tk_flag_t;
 
 #define D2TK_ID_IDX(IDX) ( ((d2tk_id_t)__LINE__ << 16) | (IDX) )
@@ -519,7 +520,7 @@ d2tk_base_vkb(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect);
 
 D2TK_API d2tk_state_t
 d2tk_base_dial_bool(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
-	bool *value);
+	bool *value, d2tk_flag_t flag);
 
 #define d2tk_base_dial_bool_is_changed(...) \
 	d2tk_state_is_changed(d2tk_base_dial_bool(__VA_ARGS__))
@@ -568,49 +569,53 @@ d2tk_base_dial_double(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
 
 D2TK_API d2tk_state_t
 d2tk_base_spinner_bool(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
-	ssize_t lbl_len, const char *lbl, bool *value);
+	ssize_t lbl_len, const char *lbl, bool *value, d2tk_flag_t flag);
 
 #define d2tk_base_spinner_bool_is_changed(...) \
 	d2tk_state_is_changed(d2tk_base_spinner_bool(__VA_ARGS__))
 
 D2TK_API d2tk_state_t
 d2tk_base_spinner_int32(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
-	ssize_t lbl_len, const char *lbl, int32_t min, int32_t *value, int32_t max);
+	ssize_t lbl_len, const char *lbl, int32_t min, int32_t *value, int32_t max,
+	d2tk_flag_t flag);
 
 #define d2tk_base_spinner_int32_is_changed(...) \
 	d2tk_state_is_changed(d2tk_base_spinner_int32(__VA_ARGS__))
 
 D2TK_API d2tk_state_t
 d2tk_base_spinner_int64(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
-	ssize_t lbl_len, const char *lbl, int64_t min, int64_t *value, int64_t max);
+	ssize_t lbl_len, const char *lbl, int64_t min, int64_t *value, int64_t max,
+	d2tk_flag_t flag);
 
 #define d2tk_base_spinner_int64_is_changed(...) \
 	d2tk_state_is_changed(d2tk_base_spinner_int64(__VA_ARGS__))
 
 D2TK_API d2tk_state_t
 d2tk_base_bar_int32(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
-	int32_t min, int32_t *value, int32_t max);
+	int32_t min, int32_t *value, int32_t max, d2tk_flag_t flag);
 
 #define d2tk_base_bar_int32_is_changed(...) \
 	d2tk_state_is_changed(d2tk_base_bar_int32(__VA_ARGS__))
 
 D2TK_API d2tk_state_t
 d2tk_base_bar_int64(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
-	int64_t min, int64_t *value, int64_t max);
+	int64_t min, int64_t *value, int64_t max, d2tk_flag_t flag);
 
 #define d2tk_base_bar_int64_is_changed(...) \
 	d2tk_state_is_changed(d2tk_base_bar_int64(__VA_ARGS__))
 
 D2TK_API d2tk_state_t
 d2tk_base_spinner_float(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
-	ssize_t lbl_len, const char *lbl, float min, float *value, float max);
+	ssize_t lbl_len, const char *lbl, float min, float *value, float max,
+	d2tk_flag_t flag);
 
 #define d2tk_base_spinner_float_is_changed(...) \
 	d2tk_state_is_changed(d2tk_base_spinner_float(__VA_ARGS__))
 
 D2TK_API d2tk_state_t
 d2tk_base_spinner_double(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
-	ssize_t lbl_len, const char *lbl, double min, double *value, double max);
+	ssize_t lbl_len, const char *lbl, double min, double *value, double max,
+	d2tk_flag_t flag);
 
 #define d2tk_base_spinner_double_is_changed(...) \
 	d2tk_state_is_changed(d2tk_base_spinner_double(__VA_ARGS__))
@@ -624,14 +629,14 @@ d2tk_base_spinner_wave_float(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t 
 
 D2TK_API d2tk_state_t
 d2tk_base_bar_float(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
-	float min, float *value, float max);
+	float min, float *value, float max, d2tk_flag_t flag);
 
 #define d2tk_base_bar_float_is_changed(...) \
 	d2tk_state_is_changed(d2tk_base_bar_float(__VA_ARGS__))
 
 D2TK_API d2tk_state_t
 d2tk_base_bar_double(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
-	double min, double *value, double max);
+	double min, double *value, double max, d2tk_flag_t flag);
 
 #define d2tk_base_bar_double_is_changed(...) \
 	d2tk_state_is_changed(d2tk_base_bar_double(__VA_ARGS__))

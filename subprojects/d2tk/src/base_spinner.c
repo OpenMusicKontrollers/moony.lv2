@@ -201,7 +201,8 @@ _d2tk_base_spinner_inc(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect)
 
 D2TK_API d2tk_state_t
 d2tk_base_spinner_int32(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
-	ssize_t lbl_len, const char *lbl, int32_t min, int32_t *value, int32_t max)
+	ssize_t lbl_len, const char *lbl, int32_t min, int32_t *value, int32_t max,
+	d2tk_flag_t flag)
 {
 	d2tk_state_t state = D2TK_STATE_NONE;
 	const d2tk_style_t *style = d2tk_base_get_style(base);
@@ -218,6 +219,11 @@ d2tk_base_spinner_int32(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect
 		{
 			case 0:
 			{
+				if(flag & D2TK_FLAG_INACTIVE)
+				{
+					break;
+				}
+
 				const d2tk_state_t substate = _d2tk_base_spinner_dec(base, subid, lrect);
 
 				if(d2tk_state_is_changed(substate))
@@ -236,7 +242,7 @@ d2tk_base_spinner_int32(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect
 			case 1:
 			{
 				const d2tk_state_t substate = d2tk_base_bar_int32(base, subid, lrect,
-					min, value, max);
+					min, value, max, flag);
 
 				state |= substate;
 
@@ -287,6 +293,11 @@ d2tk_base_spinner_int32(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect
 			} break;
 			case 2:
 			{
+				if(flag & D2TK_FLAG_INACTIVE)
+				{
+					break;
+				}
+
 				const d2tk_state_t substate = _d2tk_base_spinner_inc(base, subid, lrect);
 
 				if(d2tk_state_is_changed(substate))
@@ -310,7 +321,8 @@ d2tk_base_spinner_int32(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect
 
 D2TK_API d2tk_state_t
 d2tk_base_spinner_int64(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
-	ssize_t lbl_len, const char *lbl, int64_t min, int64_t *value, int64_t max)
+	ssize_t lbl_len, const char *lbl, int64_t min, int64_t *value, int64_t max,
+	d2tk_flag_t flag)
 {
 	d2tk_state_t state = D2TK_STATE_NONE;
 	const d2tk_style_t *style = d2tk_base_get_style(base);
@@ -327,6 +339,11 @@ d2tk_base_spinner_int64(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect
 		{
 			case 0:
 			{
+				if(flag & D2TK_FLAG_INACTIVE)
+				{
+					break;
+				}
+
 				const d2tk_state_t substate = _d2tk_base_spinner_dec(base, subid, lrect);
 
 				if(d2tk_state_is_changed(substate))
@@ -345,7 +362,7 @@ d2tk_base_spinner_int64(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect
 			case 1:
 			{
 				const d2tk_state_t substate = d2tk_base_bar_int64(base, subid, lrect,
-					min, value, max);
+					min, value, max, flag);
 
 				state |= substate;
 
@@ -396,6 +413,11 @@ d2tk_base_spinner_int64(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect
 			} break;
 			case 2:
 			{
+				if(flag & D2TK_FLAG_INACTIVE)
+				{
+					break;
+				}
+
 				const d2tk_state_t substate = _d2tk_base_spinner_inc(base, subid, lrect);
 
 				if(d2tk_state_is_changed(substate))
@@ -419,7 +441,8 @@ d2tk_base_spinner_int64(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect
 
 D2TK_API d2tk_state_t
 d2tk_base_spinner_float(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
-	ssize_t lbl_len, const char *lbl, float min, float *value, float max)
+	ssize_t lbl_len, const char *lbl, float min, float *value, float max,
+	d2tk_flag_t flag)
 {
 	d2tk_state_t state = D2TK_STATE_NONE;
 	const d2tk_style_t *style = d2tk_base_get_style(base);
@@ -436,6 +459,11 @@ d2tk_base_spinner_float(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect
 		{
 			case 0:
 			{
+				if(flag & D2TK_FLAG_INACTIVE)
+				{
+					break;
+				}
+
 				const d2tk_state_t substate = _d2tk_base_spinner_dec(base, subid, lrect);
 
 				if(d2tk_state_is_changed(substate))
@@ -454,7 +482,7 @@ d2tk_base_spinner_float(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect
 			case 1:
 			{
 				const d2tk_state_t substate = d2tk_base_bar_float(base, subid, lrect,
-					min, value, max);
+					min, value, max, flag);
 
 				state |= substate;
 
@@ -505,6 +533,11 @@ d2tk_base_spinner_float(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect
 			} break;
 			case 2:
 			{
+				if(flag & D2TK_FLAG_INACTIVE)
+				{
+					break;
+				}
+
 				const d2tk_state_t substate = _d2tk_base_spinner_inc(base, subid, lrect);
 
 				if(d2tk_state_is_changed(substate))
@@ -528,7 +561,8 @@ d2tk_base_spinner_float(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect
 
 D2TK_API d2tk_state_t
 d2tk_base_spinner_double(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
-	ssize_t lbl_len, const char *lbl, double min, double *value, double max)
+	ssize_t lbl_len, const char *lbl, double min, double *value, double max, 
+	d2tk_flag_t flag)
 {
 	d2tk_state_t state = D2TK_STATE_NONE;
 	const d2tk_style_t *style = d2tk_base_get_style(base);
@@ -545,6 +579,11 @@ d2tk_base_spinner_double(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rec
 		{
 			case 0:
 			{
+				if(flag & D2TK_FLAG_INACTIVE)
+				{
+					break;
+				}
+
 				const d2tk_state_t substate = _d2tk_base_spinner_dec(base, subid, lrect);
 
 				if(d2tk_state_is_changed(substate))
@@ -563,7 +602,7 @@ d2tk_base_spinner_double(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rec
 			case 1:
 			{
 				const d2tk_state_t substate = d2tk_base_bar_double(base, subid, lrect,
-					min, value, max);
+					min, value, max, flag);
 
 				state |= substate;
 
@@ -614,6 +653,11 @@ d2tk_base_spinner_double(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rec
 			} break;
 			case 2:
 			{
+				if(flag & D2TK_FLAG_INACTIVE)
+				{
+					break;
+				}
+
 				const d2tk_state_t substate = _d2tk_base_spinner_inc(base, subid, lrect);
 
 				if(d2tk_state_is_changed(substate))
@@ -637,7 +681,7 @@ d2tk_base_spinner_double(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rec
 
 D2TK_API d2tk_state_t
 d2tk_base_spinner_bool(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
-	ssize_t lbl_len, const char *lbl, bool *value)
+	ssize_t lbl_len, const char *lbl, bool *value, d2tk_flag_t flag)
 {
 	d2tk_state_t state = D2TK_STATE_NONE;
 	const d2tk_style_t *style = d2tk_base_get_style(base);
@@ -665,7 +709,7 @@ d2tk_base_spinner_bool(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
 			} break;
 			case 2:
 			{
-				state = d2tk_base_dial_bool(base, subid, lrect, value);
+				state = d2tk_base_dial_bool(base, subid, lrect, value, flag);
 			} break;
 		}
 	}

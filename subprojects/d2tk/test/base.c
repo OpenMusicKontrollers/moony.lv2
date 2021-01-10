@@ -2285,7 +2285,8 @@ _test_dial_bool()
 	assert(base);
 
 	bool val = false;
-	const d2tk_state_t state = d2tk_base_dial_bool(base, D2TK_ID, &rect, &val);
+	const d2tk_state_t state = d2tk_base_dial_bool(base, D2TK_ID, &rect, &val,
+		D2TK_FLAG_NONE);
 	assert(state == (D2TK_STATE_HOT | D2TK_STATE_FOCUS | D2TK_STATE_FOCUS_IN
 		| D2TK_STATE_OVER) );
 	assert(val == false);
