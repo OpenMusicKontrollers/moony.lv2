@@ -112,31 +112,34 @@ _d2tk_base_draw_bar(d2tk_core_t *core, const d2tk_rect_t *rect,
 
 D2TK_API d2tk_state_t
 d2tk_base_bar_int32(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
-	int32_t min, int32_t *value, int32_t max)
+	int32_t min, int32_t *value, int32_t max, d2tk_flag_t flag)
 {
 	d2tk_state_t state = d2tk_base_is_active_hot(base, id, rect,
 		D2TK_FLAG_SCROLL);
 
 	const int32_t oldvalue = *value;
 
-	if(d2tk_state_is_scroll_up(state))
+	if(!(flag & D2TK_FLAG_INACTIVE))
 	{
-		*value += base->scroll.ody;
-		d2tk_clip_int32(min, value, max);
-	}
-	else if(d2tk_state_is_scroll_down(state))
-	{
-		*value += base->scroll.ody;
-		d2tk_clip_int32(min, value, max);
-	}
-	else if(d2tk_state_is_motion(state))
-	{
-		const int32_t adx = abs(base->mouse.dx);
-		const int32_t ady = abs(base->mouse.dy);
-		const int32_t adz = adx > ady ? base->mouse.dx : -base->mouse.dy;
+		if(d2tk_state_is_scroll_up(state))
+		{
+			*value += base->scroll.ody;
+			d2tk_clip_int32(min, value, max);
+		}
+		else if(d2tk_state_is_scroll_down(state))
+		{
+			*value += base->scroll.ody;
+			d2tk_clip_int32(min, value, max);
+		}
+		else if(d2tk_state_is_motion(state))
+		{
+			const int32_t adx = abs(base->mouse.dx);
+			const int32_t ady = abs(base->mouse.dy);
+			const int32_t adz = adx > ady ? base->mouse.dx : -base->mouse.dy;
 
-		*value += adz;
-		d2tk_clip_int32(min, value, max);
+			*value += adz;
+			d2tk_clip_int32(min, value, max);
+		}
 	}
 
 	if(oldvalue != *value)
@@ -158,31 +161,34 @@ d2tk_base_bar_int32(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
 
 D2TK_API d2tk_state_t
 d2tk_base_bar_int64(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
-	int64_t min, int64_t *value, int64_t max)
+	int64_t min, int64_t *value, int64_t max, d2tk_flag_t flag)
 {
 	d2tk_state_t state = d2tk_base_is_active_hot(base, id, rect,
 		D2TK_FLAG_SCROLL);
 
 	const int64_t oldvalue = *value;
 
-	if(d2tk_state_is_scroll_up(state))
+	if(!(flag & D2TK_FLAG_INACTIVE))
 	{
-		*value += base->scroll.ody;
-		d2tk_clip_int64(min, value, max);
-	}
-	else if(d2tk_state_is_scroll_down(state))
-	{
-		*value += base->scroll.ody;
-		d2tk_clip_int64(min, value, max);
-	}
-	else if(d2tk_state_is_motion(state))
-	{
-		const int64_t adx = abs(base->mouse.dx);
-		const int64_t ady = abs(base->mouse.dy);
-		const int64_t adz = adx > ady ? base->mouse.dx : -base->mouse.dy;
+		if(d2tk_state_is_scroll_up(state))
+		{
+			*value += base->scroll.ody;
+			d2tk_clip_int64(min, value, max);
+		}
+		else if(d2tk_state_is_scroll_down(state))
+		{
+			*value += base->scroll.ody;
+			d2tk_clip_int64(min, value, max);
+		}
+		else if(d2tk_state_is_motion(state))
+		{
+			const int64_t adx = abs(base->mouse.dx);
+			const int64_t ady = abs(base->mouse.dy);
+			const int64_t adz = adx > ady ? base->mouse.dx : -base->mouse.dy;
 
-		*value += adz;
-		d2tk_clip_int64(min, value, max);
+			*value += adz;
+			d2tk_clip_int64(min, value, max);
+		}
 	}
 
 	if(oldvalue != *value)
@@ -204,37 +210,40 @@ d2tk_base_bar_int64(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
 
 D2TK_API d2tk_state_t
 d2tk_base_bar_float(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
-	float min, float *value, float max)
+	float min, float *value, float max, d2tk_flag_t flag)
 {
 	d2tk_state_t state = d2tk_base_is_active_hot(base, id, rect,
 		D2TK_FLAG_SCROLL);
 
 	const float oldvalue = *value;
 
-	if(d2tk_state_is_scroll_up(state))
+	if(!(flag & D2TK_FLAG_INACTIVE))
 	{
-		const float dv = (max - min);
-		const float mul = d2tk_base_get_mod(base) ? 0.01f : 0.1f;
-		*value += dv * mul * base->scroll.ody;
-		d2tk_clip_float(min, value, max);
-	}
-	else if(d2tk_state_is_scroll_down(state))
-	{
-		const float dv = (max - min);
-		const float mul = d2tk_base_get_mod(base) ? 0.01f : 0.1f;
-		*value += dv * mul * base->scroll.ody;
-		d2tk_clip_float(min, value, max);
-	}
-	else if(d2tk_state_is_motion(state))
-	{
-		const float adx = abs(base->mouse.dx);
-		const float ady = abs(base->mouse.dy);
-		const float adz = adx > ady ? base->mouse.dx : -base->mouse.dy;
+		if(d2tk_state_is_scroll_up(state))
+		{
+			const float dv = (max - min);
+			const float mul = d2tk_base_get_mod(base) ? 0.01f : 0.1f;
+			*value += dv * mul * base->scroll.ody;
+			d2tk_clip_float(min, value, max);
+		}
+		else if(d2tk_state_is_scroll_down(state))
+		{
+			const float dv = (max - min);
+			const float mul = d2tk_base_get_mod(base) ? 0.01f : 0.1f;
+			*value += dv * mul * base->scroll.ody;
+			d2tk_clip_float(min, value, max);
+		}
+		else if(d2tk_state_is_motion(state))
+		{
+			const float adx = abs(base->mouse.dx);
+			const float ady = abs(base->mouse.dy);
+			const float adz = adx > ady ? base->mouse.dx : -base->mouse.dy;
 
-		const float dv = (max - min);
-		const float mul = d2tk_base_get_mod(base) ? 0.001f : 0.01f;
-		*value += dv * adz * mul;
-		d2tk_clip_float(min, value, max);
+			const float dv = (max - min);
+			const float mul = d2tk_base_get_mod(base) ? 0.001f : 0.01f;
+			*value += dv * adz * mul;
+			d2tk_clip_float(min, value, max);
+		}
 	}
 
 	if(oldvalue != *value)
@@ -256,37 +265,40 @@ d2tk_base_bar_float(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
 
 D2TK_API d2tk_state_t
 d2tk_base_bar_double(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
-	double min, double *value, double max)
+	double min, double *value, double max, d2tk_flag_t flag)
 {
 	d2tk_state_t state = d2tk_base_is_active_hot(base, id, rect,
 		D2TK_FLAG_SCROLL);
 
 	const double oldvalue = *value;
 
-	if(d2tk_state_is_scroll_up(state))
+	if(!(flag & D2TK_FLAG_INACTIVE))
 	{
-		const double dv = (max - min);
-		const double mul = d2tk_base_get_mod(base) ? 0.01f : 0.1f;
-		*value += dv * mul * base->scroll.ody;
-		d2tk_clip_double(min, value, max);
-	}
-	else if(d2tk_state_is_scroll_down(state))
-	{
-		const double dv = (max - min);
-		const double mul = d2tk_base_get_mod(base) ? 0.01f : 0.1f;
-		*value += dv * mul * base->scroll.ody;
-		d2tk_clip_double(min, value, max);
-	}
-	else if(d2tk_state_is_motion(state))
-	{
-		const double adx = abs(base->mouse.dx);
-		const double ady = abs(base->mouse.dy);
-		const double adz = adx > ady ? base->mouse.dx : -base->mouse.dy;
+		if(d2tk_state_is_scroll_up(state))
+		{
+			const double dv = (max - min);
+			const double mul = d2tk_base_get_mod(base) ? 0.01f : 0.1f;
+			*value += dv * mul * base->scroll.ody;
+			d2tk_clip_double(min, value, max);
+		}
+		else if(d2tk_state_is_scroll_down(state))
+		{
+			const double dv = (max - min);
+			const double mul = d2tk_base_get_mod(base) ? 0.01f : 0.1f;
+			*value += dv * mul * base->scroll.ody;
+			d2tk_clip_double(min, value, max);
+		}
+		else if(d2tk_state_is_motion(state))
+		{
+			const double adx = abs(base->mouse.dx);
+			const double ady = abs(base->mouse.dy);
+			const double adz = adx > ady ? base->mouse.dx : -base->mouse.dy;
 
-		const double dv = (max - min);
-		const double mul = d2tk_base_get_mod(base) ? 0.001f : 0.01f;
-		*value += dv * adz * mul;
-		d2tk_clip_double(min, value, max);
+			const double dv = (max - min);
+			const double mul = d2tk_base_get_mod(base) ? 0.001f : 0.01f;
+			*value += dv * adz * mul;
+			d2tk_clip_double(min, value, max);
+		}
 	}
 
 	if(oldvalue != *value)

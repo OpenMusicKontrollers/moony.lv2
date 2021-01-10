@@ -23,24 +23,27 @@
 
 D2TK_API d2tk_state_t
 d2tk_base_dial_bool(d2tk_base_t *base, d2tk_id_t id, const d2tk_rect_t *rect,
-	bool *value)
+	bool *value, d2tk_flag_t flag)
 {
 	const bool oldvalue = *value;
 
 	d2tk_state_t state = d2tk_base_is_active_hot(base, id, rect,
 		D2TK_FLAG_SCROLL);
 
-	if(d2tk_state_is_down(state) || d2tk_state_is_enter(state))
+	if(!(flag & D2TK_FLAG_INACTIVE))
 	{
-		*value = !*value;
-	}
-	else if(d2tk_state_is_scroll_up(state))
-	{
-		*value = true;
-	}
-	else if(d2tk_state_is_scroll_down(state))
-	{
-		*value = false;
+		if(d2tk_state_is_down(state) || d2tk_state_is_enter(state))
+		{
+			*value = !*value;
+		}
+		else if(d2tk_state_is_scroll_up(state))
+		{
+			*value = true;
+		}
+		else if(d2tk_state_is_scroll_down(state))
+		{
+			*value = false;
+		}
 	}
 
 	if(oldvalue != *value)
