@@ -688,8 +688,9 @@ static inline void
 _render_c_layout(d2tk_base_t *base, const d2tk_rect_t *rect)
 {
 #define N 4
+#define M 5
 	static const d2tk_coord_t hfrac [N] = { 4, 2, 1, 1 };
-	static const d2tk_coord_t vfrac [N] = { 100, 0, 0, 100};
+	static const d2tk_coord_t vfrac [M] = { 100, 0, 5, 0, 100};
 
 	D2TK_BASE_LAYOUT(rect, N, hfrac, D2TK_FLAG_LAYOUT_X_REL, hlay)
 	{
@@ -700,12 +701,19 @@ _render_c_layout(d2tk_base_t *base, const d2tk_rect_t *rect)
 		{
 			case 0:
 			{
-				D2TK_BASE_LAYOUT(hrect, N, vfrac, D2TK_FLAG_LAYOUT_Y_ABS, vlay)
+				D2TK_BASE_LAYOUT(hrect, M, vfrac, D2TK_FLAG_LAYOUT_Y_ABS, vlay)
 				{
 					const d2tk_rect_t *vrect = d2tk_layout_get_rect(vlay);
 					const unsigned y = d2tk_layout_get_index(vlay);
 					char lbl [16];
 					const ssize_t lbl_len = snprintf(lbl, sizeof(lbl), "%"PRIu32, vfrac[y]);
+
+					if(y == 2)
+					{
+						d2tk_base_separator(base, vrect, D2TK_FLAG_SEPARATOR_Y);
+
+						continue;
+					}
 
 					if(d2tk_base_button_label_is_changed(base, D2TK_ID_IDX(x*N + y),
 						lbl_len, lbl, D2TK_ALIGN_CENTERED, vrect))
@@ -729,6 +737,7 @@ _render_c_layout(d2tk_base_t *base, const d2tk_rect_t *rect)
 		}
 	}
 #undef N
+#undef M
 }
 
 static inline void

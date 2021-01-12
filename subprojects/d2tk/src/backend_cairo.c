@@ -678,7 +678,11 @@ d2tk_cairo_process(void *data, d2tk_core_t *core, const d2tk_com_t *com,
 
 				FT_Face ft_face = NULL;
 				FT_New_Face(backend->library, ft_path, 0, &ft_face);
-				assert(ft_face);
+				if(ft_face == NULL)
+				{
+					fprintf(stderr, "FT_New_Face failed on '%s'\n", ft_path);
+					break;
+				}
 
 				cairo_font_face_t *face = cairo_ft_font_face_create_for_ft_face(ft_face, 0);
 				const cairo_user_data_key_t key = { 0 };

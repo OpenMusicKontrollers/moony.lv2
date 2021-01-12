@@ -1651,9 +1651,12 @@ d2tk_core_get_font_path(d2tk_core_t *core, const char *bundle_path,
 #if D2TK_FONTCONFIG
 	(void)core;
 	(void)bundle_path;
+	FcChar8 pattern [PATH_MAX];
+
+	snprintf((char *)pattern, sizeof(pattern), "%s:fontformat=TrueType", rel_path);
 
 	FcConfig *config = FcInitLoadConfigAndFonts();
-	FcPattern *pat = FcNameParse((FcChar8 *)rel_path);
+	FcPattern *pat = FcNameParse(pattern);
 	FcConfigSubstitute(config, pat, FcMatchPattern);
 	FcDefaultSubstitute(pat);
 

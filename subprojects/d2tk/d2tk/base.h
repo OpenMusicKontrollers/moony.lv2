@@ -152,7 +152,9 @@ typedef enum _d2tk_flag_t {
 	D2TK_FLAG_LAYOUT_Y_ABS  = D2TK_FLAG_LAYOUT_Y | D2TK_FLAG_LAYOUT_ABS,
 	D2TK_FLAG_TABLE_ABS     = (1 << 8),
 	D2TK_FLAG_TABLE_REL     = (1 << 9),
-	D2TK_FLAG_INACTIVE      = (1 << 10)
+	D2TK_FLAG_INACTIVE      = (1 << 10),
+	D2TK_FLAG_SEPARATOR_X   = (1 << 11),
+	D2TK_FLAG_SEPARATOR_Y   = (1 << 12)
 } d2tk_flag_t;
 
 #define D2TK_ID_IDX(IDX) ( ((d2tk_id_t)__LINE__ << 16) | (IDX) )
@@ -482,6 +484,9 @@ d2tk_base_link(d2tk_base_t *base, d2tk_id_t id, ssize_t lbl_len, const char *lbl
 
 #define d2tk_base_link_is_changed(...) \
 	d2tk_state_is_changed(d2tk_base_link(__VA_ARGS__))
+
+D2TK_API d2tk_state_t
+d2tk_base_separator(d2tk_base_t *base, const d2tk_rect_t *rect, d2tk_flag_t flags);
 
 #if D2TK_PTY
 D2TK_API d2tk_pty_t *
