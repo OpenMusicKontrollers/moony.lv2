@@ -573,6 +573,12 @@ save_png = configure_file(
 	copy: true,
 	install : true,
 	install_dir : inst_dir)
+info_png = configure_file(
+	input : join_paths('png2', 'info.png'),
+	output : 'info.png',
+	copy: true,
+	install : true,
+	install_dir : inst_dir)
 
 moony_test_lua = configure_file(
 	input : join_paths('test', 'moony_test.lua'),

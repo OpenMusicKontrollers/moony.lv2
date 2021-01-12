@@ -995,35 +995,6 @@ _expose_term(plughandle_t *handle, const d2tk_rect_t *rect)
 	handle->reinit = false;
 }
 
-static void
-_expose_man(plughandle_t *handle, const d2tk_rect_t *rect)
-{
-	d2tk_frontend_t *dpugl = handle->dpugl;
-	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
-
-	char lbl [] = "Manual";
-
-	if(d2tk_base_link_is_changed(base, D2TK_ID, sizeof(lbl), lbl, .5f,
-		rect, D2TK_ALIGN_MIDDLE | D2TK_ALIGN_LEFT))
-	{
-		char *argv [] = {
-			"xdg-open",
-			handle->manual,
-			NULL
-		};
-
-		d2tk_util_kill(&handle->kid);
-		handle->kid = d2tk_util_spawn(argv);
-		if(handle->kid <= 0)
-		{
-			lv2_log_error(&handle->logger, "[%s] failed to spawn: %s '%s'", __func__,
-				argv[0], argv[1]);
-		}
-	}
-
-	d2tk_util_wait(&handle->kid);
-}
-
 static unsigned
 _num_lines(const char *err)
 {
@@ -1260,14 +1231,55 @@ _expose_graph_minimize(plughandle_t *handle, const d2tk_rect_t *rect)
 }
 
 static void
+_expose_manual(plughandle_t *handle, const d2tk_rect_t *rect)
+{
+	d2tk_frontend_t *dpugl = handle->dpugl;
+	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
+
+	static const char path [] = "info.png";
+	static const char tip [] = "open manual";
+
+	if(!handle->request_code)
+	{
+		return;
+	}
+
+	const d2tk_state_t state = d2tk_base_button_image(base, D2TK_ID,
+		sizeof(path), path, rect);
+
+	if(d2tk_state_is_changed(state))
+	{
+		char *argv [] = {
+			"xdg-open",
+			handle->manual,
+			NULL
+		};
+
+		d2tk_util_kill(&handle->kid);
+		handle->kid = d2tk_util_spawn(argv);
+		if(handle->kid <= 0)
+		{
+			lv2_log_error(&handle->logger, "[%s] failed to spawn: %s '%s'", __func__,
+				argv[0], argv[1]);
+		}
+	}
+	if(d2tk_state_is_over(state))
+	{
+		d2tk_base_set_tooltip(base, sizeof(tip), tip, handle->tip_height);
+	}
+
+	d2tk_util_wait(&handle->kid);
+}
+
+static void
 _expose_graph_footer(plughandle_t *handle, const d2tk_rect_t *rect)
 {
 	d2tk_base_t *base = d2tk_frontend_get_base(handle->dpugl);
 
-	const d2tk_coord_t frac [2] = {
-		0, rect->h
+	const d2tk_coord_t frac [3] = {
+		0, rect->h, rect->h
 	};
-	D2TK_BASE_LAYOUT(rect, 2, frac, D2TK_FLAG_LAYOUT_X_ABS, lay)
+	D2TK_BASE_LAYOUT(rect, 3, frac, D2TK_FLAG_LAYOUT_X_ABS, lay)
 	{
 		const unsigned k = d2tk_layout_get_index(lay);
 		const d2tk_rect_t *lrect = d2tk_layout_get_rect(lay);
@@ -1282,6 +1294,10 @@ _expose_graph_footer(plughandle_t *handle, const d2tk_rect_t *rect)
 					D2TK_ALIGN_LEFT | D2TK_ALIGN_MIDDLE);
 			} break;
 			case 1:
+			{
+				_expose_manual(handle, lrect);
+			} break;
+			case 2:
 			{
 				_expose_graph_minimize(handle, lrect);
 			} break;
