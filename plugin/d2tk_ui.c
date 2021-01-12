@@ -1569,8 +1569,10 @@ _expose_right(plughandle_t *handle, const d2tk_rect_t *rect)
 static void
 _expose_body(plughandle_t *handle, const d2tk_rect_t *rect)
 {
-	const d2tk_coord_t frac [2] = { 0, handle->sidebar_width };
-	D2TK_BASE_LAYOUT(rect, 2, frac, D2TK_FLAG_LAYOUT_X_ABS, lay)
+	d2tk_base_t *base = d2tk_frontend_get_base(handle->dpugl);
+
+	const d2tk_coord_t frac [3] = { 0, 5, handle->sidebar_width };
+	D2TK_BASE_LAYOUT(rect, 3, frac, D2TK_FLAG_LAYOUT_X_ABS, lay)
 	{
 		const unsigned k = d2tk_layout_get_index(lay);
 		const d2tk_rect_t *lrect = d2tk_layout_get_rect(lay);
@@ -1582,6 +1584,10 @@ _expose_body(plughandle_t *handle, const d2tk_rect_t *rect)
 				_expose_left(handle, lrect);
 			} break;
 			case 1:
+			{
+				d2tk_base_separator(base, lrect, D2TK_FLAG_SEPARATOR_X);
+			} break;
+			case 2:
 			{
 				_expose_right(handle, lrect);
 			} break;
