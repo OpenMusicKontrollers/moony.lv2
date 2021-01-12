@@ -708,7 +708,11 @@ d2tk_nanovg_process(void *data, d2tk_core_t *core, const d2tk_com_t *com,
 					sizeof(ft_path), ft_path);
 
 				const int face = nvgCreateFont(ctx, body->face, ft_path);
-				assert(face != -1);
+				if(face == -1)
+				{
+					fprintf(stderr, "nvgCreateFont failed on '%s'\n", ft_path);
+					break;
+				}
 
 				*sprite = (uintptr_t)face;
 			}

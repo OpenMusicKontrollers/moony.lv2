@@ -145,6 +145,7 @@ lib_srcs = [
 	join_paths('src', 'base_combo.c'),
 	join_paths('src', 'base_textfield.c'),
 	join_paths('src', 'base_label.c'),
+	join_paths('src', 'base_separator.c'),
 	join_paths('src', 'base_tooltip.c'),
 	join_paths('src', 'base_link.c'),
 	join_paths('src', 'base_dial.c'),
