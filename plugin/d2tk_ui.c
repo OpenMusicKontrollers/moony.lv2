@@ -1621,6 +1621,105 @@ _expose_slot_double(plughandle_t *handle, dynparam_t *dynparam,
 }
 
 static void
+_expose_slot_urid(plughandle_t *handle, dynparam_t *dynparam,
+	const d2tk_rect_t *rect, size_t lbl_len, const char *lbl, unsigned k)
+{
+	d2tk_frontend_t *dpugl = handle->dpugl;
+	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
+
+	if(!dynparam->val)
+	{
+		return;
+	}
+
+	uint32_t *val = dynparam->val;
+//FIXME
+#if 0
+	char uri [PATH_MAX];
+
+	snprintf(uri, sizeof(uri), "%s",
+		handle->unmap->unmap(handle->unmap->handle, *val));
+
+	//FIXME
+	const d2tk_state_t state = d2tk_base_text_field(base, D2TK_ID_IDX(k), rect,
+		sizeof(uri), uri, D2TK_ALIGN_MIDDLE | D2TK_ALIGN_LEFT, NULL);
+#else
+	const char *uri = handle->unmap->unmap(handle->unmap->handle, *val);
+
+	const d2tk_state_t state = d2tk_base_label(base, -1, uri, 0.5f, rect,
+		D2TK_ALIGN_MIDDLE | D2TK_ALIGN_LEFT);
+#endif
+
+	if(d2tk_state_is_changed(state))
+	{
+		*val = handle->map->map(handle->map->handle, uri);
+		_message_set_dynparam(handle, dynparam);
+	}
+	if(d2tk_state_is_over(state) && dynparam->comment)
+	{
+		d2tk_base_set_tooltip(base, -1, dynparam->comment, handle->tip_height);
+	}
+}
+
+static void
+_expose_slot_string(plughandle_t *handle, dynparam_t *dynparam,
+	const d2tk_rect_t *rect, size_t lbl_len, const char *lbl, unsigned k)
+{
+	d2tk_frontend_t *dpugl = handle->dpugl;
+	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
+
+	if(!dynparam->val)
+	{
+		return;
+	}
+
+	const char *val = dynparam->val;
+
+	//FIXME
+	const d2tk_state_t state = d2tk_base_label(base, -1, val, 0.5f, rect,
+		D2TK_ALIGN_MIDDLE | D2TK_ALIGN_LEFT);
+
+	if(d2tk_state_is_changed(state))
+	{
+		_message_set_dynparam(handle, dynparam);
+	}
+	if(d2tk_state_is_over(state) && dynparam->comment)
+	{
+		d2tk_base_set_tooltip(base, -1, dynparam->comment, handle->tip_height);
+	}
+}
+
+static void
+_expose_slot_chunk(plughandle_t *handle, dynparam_t *dynparam,
+	const d2tk_rect_t *rect, size_t lbl_len, const char *lbl, unsigned k)
+{
+	d2tk_frontend_t *dpugl = handle->dpugl;
+	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
+
+	if(!dynparam->val)
+	{
+		return;
+	}
+
+	char sz [128];
+	const size_t sz_len = snprintf(sz, sizeof(sz), "%s (%"PRIu32" bytes)",
+		dynparam->label, dynparam->size);
+
+	//FIXME
+	const d2tk_state_t state = d2tk_base_label(base, sz_len, sz, 0.5f, rect,
+		D2TK_ALIGN_MIDDLE | D2TK_ALIGN_LEFT);
+
+	if(d2tk_state_is_changed(state))
+	{
+		_message_set_dynparam(handle, dynparam);
+	}
+	if(d2tk_state_is_over(state) && dynparam->comment)
+	{
+		d2tk_base_set_tooltip(base, -1, dynparam->comment, handle->tip_height);
+	}
+}
+
+static void
 _expose_slot(plughandle_t *handle, const d2tk_rect_t *rect, unsigned k)
 {
 	d2tk_frontend_t *dpugl = handle->dpugl;
@@ -1672,12 +1771,18 @@ _expose_slot(plughandle_t *handle, const d2tk_rect_t *rect, unsigned k)
 	{
 		_expose_slot_double(handle, dynparam, rect, lbl_len, lbl, k);
 	}
-	/*
 	else if(dynparam->range == handle->props.urid.atom_urid)
 	{
-		//TODO
+		_expose_slot_urid(handle, dynparam, rect, lbl_len, lbl, k);
 	}
-	*/
+	else if(dynparam->range == handle->forge.String)
+	{
+		_expose_slot_string(handle, dynparam, rect, lbl_len, lbl, k);
+	}
+	else if(dynparam->range == handle->forge.Chunk)
+	{
+		_expose_slot_chunk(handle, dynparam, rect, lbl_len, lbl, k);
+	}
 	else
 	{
 		if(d2tk_base_button_label_is_changed(base, D2TK_ID_IDX(k),
