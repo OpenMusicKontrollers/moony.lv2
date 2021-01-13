@@ -15,6 +15,8 @@
  * http://www.perlfoundation.org/artistic_license_2_0.
  */
 
+#include <math.h>
+
 #include <api_state.h>
 #include <api_atom.h>
 #include <api_forge.h>
@@ -223,28 +225,49 @@ _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 						|| !lv2_atom_forge_tuple(lforge->forge, &tuple_frame) )
 						luaL_error(L, forge_buffer_overflow);
 
-					// iterate over properties
-					lua_pushnil(L);  // first key 
-					while(lua_next(L, -2))
+					double last = -HUGE_VAL;
+
+					while(true)
 					{
-						// uses 'key' (at index -2) and 'value' (at index -1)
-						size_t point_size;
-						const char *point = luaL_checklstring(L, -2, &point_size);
-						LV2_Atom_Forge_Frame scale_point_frame;
+						bool found = false;
 
-						if(  !lv2_atom_forge_object(lforge->forge, &scale_point_frame, 0, 0)
+						// iterate over properties
+						lua_pushnil(L);  // first key
+						while(lua_next(L, -2))
+						{
+							const double val = luaL_checknumber(L, -1);
 
-							|| !lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_label)
-							|| !lv2_atom_forge_string(lforge->forge, point, point_size)
+							if(val > last)
+							{
+								// uses 'key' (at index -2) and 'value' (at index -1)
+								size_t point_size;
+								const char *point = luaL_checklstring(L, -2, &point_size);
+								LV2_Atom_Forge_Frame scale_point_frame;
 
-							|| !lv2_atom_forge_key(lforge->forge, moony->uris.rdf_value)
-							|| !_lforge_basic(L, -1, lforge->forge, range, 0) )
-							luaL_error(L, forge_buffer_overflow);
-						
-						lv2_atom_forge_pop(lforge->forge, &scale_point_frame); // core:scalePoint
+								if(  !lv2_atom_forge_object(lforge->forge, &scale_point_frame, 0, 0)
 
-						// removes 'value'; keeps 'key' for next iteration
-						lua_pop(L, 1);
+									|| !lv2_atom_forge_key(lforge->forge, moony->uris.rdfs_label)
+									|| !lv2_atom_forge_string(lforge->forge, point, point_size)
+
+									|| !lv2_atom_forge_key(lforge->forge, moony->uris.rdf_value)
+									|| !_lforge_basic(L, -1, lforge->forge, range, 0) )
+									luaL_error(L, forge_buffer_overflow);
+
+								lv2_atom_forge_pop(lforge->forge, &scale_point_frame); // core:scalePoint
+
+								// store match
+								last = val;
+								found = true;
+							}
+
+							// removes 'value'; keeps 'key' for next iteration
+							lua_pop(L, 1);
+						}
+
+						if(!found)
+						{
+							break;
+						}
 					}
 
 					lv2_atom_forge_pop(lforge->forge, &tuple_frame);
