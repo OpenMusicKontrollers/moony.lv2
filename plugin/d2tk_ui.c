@@ -88,6 +88,8 @@ struct _dynparam_t {
 	void *min;
 	void *max;
 	char *unit;
+
+	LV2_Atom_Tuple *points;
 };
 
 struct _plugstate_t {
@@ -147,9 +149,11 @@ struct _plughandle_t {
 	LV2_URID urid_rdfs_range;
 	LV2_URID urid_rdfs_label;
 	LV2_URID urid_rdfs_comment;
+	LV2_URID urid_rdf_value;
 
 	LV2_URID urid_lv2_minimum;
 	LV2_URID urid_lv2_maximum;
+	LV2_URID urid_lv2_scalePoint;
 
 	LV2_URID urid_units_unit;
 	LV2_URID urid_units_symbol;
@@ -409,6 +413,7 @@ _dynparam_free(dynparam_t *dynparam)
 	free(dynparam->min);
 	free(dynparam->max);
 	free(dynparam->unit);
+	free(dynparam->points);
 }
 
 static dynparam_t *
@@ -581,6 +586,14 @@ _dyn_prop_add(plughandle_t *handle, LV2_URID subj, LV2_URID prop,
 					memcpy(dynparam->unit, symbol, symbol_len);
 				}
 			}
+			else if(prop == handle->urid_lv2_scalePoint)
+			{
+				const LV2_Atom_Tuple *points = (const LV2_Atom_Tuple *)atom;
+
+				const size_t points_len = lv2_atom_total_size(&points->atom);
+				dynparam->points = realloc(dynparam->points, points_len); //FIXME check
+				memcpy(dynparam->points, points, points_len);
+			}
 			//TODO more attributes
 		}
 	}
@@ -657,7 +670,7 @@ _dyn_prop(void *data, props_dyn_ev_t ev, LV2_URID subj, LV2_URID prop,
 {
 	plughandle_t *handle = data;
 
-#if 1
+#if 0
 	const char *subject = handle->unmap->unmap(handle->unmap->handle, subj);
 	const char *property = handle->unmap->unmap(handle->unmap->handle, prop);
 	const char *range = handle->unmap->unmap(handle->unmap->handle, atom->type);
@@ -1345,6 +1358,124 @@ _dynparam_flag(dynparam_t *dynparam)
 		: D2TK_FLAG_INACTIVE;
 }
 
+static double
+_body_as_double(plughandle_t *handle, const void *data, LV2_URID range)
+{
+	if(range == handle->forge.Bool)
+	{
+		return *(const int32_t *)data;
+	}
+	else if(range == handle->forge.Int)
+	{
+		return *(const int32_t *)data;
+	}
+	else if(range == handle->forge.URID)
+	{
+		return *(const uint32_t*)data;
+	}
+	else if(range == handle->forge.Long)
+	{
+		return *(const int64_t *)data;
+	}
+	else if(range == handle->forge.Float)
+	{
+		return *(const float *)data;
+	}
+	else if(range == handle->forge.Double)
+	{
+		return *(const double *)data;
+	}
+
+	return 0.0;
+}
+
+static void
+_expose_slot_enum(plughandle_t *handle, dynparam_t *dynparam,
+	const d2tk_rect_t *rect, size_t lbl_len, const char *lbl, unsigned k)
+{
+	d2tk_frontend_t *dpugl = handle->dpugl;
+	d2tk_base_t *base = d2tk_frontend_get_base(dpugl);
+
+	if(!dynparam->val)
+	{
+		return;
+	}
+
+	d2tk_base_label(base, lbl_len, lbl, 0.5f, rect, D2TK_ALIGN_CENTERED);
+
+	// derive item number
+	size_t nitms = 0;
+	LV2_ATOM_TUPLE_FOREACH(dynparam->points, itm)
+	{
+		nitms++;
+	}
+
+	// allocate item label string array
+	const char **itms = alloca(nitms * sizeof(char *));
+
+	// initialize array index
+	int32_t idx = 0;
+	double lst_val = _body_as_double(handle, dynparam->val, dynparam->range);
+
+	// fill item label string array
+	nitms = 0;
+	LV2_ATOM_TUPLE_FOREACH(dynparam->points, itm)
+	{
+		const LV2_Atom_Object *obj = (const LV2_Atom_Object *)itm;
+		const LV2_Atom *label = NULL;
+		const LV2_Atom *value = NULL;
+
+		lv2_atom_object_get(obj,
+			handle->urid_rdfs_label, &label,
+			handle->urid_rdf_value, &value,
+			0);
+
+		const double itm_val = _body_as_double(handle, LV2_ATOM_BODY_CONST(value),
+			dynparam->range);
+
+		if(itm_val <= lst_val)
+		{
+			idx = nitms;
+		}
+
+		itms[nitms++] = LV2_ATOM_BODY_CONST(label);
+	}
+
+	const d2tk_state_t state = d2tk_base_combo(base, D2TK_ID_IDX(k),
+		nitms, itms, rect, &idx);
+
+	if(d2tk_state_is_changed(state))
+	{
+		// set current value to tuple index value
+		nitms = 0;
+		LV2_ATOM_TUPLE_FOREACH(dynparam->points, itm)
+		{
+			const LV2_Atom_Object *obj = (const LV2_Atom_Object *)itm;
+
+			if(nitms++ != idx)
+			{
+				continue;
+			}
+
+			const LV2_Atom *value = NULL;
+
+			lv2_atom_object_get(obj,
+				handle->urid_rdf_value, &value,
+				0);
+
+			memcpy(dynparam->val, LV2_ATOM_BODY_CONST(value), dynparam->size);
+
+			break;
+		}
+
+		_message_set_dynparam(handle, dynparam);
+	}
+	if(d2tk_state_is_over(state) && dynparam->comment)
+	{
+		d2tk_base_set_tooltip(base, -1, dynparam->comment, handle->tip_height);
+	}
+}
+
 static void
 _expose_slot_bool(plughandle_t *handle, dynparam_t *dynparam,
 	const d2tk_rect_t *rect, size_t lbl_len, const char *lbl, unsigned k)
@@ -1517,7 +1648,11 @@ _expose_slot(plughandle_t *handle, const d2tk_rect_t *rect, unsigned k)
 		lbl = dynparam->label;
 	}
 
-	if(dynparam->range == handle->props.urid.atom_bool)
+	if(dynparam->points)
+	{
+		_expose_slot_enum(handle, dynparam, rect, lbl_len, lbl, k);
+	}
+	else if(dynparam->range == handle->props.urid.atom_bool)
 	{
 		_expose_slot_bool(handle, dynparam, rect, lbl_len, lbl, k);
 	}
@@ -2041,11 +2176,15 @@ instantiate(const LV2UI_Descriptor *descriptor,
 		RDFS__range);
 	handle->urid_rdfs_comment = handle->map->map(handle->map->handle,
 		RDFS__comment);
+	handle->urid_rdf_value = handle->map->map(handle->map->handle,
+		RDF__value);
 
 	handle->urid_lv2_minimum = handle->map->map(handle->map->handle,
 		LV2_CORE__minimum);
 	handle->urid_lv2_maximum = handle->map->map(handle->map->handle,
 		LV2_CORE__maximum);
+	handle->urid_lv2_scalePoint = handle->map->map(handle->map->handle,
+		LV2_CORE__scalePoint);
 
 	handle->urid_units_symbol = handle->map->map(handle->map->handle, LV2_UNITS__symbol);
 	handle->urid_units_unit = handle->map->map(handle->map->handle, LV2_UNITS__unit);
