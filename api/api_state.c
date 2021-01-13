@@ -229,7 +229,7 @@ _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 
 					while(true)
 					{
-						bool found = false;
+						double next = HUGE_VAL;
 
 						// iterate over properties
 						lua_pushnil(L);  // first key
@@ -237,7 +237,29 @@ _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 						{
 							const double val = luaL_checknumber(L, -1);
 
-							if(val > last)
+							if( (val > last) && (val < next) )
+							{
+								next = val;
+							}
+
+							// removes 'value'; keeps 'key' for next iteration
+							lua_pop(L, 1);
+						}
+
+						if(next == HUGE_VAL)
+						{
+							break;
+						}
+
+						last = next;
+
+						// iterate over properties
+						lua_pushnil(L);  // first key
+						while(lua_next(L, -2))
+						{
+							const double val = luaL_checknumber(L, -1);
+
+							if(val == next)
 							{
 								// uses 'key' (at index -2) and 'value' (at index -1)
 								size_t point_size;
@@ -254,19 +276,10 @@ _lstateresponder_register_access(lua_State *L, moony_t *moony, int64_t frames,
 									luaL_error(L, forge_buffer_overflow);
 
 								lv2_atom_forge_pop(lforge->forge, &scale_point_frame); // core:scalePoint
-
-								// store match
-								last = val;
-								found = true;
 							}
 
 							// removes 'value'; keeps 'key' for next iteration
 							lua_pop(L, 1);
-						}
-
-						if(!found)
-						{
-							break;
 						}
 					}
 
