@@ -933,7 +933,11 @@ D2TK_API d2tk_widget_t *
 d2tk_core_widget_begin(d2tk_core_t *core, uint64_t hash, d2tk_widget_t *widget)
 {
 	widget->body = _d2tk_core_get_memcache(core, hash);
-	assert(widget->body);
+
+	if(!widget->body) // out-of-memory
+	{
+		return NULL;
+	}
 
 	if(*widget->body) // bluntly use cached widget instruction buffer
 	{
