@@ -1226,7 +1226,7 @@ _expose_graph_minimize(plughandle_t *handle, const d2tk_rect_t *rect)
 	d2tk_base_t *base = d2tk_frontend_get_base(handle->dpugl);
 
 	static const char *path [2] = { "eye-off.png", "eye.png" };
-	static const char tip [2][5] = { "show", "hide" };
+	static const char tip [2][10] = { "show graph", "hide graph" };
 
 	bool visible = !handle->state.graph_hidden;
 	const d2tk_state_t state = d2tk_base_toggle_label_image(base, D2TK_ID,
@@ -1771,6 +1771,7 @@ _expose_slot(plughandle_t *handle, const d2tk_rect_t *rect, unsigned k)
 	{
 		_expose_slot_double(handle, dynparam, rect, lbl_len, lbl, k);
 	}
+#if 0
 	else if(dynparam->range == handle->props.urid.atom_urid)
 	{
 		_expose_slot_urid(handle, dynparam, rect, lbl_len, lbl, k);
@@ -1783,13 +1784,15 @@ _expose_slot(plughandle_t *handle, const d2tk_rect_t *rect, unsigned k)
 	{
 		_expose_slot_chunk(handle, dynparam, rect, lbl_len, lbl, k);
 	}
+#endif
 	else
 	{
-		if(d2tk_base_button_label_is_changed(base, D2TK_ID_IDX(k),
-			-1, dynparam->label, D2TK_ALIGN_LEFT | D2TK_ALIGN_MIDDLE, rect))
-		{
-			//TODO
-		}
+		char lbl [256];
+		const size_t lbl_len = snprintf(lbl, sizeof(lbl),
+			"%s (type not implemented)", dynparam->label);
+
+		d2tk_base_label(base, lbl_len, lbl, 0.375f, rect,
+			D2TK_ALIGN_RIGHT | D2TK_ALIGN_MIDDLE);
 	}
 }
 
@@ -2044,7 +2047,7 @@ _expose_text_minimize(plughandle_t *handle, const d2tk_rect_t *rect)
 	d2tk_base_t *base = d2tk_frontend_get_base(handle->dpugl);
 
 	static const char *path [2] = { "eye-off.png", "eye.png" };
-	static const char tip [2][5] = { "show", "hide" };
+	static const char tip [2][10] = { "show code", "hide code" };
 
 	bool visible = !handle->state.editor_hidden;
 	const d2tk_state_t state = d2tk_base_toggle_label_image(base, D2TK_ID,
