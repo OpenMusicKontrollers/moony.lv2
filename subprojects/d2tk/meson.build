@@ -293,7 +293,7 @@ endif
 if use_backend_cairo.enabled()
 	if use_frontend_pugl.enabled()
 		d2tk_cairo = declare_dependency(
-			compile_args : '-DPUGL_HAVE_CAIRO',
+			compile_args : ['-DPUGL_HAVE_CAIRO', '-DPUGL_STATIC'],
 			include_directories : inc_dir,
 			dependencies : [deps, cairo_deps, cairo_xlib_dep],
 			link_args : links,
@@ -328,6 +328,7 @@ endif
 if use_backend_nanovg.enabled()
 	if use_frontend_pugl.enabled()
 		d2tk_nanovg = declare_dependency(
+			compile_args : ['-DPUGL_STATIC'],
 			include_directories : inc_dir,
 			dependencies : [deps, glu_dep, glew_dep],
 			link_args : links,
