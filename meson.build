@@ -61,6 +61,7 @@ else
 endif
 
 nk_pugl_gl = declare_dependency(
+	compile_args : ['-DPUGL_STATIC'],
 	include_directories : inc_dir,
 	dependencies : deps,
 	link_args : links,
