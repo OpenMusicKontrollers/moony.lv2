@@ -241,7 +241,7 @@ If not, you can manually set your DPI via environmental variable *D2TK_SCALE*:
 
 ### License
 
-Copyright (c) 2015-2019 Hanspeter Portner (dev@open-music-kontrollers.ch)
+Copyright (c) 2015-2021 Hanspeter Portner (dev@open-music-kontrollers.ch)
 
 This is free software: you can redistribute it and/or modify
 it under the terms of the Artistic License 2.0 as published by
