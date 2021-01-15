@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.36.0] - 15 Jan 2021
+
+### Fixed
+
+* wrong ordering of enum items
+
+### Added
+
+* next-ui: canvas graph support 
+* next-ui: bool/int/long/floag/double widgets 
+* next-ui: support for host provided file selector
+* next-ui: support for clipboard copy/paste 
+* support for ui:scaleFActor
+* support for dynamically changeable 'through' attribute in MidiResponder
+* support for dynamically changeable 'through' attribute in OSCResponder
+
+### Changed
+
+* Lua version to 5.4.2
+
 ## [0.34.0] - 15 Jul 2020
 
 ### Added
