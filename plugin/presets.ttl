@@ -24,7 +24,6 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 @prefix moony: <http://open-music-kontrollers.ch/lv2/moony#> .
-@prefix lic: <http://opensource.org/licenses/> .
 @prefix stateR: <urn:uuid:ecc34531-c5a5-4fd4-9edf-14f2d8cf7b57#> .
 
 # to please sord_validate
@@ -100,7 +99,7 @@ stateR:pURID
 
 moony:bank-through_control-through
 	a pset:Preset ;
-	doap:license lic:Artistic-2.0 ;
+	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	state:state [
 		moony:editorHidden false ;
 		moony:graphHidden true ;
@@ -119,7 +118,7 @@ end
 
 moony:bank-through_atom-through
 	a pset:Preset ;
-	doap:license lic:Artistic-2.0 ;
+	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	state:state [
 		moony:editorHidden false ;
 		moony:graphHidden true ;
@@ -142,7 +141,7 @@ end
 
 moony:bank-through_atom-through2
 	a pset:Preset ;
-	doap:license lic:Artistic-2.0 ;
+	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	state:state [
 		moony:editorHidden false ;
 		moony:graphHidden true ;
@@ -167,7 +166,7 @@ end
 
 moony:bank-through_atom-through4
 	a pset:Preset ;
-	doap:license lic:Artistic-2.0 ;
+	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	state:state [
 		moony:editorHidden false ;
 		moony:graphHidden true ;
@@ -200,7 +199,7 @@ end
 
 moony:bank-multiplex_atom-multiplex2
 	a pset:Preset ;
-	doap:license lic:Artistic-2.0 ;
+	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	state:state [
 		moony:editorHidden false ;
 		moony:graphHidden true ;
@@ -222,7 +221,7 @@ end
 
 moony:bank-multiplex_atom-multiplex4
 	a pset:Preset ;
-	doap:license lic:Artistic-2.0 ;
+	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	state:state [
 		moony:editorHidden false ;
 		moony:graphHidden true ;
@@ -246,7 +245,7 @@ end
 
 moony:bank-midi_midi-responder
 	a pset:Preset ;
-	doap:license lic:Artistic-2.0 ;
+	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	state:state [
 		moony:editorHidden false ;
 		moony:graphHidden true ;
@@ -276,7 +275,7 @@ end
 
 moony:bank-time_midi-sequencer
 	a pset:Preset ;
-	doap:license lic:Artistic-2.0 ;
+	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	state:state [
 		moony:editorHidden false ;
 		moony:graphHidden true ;
@@ -330,7 +329,7 @@ end
 
 moony:bank-time_lindenmayer-system
 	a pset:Preset ;
-	doap:license lic:Artistic-2.0 ;
+	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	state:state [
 		moony:editorHidden false ;
 		moony:graphHidden true ;
@@ -434,7 +433,7 @@ end
 
 moony:bank-osc_osc-responder
 	a pset:Preset ;
-	doap:license lic:Artistic-2.0 ;
+	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	state:state [
 		moony:editorHidden false ;
 		moony:graphHidden true ;
@@ -464,7 +463,7 @@ end
 
 moony:bank-state_state-responder
 	a pset:Preset ;
-	doap:license lic:Artistic-2.0 ;
+	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	state:state [
 		moony:editorHidden false ;
 		moony:graphHidden true ;
@@ -635,7 +634,7 @@ end""" ;
 
 moony:bank-canvas_lv2-logo
 	a pset:Preset ;
-	doap:license lic:Artistic-2.0 ;
+	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	state:state [
 		moony:editorHidden false ;
 		moony:graphHidden true ;
@@ -787,7 +786,7 @@ end
 
 moony:bank-tutorial_part-1
 	a pset:Preset ;
-	doap:license lic:Artistic-2.0 ;
+	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	state:state [
 		moony:editorHidden false ;
 		moony:graphHidden true ;
@@ -833,7 +832,7 @@ end
 
 moony:bank-tutorial_part-2
 	a pset:Preset ;
-	doap:license lic:Artistic-2.0 ;
+	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	state:state [
 		moony:editorHidden false ;
 		moony:graphHidden true ;
@@ -879,7 +878,7 @@ end
 
 moony:bank-tutorial_part-3
 	a pset:Preset ;
-	doap:license lic:Artistic-2.0 ;
+	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	state:state [
 		moony:editorHidden false ;
 		moony:graphHidden true ;
@@ -976,7 +975,7 @@ end
 
 moony:bank-tutorial_part-4
 	a pset:Preset ;
-	doap:license lic:Artistic-2.0 ;
+	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	state:state [
 		moony:editorHidden false ;
 		moony:graphHidden true ;
@@ -1068,7 +1067,7 @@ end
 
 moony:bank-tutorial_part-5
 	a pset:Preset ;
-	doap:license lic:Artistic-2.0 ;
+	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	state:state [
 		moony:editorHidden false ;
 		moony:graphHidden true ;
@@ -1131,7 +1130,7 @@ end
 
 moony:bank-tutorial_part-6
 	a pset:Preset ;
-	doap:license lic:Artistic-2.0 ;
+	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	state:state [
 		moony:editorHidden false ;
 		moony:graphHidden true ;
@@ -1235,7 +1234,7 @@ end
 
 moony:bank-template_part-1
 	a pset:Preset ;
-	doap:license lic:Artistic-2.0 ;
+	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	state:state [
 		moony:editorHidden false ;
 		moony:graphHidden true ;
@@ -1321,7 +1320,7 @@ end
 
 moony:bank-template_part-2
 	a pset:Preset ;
-	doap:license lic:Artistic-2.0 ;
+	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	state:state [
 		moony:editorHidden false ;
 		moony:graphHidden true ;
@@ -1388,7 +1387,7 @@ end
 
 moony:bank-template_part-3
 	a pset:Preset ;
-	doap:license lic:Artistic-2.0 ;
+	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	state:state [
 		moony:editorHidden false ;
 		moony:graphHidden true ;
@@ -1421,7 +1420,7 @@ end
 
 moony:bank-template_part-4
 	a pset:Preset ;
-	doap:license lic:Artistic-2.0 ;
+	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	state:state [
 		moony:editorHidden false ;
 		moony:graphHidden true ;
@@ -1483,7 +1482,7 @@ end
 
 moony:bank-template_part-5
 	a pset:Preset ;
-	doap:license lic:Artistic-2.0 ;
+	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	state:state [
 		moony:editorHidden false ;
 		moony:graphHidden true ;
