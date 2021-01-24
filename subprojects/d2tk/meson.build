@@ -17,7 +17,6 @@ use_frontend_fbdev = get_option('use-frontend-fbdev')
 use_frontend_pugl = get_option('use-frontend-pugl')
 use_frontend_glfw = get_option('use-frontend-glfw')
 
-use_vterm = get_option('use-vterm')
 use_evdev = get_option('use-evdev')
 use_fontconfig = get_option('use-fontconfig')
 
@@ -87,12 +86,10 @@ if use_frontend_glfw.enabled()
 endif
 
 # optional dependencies
-util_dep = cc.find_library('util',
-	required : use_vterm)
+util_dep = cc.find_library('util')
 vterm_dep = dependency('vterm',
 	version : '>=0.1',
-	static : static_link,
-	required : use_vterm)
+	static : static_link)
 if not use_frontend_fbdev.enabled()
 	evdev_dep = dependency('libevdev',
 		version : '>=1.5.0',
@@ -104,12 +101,13 @@ fontconfig_dep = dependency('fontconfig',
 	static : static_link,
 	required : use_fontconfig)
 
-deps = [m_dep, evdev_dep, vterm_dep, fontconfig_dep]
+deps = [m_dep, evdev_dep, util_dep, vterm_dep, fontconfig_dep]
 links = []
 
-pugl_inc = include_directories('pugl/include')
-nanovg_inc = include_directories('nanovg/src')
-inc_dir = [pugl_inc, nanovg_inc]
+pugl_inc = include_directories(join_paths('pugl', 'include'))
+nanovg_inc = include_directories(join_paths('nanovg', 'src'))
+linenoise_inc = include_directories('linenoise')
+inc_dir = [pugl_inc, nanovg_inc, linenoise_inc]
 
 rawvers = run_command('cat', 'VERSION').stdout().strip()
 version = rawvers.split('.')
@@ -152,16 +150,13 @@ lib_srcs = [
 	join_paths('src', 'base_spinner.c'),
 	join_paths('src', 'base_bar.c'),
 	join_paths('src', 'base_wave.c'),
-	join_paths('src', 'base_flowmatrix.c')
+	join_paths('src', 'base_flowmatrix.c'),
+	join_paths('src', 'base_pty.c'),
+	join_paths('src', 'base_lineedit.c'),
+	join_paths('src', 'util_spawn.c'),
+	join_paths('linenoise', 'linenoise.c'),
+	join_paths('linenoise', 'encodings', 'utf8.c')
 ]
-
-if use_vterm.enabled()
-	conf_data.set('D2TK_PTY', 1)
-	lib_srcs += join_paths('src', 'base_pty.c')
-	deps += util_dep
-else
-	conf_data.set('D2TK_PTY', 0)
-endif
 
 if use_evdev.enabled()
 	conf_data.set('D2TK_EVDEV', 1)
@@ -192,15 +187,6 @@ if cc.has_function('clone')
 	conf_data.set('D2TK_CLONE', 1)
 else
 	conf_data.set('D2TK_CLONE', 0)
-endif
-
-if host_machine.system() == 'windows'
-	conf_data.set('D2TK_SPAWN', 0)
-elif host_machine.system() == 'darwin'
-	conf_data.set('D2TK_SPAWN', 0)
-else
-	conf_data.set('D2TK_SPAWN', 1)
-	lib_srcs += join_paths('src', 'util_spawn.c')
 endif
 
 example_srcs = [

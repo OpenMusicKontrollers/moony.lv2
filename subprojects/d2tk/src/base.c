@@ -126,12 +126,14 @@ _d2tk_base_get_atom(d2tk_base_t *base, d2tk_id_t id, d2tk_atom_type_t type,
 				{
 					len = d2tk_atom_body_flow_sz;
 				} break;
-#if D2TK_PTY
 				case D2TK_ATOM_PTY:
 				{
 					len = d2tk_atom_body_pty_sz;
 				} break;
-#endif
+				case D2TK_ATOM_LINEEDIT:
+				{
+					len = d2tk_atom_body_lineedit_sz;
+				} break;
 #if D2TK_EVDEV
 				case D2TK_ATOM_VKB:
 				{

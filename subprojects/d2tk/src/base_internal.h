@@ -31,9 +31,8 @@ typedef enum _d2tk_atom_type_t {
 	D2TK_ATOM_FLOW,
 	D2TK_ATOM_FLOW_NODE,
 	D2TK_ATOM_FLOW_ARC,
-#if D2TK_PTY
 	D2TK_ATOM_PTY,
-#endif
+	D2TK_ATOM_LINEEDIT,
 #if D2TK_EVDEV
 	D2TK_ATOM_VKB,
 #endif
@@ -123,9 +122,8 @@ struct _d2tk_base_t {
 extern const size_t d2tk_atom_body_flow_sz;
 extern const size_t d2tk_atom_body_pane_sz;
 extern const size_t d2tk_atom_body_scroll_sz;
-#if D2TK_PTY
 extern const size_t d2tk_atom_body_pty_sz;
-#endif
+extern const size_t d2tk_atom_body_lineedit_sz;
 #if D2TK_EVDEV
 extern const size_t d2tk_atom_body_vkb_sz;
 #endif

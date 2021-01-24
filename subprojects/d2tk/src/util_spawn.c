@@ -20,9 +20,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <sched.h>
 #include <sys/wait.h>
 #include <sys/mman.h>
+#include <signal.h>
 
 #include <d2tk/util.h>
 
@@ -60,13 +62,13 @@ d2tk_util_spawn(char **argv)
 	}
 
 	uint8_t *stack_top = stack + STACK_SIZE;
-	const int flags = CLONE_FS | CLONE_IO | CLONE_VFORK | CLONE_VM;
+	const int flags = CLONE_FS | CLONE_IO | CLONE_VFORK | CLONE_VM | SIGCHLD;
 	const int pid = clone(_clone, stack_top, flags, &clone_data);
 #	undef STACK_SIZE
 #elif D2TK_VFORK == 1
 	const int pid = vfork();
 #else
-	const int pid = fork();
+#	error "support for clone or vfork required"
 #endif
 
 	switch(pid)
@@ -84,6 +86,7 @@ d2tk_util_spawn(char **argv)
 
 		default: // parent
 		{
+			fprintf(stderr, "[%s] child with pid %i has spawned\n", __func__, pid);
 		} return pid;
 	}
 }
@@ -96,15 +99,45 @@ d2tk_util_kill(int *kid)
 		return 0;
 	}
 
-	kill(*kid, SIGKILL);
-
-	if(waitpid(*kid, NULL, 0) == *kid)
+	while(true)
 	{
+		usleep(1000);
+
+		kill(*kid, SIGINT);
+		kill(*kid, SIGQUIT);
+		kill(*kid, SIGTERM);
+		kill(*kid, SIGKILL);
+
+		int stat = 0;
+		const int pid = waitpid(*kid, &stat, 0);
+
+		if(pid == -1)
+		{
+			continue;
+		}
+
+		if(pid == 0)
+		{
+			continue;
+		}
+
+		// has exited
+		if(WIFSIGNALED(stat))
+		{
+			fprintf(stderr, "[%s] child with pid %d has exited with signal %d\n",
+				__func__, *kid, WTERMSIG(stat));
+		}
+		else if(WIFEXITED(stat))
+		{
+			fprintf(stderr, "[%s] child with pid %d has exited with status %d\n",
+				__func__, *kid, WEXITSTATUS(stat));
+		}
+
 		*kid = -1;
-		return 0;
+		break;
 	}
 
-	return 1;
+	return 0;
 }
 
 D2TK_API int
@@ -115,11 +148,31 @@ d2tk_util_wait(int *kid)
 		return 0;
 	}
 
-	if(waitpid(*kid, NULL, WNOHANG) == *kid)
+	int stat = 0;
+	const int pid = waitpid(*kid, &stat, WNOHANG);
+
+	if(pid == -1)
 	{
-		*kid = -1;
-		return 0;
+		return 1;
 	}
 
-	return 1;
+	if(pid == 0)
+	{
+		return 1;
+	}
+
+	// has exited
+	if(WIFSIGNALED(stat))
+	{
+		fprintf(stderr, "[%s] child with pid %d has exited with signal %d\n",
+			__func__, *kid, WTERMSIG(stat));
+	}
+	else if(WIFEXITED(stat))
+	{
+		fprintf(stderr, "[%s] child with pid %d has exited with status %d\n",
+			__func__, *kid, WEXITSTATUS(stat));
+	}
+
+	*kid = -1;
+	return 0;
 }
