@@ -105,6 +105,6 @@ moony:moony_d2tk
 		ui:protocol atom:eventTransfer ;
 	] ;
 	lv2:requiredFeature ui:idleInterface, urid:map, urid:unmap ;
-	lv2:optionalFeature ui:resize, opts:options, log:log ;
+	lv2:optionalFeature ui:resize, ui:requestValue, opts:options, log:log ;
 	opts:supportedOption ui:scaleFactor ;
 	lv2:extensionData ui:idleInterface, ui:resize .
