@@ -987,7 +987,7 @@ _expose_term(plughandle_t *handle, const d2tk_rect_t *rect)
 		NULL
 	};
 
-	D2TK_BASE_PTY(base, D2TK_ID, args,
+	D2TK_BASE_PTY(base, D2TK_ID, NULL, args,
 		handle->font_height, rect, handle->reinit, pty)
 	{
 		const d2tk_state_t state = d2tk_pty_get_state(pty);
