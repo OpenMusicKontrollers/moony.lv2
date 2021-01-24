@@ -25,7 +25,6 @@ extern "C" {
 #include "config.h"
 #include <d2tk/d2tk.h>
 
-#if D2TK_SPAWN
 D2TK_API int
 d2tk_util_spawn(char **argv);
 
@@ -34,7 +33,6 @@ d2tk_util_kill(int *kid);
 
 D2TK_API int
 d2tk_util_wait(int *kid);
-#endif
 
 #ifdef __cplusplus
 }

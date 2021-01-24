@@ -22,6 +22,7 @@
 #include <inttypes.h>
 #include <dirent.h>
 #include <string.h>
+#include <stdatomic.h>
 
 #include "example/example.h"
 
@@ -53,12 +54,8 @@ typedef enum _bar_t {
 	BAR_UTF8,
 	BAR_CUSTOM,
 	BAR_COPYPASTE,
-#if D2TK_PTY
 	BAR_PTY,
-#endif
-#if D2TK_SPAWN
 	BAR_SPAWN,
-#endif
 #if !defined(_WIN32) && !defined(__APPLE__)
 	BAR_BROWSER,
 #endif
@@ -69,7 +66,7 @@ typedef enum _bar_t {
 	BAR_MAX
 } bar_t;
 
-static bar_t bar = BAR_MIX;
+static int32_t bar = BAR_MIX;
 static const char *bar_lbl [BAR_MAX] = {
 	[BAR_MIX]        = "Mix of many",
 	[BAR_SPINNER]    = "Spinner",
@@ -85,12 +82,8 @@ static const char *bar_lbl [BAR_MAX] = {
 	[BAR_CUSTOM]     = "Custom",
 	[BAR_COPYPASTE]  = "Copy&Paste",
 	[BAR_UTF8]       = "UTF-8",
-#if D2TK_PTY
 	[BAR_PTY]        = "PTY",
-#endif
-#if D2TK_SPAWN
 	[BAR_SPAWN]      = "Spawn",
-#endif
 #if !defined(_WIN32) && !defined(__APPLE__)
 	[BAR_BROWSER]    = "Browser",
 #endif
@@ -1019,7 +1012,6 @@ _render_c_copypaste(d2tk_frontend_t *frontend, d2tk_base_t *base,
 	}
 }
 
-#if D2TK_PTY
 static inline void
 _render_c_pty(d2tk_base_t *base, const d2tk_rect_t *rect)
 {
@@ -1032,10 +1024,11 @@ _render_c_pty(d2tk_base_t *base, const d2tk_rect_t *rect)
 	static uint32_t last_red = 0x0;;
 	static uint32_t last_green = 0x0;;
 	static uint32_t last_blue = 0x0;;
+	static char entry [512] = "fill";
 
-	static d2tk_coord_t hfrac [2] = { 1, 1 };
+	static d2tk_coord_t hfrac [3] = { 1, 1, 1 };
 
-	D2TK_BASE_LAYOUT(rect, 2, hfrac, D2TK_FLAG_LAYOUT_X_REL, hlay)
+	D2TK_BASE_LAYOUT(rect, 3, hfrac, D2TK_FLAG_LAYOUT_X_REL, hlay)
 	{
 		const d2tk_rect_t *hrect = d2tk_layout_get_rect(hlay);
 		const d2tk_coord_t x = d2tk_layout_get_index(hlay);
@@ -1044,7 +1037,7 @@ _render_c_pty(d2tk_base_t *base, const d2tk_rect_t *rect)
 		{
 			case 0:
 			{
-				D2TK_BASE_PTY(base, D2TK_ID, argv, HEIGHT, hrect, false, pty)
+				D2TK_BASE_PTY(base, D2TK_ID, NULL, argv, HEIGHT, hrect, D2TK_FLAG_NONE, pty)
 				{
 					const uint32_t max_red = d2tk_pty_get_max_red(pty);
 					const uint32_t max_green = d2tk_pty_get_max_green(pty);
@@ -1069,9 +1062,37 @@ _render_c_pty(d2tk_base_t *base, const d2tk_rect_t *rect)
 			} break;
 			case 1:
 			{
-				D2TK_BASE_PTY(base, D2TK_ID, argv, HEIGHT, hrect, false, pty)
+				D2TK_BASE_PTY(base, D2TK_ID, NULL, argv, HEIGHT, hrect, D2TK_FLAG_NONE, pty)
 				{
 					// nothing to do
+				}
+			} break;
+			case 2:
+			{
+				D2TK_BASE_LINEEDIT(base, D2TK_ID, entry, HEIGHT, hrect, D2TK_FLAG_NONE, lineedit)
+				{
+					const d2tk_state_t state = d2tk_lineedit_get_state(lineedit);
+
+					if(d2tk_state_is_enter(state))
+					{
+						const char *line;
+						if( (line = d2tk_lineedit_acquire_line(lineedit)) )
+						{
+							fprintf(stderr, "line: %s\n", line);
+							snprintf(entry, sizeof(entry), "%s", line);
+
+							d2tk_lineedit_release_line(lineedit);
+						}
+
+						size_t fill_len = 0;
+						char *fill = NULL;
+						if( (fill = d2tk_lineedit_acquire_fill(lineedit, &fill_len)) )
+						{
+							snprintf(fill, fill_len, "%s", entry);
+
+							d2tk_lineedit_release_fill(lineedit);
+						}
+					}
 				}
 			} break;
 		}
@@ -1079,9 +1100,7 @@ _render_c_pty(d2tk_base_t *base, const d2tk_rect_t *rect)
 
 #undef HEIGHT
 }
-#endif
 
-#if D2TK_SPAWN
 static inline void
 _render_c_spawn(d2tk_base_t *base, const d2tk_rect_t *rect)
 {
@@ -1109,7 +1128,6 @@ _render_c_spawn(d2tk_base_t *base, const d2tk_rect_t *rect)
 		fprintf(stderr, "kid still running\n");
 	}
 }
-#endif
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 static int
@@ -1395,19 +1413,7 @@ d2tk_example_run(d2tk_frontend_t *frontend, d2tk_base_t *base,
 		{
 			case 0:
 			{
-				D2TK_BASE_TABLE(vrect, BAR_MAX, 1, D2TK_FLAG_TABLE_REL, tab)
-				{
-					const d2tk_rect_t *hrect = d2tk_table_get_rect(tab);
-					const unsigned b = d2tk_table_get_index(tab);
-
-					bool val = (b == bar);
-					d2tk_base_toggle_label(base, D2TK_ID_IDX(b), -1, bar_lbl[b],
-						D2TK_ALIGN_CENTERED, hrect, &val);
-					if(val)
-					{
-						bar = b;
-					}
-				}
+				d2tk_base_combo(base, D2TK_ID, BAR_MAX, bar_lbl, vrect, &bar);
 			} break;
 			case 1:
 			{
@@ -1469,18 +1475,14 @@ d2tk_example_run(d2tk_frontend_t *frontend, d2tk_base_t *base,
 					{
 						_render_c_copypaste(frontend, base, vrect);
 					} break;
-#if D2TK_PTY
 					case BAR_PTY:
 					{
 						_render_c_pty(base, vrect);
 					} break;
-#endif
-#if D2TK_SPAWN
 					case BAR_SPAWN:
 					{
 						_render_c_spawn(base, vrect);
 					} break;
-#endif
 #if !defined(_WIN32) && !defined(__APPLE__)
 					case BAR_BROWSER:
 					{

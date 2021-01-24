@@ -130,7 +130,7 @@ _term_read(d2tk_atom_body_pty_t *vpty,
 		{
 			if(errno != EAGAIN)
 			{
-				//FIXME fprintf(stderr, "read failed '%s'\n", strerror(errno));
+				//FIXME fprintf(stderr, "[%s] read failed '%s'\n", __func__, strerror(errno));
 			}
 			break;
 		}
@@ -155,13 +155,33 @@ _term_done(d2tk_atom_body_pty_t *vpty)
 		return 1;
 	}
 
-	if(waitpid(vpty->kid, NULL, WNOHANG) == vpty->kid)
+	int stat = 0;
+	const int kid = waitpid(vpty->kid, NULL, WNOHANG);
+
+	if(kid == -1)
 	{
-		vpty->kid = 0;
-		return 1;
+		return 0;
 	}
 
-	return 0;
+	if(kid == 0)
+	{
+		return 0;
+	}
+
+	// has exited
+	if(WIFSIGNALED(stat))
+	{
+		fprintf(stderr, "[%s] child with pid %d has exited with signal %d\n",
+			__func__, vpty->kid, WTERMSIG(stat));
+	}
+	else if(WIFEXITED(stat))
+	{
+		fprintf(stderr, "[%s] child with pid %d has exited with status %d\n",
+			__func__, vpty->kid, WEXITSTATUS(stat));
+	}
+
+	vpty->kid = 0;
+	return 1;
 }
 
 static void
@@ -173,7 +193,7 @@ _term_output(const char *buf, size_t len, void *data)
 
 	if(writ == -1)
 	{
-		fprintf(stderr, "write failed '%s'\n", strerror(errno));
+		fprintf(stderr, "[%s] write failed '%s'\n", __func__, strerror(errno));
 		return;
 	}
 }
@@ -222,7 +242,7 @@ _screen_resize(int nrows, int ncols, void *data)
 
 	if(ioctl(vpty->fd, TIOCSWINSZ, &winsize) == -1)
 	{
-		fprintf(stderr, "ioctl failed '%s'\n", strerror(errno));
+		fprintf(stderr, "[%s] ioctl failed '%s'\n", __func__, strerror(errno));
 		return 1;
 	}
 
@@ -253,8 +273,8 @@ typedef struct _clone_data_t clone_data_t;
 struct _clone_data_t {
 	int master;
 	int slave;
-	int stderr_save_fileno;
-	char **argv;
+	d2tk_base_pty_cb_t cb;
+	void *data;
 };
 
 static int
@@ -269,15 +289,19 @@ _clone(void *data)
 		_exit(1);
 	}
 
-	fcntl(clone_data->stderr_save_fileno, F_SETFD,
-		fcntl(clone_data->stderr_save_fileno, F_GETFD) | FD_CLOEXEC);
-	FILE *stderr_save = fdopen(clone_data->stderr_save_fileno, "a");
-
 	/* Restore the ISIG signals back to defaults */
 	signal(SIGINT,  SIG_DFL);
 	signal(SIGQUIT, SIG_DFL);
+	signal(SIGTERM, SIG_DFL);
 	signal(SIGSTOP, SIG_DFL);
 	signal(SIGCONT, SIG_DFL);
+
+	if(clone_data->cb)
+	{
+		return clone_data->cb(clone_data->data);
+	}
+
+	char **argv = (char **)clone_data->data;
 
 	char envh [PATH_MAX];
 	char envu [PATH_MAX];
@@ -293,8 +317,7 @@ _clone(void *data)
 		NULL
 	};
 
-	execvpe(clone_data->argv[0], clone_data->argv, envp);
-	fprintf(stderr_save, "cannot exec(%s) - %s\n", clone_data->argv[0], strerror(errno));
+	execvpe(argv[0], argv, envp);
 	_exit(EXIT_FAILURE);
 
 	return 0;
@@ -302,13 +325,13 @@ _clone(void *data)
 
 static int
 _forkpty(int *amaster, char *name, const struct termios *termp,
-	const struct winsize *winp, char **argv, int stderr_save_fileno)
+	const struct winsize *winp, d2tk_base_pty_cb_t cb, void *data)
 {
 	clone_data_t clone_data = {
 		.master = 0,
 		.slave = 0,
-		.argv = argv,
-		.stderr_save_fileno = stderr_save_fileno
+		.cb = cb,
+		.data = data
 	};
 	
 	if(openpty(&clone_data.master, &clone_data.slave, name, termp, winp) == -1)
@@ -328,13 +351,17 @@ _forkpty(int *amaster, char *name, const struct termios *termp,
 	}
 
 	uint8_t *stack_top = stack + STACK_SIZE;
-	const int flags = CLONE_FS | CLONE_IO | CLONE_VFORK | CLONE_VM;
+	int flags = CLONE_FS | CLONE_IO | CLONE_VM | SIGCHLD;
+	if(cb == NULL)
+	{
+		flags |= CLONE_VFORK;
+	}
 	const int pid = clone(_clone, stack_top, flags, &clone_data);
 #	undef STACK_SIZE
 #elif D2TK_VFORK == 1
 	const int pid = vfork();
 #else
-	const int pid = fork();
+#	error "support for clone or vfork required"
 #endif
 
 	switch(pid)
@@ -361,7 +388,7 @@ _forkpty(int *amaster, char *name, const struct termios *termp,
 }
 
 static int
-_term_init(d2tk_atom_body_pty_t *vpty, char **argv,
+_term_init(d2tk_atom_body_pty_t *vpty, d2tk_base_pty_cb_t cb, void *data,
 	d2tk_coord_t height, d2tk_coord_t ncols, d2tk_coord_t nrows)
 {
 	vpty->height = height;
@@ -430,17 +457,16 @@ _term_init(d2tk_atom_body_pty_t *vpty, char **argv,
 		.ws_ypixel = 0
 	};
 
-	const int stderr_save_fileno = dup(STDERR_FILENO);
-
-	vpty->kid = _forkpty(&vpty->fd, NULL, &termios, &winsize, argv, stderr_save_fileno);
+	vpty->kid = _forkpty(&vpty->fd, NULL, &termios, &winsize, cb, data);
 	if(vpty->kid == -1)
 	{
 		vpty->kid = 0;
 		return 1;
 	}
 
+	fprintf(stderr, "[%s] child with pid %i has spawned\n", __func__, vpty->kid);
+
   fcntl(vpty->fd, F_SETFL, fcntl(vpty->fd, F_GETFL) | O_NONBLOCK);
-	close(stderr_save_fileno);
 
 	vpty->vterm = vterm_new(vpty->nrows, vpty->ncols);
 	vterm_set_utf8(vpty->vterm, 1);
@@ -469,30 +495,53 @@ _term_deinit(d2tk_atom_body_pty_t *vpty)
 		return 1;
 	}
 
-	if(vpty->kid != 0)
+	if(vpty->fd)
 	{
-		kill(vpty->kid, SIGTERM);
+		close(vpty->fd);
 
-#define RETRIES 100 // over the course of 100 ms
-		for(int i = 0; i < RETRIES; i++)
-		{
-			if(waitpid(vpty->kid, NULL, WNOHANG) == vpty->kid)
-			{
-				vpty->kid = 0;
-				break;
-			}
-
-			usleep(1000000 / RETRIES);
-		}
-#undef RETRIES
+		vpty->fd = 0;
 	}
 
-	if(vpty->kid !=  0)
+	if(vpty->kid != 0)
 	{
-		fprintf(stderr, "[%s] sending SIGKILL to pid %i\n", __func__, vpty->kid);
-		kill(vpty->kid, SIGKILL);
-		waitpid(vpty->kid, NULL, 0);
-		vpty->kid = 0;
+		while(true)
+		{
+			usleep(1000);;
+
+			kill(vpty->kid, SIGINT);
+			kill(vpty->kid, SIGQUIT);
+			kill(vpty->kid, SIGTERM);
+			kill(vpty->kid, SIGKILL);
+
+			int stat = 0;
+			const int kid = waitpid(vpty->kid, &stat, 0);
+
+			if(kid == -1)
+			{
+				continue;
+			}
+
+			if(kid == 0)
+			{
+				// no change
+				continue;
+			}
+
+			// has exited
+			if(WIFSIGNALED(stat))
+			{
+				fprintf(stderr, "[%s] child with pid %d has exited with signal %d\n",
+					__func__, vpty->kid, WTERMSIG(stat));
+			}
+			else if(WIFEXITED(stat))
+			{
+				fprintf(stderr, "[%s] child with pid %d has exited with status %d\n",
+					__func__, vpty->kid, WEXITSTATUS(stat));
+			}
+
+			vpty->kid = 0;
+			break;
+		}
 	}
 
 	if(vpty->vterm)
@@ -983,8 +1032,8 @@ _term_draw(d2tk_base_t *base, d2tk_atom_body_pty_t *vpty,
 }
 
 D2TK_API d2tk_pty_t *
-d2tk_pty_begin(d2tk_base_t *base, d2tk_id_t id, char **argv,
-	d2tk_coord_t height, const d2tk_rect_t *rect, bool reinit, d2tk_pty_t *pty)
+d2tk_pty_begin(d2tk_base_t *base, d2tk_id_t id, d2tk_base_pty_cb_t cb, void *data,
+	d2tk_coord_t height, const d2tk_rect_t *rect, d2tk_flag_t flags, d2tk_pty_t *pty)
 {
 	memset(pty, 0x0, sizeof(d2tk_pty_t));
 
@@ -993,17 +1042,23 @@ d2tk_pty_begin(d2tk_base_t *base, d2tk_id_t id, char **argv,
 	pty->vpty = vpty;
 
 	const d2tk_coord_t width = height / 2;
+
+	if( (width == 0) || (height == 0) )
+	{
+		return NULL;
+	}
+
 	const d2tk_coord_t ncols = rect->w / width;
 	const d2tk_coord_t nrows = rect->h / height;
 
-	if(reinit)
+	if(flags & D2TK_FLAG_PTY_REINIT)
 	{
 		_term_deinit(vpty);
 	}
 
 	if(vpty->height == 0)
 	{
-		if(_term_init(vpty, argv, height, ncols, nrows) != 0)
+		if(_term_init(vpty, cb, data, height, ncols, nrows) != 0)
 		{
 			fprintf(stderr, "[%s] _term_init failed\n", __func__);
 		}

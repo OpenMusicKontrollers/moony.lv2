@@ -33,10 +33,6 @@ option('use-frontend-glfw',
 	value : 'disabled',
 	yield : true)
 
-option('use-vterm',
-	type : 'feature',
-	value : 'disabled',
-	yield : true)
 option('use-evdev',
 	type : 'feature',
 	value : 'disabled',

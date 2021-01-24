@@ -42,7 +42,10 @@ typedef struct _d2tk_flowmatrix_node_t d2tk_flowmatrix_node_t;
 typedef struct _d2tk_flowmatrix_arc_t d2tk_flowmatrix_arc_t;
 typedef struct _d2tk_pane_t d2tk_pane_t;
 typedef struct _d2tk_pty_t d2tk_pty_t;
+typedef struct _d2tk_lineedit_t d2tk_lineedit_t;
 typedef struct _d2tk_base_t d2tk_base_t;
+
+typedef int (*d2tk_base_pty_cb_t)(void *data);
 
 struct _d2tk_pos_t {
 	d2tk_coord_t x;
@@ -154,7 +157,8 @@ typedef enum _d2tk_flag_t {
 	D2TK_FLAG_TABLE_REL     = (1 << 9),
 	D2TK_FLAG_INACTIVE      = (1 << 10),
 	D2TK_FLAG_SEPARATOR_X   = (1 << 11),
-	D2TK_FLAG_SEPARATOR_Y   = (1 << 12)
+	D2TK_FLAG_SEPARATOR_Y   = (1 << 12),
+	D2TK_FLAG_PTY_REINIT    = (1 << 13)
 } d2tk_flag_t;
 
 #define D2TK_ID_IDX(IDX) ( ((d2tk_id_t)__LINE__ << 16) | (IDX) )
@@ -172,6 +176,7 @@ extern const size_t d2tk_flowmatrix_node_sz;
 extern const size_t d2tk_flowmatrix_arc_sz;
 extern const size_t d2tk_pane_sz;
 extern const size_t d2tk_pty_sz;
+extern const size_t d2tk_lineedit_sz;
 
 D2TK_API d2tk_table_t *
 d2tk_table_begin(const d2tk_rect_t *rect, unsigned N, unsigned M,
@@ -488,10 +493,9 @@ d2tk_base_link(d2tk_base_t *base, d2tk_id_t id, ssize_t lbl_len, const char *lbl
 D2TK_API d2tk_state_t
 d2tk_base_separator(d2tk_base_t *base, const d2tk_rect_t *rect, d2tk_flag_t flags);
 
-#if D2TK_PTY
 D2TK_API d2tk_pty_t *
-d2tk_pty_begin(d2tk_base_t *base, d2tk_id_t id, char **argv,
-	d2tk_coord_t height, const d2tk_rect_t *rect, bool reinit, d2tk_pty_t *pty);
+d2tk_pty_begin(d2tk_base_t *base, d2tk_id_t id, d2tk_base_pty_cb_t cb, void *data,
+	d2tk_coord_t height, const d2tk_rect_t *rect, d2tk_flag_t flags, d2tk_pty_t *pty);
 
 D2TK_API bool
 d2tk_pty_not_end(d2tk_pty_t *pty);
@@ -511,12 +515,43 @@ d2tk_pty_get_max_green(d2tk_pty_t *pty);
 D2TK_API uint32_t
 d2tk_pty_get_max_blue(d2tk_pty_t *pty);
 
-#define D2TK_BASE_PTY(BASE, ID, ARGV, HEIGHT, RECT, REINIT, PTY) \
-	for(d2tk_pty_t *(PTY) = d2tk_pty_begin((BASE), (ID), (ARGV), (HEIGHT), \
-			(RECT), (REINIT), alloca(d2tk_pty_sz)); \
+#define D2TK_BASE_PTY(BASE, ID, CB, DATA, HEIGHT, RECT, FLAGS, PTY) \
+	for(d2tk_pty_t *(PTY) = d2tk_pty_begin((BASE), (ID), (CB), (DATA), (HEIGHT), \
+			(RECT), (FLAGS), alloca(d2tk_pty_sz)); \
 		d2tk_pty_not_end((PTY)); \
 		(PTY) = d2tk_pty_next((PTY)))
-#endif
+
+D2TK_API d2tk_lineedit_t *
+d2tk_lineedit_begin(d2tk_base_t *base, d2tk_id_t id, const char *fill,
+	d2tk_coord_t height, const d2tk_rect_t *rect, d2tk_flag_t flags,
+	d2tk_lineedit_t *lineedit);
+
+D2TK_API bool
+d2tk_lineedit_not_end(d2tk_lineedit_t *lineedit);
+
+D2TK_API d2tk_lineedit_t *
+d2tk_lineedit_next(d2tk_lineedit_t *lineedit);
+
+D2TK_API d2tk_state_t
+d2tk_lineedit_get_state(d2tk_lineedit_t *lineedit);
+
+D2TK_API const char *
+d2tk_lineedit_acquire_line(d2tk_lineedit_t *lineedit);
+
+D2TK_API void
+d2tk_lineedit_release_line(d2tk_lineedit_t *lineedit);
+
+D2TK_API char *
+d2tk_lineedit_acquire_fill(d2tk_lineedit_t *lineedit, size_t *fill_len);
+
+D2TK_API void
+d2tk_lineedit_release_fill(d2tk_lineedit_t *lineedit);
+
+#define D2TK_BASE_LINEEDIT(BASE, ID, FILL, HEIGHT, RECT, FLAGS, LINEEDIT) \
+	for(d2tk_lineedit_t *(LINEEDIT) = d2tk_lineedit_begin((BASE), (ID), (FILL), (HEIGHT), \
+			(RECT), (FLAGS), alloca(d2tk_lineedit_sz)); \
+		d2tk_lineedit_not_end((LINEEDIT)); \
+		(LINEEDIT) = d2tk_lineedit_next((LINEEDIT)))
 
 #if D2TK_EVDEV
 D2TK_API d2tk_state_t
