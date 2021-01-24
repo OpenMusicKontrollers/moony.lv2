@@ -28,6 +28,7 @@
 @prefix urid: <http://lv2plug.in/ns/ext/urid#> .
 @prefix opts: <http://lv2plug.in/ns/ext/options#> .
 @prefix param: <http://lv2plug.in/ns/ext/parameters#> .
+@prefix log: <http://lv2plug.in/ns/ext/log#> .
 @prefix ui: <http://lv2plug.in/ns/extensions/ui#> .
 @prefix idisp: <http://harrisonconsoles.com/lv2/inlinedisplay#> .
 
@@ -139,7 +140,7 @@ moony:c1xc1
 	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options, log:log ;
 	lv2:extensionData work:interface, state:interface ;
 	@BUILD_INLINE_DISPLAY@lv2:optionalFeature idisp:queue_draw ;
 	@BUILD_INLINE_DISPLAY@lv2:extensionData idisp:interface ;
@@ -217,7 +218,7 @@ moony:c2xc2
 	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options, log:log ;
 	lv2:extensionData work:interface, state:interface ;
 	@BUILD_INLINE_DISPLAY@lv2:optionalFeature idisp:queue_draw ;
 	@BUILD_INLINE_DISPLAY@lv2:extensionData idisp:interface ;
@@ -310,7 +311,7 @@ moony:c4xc4
 	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options, log:log ;
 	lv2:extensionData work:interface, state:interface ;
 	@BUILD_INLINE_DISPLAY@lv2:optionalFeature idisp:queue_draw ;
 	@BUILD_INLINE_DISPLAY@lv2:extensionData idisp:interface ;
@@ -433,7 +434,7 @@ moony:a1xa1
 	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options, log:log ;
 	lv2:extensionData work:interface, state:interface ;
 	@BUILD_INLINE_DISPLAY@lv2:optionalFeature idisp:queue_draw ;
 	@BUILD_INLINE_DISPLAY@lv2:extensionData idisp:interface ;
@@ -518,7 +519,7 @@ moony:a2xa2
 	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options, log:log ;
 	lv2:extensionData work:interface, state:interface ;
 	@BUILD_INLINE_DISPLAY@lv2:optionalFeature idisp:queue_draw ;
 	@BUILD_INLINE_DISPLAY@lv2:extensionData idisp:interface ;
@@ -627,7 +628,7 @@ moony:a4xa4
 	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options, log:log ;
 	lv2:extensionData work:interface, state:interface ;
 	@BUILD_INLINE_DISPLAY@lv2:optionalFeature idisp:queue_draw ;
 	@BUILD_INLINE_DISPLAY@lv2:extensionData idisp:interface ;
@@ -784,7 +785,7 @@ moony:c1a1xc1a1
 	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options, log:log ;
 	lv2:extensionData work:interface, state:interface ;
 	@BUILD_INLINE_DISPLAY@lv2:optionalFeature idisp:queue_draw ;
 	@BUILD_INLINE_DISPLAY@lv2:extensionData idisp:interface ;
@@ -888,7 +889,7 @@ moony:c2a1xc2a1
 	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options, log:log ;
 	lv2:extensionData work:interface, state:interface ;
 	@BUILD_INLINE_DISPLAY@lv2:optionalFeature idisp:queue_draw ;
 	@BUILD_INLINE_DISPLAY@lv2:extensionData idisp:interface ;
@@ -1007,7 +1008,7 @@ moony:c4a1xc4a1
 	doap:license <https://spdx.org/licenses/Artistic-2.0> ;
 	rdfs:comment "Realtime Lua as programmable glue in LV2";
 	lv2:project proj:moony ;
-	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options ;
+	lv2:optionalFeature lv2:isLive, lv2:hardRTCapable, bufsz:boundedBlockLength, osc:schedule, state:loadDefaultState, xpress:voiceMap, state:threadSafeRestore, opts:options, log:log ;
 	lv2:extensionData work:interface, state:interface ;
 	@BUILD_INLINE_DISPLAY@lv2:optionalFeature idisp:queue_draw ;
 	@BUILD_INLINE_DISPLAY@lv2:extensionData idisp:interface ;

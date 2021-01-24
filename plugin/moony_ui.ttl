@@ -19,6 +19,7 @@
 @prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .
 @prefix urid: <http://lv2plug.in/ns/ext/urid#> .
 @prefix opts: <http://lv2plug.in/ns/ext/options#> .
+@prefix log: <http://lv2plug.in/ns/ext/log#> .
 
 @prefix moony:	<http://open-music-kontrollers.ch/lv2/moony#> .
 
@@ -61,7 +62,7 @@ moony:moony_ui
 		ui:protocol atom:eventTransfer ;
 	] ;
 	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map, urid:unmap ;
-	lv2:optionalFeature ui:resize, opts:options ;
+	lv2:optionalFeature ui:resize, opts:options, log:log ;
 	opts:supportedOption ui:scaleFactor ;
 	lv2:extensionData ui:idleInterface, ui:resize .
 
@@ -104,6 +105,6 @@ moony:moony_d2tk
 		ui:protocol atom:eventTransfer ;
 	] ;
 	lv2:requiredFeature ui:idleInterface, urid:map, urid:unmap ;
-	lv2:optionalFeature ui:resize, opts:options ;
+	lv2:optionalFeature ui:resize, opts:options, log:log ;
 	opts:supportedOption ui:scaleFactor ;
 	lv2:extensionData ui:idleInterface, ui:resize .
