@@ -2233,10 +2233,10 @@ instantiate(const LV2UI_Descriptor *descriptor,
 		return NULL;
 	}
 
-	if(!handle->map)
+	if(!handle->map || !handle->unmap)
 	{
 		fprintf(stderr,
-			"%s: Host does not support urid:map\n", descriptor->URI);
+			"%s: Host does not support urid:map/unmap\n", descriptor->URI);
 		free(handle);
 		return NULL;
 	}
