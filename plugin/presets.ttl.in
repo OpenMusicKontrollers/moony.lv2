@@ -109,11 +109,7 @@ moony:bank-through_control-through
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
-		moony:code """function run(n, control, notify, ...)
-	return ...
-end
-
--- vim: set syntax=lua:"""
+		moony:code """@BANK-THROUGH_CONTROL-THROUGH@"""
 	] .
 
 moony:bank-through_atom-through

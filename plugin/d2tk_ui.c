@@ -987,8 +987,13 @@ _expose_term(plughandle_t *handle, const d2tk_rect_t *rect)
 		NULL
 	};
 
-	D2TK_BASE_PTY(base, D2TK_ID, NULL, args,
-		handle->font_height, rect, handle->reinit, pty)
+	d2tk_flag_t flag = D2TK_FLAG_NONE;
+	if(handle->reinit)
+	{
+		flag |= D2TK_FLAG_PTY_REINIT;
+	}
+
+	D2TK_BASE_PTY(base, D2TK_ID, NULL, args, handle->font_height, rect, flag, pty)
 	{
 		const d2tk_state_t state = d2tk_pty_get_state(pty);
 		const uint32_t max_red = d2tk_pty_get_max_red(pty);

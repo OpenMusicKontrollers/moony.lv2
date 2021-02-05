@@ -88,4 +88,4 @@ local function parse(pin)
 	end
 end
 
-parse('../plugin/presets.ttl')
+parse('presets.ttl')

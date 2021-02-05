@@ -350,6 +350,9 @@ if build_next_ui
 	endif
 endif
 
+bank_filter_control_through = run_command('cat', 'plugin/bank-filter_control_through.lua').stdout()
+conf_data.set('BANK-THROUGH_CONTROL-THROUGH', bank_filter_control_through)
+
 manifest_ttl = configure_file(
 	input : join_paths('plugin', 'manifest.ttl.in'),
 	output : 'manifest.ttl',
@@ -372,9 +375,9 @@ ui_ttl = configure_file(
 	install_dir : inst_dir)
 
 pset_ttl = configure_file(
-	input : join_paths('plugin', 'presets.ttl'),
+	input : join_paths('plugin', 'presets.ttl.in'),
 	output : 'presets.ttl',
-	copy : true,
+	configuration : conf_data,
 	install : true,
 	install_dir : inst_dir)
 

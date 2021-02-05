@@ -16,9 +16,6 @@ option('use-frontend-pugl',
 	type : 'feature',
 	value : 'enabled')
 
-option('use-vterm',
-	type : 'feature',
-	value : 'disabled')
 option('use-fontconfig',
 	type : 'feature',
 	value : 'disabled')
