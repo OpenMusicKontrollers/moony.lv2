@@ -350,8 +350,22 @@ if build_next_ui
 	endif
 endif
 
-bank_filter_control_through = run_command('cat', 'plugin/bank-filter_control_through.lua').stdout()
-conf_data.set('BANK-THROUGH_CONTROL-THROUGH', bank_filter_control_through)
+# bank through
+bank_through_control_through = run_command('cat',
+	join_paths('plugin', 'bank-through_control_through.lua')).stdout()
+conf_data.set('BANK-THROUGH_CONTROL-THROUGH', bank_through_control_through)
+
+bank_through_atom_through = run_command('cat',
+	join_paths('plugin', 'bank-through_atom_through.lua')).stdout()
+conf_data.set('BANK-THROUGH_ATOM-THROUGH', bank_through_atom_through)
+
+bank_through_atom_through2 = run_command('cat',
+	join_paths('plugin', 'bank-through_atom_through2.lua')).stdout()
+conf_data.set('BANK-THROUGH_ATOM-THROUGH2', bank_through_atom_through2)
+
+bank_through_atom_through4 = run_command('cat',
+	join_paths('plugin', 'bank-through_atom_through4.lua')).stdout()
+conf_data.set('BANK-THROUGH_ATOM-THROUGH4', bank_through_atom_through4)
 
 manifest_ttl = configure_file(
 	input : join_paths('plugin', 'manifest.ttl.in'),

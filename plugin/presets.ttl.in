@@ -124,15 +124,7 @@ moony:bank-through_atom-through
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
-		moony:code """function run(n, control, notify, seq, forge, ...)
-	for frames, atom in seq:foreach() do
-		forge:time(frames):atom(atom)
-	end
-
-	return ...
-end
-
--- vim: set syntax=lua:"""
+		moony:code """@BANK-THROUGH_ATOM-THROUGH@"""
 	] .
 
 moony:bank-through_atom-through2
@@ -147,17 +139,7 @@ moony:bank-through_atom-through2
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
-		moony:code """function run(n, control, notify, seq1, forge1, seq2, forge2)
-	for frames, atom in seq1:foreach() do
-		forge1:time(frames):atom(atom)
-	end
-
-	for frames, atom in seq2:foreach() do
-		forge2:time(frames):atom(atom)
-	end
-end
-
--- vim: set syntax=lua:"""
+		moony:code """@BANK-THROUGH_ATOM-THROUGH2@"""
 	] .
 
 moony:bank-through_atom-through4
@@ -172,25 +154,7 @@ moony:bank-through_atom-through4
 		moony:paramHidden true ;
 		moony:paramCols 3 ;
 		moony:paramRows 4 ;
-		moony:code """function run(n, control, notify, seq1, forge1, seq2, forge2, seq3, forge3, seq4, forge4)
-	for frames, atom in seq1:foreach() do
-		forge1:time(frames):atom(atom)
-	end
-
-	for frames, atom in seq2:foreach() do
-		forge2:time(frames):atom(atom)
-	end
-
-	for frames, atom in seq3:foreach() do
-		forge3:time(frames):atom(atom)
-	end
-
-	for frames, atom in seq4:foreach() do
-		forge4:time(frames):atom(atom)
-	end
-end
-
--- vim: set syntax=lua:"""
+		moony:code """@BANK-THROUGH_ATOM-THROUGH4@"""
 	] .
 
 moony:bank-multiplex_atom-multiplex2
