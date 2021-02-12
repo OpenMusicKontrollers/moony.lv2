@@ -61,7 +61,7 @@ moony:moony_ui
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 	] ;
-	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map, urid:unmap ;
+	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map, urid:unmap, ui:parent ;
 	lv2:optionalFeature ui:resize, opts:options, log:log ;
 	opts:supportedOption ui:scaleFactor ;
 	lv2:extensionData ui:idleInterface, ui:resize .
@@ -104,7 +104,7 @@ moony:moony_d2tk
 		lv2:symbol "notify" ;
 		ui:protocol atom:eventTransfer ;
 	] ;
-	lv2:requiredFeature ui:idleInterface, urid:map, urid:unmap ;
+	lv2:requiredFeature ui:idleInterface, ui:portMap, urid:map, urid:unmap, ui:parent ;
 	lv2:optionalFeature ui:resize, ui:requestValue, opts:options, log:log ;
 	opts:supportedOption ui:scaleFactor ;
 	lv2:extensionData ui:idleInterface, ui:resize .
