@@ -45,7 +45,7 @@ extern "C" {
 
 typedef struct _linenoiseApp linenoiseApp;
 
-linenoiseApp *linenoiseAppNew();
+linenoiseApp *linenoiseAppNew(int fd_in, int fd_out);
 void linenoiseAppFree(linenoiseApp *app);
 
 typedef struct linenoiseCompletions {

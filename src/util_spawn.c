@@ -52,41 +52,24 @@ d2tk_util_spawn(char **argv)
 		.argv = argv
 	};
 
-#if D2TK_CLONE == 1
-#	define STACK_SIZE (1024 * 1024)
-	uint8_t *stack = mmap(NULL, STACK_SIZE, PROT_READ | PROT_WRITE,
-		MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
-	if(stack == MAP_FAILED)
-	{
-		return -1;
-	}
-
-	uint8_t *stack_top = stack + STACK_SIZE;
-	const int flags = CLONE_FS | CLONE_IO | CLONE_VFORK | CLONE_VM | SIGCHLD;
-	const int pid = clone(_clone, stack_top, flags, &clone_data);
-#	undef STACK_SIZE
-#elif D2TK_VFORK == 1
 	const int pid = vfork();
-#else
-#	error "support for clone or vfork required"
-#endif
-
 	switch(pid)
 	{
 		case -1:
 		{
+			 // nothing to do
 		} return -1;
 
-#if D2TK_CLONE == 0
     case 0: //child
 		{
 			// everything is done in _clone
 		} return _clone(&clone_data);
-#endif
 
 		default: // parent
 		{
+#if D2TK_DEBUG == 1
 			fprintf(stderr, "[%s] child with pid %i has spawned\n", __func__, pid);
+#endif
 		} return pid;
 	}
 }
@@ -124,13 +107,17 @@ d2tk_util_kill(int *kid)
 		// has exited
 		if(WIFSIGNALED(stat))
 		{
+#if D2TK_DEBUG == 1
 			fprintf(stderr, "[%s] child with pid %d has exited with signal %d\n",
 				__func__, *kid, WTERMSIG(stat));
+#endif
 		}
 		else if(WIFEXITED(stat))
 		{
+#if D2TK_DEBUG == 1
 			fprintf(stderr, "[%s] child with pid %d has exited with status %d\n",
 				__func__, *kid, WEXITSTATUS(stat));
+#endif
 		}
 
 		*kid = -1;
@@ -164,13 +151,17 @@ d2tk_util_wait(int *kid)
 	// has exited
 	if(WIFSIGNALED(stat))
 	{
+#if D2TK_DEBUG == 1
 		fprintf(stderr, "[%s] child with pid %d has exited with signal %d\n",
 			__func__, *kid, WTERMSIG(stat));
+#endif
 	}
 	else if(WIFEXITED(stat))
 	{
+#if D2TK_DEBUG == 1
 		fprintf(stderr, "[%s] child with pid %d has exited with status %d\n",
 			__func__, *kid, WEXITSTATUS(stat));
+#endif
 	}
 
 	*kid = -1;

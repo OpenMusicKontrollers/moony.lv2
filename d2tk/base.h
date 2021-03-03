@@ -25,6 +25,7 @@
 #include <d2tk/core.h>
 
 #include <utf8.h/utf8.h>
+#include <linenoise.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,10 +43,16 @@ typedef struct _d2tk_flowmatrix_node_t d2tk_flowmatrix_node_t;
 typedef struct _d2tk_flowmatrix_arc_t d2tk_flowmatrix_arc_t;
 typedef struct _d2tk_pane_t d2tk_pane_t;
 typedef struct _d2tk_pty_t d2tk_pty_t;
-typedef struct _d2tk_lineedit_t d2tk_lineedit_t;
 typedef struct _d2tk_base_t d2tk_base_t;
+typedef struct _d2tk_lineedit_filter_t d2tk_lineedit_filter_t;
 
-typedef int (*d2tk_base_pty_cb_t)(void *data);
+typedef int (*d2tk_base_pty_cb_t)(void *data, int fd_in, int fd_out);
+
+struct _d2tk_lineedit_filter_t {
+	linenoiseCompletionCallback *completion_cb;
+	linenoiseHintsCallback *hints_cb;
+	linenoiseFreeHintsCallback *free_hints_cb;
+};
 
 struct _d2tk_pos_t {
 	d2tk_coord_t x;
@@ -158,7 +165,8 @@ typedef enum _d2tk_flag_t {
 	D2TK_FLAG_INACTIVE      = (1 << 10),
 	D2TK_FLAG_SEPARATOR_X   = (1 << 11),
 	D2TK_FLAG_SEPARATOR_Y   = (1 << 12),
-	D2TK_FLAG_PTY_REINIT    = (1 << 13)
+	D2TK_FLAG_PTY_REINIT    = (1 << 13),
+	D2TK_FLAG_PTY_NOMOUSE   = (1 << 14)
 } d2tk_flag_t;
 
 #define D2TK_ID_IDX(IDX) ( ((d2tk_id_t)__LINE__ << 16) | (IDX) )
@@ -176,7 +184,6 @@ extern const size_t d2tk_flowmatrix_node_sz;
 extern const size_t d2tk_flowmatrix_arc_sz;
 extern const size_t d2tk_pane_sz;
 extern const size_t d2tk_pty_sz;
-extern const size_t d2tk_lineedit_sz;
 
 D2TK_API d2tk_table_t *
 d2tk_table_begin(const d2tk_rect_t *rect, unsigned N, unsigned M,
@@ -521,37 +528,13 @@ d2tk_pty_get_max_blue(d2tk_pty_t *pty);
 		d2tk_pty_not_end((PTY)); \
 		(PTY) = d2tk_pty_next((PTY)))
 
-D2TK_API d2tk_lineedit_t *
-d2tk_lineedit_begin(d2tk_base_t *base, d2tk_id_t id, const char *fill,
-	d2tk_coord_t height, const d2tk_rect_t *rect, d2tk_flag_t flags,
-	d2tk_lineedit_t *lineedit);
-
-D2TK_API bool
-d2tk_lineedit_not_end(d2tk_lineedit_t *lineedit);
-
-D2TK_API d2tk_lineedit_t *
-d2tk_lineedit_next(d2tk_lineedit_t *lineedit);
-
 D2TK_API d2tk_state_t
-d2tk_lineedit_get_state(d2tk_lineedit_t *lineedit);
+d2tk_base_lineedit(d2tk_base_t *base, d2tk_id_t id, size_t line_len,
+	char *line, const d2tk_lineedit_filter_t *filter,
+	const d2tk_rect_t *rect, d2tk_flag_t flags);
 
-D2TK_API const char *
-d2tk_lineedit_acquire_line(d2tk_lineedit_t *lineedit);
-
-D2TK_API void
-d2tk_lineedit_release_line(d2tk_lineedit_t *lineedit);
-
-D2TK_API char *
-d2tk_lineedit_acquire_fill(d2tk_lineedit_t *lineedit, size_t *fill_len);
-
-D2TK_API void
-d2tk_lineedit_release_fill(d2tk_lineedit_t *lineedit);
-
-#define D2TK_BASE_LINEEDIT(BASE, ID, FILL, HEIGHT, RECT, FLAGS, LINEEDIT) \
-	for(d2tk_lineedit_t *(LINEEDIT) = d2tk_lineedit_begin((BASE), (ID), (FILL), (HEIGHT), \
-			(RECT), (FLAGS), alloca(d2tk_lineedit_sz)); \
-		d2tk_lineedit_not_end((LINEEDIT)); \
-		(LINEEDIT) = d2tk_lineedit_next((LINEEDIT)))
+#define d2tk_base_lineedit_is_changed(...) \
+	d2tk_state_is_changed(d2tk_base_lineedit(__VA_ARGS__))
 
 #if D2TK_EVDEV
 D2TK_API d2tk_state_t

@@ -27,6 +27,8 @@
 #include <limits.h>
 #include <sys/wait.h>
 #include <sys/mman.h>
+#include <pthread.h>
+#include <stdatomic.h>
 
 #include "base_internal.h"
 
@@ -50,6 +52,8 @@ typedef struct _col_t col_t;
 typedef struct _cell_t cell_t;
 typedef struct _d2tk_atom_body_pty_t d2tk_atom_body_pty_t;
 typedef struct _d2tk_pty_t d2tk_pty_t;
+typedef struct _thread_data_t thread_data_t;
+typedef struct _clone_data_t clone_data_t;
 
 struct _col_t {
 	uint8_t r;
@@ -68,6 +72,19 @@ struct _cell_t {
 	uint32_t bg;
 };
 
+struct _thread_data_t {
+	int slave;
+	d2tk_base_pty_cb_t cb;
+	void *data;
+	atomic_bool running;
+};
+
+struct _clone_data_t {
+	int master;
+	int slave;
+	void *data;
+};
+
 struct _d2tk_atom_body_pty_t {
 	d2tk_coord_t height;
 
@@ -77,6 +94,9 @@ struct _d2tk_atom_body_pty_t {
 
 	int fd;
 	pid_t kid;
+
+	thread_data_t thread_data;
+	bool is_threaded;
 
 	VTerm *vterm;
 	VTermScreen *screen;
@@ -147,16 +167,36 @@ _term_read(d2tk_atom_body_pty_t *vpty,
 	return count;
 }
 
-static inline int
-_term_done(d2tk_atom_body_pty_t *vpty)
+static inline void
+_term_clear(d2tk_atom_body_pty_t *vpty)
 {
-	if(vpty->kid == 0)
+	vpty->kid = 0;
+	atomic_store(&vpty->thread_data.running, false);;
+}
+
+static inline int
+_term_done_thread(d2tk_atom_body_pty_t *vpty)
+{
+	if(atomic_load(&vpty->thread_data.running))
 	{
-		return 1;
+		return 0;
 	}
 
+	pthread_join(vpty->kid, NULL);
+
+	_term_clear(vpty);
+	return 1;
+}
+
+static inline int
+_term_done_fork(d2tk_atom_body_pty_t *vpty)
+{
 	int stat = 0;
 	const int kid = waitpid(vpty->kid, NULL, WNOHANG);
+#if D2TK_DEBUG == 1
+	fprintf(stderr, "[%s] waitpid of child with pid %d: %d (%d)\n",
+		__func__, vpty->kid, kid, stat);
+#endif
 
 	if(kid == -1)
 	{
@@ -171,17 +211,34 @@ _term_done(d2tk_atom_body_pty_t *vpty)
 	// has exited
 	if(WIFSIGNALED(stat))
 	{
+#if D2TK_DEBUG == 1
 		fprintf(stderr, "[%s] child with pid %d has exited with signal %d\n",
 			__func__, vpty->kid, WTERMSIG(stat));
+#endif
 	}
 	else if(WIFEXITED(stat))
 	{
+#if D2TK_DEBUG == 1
 		fprintf(stderr, "[%s] child with pid %d has exited with status %d\n",
 			__func__, vpty->kid, WEXITSTATUS(stat));
+#endif
 	}
 
-	vpty->kid = 0;
+	_term_clear(vpty);
 	return 1;
+}
+
+static inline int
+_term_done(d2tk_atom_body_pty_t *vpty)
+{
+	if(vpty->kid == 0)
+	{
+		return 1;
+	}
+
+	return vpty->is_threaded
+		? _term_done_thread(vpty)
+		: _term_done_fork(vpty);
 }
 
 static void
@@ -268,15 +325,6 @@ static const VTermScreenCallbacks screen_callbacks = {
   .resize = _screen_resize
 };
 
-typedef struct _clone_data_t clone_data_t;
-
-struct _clone_data_t {
-	int master;
-	int slave;
-	d2tk_base_pty_cb_t cb;
-	void *data;
-};
-
 static int
 _clone(void *data)
 {
@@ -296,26 +344,34 @@ _clone(void *data)
 	signal(SIGSTOP, SIG_DFL);
 	signal(SIGCONT, SIG_DFL);
 
-	if(clone_data->cb)
-	{
-		return clone_data->cb(clone_data->data);
-	}
-
 	char **argv = (char **)clone_data->data;
 
-	char envh [PATH_MAX];
-	char envu [PATH_MAX];
-	char *home = getenv("HOME");
-	char *user = getenv("USER");
-	snprintf(envh, sizeof(envh), "HOME=%s", home ? home : "");
-	snprintf(envu, sizeof(envu), "USER=%s", user ? user : "");
+	/* clone environment */
+	unsigned envc = 0;
+	for(char **env = environ; *env; env++)
+	{
+		envc++;
+	}
 
-	char *envp [] = {
-		"TERM=xterm-256color",
-		envh,
-		envu,
-		NULL
-	};
+	const size_t envs = envc + 2; // TERM + sentinel
+	char **envp = alloca(envs*sizeof(char *));
+
+	envc = 0;
+	for(char **env = environ; *env; env++)
+	{
+		if(strstr(*env, "TERM=") == *env)
+		{
+			/* ignore parent TERM */
+		}
+		else
+		{
+			envp[envc++] = *env;
+		}
+	}
+
+	/* add child TERM and sentinel */
+	envp[envc++] = "TERM=xterm-256color";
+	envp[envc] = NULL;
 
 	execvpe(argv[0], argv, envp);
 	_exit(EXIT_FAILURE);
@@ -323,46 +379,68 @@ _clone(void *data)
 	return 0;
 }
 
+static void *
+_thread(void *data)
+{
+	thread_data_t *thread_data = data;
+
+	thread_data->cb(thread_data->data, thread_data->slave, thread_data->slave);
+
+	atomic_store(&thread_data->running, false);
+
+	close(thread_data->slave);
+
+	return NULL;
+}
+
 static int
-_forkpty(int *amaster, char *name, const struct termios *termp,
-	const struct winsize *winp, d2tk_base_pty_cb_t cb, void *data)
+_threadpty(int *amaster, const struct termios *termp, const struct winsize *winp,
+	d2tk_base_pty_cb_t cb, void *data, thread_data_t *thread_data)
+{
+	pthread_t thread = 0;
+	int thread_data_master = 0;
+
+	thread_data->slave = 0,
+	thread_data->cb = cb,
+	thread_data->data = data,
+	atomic_store(&thread_data->running, false);
+
+	if(openpty(&thread_data_master, &thread_data->slave, NULL, termp, winp) == -1)
+	{
+		return -1;
+	}
+
+	atomic_store(&thread_data->running, true);
+
+	if(pthread_create(&thread, NULL, _thread, thread_data) != 0)
+	{
+		close(thread_data_master);
+		close(thread_data->slave);
+		atomic_store(&thread_data->running, false);
+		return -1;
+	}
+
+	*amaster = thread_data_master;
+
+	return thread;
+}
+
+static int
+_forkpty(int *amaster, const struct termios *termp, const struct winsize *winp,
+	void *data)
 {
 	clone_data_t clone_data = {
 		.master = 0,
 		.slave = 0,
-		.cb = cb,
 		.data = data
 	};
-	
-	if(openpty(&clone_data.master, &clone_data.slave, name, termp, winp) == -1)
+
+	if(openpty(&clone_data.master, &clone_data.slave, NULL, termp, winp) == -1)
 	{
     return -1;
 	}
 
-#if D2TK_CLONE == 1
-#	define STACK_SIZE (1024 * 1024)
-	uint8_t *stack = mmap(NULL, STACK_SIZE, PROT_READ | PROT_WRITE,
-		MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
-	if(stack == MAP_FAILED)
-	{
-		close(clone_data.master);
-		close(clone_data.slave);
-		return -1;
-	}
-
-	uint8_t *stack_top = stack + STACK_SIZE;
-	int flags = CLONE_FS | CLONE_IO | CLONE_VM | SIGCHLD;
-	if(cb == NULL)
-	{
-		flags |= CLONE_VFORK;
-	}
-	const int pid = clone(_clone, stack_top, flags, &clone_data);
-#	undef STACK_SIZE
-#elif D2TK_VFORK == 1
 	const int pid = vfork();
-#else
-#	error "support for clone or vfork required"
-#endif
 
 	switch(pid)
 	{
@@ -372,12 +450,10 @@ _forkpty(int *amaster, char *name, const struct termios *termp,
 			close(clone_data.slave);
 		} return -1;
 
-#if D2TK_CLONE == 0
     case 0: //child
 		{
 			// everything is done in _clone
 		} return _clone(&clone_data);
-#endif
 
 		default: // parent
 		{
@@ -391,6 +467,7 @@ static int
 _term_init(d2tk_atom_body_pty_t *vpty, d2tk_base_pty_cb_t cb, void *data,
 	d2tk_coord_t height, d2tk_coord_t ncols, d2tk_coord_t nrows)
 {
+	vpty->is_threaded = cb ? true : false;
 	vpty->height = height;
 	vpty->nrows = nrows;
 	vpty->ncols = ncols;
@@ -457,14 +534,19 @@ _term_init(d2tk_atom_body_pty_t *vpty, d2tk_base_pty_cb_t cb, void *data,
 		.ws_ypixel = 0
 	};
 
-	vpty->kid = _forkpty(&vpty->fd, NULL, &termios, &winsize, cb, data);
+	vpty->kid =vpty->is_threaded
+		? _threadpty(&vpty->fd, &termios, &winsize, cb, data, &vpty->thread_data)
+		: _forkpty(&vpty->fd, &termios, &winsize, data);
+
 	if(vpty->kid == -1)
 	{
-		vpty->kid = 0;
+		_term_clear(vpty);
 		return 1;
 	}
 
+#if D2TK_DEBUG == 1
 	fprintf(stderr, "[%s] child with pid %i has spawned\n", __func__, vpty->kid);
+#endif
 
   fcntl(vpty->fd, F_SETFL, fcntl(vpty->fd, F_GETFL) | O_NONBLOCK);
 
@@ -488,24 +570,31 @@ _term_fd(d2tk_atom_body_pty_t *vpty)
 }
 
 static int
-_term_deinit(d2tk_atom_body_pty_t *vpty)
+_term_deinit_thread(d2tk_atom_body_pty_t *vpty)
 {
-	if(!vpty)
+	if(vpty->kid != 0)
 	{
-		return 1;
+		// send CTRL-C
+		vterm_keyboard_unichar(vpty->vterm, 0x3, VTERM_MOD_NONE);
+
+		pthread_join(vpty->kid, NULL);
+
+		_term_clear(vpty);
 	}
 
-	if(vpty->fd)
-	{
-		close(vpty->fd);
+	return 0;
+}
 
-		vpty->fd = 0;
-	}
-
+static int
+_term_deinit_fork(d2tk_atom_body_pty_t *vpty)
+{
 	if(vpty->kid != 0)
 	{
 		while(true)
 		{
+			// send CTRL-C
+			vterm_keyboard_unichar(vpty->vterm, 0x3, VTERM_MOD_NONE);
+
 			usleep(1000);;
 
 			kill(vpty->kid, SIGINT);
@@ -530,18 +619,44 @@ _term_deinit(d2tk_atom_body_pty_t *vpty)
 			// has exited
 			if(WIFSIGNALED(stat))
 			{
+#if D2TK_DEBUG == 1
 				fprintf(stderr, "[%s] child with pid %d has exited with signal %d\n",
 					__func__, vpty->kid, WTERMSIG(stat));
+#endif
 			}
 			else if(WIFEXITED(stat))
 			{
+#if D2TK_DEBUG == 1
 				fprintf(stderr, "[%s] child with pid %d has exited with status %d\n",
 					__func__, vpty->kid, WEXITSTATUS(stat));
+#endif
 			}
 
-			vpty->kid = 0;
+			_term_clear(vpty);
 			break;
 		}
+	}
+
+	return 0;
+}
+
+static int
+_term_deinit(d2tk_atom_body_pty_t *vpty)
+{
+	if(!vpty)
+	{
+		return 1;
+	}
+
+	const int ret = vpty->is_threaded
+		? _term_deinit_thread(vpty)
+		: _term_deinit_fork(vpty);
+
+	if(vpty->fd)
+	{
+		close(vpty->fd);
+
+		vpty->fd = 0;
 	}
 
 	if(vpty->vterm)
@@ -551,7 +666,7 @@ _term_deinit(d2tk_atom_body_pty_t *vpty)
 
 	memset(vpty, 0x0, sizeof(d2tk_atom_body_pty_t));
 
-	return 0;
+	return ret;
 }
 
 static int
@@ -816,11 +931,8 @@ _term_input(d2tk_atom_body_pty_t *vpty)
 
 static inline d2tk_state_t
 _term_behave(d2tk_base_t *base, d2tk_atom_body_pty_t *vpty,
-	d2tk_id_t id, const d2tk_rect_t *rect)
+	d2tk_state_t state, d2tk_flag_t flags, const d2tk_rect_t *rect)
 {
-	const d2tk_state_t state = d2tk_base_is_active_hot(base, id, rect,
-		D2TK_FLAG_NONE);
-
 	VTermModifier mod = VTERM_MOD_NONE;
 
 	if(d2tk_state_is_focused(state))
@@ -901,6 +1013,11 @@ _term_behave(d2tk_base_t *base, d2tk_atom_body_pty_t *vpty,
 	if(d2tk_state_is_focus_out(state))
 	{
 		vterm_state_focus_out(vpty->state);
+	}
+
+	if(flags & D2TK_FLAG_PTY_NOMOUSE)
+	{
+		return state;
 	}
 
 	if(d2tk_state_is_hot(state))
@@ -1031,9 +1148,10 @@ _term_draw(d2tk_base_t *base, d2tk_atom_body_pty_t *vpty,
 	}
 }
 
-D2TK_API d2tk_pty_t *
-d2tk_pty_begin(d2tk_base_t *base, d2tk_id_t id, d2tk_base_pty_cb_t cb, void *data,
-	d2tk_coord_t height, const d2tk_rect_t *rect, d2tk_flag_t flags, d2tk_pty_t *pty)
+d2tk_pty_t *
+d2tk_pty_begin_state(d2tk_base_t *base, d2tk_id_t id, d2tk_state_t state,
+	d2tk_base_pty_cb_t cb, void *data, d2tk_coord_t height,
+	const d2tk_rect_t *rect, d2tk_flag_t flags, d2tk_pty_t *pty)
 {
 	memset(pty, 0x0, sizeof(d2tk_pty_t));
 
@@ -1076,7 +1194,7 @@ d2tk_pty_begin(d2tk_base_t *base, d2tk_id_t id, d2tk_base_pty_cb_t cb, void *dat
 
 	_term_resize(vpty, ncols, nrows);
 
-	pty->state = _term_behave(base, vpty, id, rect);
+	pty->state = _term_behave(base, vpty, state, flags, rect);
 
 	_term_input(vpty);
 
@@ -1099,6 +1217,16 @@ d2tk_pty_begin(d2tk_base_t *base, d2tk_id_t id, d2tk_base_pty_cb_t cb, void *dat
 	d2tk_base_set_style(base, old_style);
 
 	return pty;
+}
+
+D2TK_API d2tk_pty_t *
+d2tk_pty_begin(d2tk_base_t *base, d2tk_id_t id, d2tk_base_pty_cb_t cb, void *data,
+	d2tk_coord_t height, const d2tk_rect_t *rect, d2tk_flag_t flags, d2tk_pty_t *pty)
+{
+	const d2tk_state_t state = d2tk_base_is_active_hot(base, id, rect,
+		D2TK_FLAG_NONE);
+
+	return d2tk_pty_begin_state(base, id, state, cb, data, height, rect, flags, pty);
 }
 
 D2TK_API bool

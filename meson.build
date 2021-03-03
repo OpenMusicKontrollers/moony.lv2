@@ -10,6 +10,7 @@ static_link = false #meson.is_cross_build()
 build_debug_overlay = get_option('build-debug-overlay')
 build_examples = get_option('build-examples')
 build_tests = get_option('build-tests')
+build_doc = get_option('build-doc')
 
 use_backend_cairo = get_option('use-backend-cairo')
 use_backend_nanovg = get_option('use-backend-nanovg')
@@ -29,11 +30,15 @@ fc_list = find_program('fc-list',
 check_for_font = find_program('check_for_font',
 	native : true,
 	required : use_fontconfig)
+robodoc = find_program('robodoc',
+	native : true,
+	required : build_doc)
 
 cc = meson.get_compiler('c')
 
 # mandatory dependencies
 m_dep = cc.find_library('m')
+thread_dep = dependency('threads')
 
 # dependencies for backend_cairo/frontend_pugl
 freetype_dep = dependency('freetype2',
@@ -101,7 +106,7 @@ fontconfig_dep = dependency('fontconfig',
 	static : static_link,
 	required : use_fontconfig)
 
-deps = [m_dep, evdev_dep, util_dep, vterm_dep, fontconfig_dep]
+deps = [m_dep, thread_dep, evdev_dep, util_dep, vterm_dep, fontconfig_dep]
 links = []
 
 pugl_inc = include_directories(join_paths('pugl', 'include'))
@@ -175,18 +180,6 @@ if use_fontconfig.enabled()
 	conf_data.set('D2TK_FONTCONFIG', 1)
 else
 	conf_data.set('D2TK_FONTCONFIG', 0)
-endif
-
-if cc.has_function('vfork')
-	conf_data.set('D2TK_VFORK', 1)
-else
-	conf_data.set('D2TK_VFORK', 0)
-endif
-
-if cc.has_function('clone')
-	conf_data.set('D2TK_CLONE', 1)
-else
-	conf_data.set('D2TK_CLONE', 0)
 endif
 
 example_srcs = [
@@ -427,4 +420,14 @@ if build_tests
 		test('FiraCode-Medium.ttf', check_for_font, args : ['FiraCode-Medium.ttf'])
 		test('FiraCode-Bold.ttf', check_for_font, args : ['FiraCode-Bold.ttf'])
 	endif
+endif
+
+if build_doc
+	run_command('rm', '-rf', 'doc')
+
+	run_command(robodoc,
+		'--src', './d2tk',
+		'--doc', 'doc',
+		'--multidoc', '--troff', '--nosort', '--nodesc', '--cmode',
+		'--compress', 'gzip')
 endif

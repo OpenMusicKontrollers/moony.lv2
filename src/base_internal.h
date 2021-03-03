@@ -144,3 +144,8 @@ _d2tk_base_clear_chars(d2tk_base_t *base);
 d2tk_state_t
 _d2tk_base_tooltip_draw(d2tk_base_t *base, ssize_t lbl_len, const char *lbl,
 	d2tk_coord_t h);
+
+d2tk_pty_t *
+d2tk_pty_begin_state(d2tk_base_t *base, d2tk_id_t id, d2tk_state_t state,
+	d2tk_base_pty_cb_t cb, void *data, d2tk_coord_t height,
+	const d2tk_rect_t *rect, d2tk_flag_t flags, d2tk_pty_t *pty);
