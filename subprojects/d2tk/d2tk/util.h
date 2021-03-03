@@ -25,8 +25,19 @@ extern "C" {
 #include "config.h"
 #include <d2tk/d2tk.h>
 
+/****f* util/d2tk_util_spawn
+ * SYNOPSIS
+ */
 D2TK_API int
 d2tk_util_spawn(char **argv);
+/*
+ * FUNCTION
+ *  If condition is false, makes a longjump back to wrapping function start.
+ * INPUTS
+ *  - jit       Pointer to opaque jit structure
+ *  - condition	Condition, whether to longjump or not
+ ****
+ */
 
 D2TK_API int
 d2tk_util_kill(int *kid);

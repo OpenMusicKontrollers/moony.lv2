@@ -54,6 +54,7 @@ typedef enum _bar_t {
 	BAR_UTF8,
 	BAR_CUSTOM,
 	BAR_COPYPASTE,
+	BAR_LINEEDIT,
 	BAR_PTY,
 	BAR_SPAWN,
 #if !defined(_WIN32) && !defined(__APPLE__)
@@ -82,6 +83,7 @@ static const char *bar_lbl [BAR_MAX] = {
 	[BAR_CUSTOM]     = "Custom",
 	[BAR_COPYPASTE]  = "Copy&Paste",
 	[BAR_UTF8]       = "UTF-8",
+	[BAR_LINEEDIT]   = "Lineedit",
 	[BAR_PTY]        = "PTY",
 	[BAR_SPAWN]      = "Spawn",
 #if !defined(_WIN32) && !defined(__APPLE__)
@@ -892,7 +894,7 @@ static inline void
 _render_c_frame(d2tk_base_t *base, const d2tk_rect_t *rect)
 {
 #define N 4
-	static bool val [N];
+	static bool val [N*N];
 
 	D2TK_BASE_TABLE(rect, N, N, D2TK_FLAG_TABLE_REL, tab)
 	{
@@ -1012,6 +1014,78 @@ _render_c_copypaste(d2tk_frontend_t *frontend, d2tk_base_t *base,
 	}
 }
 
+static void
+_completion(const char *buf, linenoiseCompletions *lc)
+{
+	if(!strcasecmp(buf, ":"))
+	{
+		linenoiseAddCompletion(lc, ":author");
+		linenoiseAddCompletion(lc, ":class");
+	};
+}
+
+static char *
+_hints(const char *buf, int *color, int *bold)
+{
+	if(!strcasecmp(buf, ":"))
+	{
+		*color = 35;
+		*bold = 0;
+		return " search-category (author|class)";
+	}
+	else if(!strcasecmp(buf, ":author"))
+	{
+		*color = 35;
+		*bold = 0;
+		return " author-name";
+	}
+	else if(!strcasecmp(buf, ":class"))
+	{
+		*color = 35;
+		*bold = 0;
+		return " class-name";
+	}
+
+	return NULL;
+}
+
+static const d2tk_lineedit_filter_t filter = {
+	.completion_cb = _completion,
+	.hints_cb = _hints,
+	.free_hints_cb = NULL
+};
+
+static inline void
+_render_c_lineedit(d2tk_base_t *base, const d2tk_rect_t *rect)
+{
+	static char entry [16] [512] = {
+		"h0", "h1", "h2", "h3",
+		"h4", "h5", "h6", "h7",
+		"h8", "h9", "hA", "hB",
+		"hC", "hD", "hE", "hF"
+	};
+
+	static d2tk_coord_t vfrac [16] = {
+		1, 1, 1, 1,
+		1, 1, 1, 1,
+		1, 1, 1, 1,
+		1, 1, 1, 1
+	};
+
+	D2TK_BASE_LAYOUT(rect, 16, vfrac, D2TK_FLAG_LAYOUT_Y_REL, vlay)
+	{
+		const d2tk_rect_t *vrect = d2tk_layout_get_rect(vlay);
+		const d2tk_coord_t k = d2tk_layout_get_index(vlay);
+		const d2tk_id_t id = D2TK_ID_IDX(k);
+
+		if(d2tk_base_lineedit_is_changed(base, id, sizeof(entry), entry[k], &filter,
+			vrect, D2TK_FLAG_PTY_NOMOUSE))
+		{
+			fprintf(stderr, "line: %s\n", entry[k]);
+		}
+	}
+}
+
 static inline void
 _render_c_pty(d2tk_base_t *base, const d2tk_rect_t *rect)
 {
@@ -1024,11 +1098,10 @@ _render_c_pty(d2tk_base_t *base, const d2tk_rect_t *rect)
 	static uint32_t last_red = 0x0;;
 	static uint32_t last_green = 0x0;;
 	static uint32_t last_blue = 0x0;;
-	static char entry [512] = "fill";
 
-	static d2tk_coord_t hfrac [3] = { 1, 1, 1 };
+	static d2tk_coord_t hfrac [2] = { 1, 1 };
 
-	D2TK_BASE_LAYOUT(rect, 3, hfrac, D2TK_FLAG_LAYOUT_X_REL, hlay)
+	D2TK_BASE_LAYOUT(rect, 2, hfrac, D2TK_FLAG_LAYOUT_X_REL, hlay)
 	{
 		const d2tk_rect_t *hrect = d2tk_layout_get_rect(hlay);
 		const d2tk_coord_t x = d2tk_layout_get_index(hlay);
@@ -1037,7 +1110,8 @@ _render_c_pty(d2tk_base_t *base, const d2tk_rect_t *rect)
 		{
 			case 0:
 			{
-				D2TK_BASE_PTY(base, D2TK_ID, NULL, argv, HEIGHT, hrect, D2TK_FLAG_NONE, pty)
+				D2TK_BASE_PTY(base, D2TK_ID, NULL, argv, HEIGHT, hrect,
+					D2TK_FLAG_PTY_NOMOUSE, pty)
 				{
 					const uint32_t max_red = d2tk_pty_get_max_red(pty);
 					const uint32_t max_green = d2tk_pty_get_max_green(pty);
@@ -1062,37 +1136,10 @@ _render_c_pty(d2tk_base_t *base, const d2tk_rect_t *rect)
 			} break;
 			case 1:
 			{
-				D2TK_BASE_PTY(base, D2TK_ID, NULL, argv, HEIGHT, hrect, D2TK_FLAG_NONE, pty)
+				D2TK_BASE_PTY(base, D2TK_ID, NULL, argv, HEIGHT, hrect,
+					D2TK_FLAG_PTY_NOMOUSE, pty)
 				{
 					// nothing to do
-				}
-			} break;
-			case 2:
-			{
-				D2TK_BASE_LINEEDIT(base, D2TK_ID, entry, HEIGHT, hrect, D2TK_FLAG_NONE, lineedit)
-				{
-					const d2tk_state_t state = d2tk_lineedit_get_state(lineedit);
-
-					if(d2tk_state_is_enter(state))
-					{
-						const char *line;
-						if( (line = d2tk_lineedit_acquire_line(lineedit)) )
-						{
-							fprintf(stderr, "line: %s\n", line);
-							snprintf(entry, sizeof(entry), "%s", line);
-
-							d2tk_lineedit_release_line(lineedit);
-						}
-
-						size_t fill_len = 0;
-						char *fill = NULL;
-						if( (fill = d2tk_lineedit_acquire_fill(lineedit, &fill_len)) )
-						{
-							snprintf(fill, fill_len, "%s", entry);
-
-							d2tk_lineedit_release_fill(lineedit);
-						}
-					}
 				}
 			} break;
 		}
@@ -1474,6 +1521,10 @@ d2tk_example_run(d2tk_frontend_t *frontend, d2tk_base_t *base,
 					case BAR_COPYPASTE:
 					{
 						_render_c_copypaste(frontend, base, vrect);
+					} break;
+					case BAR_LINEEDIT:
+					{
+						_render_c_lineedit(base, vrect);
 					} break;
 					case BAR_PTY:
 					{

@@ -19,82 +19,57 @@
 
 #include "base_internal.h"
 
-#include <linenoise.h>
 #include <encodings/utf8.h>
 
+#define FONT_CODE_REGULAR "FiraCode:regular"
+
 typedef struct _d2tk_atom_body_lineedit_t d2tk_atom_body_lineedit_t;
-typedef struct _d2tk_lineedit_t d2tk_lineedit_t;
 
 struct _d2tk_atom_body_lineedit_t {
-	atomic_flag lock;
-	char fill [512];
-	char line [512];
-};
-
-struct _d2tk_lineedit_t {
-	d2tk_state_t state;
-	d2tk_atom_body_lineedit_t *body;
+	atomic_uintptr_t filter;
+	atomic_uintptr_t line;
+	atomic_uintptr_t fill;
 };
 
 const size_t d2tk_atom_body_lineedit_sz = sizeof(d2tk_atom_body_lineedit_t);
-const size_t d2tk_lineedit_sz = sizeof(d2tk_lineedit_t);
-
-static void
-_completion(const char *buf, linenoiseCompletions *lc)
-{
-	if(!strcasecmp(buf, ":"))
-	{
-		linenoiseAddCompletion(lc, ":author");
-		linenoiseAddCompletion(lc, ":class");
-	};
-}
 
 static char *
-_hints(const char *buf, int *color, int *bold)
+_atomic_get(atomic_uintptr_t *ptr)
 {
-	if(!strcasecmp(buf, ":"))
-	{
-		*color = 35;
-		*bold = 0;
-		return " search-category (author|class)";
-	}
-	else if(!strcasecmp(buf, ":author"))
-	{
-		*color = 35;
-		*bold = 0;
-		return " author-name";
-	}
-	else if(!strcasecmp(buf, ":class"))
-	{
-		*color = 35;
-		*bold = 0;
-		return " class-name";
-	}
+	uintptr_t desired = 0;
+	char *old = (char *)atomic_exchange(ptr, desired);
 
-	return NULL;
+	return old;
 }
 
 static void
-_body_lock(d2tk_atom_body_lineedit_t *body)
+_atomic_set(atomic_uintptr_t *ptr, const char *new)
 {
-	while(atomic_flag_test_and_set(&body->lock))
-	{}
+	uintptr_t desired = new
+		? (uintptr_t)strdup(new)
+		: 0;
+	char *old = (char *)atomic_exchange(ptr, desired);
+
+	if(old)
+	{
+		free(old);
+	}
 }
 
 static void
-_body_unlock(d2tk_atom_body_lineedit_t *body)
+_atomic_clr(atomic_uintptr_t *ptr)
 {
-		atomic_flag_clear(&body->lock);
+	_atomic_set(ptr, 0);
 }
 
 static int
-_entry(void *data)
+_entry(void *data, int file_in, int file_out)
 {
-	static const char *prompt = "> ";
+	static const char *prompt = "◆";
 	d2tk_atom_body_lineedit_t *body = data;
-	char fill [512] = "";
+	char entry [2048] = "";
 
-	linenoiseApp *app = linenoiseAppNew();
+	linenoiseApp *app = linenoiseAppNew(file_in, file_out);
 	if(!app)
 	{
 		return 1;
@@ -102,27 +77,42 @@ _entry(void *data)
 
 	linenoiseSetMultiLine(app, 0);
 	linenoiseHistorySetMaxLen(app, 32);
-	linenoiseSetFill(app, fill);
+	linenoiseSetFill(app, entry);
 
-	linenoiseSetCompletionCallback(app, _completion);
-	linenoiseSetHintsCallback(app, _hints);
+	d2tk_lineedit_filter_t *filter = (d2tk_lineedit_filter_t *)atomic_load(&body->filter);
+	if(filter)
+	{
+		if(filter->completion_cb)
+		{
+			linenoiseSetCompletionCallback(app, filter->completion_cb);
+		}
+
+		if(filter->hints_cb)
+		{
+			linenoiseSetHintsCallback(app, filter->hints_cb);
+		}
+
+		if(filter->free_hints_cb)
+		{
+			linenoiseSetFreeHintsCallback(app, filter->free_hints_cb);
+		}
+	}
+
 	linenoiseSetEncodingFunctions(app, linenoiseUtf8PrevCharLen,
 		linenoiseUtf8NextCharLen, linenoiseUtf8ReadCode);
 
-	_body_lock(body);
-	snprintf(fill, sizeof(fill), "%s", body->fill);
-	_body_unlock(body);
+	char *fill = _atomic_get(&body->fill);
+	if(fill)
+	{
+		snprintf(entry, sizeof(entry), "%s", fill);
+		free(fill);
+	}
 
 	char *line;
 	while( (line= linenoise(app, prompt)) )
 	{
-		_body_lock(body);
-		snprintf(body->line, sizeof(body->line), "%s", line);
-		_body_unlock(body);
-
-		_body_lock(body);
-		snprintf(fill, sizeof(fill), "%s", body->fill);
-		_body_unlock(body);
+		_atomic_set(&body->line, line);
+		snprintf(entry, sizeof(entry), "%s", line);
 
 		linenoiseHistoryAdd(app, line);
 		linenoiseFree(app, line);
@@ -134,80 +124,87 @@ _entry(void *data)
 	return 0;
 }
 
-D2TK_API d2tk_lineedit_t *
-d2tk_lineedit_begin(d2tk_base_t *base, d2tk_id_t id, const char *fill,
-	d2tk_coord_t height, const d2tk_rect_t *rect, d2tk_flag_t flags,
-	d2tk_lineedit_t *lineedit)
+static int
+_lineedit_event(d2tk_atom_event_type_t event, void *data)
 {
-	memset(lineedit, 0x0, sizeof(d2tk_lineedit_t));
+	d2tk_atom_body_lineedit_t *body = data;
 
-	lineedit->body = _d2tk_base_get_atom(base, id, D2TK_ATOM_LINEEDIT,
-		NULL);
-
-	if(fill)
+	switch(event)
 	{
-		_body_lock(lineedit->body);
-		snprintf(lineedit->body->fill, sizeof(lineedit->body->fill), "%s", fill);
-		_body_unlock(lineedit->body);
+		case D2TK_ATOM_EVENT_DEINIT:
+		{
+			_atomic_clr(&body->line);
+			_atomic_clr(&body->fill);
+		} break;
+
+		case D2TK_ATOM_EVENT_FD:
+			// fall-through
+		case D2TK_ATOM_EVENT_NONE:
+			// fall-through
+		default:
+		{
+			// nothing to do
+		} break;
 	}
 
-	const d2tk_id_t subid = (1ULL << 32) | id;
-
-	d2tk_pty_t *pty = d2tk_pty_begin(base, subid, _entry, lineedit->body, height, rect,
-		flags, alloca(d2tk_pty_sz));
-
-	lineedit->state = d2tk_pty_get_state(pty);
-
-	return lineedit;
-}
-
-D2TK_API bool
-d2tk_lineedit_not_end(d2tk_lineedit_t *lineedit)
-{
-	return lineedit ? true : false;
-}
-
-D2TK_API d2tk_lineedit_t *
-d2tk_lineedit_next(d2tk_lineedit_t *lineedit __attribute__((unused)))
-{
-	return NULL;
+	return 0;
 }
 
 D2TK_API d2tk_state_t
-d2tk_lineedit_get_state(d2tk_lineedit_t *lineedit)
+d2tk_base_lineedit(d2tk_base_t *base, d2tk_id_t id, size_t line_len,
+	char *line, const d2tk_lineedit_filter_t *filter,
+	const d2tk_rect_t *rect, d2tk_flag_t flags)
 {
-	return lineedit->state;
-}
+	static const float mul = 0.5f;
 
-D2TK_API const char *
-d2tk_lineedit_acquire_line(d2tk_lineedit_t *lineedit)
-{
-	_body_lock(lineedit->body);
+	const d2tk_id_t subid = (1ULL << 32) | id;
+	d2tk_atom_body_lineedit_t *body = _d2tk_base_get_atom(base, subid,
+		D2TK_ATOM_LINEEDIT, _lineedit_event);
 
-	return lineedit->body->line;
-}
+	atomic_store(&body->filter, (uintptr_t)filter);
+	_atomic_set(&body->fill, line);
+	
+	d2tk_state_t state = d2tk_base_is_active_hot(base, id, rect, D2TK_FLAG_NONE);
 
-D2TK_API void
-d2tk_lineedit_release_line(d2tk_lineedit_t *lineedit)
-{
-	_body_unlock(lineedit->body);
-}
-
-D2TK_API char *
-d2tk_lineedit_acquire_fill(d2tk_lineedit_t *lineedit, size_t *fill_len)
-{
-	_body_lock(lineedit->body);
-
-	if(fill_len)
+	if(d2tk_state_is_focused(state))
 	{
-		*fill_len = sizeof(lineedit->body->fill);
+		const d2tk_coord_t dh = rect->h * mul / 2;
+
+		d2tk_rect_t bnd;
+		d2tk_rect_shrink_y(&bnd, rect, dh);
+
+		d2tk_pty_t *pty = d2tk_pty_begin_state(base, id, state, _entry, body,
+			bnd.h, &bnd, flags, alloca(d2tk_pty_sz));
+
+		state = d2tk_pty_get_state(pty);
+
+		char *old = _atomic_get(&body->line);
+		if(old)
+		{
+			if(line)
+			{
+				snprintf(line, line_len, "%s", old);
+				state |= D2TK_STATE_CHANGED;
+			}
+
+			free(old);
+		}
+	}
+	else
+	{
+		const d2tk_style_t *old_style = d2tk_base_get_style(base);
+		d2tk_style_t style = *old_style;
+		style.font_face = FONT_CODE_REGULAR;
+		d2tk_base_set_style(base, &style);
+
+		char lbl [512];
+		const size_t lbl_len = snprintf(lbl, sizeof(lbl), "◇%s", line);
+
+		state = d2tk_base_label(base, lbl_len, lbl, mul, rect,
+			D2TK_ALIGN_MIDDLE | D2TK_ALIGN_LEFT);
+
+		d2tk_base_set_style(base, old_style);
 	}
 
-	return lineedit->body->fill;
-}
-
-D2TK_API void
-d2tk_lineedit_release_fill(d2tk_lineedit_t *lineedit)
-{
-	_body_unlock(lineedit->body);
+	return state;
 }

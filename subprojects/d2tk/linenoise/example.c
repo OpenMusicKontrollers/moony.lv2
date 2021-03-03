@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "linenoise.h"
 
 #define UTF8
@@ -40,7 +41,7 @@ int main(int argc, char **argv) {
     char *line;
     char *prgname = argv[0];
 
-		linenoiseApp *app = linenoiseAppNew();
+		linenoiseApp *app = linenoiseAppNew(STDIN_FILENO, STDOUT_FILENO);
 
 		if(!app)
 		{

@@ -10,6 +10,10 @@ option('build-tests',
 	type : 'boolean',
 	value : true,
 	yield : true)
+option('build-doc',
+	type : 'boolean',
+	value : false,
+	yield : true)
 
 option('use-backend-cairo',
 	type : 'feature',

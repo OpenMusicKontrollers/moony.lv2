@@ -1049,8 +1049,8 @@ d2tk_core_bbox_pop(d2tk_core_t *core, ssize_t ref)
 
 	com->size = len - sizeof(d2tk_com_t);
 	// hash over instructions exclusive position
-	com->body->bbox.hash = d2tk_hash(&com->body->bbox.clip.w,
-		len - offsetof(d2tk_clip_t, w));
+	const size_t hash_len = com->size - offsetof(d2tk_body_bbox_t, clip) - offsetof(d2tk_clip_t, w);
+	com->body->bbox.hash = d2tk_hash(&com->body->bbox.clip.w, hash_len);
 
 	core->ref.x = 0;
 	core->ref.y = 0;
