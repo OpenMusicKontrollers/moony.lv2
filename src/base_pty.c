@@ -91,9 +91,10 @@ struct _d2tk_atom_body_pty_t {
 	d2tk_coord_t ncols;
 	d2tk_coord_t nrows;
 	unsigned bell;
+	bool hasmouse;
 
 	int fd;
-	pid_t kid;
+	ptrdiff_t kid;
 
 	thread_data_t thread_data;
 	bool is_threaded;
@@ -184,6 +185,11 @@ _term_done_thread(d2tk_atom_body_pty_t *vpty)
 
 	pthread_join(vpty->kid, NULL);
 
+#if D2TK_DEBUG == 1
+				fprintf(stderr, "[%s] child with pid %ld has exited\n",
+					__func__, vpty->kid);
+#endif
+
 	_term_clear(vpty);
 	return 1;
 }
@@ -192,9 +198,9 @@ static inline int
 _term_done_fork(d2tk_atom_body_pty_t *vpty)
 {
 	int stat = 0;
-	const int kid = waitpid(vpty->kid, NULL, WNOHANG);
+	const ptrdiff_t kid = waitpid(vpty->kid, NULL, WNOHANG);
 #if D2TK_DEBUG == 1
-	fprintf(stderr, "[%s] waitpid of child with pid %d: %d (%d)\n",
+	fprintf(stderr, "[%s] waitpid of child with pid %ld: %ld (%d)\n",
 		__func__, vpty->kid, kid, stat);
 #endif
 
@@ -212,14 +218,14 @@ _term_done_fork(d2tk_atom_body_pty_t *vpty)
 	if(WIFSIGNALED(stat))
 	{
 #if D2TK_DEBUG == 1
-		fprintf(stderr, "[%s] child with pid %d has exited with signal %d\n",
+		fprintf(stderr, "[%s] child with pid %ld has exited with signal %d\n",
 			__func__, vpty->kid, WTERMSIG(stat));
 #endif
 	}
 	else if(WIFEXITED(stat))
 	{
 #if D2TK_DEBUG == 1
-		fprintf(stderr, "[%s] child with pid %d has exited with status %d\n",
+		fprintf(stderr, "[%s] child with pid %ld has exited with status %d\n",
 			__func__, vpty->kid, WEXITSTATUS(stat));
 #endif
 	}
@@ -269,6 +275,10 @@ _screen_settermprop(VTermProp prop, VTermValue *val, void *data)
 		case VTERM_PROP_CURSORSHAPE: // number
 		{
 			vpty->cursor_shape = val->number;
+		} break;
+		case VTERM_PROP_MOUSE:
+		{
+			vpty->hasmouse = true;
 		} break;
 
 		default:
@@ -393,7 +403,7 @@ _thread(void *data)
 	return NULL;
 }
 
-static int
+static ptrdiff_t
 _threadpty(int *amaster, const struct termios *termp, const struct winsize *winp,
 	d2tk_base_pty_cb_t cb, void *data, thread_data_t *thread_data)
 {
@@ -425,7 +435,7 @@ _threadpty(int *amaster, const struct termios *termp, const struct winsize *winp
 	return thread;
 }
 
-static int
+static ptrdiff_t
 _forkpty(int *amaster, const struct termios *termp, const struct winsize *winp,
 	void *data)
 {
@@ -545,7 +555,7 @@ _term_init(d2tk_atom_body_pty_t *vpty, d2tk_base_pty_cb_t cb, void *data,
 	}
 
 #if D2TK_DEBUG == 1
-	fprintf(stderr, "[%s] child with pid %i has spawned\n", __func__, vpty->kid);
+	fprintf(stderr, "[%s] child with pid %ld has spawned\n", __func__, vpty->kid);
 #endif
 
   fcntl(vpty->fd, F_SETFL, fcntl(vpty->fd, F_GETFL) | O_NONBLOCK);
@@ -578,6 +588,11 @@ _term_deinit_thread(d2tk_atom_body_pty_t *vpty)
 		vterm_keyboard_unichar(vpty->vterm, 0x3, VTERM_MOD_NONE);
 
 		pthread_join(vpty->kid, NULL);
+
+#if D2TK_DEBUG == 1
+				fprintf(stderr, "[%s] child with pid %ld has exited\n",
+					__func__, vpty->kid);
+#endif
 
 		_term_clear(vpty);
 	}
@@ -620,14 +635,14 @@ _term_deinit_fork(d2tk_atom_body_pty_t *vpty)
 			if(WIFSIGNALED(stat))
 			{
 #if D2TK_DEBUG == 1
-				fprintf(stderr, "[%s] child with pid %d has exited with signal %d\n",
+				fprintf(stderr, "[%s] child with pid %ld has exited with signal %d\n",
 					__func__, vpty->kid, WTERMSIG(stat));
 #endif
 			}
 			else if(WIFEXITED(stat))
 			{
 #if D2TK_DEBUG == 1
-				fprintf(stderr, "[%s] child with pid %d has exited with status %d\n",
+				fprintf(stderr, "[%s] child with pid %ld has exited with status %d\n",
 					__func__, vpty->kid, WEXITSTATUS(stat));
 #endif
 			}
@@ -652,16 +667,16 @@ _term_deinit(d2tk_atom_body_pty_t *vpty)
 		? _term_deinit_thread(vpty)
 		: _term_deinit_fork(vpty);
 
+	if(vpty->vterm)
+	{
+		vterm_free(vpty->vterm);
+	}
+
 	if(vpty->fd)
 	{
 		close(vpty->fd);
 
 		vpty->fd = 0;
-	}
-
-	if(vpty->vterm)
-	{
-		vterm_free(vpty->vterm);
 	}
 
 	memset(vpty, 0x0, sizeof(d2tk_atom_body_pty_t));
@@ -1015,7 +1030,7 @@ _term_behave(d2tk_base_t *base, d2tk_atom_body_pty_t *vpty,
 		vterm_state_focus_out(vpty->state);
 	}
 
-	if(flags & D2TK_FLAG_PTY_NOMOUSE)
+	if( !vpty->hasmouse || (flags & D2TK_FLAG_PTY_NOMOUSE) )
 	{
 		return state;
 	}

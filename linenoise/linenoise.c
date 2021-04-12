@@ -1164,7 +1164,6 @@ static int linenoiseRaw(linenoiseApp *app, char *buf, size_t buflen, const char 
     if (enableRawMode(app, app->fd_in) == -1) return -1;
     count = linenoiseEdit(app, app->fd_in, app->fd_out, buf, buflen, prompt);
     disableRawMode(app, app->fd_in);
-    printf("\n");
     return count;
 }
 

@@ -173,6 +173,7 @@ _d2tk_base_get_atom(d2tk_base_t *base, d2tk_id_t id, d2tk_atom_type_t type,
 			}
 		}
 
+		atom->ttl = 32; //FIXME
 		return atom->body;
 	}
 
@@ -793,24 +794,52 @@ d2tk_base_set_ttls(d2tk_base_t *base, uint32_t sprites, uint32_t memcaches)
 	d2tk_core_set_ttls(base->core, sprites, memcaches);
 }
 
-D2TK_API void
-d2tk_base_free(d2tk_base_t *base)
+static void
+_d2tk_atom_deinit(d2tk_atom_t *atom)
+{
+	atom->id = 0;
+	atom->type = 0;
+	if(atom->event)
+	{
+		atom->event(D2TK_ATOM_EVENT_DEINIT, atom->body);
+		atom->event = NULL;
+	}
+	free(atom->body);
+	atom->body = NULL;
+	atom->ttl = 0;
+}
+
+static void
+_d2tk_atom_gc(d2tk_base_t *base)
 {
 	for(unsigned i = 0; i < _D2TK_MAX_ATOM; i++)
 	{
 		d2tk_atom_t *atom = &base->atoms[i];
 
-		atom->id = 0;
-		atom->type = 0;
-		if(atom->event)
+		if(!atom->id || (--atom->ttl > 0) )
 		{
-			atom->event(D2TK_ATOM_EVENT_DEINIT, atom->body);
-			atom->event = NULL;
+			continue;
 		}
-		free(atom->body);
-		atom->body = NULL;
-	}
 
+		_d2tk_atom_deinit(atom);
+	}
+}
+
+static void
+_d2tk_atom_free(d2tk_base_t *base)
+{
+	for(unsigned i = 0; i < _D2TK_MAX_ATOM; i++)
+	{
+		d2tk_atom_t *atom = &base->atoms[i];
+
+		_d2tk_atom_deinit(atom);
+	}
+}
+
+D2TK_API void
+d2tk_base_free(d2tk_base_t *base)
+{
+	_d2tk_atom_free(base);
 	d2tk_core_free(base->core);
 	free(base);
 }
@@ -866,6 +895,8 @@ d2tk_base_post(d2tk_base_t *base)
 	base->keys.mask_prev = base->keys.mask;
 
 	_d2tk_base_clear_chars(base);
+
+	_d2tk_atom_gc(base);
 
 	d2tk_core_post(base->core);
 }

@@ -56,6 +56,7 @@ struct _d2tk_flip_t {
 struct _d2tk_atom_t {
 	d2tk_id_t id;
 	d2tk_atom_type_t type;
+	uint32_t ttl;
 	void *body;
 	d2tk_atom_event_t event;
 };

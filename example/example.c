@@ -67,7 +67,7 @@ typedef enum _bar_t {
 	BAR_MAX
 } bar_t;
 
-static int32_t bar = BAR_MIX;
+static int32_t bar = BAR_LINEEDIT;
 static const char *bar_lbl [BAR_MAX] = {
 	[BAR_MIX]        = "Mix of many",
 	[BAR_SPINNER]    = "Spinner",
