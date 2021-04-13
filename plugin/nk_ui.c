@@ -3068,9 +3068,11 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		}
 	}
 
+	const float scale = nk_pugl_get_scale();
+
 	nk_pugl_config_t *cfg = &handle->win.cfg;
-	cfg->width = 1280;
-	cfg->height = 720;
+	cfg->width = 1280 * scale;
+	cfg->height = 720 * scale;
 	cfg->min_width = cfg->width / 4;
 	cfg->min_height = cfg->height / 4;
 	cfg->resizable = true;
@@ -3084,7 +3086,7 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 
 	if(asprintf(&cfg->font.face, "%sCousine-Regular.ttf", bundle_path) == -1)
 		cfg->font.face = NULL;
-	cfg->font.size = 13;
+	cfg->font.size = 13 * scale;
 
 	if(asprintf(&handle->manual, "%smanual.html", bundle_path) == -1)
 		handle->manual = NULL;
