@@ -1088,6 +1088,9 @@ props_save(props_t *props, LV2_State_Store_Function store,
 			if(impl->access == props->urid.patch_readable)
 				continue; // skip read-only, as it makes no sense to restore them
 
+			// always clear memory
+			memset(body, 0x0, props->max_size);
+
 			_props_impl_spin_lock(impl, PROP_STATE_NONE, PROP_STATE_LOCK);
 
 			// create temporary copy of value, store() may well be blocking
