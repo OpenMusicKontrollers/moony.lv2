@@ -3068,31 +3068,6 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 		}
 	}
 
-	const float scale = nk_pugl_get_scale();
-
-	nk_pugl_config_t *cfg = &handle->win.cfg;
-	cfg->width = 1280 * scale;
-	cfg->height = 720 * scale;
-	cfg->min_width = cfg->width / 4;
-	cfg->min_height = cfg->height / 4;
-	cfg->resizable = true;
-	cfg->ignore = false;
-	cfg->class = "moony";
-	cfg->title = "Moony";
-	cfg->parent = (intptr_t)parent;
-	cfg->host_resize = host_resize;
-	cfg->data = handle;
-	cfg->expose = _expose;
-
-	if(asprintf(&cfg->font.face, "%sCousine-Regular.ttf", bundle_path) == -1)
-		cfg->font.face = NULL;
-	cfg->font.size = 13 * scale;
-
-	if(asprintf(&handle->manual, "%smanual.html", bundle_path) == -1)
-		handle->manual = NULL;
-
-	*(intptr_t *)widget = nk_pugl_init(&handle->win);
-
 	const LV2_URID ui_scaleFactor = handle->map->map(handle->map->handle,
 		LV2_UI__scaleFactor);
 
@@ -3108,8 +3083,31 @@ instantiate(const LV2UI_Descriptor *descriptor, const char *plugin_uri,
 
 	if(handle->scale == 0.f)
 	{
-		handle->scale = nk_pugl_get_scale(&handle->win);
+		handle->scale = nk_pugl_get_scale();
 	}
+
+	nk_pugl_config_t *cfg = &handle->win.cfg;
+	cfg->width = 1280 * handle->scale;
+	cfg->height = 720 * handle->scale;
+	cfg->min_width = cfg->width / 4;
+	cfg->min_height = cfg->height / 4;
+	cfg->resizable = true;
+	cfg->ignore = false;
+	cfg->class = "moony";
+	cfg->title = "Moony";
+	cfg->parent = (intptr_t)parent;
+	cfg->host_resize = host_resize;
+	cfg->data = handle;
+	cfg->expose = _expose;
+
+	if(asprintf(&cfg->font.face, "%sCousine-Regular.ttf", bundle_path) == -1)
+		cfg->font.face = NULL;
+	cfg->font.size = 13 * handle->scale;
+
+	if(asprintf(&handle->manual, "%smanual.html", bundle_path) == -1)
+		handle->manual = NULL;
+
+	*(intptr_t *)widget = nk_pugl_init(&handle->win);
 
 	nk_pugl_show(&handle->win);
 
