@@ -53,8 +53,10 @@ main(int argc __attribute__((unused)), char **argv __attribute__((unused)))
 	static nk_pugl_window_t win;
 	nk_pugl_config_t *cfg = &win.cfg;
 
-	cfg->width = 1280;
-	cfg->height = 720;
+	const float scale = nk_pugl_get_scale();
+
+	cfg->width = 1280 * scale;
+	cfg->height = 720 * scale;
 	cfg->resizable = true;
 	cfg->parent = 0;
 	cfg->threads = false;
@@ -64,7 +66,7 @@ main(int argc __attribute__((unused)), char **argv __attribute__((unused)))
 	cfg->expose = _expose;
 	cfg->data = NULL;
 	cfg->font.face = "./Cousine-Regular.ttf";
-	cfg->font.size = 13;
+	cfg->font.size = 13 * scale;
 
 	signal(SIGTERM, _sigint);
 	signal(SIGINT, _sigint);
