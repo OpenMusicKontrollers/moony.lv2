@@ -1,7 +1,3 @@
-####
-Pugl
-####
-
 Pugl is an API for writing portable and embeddable GUIs.
 Pugl is not a toolkit or framework,
 but a minimal portability layer that sets up a drawing context and delivers events.
