@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.38.0] - 14 Apr 2021
+
+### Fixed
+
+* license URI in turtle manifest
+* font scaling on high DPI screens
+* pseudo terminal mouse support discovery
+* EDITOR environment variable parsing
+* termination of spawned processes
+
+### Added
+
+* missing ui:parent feature in turtle manifest
+* missing ui:requestValue feature in turtle manifest
+* cloning of parent environment
+* missing signal header include
+
+### Updated
+
+* to latest pugl
+
 ## [0.36.0] - 15 Jan 2021
 
 ### Fixed
