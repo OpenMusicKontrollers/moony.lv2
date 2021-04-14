@@ -43,24 +43,23 @@ Documentation
 Pugl is a C library that includes C++ bindings.
 Each API is documented separately:
 
- * [C Documentation](https://lv2.gitlab.io/pugl/c/singlehtml)
- * [C++ Documentation](https://lv2.gitlab.io/pugl/cpp/singlehtml)
+ * [C Documentation (single page)](https://lv2.gitlab.io/pugl/c/singlehtml/)
+ * [C Documentation (paginated)](https://lv2.gitlab.io/pugl/c/html/)
+ * [C++ Documentation (single page)](https://lv2.gitlab.io/pugl/cpp/singlehtml/)
+ * [C++ Documentation (paginated)](https://lv2.gitlab.io/pugl/cpp/html/)
 
 The documentation can also be built from the source by configuring with `--docs`.
 
 Testing
 -------
 
-There are a few unit tests included, but unfortunately manual testing is still
-required.  The tests and example programs will be built if you pass the
-`--test` option when configuring:
+Some unit tests are included, but unfortunately manual testing is still
+required.  The tests and example programs are built by default.  You can run
+all the tests at once via ninja:
 
-    ./waf configure --test
-
-Then, after building, the unit tests can be run:
-
-    ./waf
-    ./waf test --gui-tests
+    meson setup build
+    cd build
+    ninja test
 
 The `examples` directory contains several programs that serve as both manual
 tests and demonstrations:
