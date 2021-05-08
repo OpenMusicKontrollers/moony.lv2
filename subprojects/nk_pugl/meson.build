@@ -24,8 +24,9 @@ glu_dep = dependency('glu',
 deps = [m_dep, lv2_dep, glu_dep, glew_dep]
 links = []
 
+nk_pugl_inc = include_directories('')
 pugl_inc = include_directories(join_paths('pugl', 'include'))
-inc_dir = [pugl_inc]
+inc_dir = [nk_pugl_inc, pugl_inc]
 
 add_project_arguments('-D_GNU_SOURCE', language : 'c')
 
