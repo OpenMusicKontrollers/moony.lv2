@@ -84,10 +84,9 @@ tlsf_inc = include_directories('tlsf-3.0')
 varchunk_inc = include_directories('varchunk')
 xpress_inc = include_directories('xpress.lv2')
 nk_pugl_inc = include_directories(join_paths('subprojects', 'nk_pugl'))
-d2tk_inc = include_directories(join_paths('subprojects', 'd2tk'))
 props_inc = include_directories('props.lv2')
 ser_atom_inc = include_directories('ser_atom.lv2')
-inc_dir = [canvas_inc, extui_inc, include_inc, api_inc, plugin_inc, laes128_inc, tinyaes_inc, lascii85_inc, lbase64_inc, lcomplex_inc, lmathx_inc, lpeg_inc, lrandom_inc, lua_inc, osc_inc, timely_inc, tlsf_inc, varchunk_inc, xpress_inc, nk_pugl_inc, d2tk_inc, props_inc, ser_atom_inc]
+inc_dir = [canvas_inc, extui_inc, include_inc, api_inc, plugin_inc, laes128_inc, tinyaes_inc, lascii85_inc, lbase64_inc, lcomplex_inc, lmathx_inc, lpeg_inc, lrandom_inc, lua_inc, osc_inc, timely_inc, tlsf_inc, varchunk_inc, xpress_inc, nk_pugl_inc, props_inc, ser_atom_inc]
 
 rawvers = run_command('cat', 'VERSION').stdout().strip()
 version = rawvers.split('.')
