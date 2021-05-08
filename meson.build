@@ -109,10 +109,11 @@ fontconfig_dep = dependency('fontconfig',
 deps = [m_dep, thread_dep, evdev_dep, util_dep, vterm_dep, fontconfig_dep]
 links = []
 
+d2tk_inc = include_directories('')
 pugl_inc = include_directories(join_paths('pugl', 'include'))
 nanovg_inc = include_directories(join_paths('nanovg', 'src'))
 linenoise_inc = include_directories('linenoise')
-inc_dir = [pugl_inc, nanovg_inc, linenoise_inc]
+inc_dir = [d2tk_inc, pugl_inc, nanovg_inc, linenoise_inc]
 
 rawvers = run_command('cat', 'VERSION').stdout().strip()
 version = rawvers.split('.')
