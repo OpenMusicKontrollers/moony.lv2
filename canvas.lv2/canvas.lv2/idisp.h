@@ -22,8 +22,7 @@
 extern "C" {
 #endif
 
-#define LV2_CANVAS_RENDER_CAIRO
-#include <canvas.lv2/render.h>
+#include <canvas.lv2/render_cairo.h>
 #include <canvas.lv2/lv2_extensions.h>
 
 typedef struct _LV2_Canvas_Idisp LV2_Canvas_Idisp;
