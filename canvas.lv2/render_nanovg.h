@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Hanspeter Portner (dev@open-music-kontrollers.ch)
+ * Copyright (c) 2016-2021 Hanspeter Portner (dev@open-music-kontrollers.ch)
  *
  * This is free software: you can redistribute it and/or modify
  * it under the terms of the Artistic License 2.0 as published by
@@ -20,6 +20,8 @@
 
 #include <assert.h>
 
+#include <canvas.lv2/render.h>
+
 #include <nanovg.h>
 
 #if defined(__APPLE__)
@@ -29,8 +31,12 @@
 #	include <GL/glew.h>
 #endif
 
-#define NANOVG_GL2_IMPLEMENTATION
+#define NANOVG_GLES3_IMPLEMENTATION
 #include <nanovg_gl.h>
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#include <nanovg_gl_utils.h>
+#pragma GCC diagnostic pop
 
 #if defined(NANOVG_GL2_IMPLEMENTATION)
 #	define nvgCreate nvgCreateGL2
