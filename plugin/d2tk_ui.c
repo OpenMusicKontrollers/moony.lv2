@@ -38,8 +38,7 @@
 
 #include <nanovg.h>
 
-#define LV2_CANVAS_RENDER_NANOVG
-#include <canvas.lv2/render.h>
+#include <canvas.lv2/render_nanovg.h>
 
 #define MAX_NPROPS 16
 #define MAX_GRAPH 2048 //FIXME
