@@ -32,6 +32,10 @@
 #include <api_state.h>
 #include <api_parameter.h>
 
+#if defined(BUILD_INLINE_DISP)
+#	include <canvas.lv2/idisp.h>
+#endif
+
 #define RDF_PREFIX    "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 #define RDFS_PREFIX   "http://www.w3.org/2000/01/rdf-schema#"
 
@@ -1191,7 +1195,7 @@ _idisp_render(LV2_Handle instance, uint32_t w, uint32_t h)
 	float aspect_ratio = 1.f; //FIXME
 
 	LV2_Inline_Display_Image_Surface *surf = 
-		lv2_canvas_idisp_surf_configure(&moony->canvas_idisp, w, h, aspect_ratio);
+		lv2_canvas_idisp_surf_configure(moony->canvas_idisp, w, h, aspect_ratio);
 
 	const LV2_Atom *value = NULL;
 	size_t tot_size = 0;
@@ -1216,7 +1220,7 @@ _idisp_render(LV2_Handle instance, uint32_t w, uint32_t h)
 		value = &fake;
 	}
 
-	lv2_canvas_idisp_render_body(&moony->canvas_idisp, value->type, value->size,
+	lv2_canvas_idisp_render_body(moony->canvas_idisp, value->type, value->size,
 		LV2_ATOM_BODY_CONST(value));
 
 	return surf;
@@ -1482,7 +1486,8 @@ moony_init(moony_t *moony, const char *subject, double sample_rate,
 	moony->param_rows = ATOMIC_VAR_INIT(4);
 
 #if defined(BUILD_INLINE_DISP)
-	lv2_canvas_idisp_init(&moony->canvas_idisp, queue_draw, moony->map);
+	moony->canvas_idisp = calloc(1, sizeof(LV2_Canvas_Idisp));
+	lv2_canvas_idisp_init(moony->canvas_idisp, queue_draw, moony->map);
 #endif
 
 	return 0;
@@ -1495,7 +1500,9 @@ moony_deinit(moony_t *moony)
 	if(moony->to_idisp)
 		varchunk_free(moony->to_idisp);
 	free(moony->canvas_graph);
-	lv2_canvas_idisp_deinit(&moony->canvas_idisp);
+	lv2_canvas_idisp_deinit(moony->canvas_idisp);
+	free(moony->canvas_idisp);
+	moony->canvas_idisp = NULL;
 #endif
 
 	LV2_Atom *state_atom_old = (LV2_Atom *)atomic_load_explicit(&moony->state_atom_new, memory_order_relaxed);
@@ -2215,7 +2222,7 @@ _moony_props_out(moony_t *moony, uint32_t frames, LV2_Atom_Forge *forge)
 __realtime LV2_Worker_Status
 moony_wake_worker(const LV2_Worker_Schedule *work_sched)
 {
-	int32_t dummy;
+	int32_t dummy = 0;
 	return work_sched->schedule_work(work_sched->handle, sizeof(int32_t), &dummy);
 }
 
@@ -2363,7 +2370,7 @@ moony_in(moony_t *moony, const LV2_Atom_Sequence *control, LV2_Atom_Sequence *no
 			memcpy(dst, &fake, tot_size);
 			varchunk_write_advance(moony->to_idisp, tot_size);
 
-			lv2_canvas_idisp_queue_draw(&moony->canvas_idisp);
+			lv2_canvas_idisp_queue_draw(moony->canvas_idisp);
 		}
 #endif
 	}
@@ -2664,7 +2671,7 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 					memcpy(dst, value, tot_size);
 					varchunk_write_advance(moony->to_idisp, tot_size);
 
-					lv2_canvas_idisp_queue_draw(&moony->canvas_idisp);
+					lv2_canvas_idisp_queue_draw(moony->canvas_idisp);
 				}
 			}
 		}
@@ -2703,7 +2710,7 @@ moony_out(moony_t *moony, LV2_Atom_Sequence *notify, uint32_t frames)
 						memcpy(dst, value, tot_size);
 						varchunk_write_advance(moony->to_idisp, tot_size);
 
-						lv2_canvas_idisp_queue_draw(&moony->canvas_idisp);
+						lv2_canvas_idisp_queue_draw(moony->canvas_idisp);
 					}
 				}
 			}

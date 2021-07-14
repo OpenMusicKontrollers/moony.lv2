@@ -99,9 +99,6 @@ add_project_arguments('-DMOONY_VERSION="'+rawvers+'"', language : 'c')
 add_project_arguments('-DMOONY_MINOR_VERSION='+version[1], language : 'c')
 add_project_arguments('-DMOONY_MICRO_VERSION='+version[2], language : 'c')
 add_project_arguments('-D_GNU_SOURCE', language : 'c')
-if build_inline_disp
-	add_project_arguments('-DBUILD_INLINE_DISP', language : 'c')
-endif
 
 if gc_method == 'manual'
 	message('using manual gc method')
@@ -124,6 +121,11 @@ c_args = [
 	'-fvisibility=hidden',
 	'-Wno-attributes',
 	'-Wno-unused-function']
+
+extra_args = []
+if build_inline_disp
+	extra_args += '-DBUILD_INLINE_DISP'
+endif
 
 laes128_lib = static_library('laes128',
 	join_paths('laes128', 'laes128.c'),
@@ -222,7 +224,7 @@ api_lib = static_library('api',
 	join_paths('api', 'api_vm.c'),
 	include_directories : inc_dir,
 	dependencies : dsp_deps,
-	c_args : c_args)
+	c_args : [c_args, extra_args])
 
 dsp_links = [laes128_lib, lascii85_lib, lbase64_lib, lcomplex_lib, lmathx_lib, lrandom_lib, lpeg_lib, lua_lib, tlsf_lib, api_lib]
 
@@ -238,7 +240,7 @@ app_srcs = [
 	join_paths('test', 'moony_test.c')]
 
 mod = shared_module('moony', dsp_srcs,
-	c_args : c_args,
+	c_args : [c_args, extra_args],
 	include_directories : inc_dir,
 	name_prefix : '',
 	dependencies : dsp_deps,
@@ -286,7 +288,7 @@ if build_opengl_ui
 		join_paths('plugin', 'nk_ui.c')]
 
 	nk_ui = shared_module('moony_ui', nk_ui_srcs,
-		c_args : c_args,
+		c_args : [c_args, extra_args],
 		include_directories : inc_dir,
 		name_prefix : '',
 		dependencies : nk_ui_deps,

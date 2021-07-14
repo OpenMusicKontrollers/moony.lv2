@@ -36,8 +36,7 @@
 #include <d2tk/util.h>
 #include <d2tk/frontend_pugl.h>
 
-#include <nanovg.h>
-
+#define LV2_CANVAS_RENDER_NANOVG_NO_IMPLEMENTATION
 #include <canvas.lv2/render_nanovg.h>
 
 #define MAX_NPROPS 16

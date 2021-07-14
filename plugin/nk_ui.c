@@ -34,7 +34,7 @@
 #include <lauxlib.h>
 
 #if defined(BUILD_INLINE_DISP)
-#	include <canvas.lv2/render_cairo.h>
+#	include <canvas.lv2/idisp.h>
 #endif
 
 extern int luaopen_lpeg(lua_State *L);
