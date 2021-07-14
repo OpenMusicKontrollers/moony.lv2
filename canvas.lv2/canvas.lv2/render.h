@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Hanspeter Portner (dev@open-music-kontrollers.ch)
+ * Copyright (c) 2016-2021 Hanspeter Portner (dev@open-music-kontrollers.ch)
  *
  * This is free software: you can redistribute it and/or modify
  * it under the terms of the Artistic License 2.0 as published by
@@ -18,11 +18,12 @@
 #ifndef _LV2_CANVAS_RENDER_H
 #define _LV2_CANVAS_RENDER_H
 
+// Do NOT use this header directly, use render_{nanovg,cairo}.h instead
+#include <canvas.lv2/canvas.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <canvas.lv2/canvas.h>
 
 #define LV2_CANVAS_NUM_METHODS 26
 
@@ -76,12 +77,6 @@ _lv2_canvas_render_get_type(const LV2_Atom *body, LV2_URID type)
 
 #ifdef __cplusplus
 }
-#endif
-
-#if defined(LV2_CANVAS_RENDER_NANOVG)
-#	include <canvas.lv2/render_nanovg.h>
-#else
-#	include <canvas.lv2/render_cairo.h>
 #endif
 
 #endif // _LV2_CANVAS_RENDER_H
