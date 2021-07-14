@@ -31,7 +31,10 @@
 #	include <GL/glew.h>
 #endif
 
-#define NANOVG_GLES3_IMPLEMENTATION
+#if !defined(LV2_CANVAS_RENDER_NANOVG_NO_IMPLEMENTATION)
+#	define NANOVG_GLES3_IMPLEMENTATION
+#endif
+
 #include <nanovg_gl.h>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsign-compare"
