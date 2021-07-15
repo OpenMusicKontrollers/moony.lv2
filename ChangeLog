@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.40.0] - 15 Jul 2021
+
+### Changed
+
+* Lua version to 5.4.3
+
+### Fixed
+
+* compilation error with concurrently enabled inline display and next gui
+* meson subproject sandbox error
+
 ## [0.38.0] - 14 Apr 2021
 
 ### Fixed
